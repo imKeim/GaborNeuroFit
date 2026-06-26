@@ -24,7 +24,7 @@
 </p>
 
 <p align="center" style="font-size: 1.25em; font-weight: bold;">
-  <a href="https://imKeimLaptop.github.io/GaborNeuroFit/">▶️ PLAY GABORNEUROFIT LIVE NOW</a>
+  <a href="https://imkeim.github.io/GaborNeuroFit/">▶️ PLAY GABORNEUROFIT LIVE NOW</a>
 </p>
 
 ---
