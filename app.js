@@ -5,11 +5,6 @@
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details: <https://www.gnu.org/licenses/>
  */
 
 document.addEventListener('touchstart', function (event) {
@@ -49,11 +44,14 @@ const selectFlashDuration = document.getElementById('select-flash-duration');
 const chkStageAdvance = document.getElementById('chk-stage-advance');
 const chkPeripheral = document.getElementById('chk-peripheral');
 const chkCrowding = document.getElementById('chk-crowding');
+const chkOrthogonal = document.getElementById('chk-orthogonal-flankers');
+const chkDynamic = document.getElementById('chk-dynamic-flankers');
 const chkLowContrast = document.getElementById('chk-low-contrast');
 const chkWideVariance = document.getElementById('chk-wide-variance');
 const chkStatic = document.getElementById('chk-static');
 const chkAnaglyph = document.getElementById('chk-anaglyph');
 const chkFlicker = document.getElementById('chk-flicker');
+const chkFusionLock = document.getElementById('chk-fusion-lock');
 
 // Anaglyph dichoptics controls
 const selectRedSide = document.getElementById('select-red-side');
@@ -119,11 +117,16 @@ let currentLang = 'en';
 // Granular training state (default values)
 let presetMode = 'occlusion'; // Classic monocular patching as the default entry point
 let sessionLimit = 0;
+let autoAdvance = true; // FAULT FIXED: Explicitly declared globally to prevent ReferenceErrors!
 
 let allowStageAdvance = true; // Auto-advance/downgrade level based on accuracy
 let flashDurationMode = 'adaptive'; // Options: adaptive, 100, 180, 200, 350
 let isPeripheralEnabled = false; // Target peripheral eccentric shift
 let isCrowdingEnabled = true; // Visual crowding distractors (flankers)
+let isOrthogonalFlankersEnabled = false; // Orthogonal flankers orientation offset
+let isDynamicFlankersEnabled = false; // Dynamic phase-drifting flankers animation
+let flankerPhaseOffset = 0; // Cumulative phase step for running flankers
+let flankerAnimationId = null; // Animation request frame handler
 let allowLowContrast = false; // Permit contrast degradation down to 1%
 let allowWideVariance = false; // Randomize line density and blur values
 let isStaticEnabled = false; // Static mode (disable automatic stimulus hiding)
@@ -170,7 +173,7 @@ const translations = {
         secAmblyopiaTitle: "🔊 Acoustic Priming: Sound as a Neural Catalyst",
         secAmblyopiaText: "<li>🎋 <strong>Bamboo Click</strong> (Pre-cueing): Plays 180 ms before the flash, alerting the brain's temporal attention networks to prepare V1 neurons.</li><li>🔮 <strong>Crystal Chime</strong> (Success): A pleasant 3-note major chord (La-Do#-Mi) triggers a micro-release of dopamine, serving as a 'write-enable' signal to lock in successful synaptic weights.</li><li>🎵 <strong>Sliding Low Tone</strong> (Error): A gentle downward pitch provides non-intrusive error feedback to help the brain re-calibrate its thresholds.</li>",
         secRecommendationsTitle: "⚠️ Essential Safety & Training Rules",
-        secRecommendationsText: "<li><strong>1. Focus ONLY on the central cross (+):</strong> Never chase the Gabor patch with your gaze. Resolving the tilt using your parafoveal vision trains receptive fields and corrects ocular misalignment.</li><li><strong>2. The 15-Minute Rule:</strong> Train daily for 100–150 attempts (approx. 15 minutes). Rest is critical for consolidating visual memory; overtraining only causes muscle fatigue.</li><li><strong>3. Listen to Your Body:</strong> Stop immediately if your eyes water or feel painful. Always prioritize comfort.</li>",
+        secRecommendationsText: "<li><strong>1. Focus ONLY on the central cross (+):</strong> Never chase the Gabor patch with your gaze. Resolving the tilt using your foveal vision trains receptive fields and corrects ocular misalignment.</li><li><strong>2. The 15-Minute Rule:</strong> Train daily for 100–150 attempts (approx. 15 minutes). Rest is critical for consolidating visual memory; overtraining only causes muscle fatigue.</li><li><strong>3. Listen to Your Body:</strong> Stop immediately if your eyes water or feel painful. Always prioritize comfort.</li>",
         
         // Settings UI Translations
         settingsTitle: "Configuration Panel",
@@ -205,6 +208,8 @@ const translations = {
         lblSettingStrongAttenuation: "Strong Eye Contrast Balancer:",
         lblSettingFlicker: "Flicker Stimulation (10 Hz):",
         lblSettingFusionLock: "Binocular Fusion Lock:",
+        lblSettingOrthogonal: "Orthogonal Distractor Orientation:",
+        lblSettingDynamic: "Dynamic Distractor Phase Shift:",
         btnFusionTestLabel: "Toggle Fusion Alignment Test",
         optSideLeft: "Left Eye",
         optSideRight: "Right Eye",
@@ -229,7 +234,9 @@ const translations = {
         helpStatic: "The Gabor patch stays visible indefinitely until you choose an answer (no auto-hiding).",
         helpFlicker: "Pulsates the target at 10 Hz (Alpha-resonance) to bypass chronic cortical suppression of the weak eye.",
         helpAnaglyph: "Splits red/cyan color channels for dichoptic training. Requires Red-Cyan 3D glasses.",
-        helpFusionLock: "Renders a zero-disparity frame and corner brackets to stabilize eye alignment and prevent dominant-eye suppression."
+        helpFusionLock: "Renders a zero-disparity frame and corner brackets to stabilize eye alignment and prevent dominant-eye suppression.",
+        helpOrthogonal: "Rotates flanking bars perpendicular to the target, creating distinct orientation boundaries.",
+        helpDynamic: "Runs a continuous motion wave inside the flankers to saturate dominant eye motion channels."
     },
     ru: {
         stage: "Этап",
@@ -253,7 +260,7 @@ const translations = {
         secLevelsTitle: "🕶️ Сценарий II. В 3D-очках (дихоптика)",
         secLevelsList: "<li>Используйте этот метод для протоколов 🕶️ <strong>Бинокулярный баланс</strong>, 🎯 <strong>Парафовеальный захват</strong> и 🌀 <strong>Фликкер-резонанс</strong>.</li><li><strong>Инструкция:</strong> надевать повязку НЕЛЬЗЯ. Наденьте красно-синие (Red-Cyan) 3D-очки (оба глаза должны быть открыты!).</li><li><strong>Калибровка:</strong> откройте настройки и запустите 'Тест слияния'. Закрыв правый глаз, вы должны видеть только букву 'L' (красную), закрыв левый — только букву 'R' (синюю).</li><li><strong>Баланс контраста:</strong> если здоровый глаз полностью глушит ленивый, плавно снижайте слайдер 'Контраст здорового глаза' в настройках до тех пор, пока картинка не соединится.</li>",
         secAmblyopiaTitle: "🔊 Акустический прайминг: звук как нейростимулятор",
-        secAmblyopiaText: "<li>🎋 <strong>Бамбуковый клик</strong> (прайминг): звучит за 180 мс до вспышки, мгновенно мобилизуя внимание и подготавливая нейроны к приему изображения.</li><li>🔮 <strong>Хрустальный аккорд</strong> (успех): приятный 3-нотный мажорный перелив (La-Do#-Mi) вызывает микро-выброс дофамина, давая мозгу команду закрепить успешную комбинацию связей.</li><li>🎵 <strong>Глухой слайд</strong> (ошибка): низкий спадающий тон деликатно сообщает об ошибке, помогая мозгу перенастроить порог детекции.</li>",
+        secAmblyopiaText: "<li>🎋 <strong>Бамбуковый клик</strong> (прайминг): звучит за 180 мс до вспышки, мгновенно мобилизуя внимание и подготавливая нейроны к приему изображения.</li><li>🔮 <strong>Хрустальный аккорд</strong> (успех): приятный 3-нотного мажорный перелив (La-Do#-Mi) вызывает микро-выброс дофамина, давая мозгу команду закрепить успешную комбинацию связей.</li><li>🎵 <strong>Глухой слайд</strong> (ошибка): низкий спадающий тон деликатно сообщает об ошибке, помогая мозгу перенастроить порог детекции.</li>",
         secRecommendationsTitle: "⚠️ Золотые правила безопасности",
         secRecommendationsText: "<li><strong>1. Фиксация:</strong> смотрите строго на центральный крест (+). Ни в коем случае не бегайте глазами за паттерном. Считывание наклона боковым зрением тренирует рецептивные поля нейронов и исправляет косоглазие.</li><li><strong>2. Регулярность:</strong> занимайтесь ежедневно по 100–150 попыток (около 15 минут). Мозгу нужен отдых для консолидации памяти, избыток тренировок приведет лишь к мышечной усталости.</li><li><strong>3. Предел боли:</strong> если глаза начали слезиться или болеть — сразу прекратите сессию. Всегда приоритезируйте комфорт.</li>",
         
@@ -290,6 +297,8 @@ const translations = {
         lblSettingStrongAttenuation: "Контраст здорового глаза:",
         lblSettingFlicker: "Фликкер-стимуляция (10 Гц):",
         lblSettingFusionLock: "Бинокулярная рамка-замок:",
+        lblSettingOrthogonal: "Ортогональный наклон дистракторов:",
+        lblSettingDynamic: "Динамический сдвиг фазы дистракторов:",
         btnFusionTestLabel: "Запустить тест слияния",
         optSideLeft: "Левый глаз",
         optSideRight: "Правый глаз",
@@ -314,7 +323,9 @@ const translations = {
         helpStatic: "Паттерн не исчезает с экрана сам, а висит до тех пор, пока вы не выберете ответ.",
         helpFlicker: "Заставляет паттерн мигать с частотой 10 Гц, резонансно взламывая глубокое подавление ленивого глаза.",
         helpAnaglyph: "Разделяет цветовые каналы для тренировки в красно-синих 3D-очках.",
-        helpFusionLock: "Отрисовывает рамку и уголки с нулевым сдвигом для стабилизации соосности глаз и предотвращения подавления."
+        helpFusionLock: "Отрисовывает рамку и уголки с нулевым сдвигом для стабилизации соосности глаз и предотвращения подавления.",
+        helpOrthogonal: "Поворачивает боковые полосы перпендикулярно цели, создавая чистый контраст текстур без слияния.",
+        helpDynamic: "Запускает плавное бегущее движение внутри дистракторов, отвлекая ведущий глаз и облегчая работу слабого."
     }
 };
 
@@ -397,13 +408,13 @@ function setLanguage(lang) {
         'help-preset-mode', 'help-start-level', 'help-flash-duration',
         'help-stage-advance', 'help-peripheral', 'help-crowding',
         'help-low-contrast', 'help-wide-variance', 'help-static',
-        'help-flicker', 'help-anaglyph', 'help-fusion-lock'
+        'help-flicker', 'help-anaglyph', 'help-fusion-lock', 'help-orthogonal', 'help-dynamic'
     ];
     const helpKeys = [
         'helpPresetMode', 'helpStartLevel', 'helpFlashDuration',
         'helpStageAdvance', 'helpPeripheral', 'helpCrowding',
         'helpLowContrast', 'helpWideVariance', 'helpStatic',
-        'helpFlicker', 'helpAnaglyph', 'helpFusionLock'
+        'helpFlicker', 'helpAnaglyph', 'helpFusionLock', 'helpOrthogonal', 'helpDynamic'
     ];
     for (let i = 0; i < helpSpans.length; i++) {
         const el = document.getElementById(helpSpans[i]);
@@ -437,6 +448,8 @@ function setLanguage(lang) {
     if (document.getElementById('lbl-setting-strong-attenuation')) document.getElementById('lbl-setting-strong-attenuation').innerText = t.lblSettingStrongAttenuation;
     if (document.getElementById('lbl-setting-flicker')) document.getElementById('lbl-setting-flicker').innerText = t.lblSettingFlicker;
     if (document.getElementById('lbl-setting-fusion-lock')) document.getElementById('lbl-setting-fusion-lock').innerText = t.lblSettingFusionLock;
+    if (document.getElementById('lbl-setting-orthogonal')) document.getElementById('lbl-setting-orthogonal').innerText = t.lblSettingOrthogonal;
+    if (document.getElementById('lbl-setting-dynamic')) document.getElementById('lbl-setting-dynamic').innerText = t.lblSettingDynamic;
     if (document.getElementById('btn-fusion-test')) document.getElementById('btn-fusion-test').innerText = t.btnFusionTestLabel;
 
     // Selector options
@@ -472,6 +485,8 @@ function detectMatchingPreset() {
         flashDurationMode === 'adaptive' &&
         isPeripheralEnabled === false &&
         isCrowdingEnabled === false &&
+        isOrthogonalFlankersEnabled === false &&
+        isDynamicFlankersEnabled === false &&
         isStaticEnabled === false &&
         isAnaglyphEnabled === false &&
         allowWideVariance === false &&
@@ -484,6 +499,8 @@ function detectMatchingPreset() {
         flashDurationMode === 'adaptive' &&
         isPeripheralEnabled === false &&
         isCrowdingEnabled === true &&
+        isOrthogonalFlankersEnabled === false &&
+        isDynamicFlankersEnabled === false &&
         isStaticEnabled === false &&
         isAnaglyphEnabled === true &&
         allowWideVariance === false &&
@@ -496,6 +513,8 @@ function detectMatchingPreset() {
         flashDurationMode === '180' &&
         isPeripheralEnabled === true &&
         isCrowdingEnabled === false &&
+        isOrthogonalFlankersEnabled === false &&
+        isDynamicFlankersEnabled === false &&
         isStaticEnabled === false &&
         isAnaglyphEnabled === true &&
         allowWideVariance === false &&
@@ -508,6 +527,8 @@ function detectMatchingPreset() {
         flashDurationMode === '100' &&
         isPeripheralEnabled === false &&
         isCrowdingEnabled === false &&
+        isOrthogonalFlankersEnabled === false &&
+        isDynamicFlankersEnabled === false &&
         isStaticEnabled === false &&
         isAnaglyphEnabled === false &&
         allowWideVariance === true &&
@@ -520,6 +541,8 @@ function detectMatchingPreset() {
         flashDurationMode === 'adaptive' &&
         isPeripheralEnabled === false &&
         isCrowdingEnabled === true &&
+        isOrthogonalFlankersEnabled === false &&
+        isDynamicFlankersEnabled === false &&
         isStaticEnabled === true &&
         isAnaglyphEnabled === true &&
         allowWideVariance === false &&
@@ -538,6 +561,8 @@ function applyPresetTemplate(mode) {
         flashDurationMode = 'adaptive';
         isPeripheralEnabled = false;
         isCrowdingEnabled = false;
+        isOrthogonalFlankersEnabled = false;
+        isDynamicFlankersEnabled = false;
         isStaticEnabled = false;
         isAnaglyphEnabled = false;
         allowWideVariance = false;
@@ -548,6 +573,8 @@ function applyPresetTemplate(mode) {
         flashDurationMode = 'adaptive';
         isPeripheralEnabled = false;
         isCrowdingEnabled = true;
+        isOrthogonalFlankersEnabled = false;
+        isDynamicFlankersEnabled = false;
         isStaticEnabled = false;
         isAnaglyphEnabled = true;
         allowWideVariance = false;
@@ -558,6 +585,8 @@ function applyPresetTemplate(mode) {
         flashDurationMode = '180';
         isPeripheralEnabled = true;
         isCrowdingEnabled = false;
+        isOrthogonalFlankersEnabled = false;
+        isDynamicFlankersEnabled = false;
         isStaticEnabled = false;
         isAnaglyphEnabled = true;
         allowWideVariance = false;
@@ -568,6 +597,8 @@ function applyPresetTemplate(mode) {
         flashDurationMode = '100';
         isPeripheralEnabled = false;
         isCrowdingEnabled = false;
+        isOrthogonalFlankersEnabled = false;
+        isDynamicFlankersEnabled = false;
         isStaticEnabled = false;
         isAnaglyphEnabled = false;
         allowWideVariance = true;
@@ -578,6 +609,8 @@ function applyPresetTemplate(mode) {
         flashDurationMode = 'adaptive';
         isPeripheralEnabled = false;
         isCrowdingEnabled = true;
+        isOrthogonalFlankersEnabled = false;
+        isDynamicFlankersEnabled = false;
         isStaticEnabled = true;
         isAnaglyphEnabled = true;
         allowWideVariance = false;
@@ -595,6 +628,9 @@ function applyPresetTemplate(mode) {
     if (chkWideVariance) chkWideVariance.checked = allowWideVariance;
     if (chkFlicker) chkFlicker.checked = isFlickerEnabled;
     if (chkFusionLock) chkFusionLock.checked = isFusionLockEnabled;
+    
+    if (chkOrthogonal) chkOrthogonal.checked = isOrthogonalFlankersEnabled;
+    if (chkDynamic) chkDynamic.checked = isDynamicFlankersEnabled;
 
     if (anaglyphSettingsPanel) {
         anaglyphSettingsPanel.style.display = isAnaglyphEnabled ? 'block' : 'none';
@@ -609,6 +645,10 @@ function syncStateFromUI() {
     if (selectFlashDuration) flashDurationMode = selectFlashDuration.value;
     if (chkPeripheral) isPeripheralEnabled = chkPeripheral.checked;
     if (chkCrowding) isCrowdingEnabled = chkCrowding.checked;
+    
+    if (chkOrthogonal) isOrthogonalFlankersEnabled = chkOrthogonal.checked;
+    if (chkDynamic) isDynamicFlankersEnabled = chkDynamic.checked;
+    
     if (chkLowContrast) allowLowContrast = chkLowContrast.checked;
     if (chkWideVariance) allowWideVariance = chkWideVariance.checked;
     if (chkStatic) isStaticEnabled = chkStatic.checked;
@@ -655,6 +695,9 @@ function updatePresetUI() {
     if (chkAnaglyph) chkAnaglyph.disabled = false;
     if (chkFlicker) chkFlicker.disabled = false;
     if (chkFusionLock) chkFusionLock.disabled = false;
+    
+    if (chkOrthogonal) chkOrthogonal.disabled = false;
+    if (chkDynamic) chkDynamic.disabled = false;
 
     if (presetMode !== 'custom') {
         applyPresetTemplate(presetMode);
@@ -762,6 +805,28 @@ function drawIdleCanvas() {
     }
 }
 
+// Start continuous high-performance phase drifting animation loop for moving flankers
+function startFlankerAnimation() {
+    if (flankerAnimationId) cancelAnimationFrame(flankerAnimationId);
+    
+    function animate() {
+        flankerPhaseOffset += 0.12; // Fluid phase step size
+        drawGabor(currentAngleDeg, autoContrast, lastRandomFreq, lastRandomSigma, lastOffsetX, lastOffsetY);
+        flankerAnimationId = requestAnimationFrame(animate);
+    }
+    
+    flankerAnimationId = requestAnimationFrame(animate);
+}
+
+// Stop the running phase drift animation and reset phase variables safely
+function stopFlankerAnimation() {
+    if (flankerAnimationId) {
+        cancelAnimationFrame(flankerAnimationId);
+        flankerAnimationId = null;
+    }
+    flankerPhaseOffset = 0;
+}
+
 function drawGabor(angleDeg, contrast, freq, sigma, offsetX = 0, offsetY = 0) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -775,7 +840,7 @@ function drawGabor(angleDeg, contrast, freq, sigma, offsetX = 0, offsetY = 0) {
     const cy = height / 2;
 
     const isCrowding = isCrowdingEnabled;
-    const distAngleRad = 0; 
+    const flankerAngleRad = isOrthogonalFlankersEnabled ? (angleRad + Math.PI / 2) : 0; 
     const flankerOffset = sigma * 2.0; 
 
     for (let y = 0; y < height; y++) {
@@ -802,18 +867,18 @@ function drawGabor(angleDeg, contrast, freq, sigma, offsetX = 0, offsetY = 0) {
 
             let centralGaborValue = gaussian * cosine * fade;
 
-            // Modulate crowding distractors (presented to dominant eye)
+            // Modulate crowding distractors (presented to dominant eye) with optional phase-drifting
             let flankerGaborValue = 0;
             if (isCrowding) {
                 const dy1 = y - (cy - flankerOffset);
-                const x_t1 = dx * Math.cos(distAngleRad) + dy1 * Math.sin(distAngleRad);
-                const y_t1 = -dx * Math.sin(distAngleRad) + dy1 * Math.cos(distAngleRad);
-                const g1 = Math.exp(-(x_t1 * x_t1 + y_t1 * y_t1) / (2 * sigma * sigma)) * Math.cos(2 * Math.PI * x_t1 * freq);
+                const x_t1 = dx * Math.cos(flankerAngleRad) + dy1 * Math.sin(flankerAngleRad);
+                const y_t1 = -dx * Math.sin(flankerAngleRad) + dy1 * Math.cos(flankerAngleRad);
+                const g1 = Math.exp(-(x_t1 * x_t1 + y_t1 * y_t1) / (2 * sigma * sigma)) * Math.cos(2 * Math.PI * x_t1 * freq + flankerPhaseOffset);
 
                 const dy2 = y - (cy + flankerOffset);
-                const x_t2 = dx * Math.cos(distAngleRad) + dy2 * Math.sin(distAngleRad);
-                const y_t2 = -dx * Math.sin(distAngleRad) + dy2 * Math.cos(distAngleRad);
-                const g2 = Math.exp(-(x_t2 * x_t2 + y_t2 * y_t2) / (2 * sigma * sigma)) * Math.cos(2 * Math.PI * x_t2 * freq);
+                const x_t2 = dx * Math.cos(flankerAngleRad) + dy2 * Math.sin(flankerAngleRad);
+                const y_t2 = -dx * Math.sin(flankerAngleRad) + dy2 * Math.cos(flankerAngleRad);
+                const g2 = Math.exp(-(x_t2 * x_t2 + y_t2 * y_t2) / (2 * sigma * sigma)) * Math.cos(2 * Math.PI * x_t2 * freq + flankerPhaseOffset);
 
                 flankerGaborValue = (g1 + g2) * 0.55 * fade;
             }
@@ -1049,7 +1114,11 @@ function reFlashCurrentGabor() {
     const t = translations[currentLang] || translations['en'];
     btnStart.innerText = "...";
 
-    drawGabor(currentAngleDeg, autoContrast, lastRandomFreq, lastRandomSigma, lastOffsetX, lastOffsetY);
+    if (isDynamicFlankersEnabled && isCrowdingEnabled) {
+        startFlankerAnimation();
+    } else {
+        drawGabor(currentAngleDeg, autoContrast, lastRandomFreq, lastRandomSigma, lastOffsetX, lastOffsetY);
+    }
 
     let flashDuration = 200;
     if (flashDurationMode === '100') {
@@ -1073,6 +1142,7 @@ function reFlashCurrentGabor() {
 
     if (!isStaticEnabled) {
         setTimeout(() => {
+            stopFlankerAnimation();
             drawIdleCanvas();
             cross.style.display = 'block';
             btnStart.innerText = t.reflashBtn;
@@ -1184,8 +1254,13 @@ function executeGaborFlash() {
     canvas.style.display = 'block';
     isWaitingForAnswer = true;
 
+    if (isDynamicFlankersEnabled && isCrowdingEnabled) {
+        startFlankerAnimation();
+    }
+
     if (!isStaticEnabled) {
         setTimeout(() => {
+            stopFlankerAnimation();
             drawIdleCanvas();
             cross.style.display = 'block';
             btnStart.innerText = t.reflashBtn;
@@ -1232,6 +1307,7 @@ function checkAnswer(userChoice) {
         clearInterval(flickerIntervalId);
         flickerIntervalId = null;
     }
+    stopFlankerAnimation();
     cross.style.display = 'block';
 
     if (nextFlashTimeoutId) {
@@ -1395,6 +1471,8 @@ function loadSettings() {
         flashDurationMode = localStorage.getItem('gabor_flash_mode') || 'adaptive';
         isPeripheralEnabled = localStorage.getItem('gabor_peripheral') === 'true';
         isCrowdingEnabled = localStorage.getItem('gabor_crowding') === 'true';
+        isOrthogonalFlankersEnabled = localStorage.getItem('gabor_orthogonal') === 'true';
+        isDynamicFlankersEnabled = localStorage.getItem('gabor_dynamic_flankers') === 'true';
         allowLowContrast = localStorage.getItem('gabor_low_contrast') === 'true';
         allowWideVariance = localStorage.getItem('gabor_wide_variance') === 'true';
         isStaticEnabled = localStorage.getItem('gabor_static') === 'true';
@@ -1414,6 +1492,8 @@ function loadSettings() {
         flashDurationMode = 'adaptive';
         isPeripheralEnabled = false;
         isCrowdingEnabled = false;
+        isOrthogonalFlankersEnabled = false;
+        isDynamicFlankersEnabled = false;
         allowLowContrast = false;
         allowWideVariance = false;
         isStaticEnabled = false;
@@ -1440,6 +1520,9 @@ function loadSettings() {
     if (chkAnaglyph) chkAnaglyph.checked = isAnaglyphEnabled;
     if (chkFlicker) chkFlicker.checked = isFlickerEnabled;
     if (chkFusionLock) chkFusionLock.checked = isFusionLockEnabled;
+    
+    if (chkOrthogonal) chkOrthogonal.checked = isOrthogonalFlankersEnabled;
+    if (chkDynamic) chkDynamic.checked = isDynamicFlankersEnabled;
     
     if (selectRedSide) selectRedSide.value = redEyeSide;
     if (selectLazySide) selectLazySide.value = lazyEyeSide;
@@ -1470,6 +1553,9 @@ function saveSettings() {
         if (chkFlicker) isFlickerEnabled = chkFlicker.checked;
         if (chkFusionLock) isFusionLockEnabled = chkFusionLock.checked;
         
+        if (chkOrthogonal) isOrthogonalFlankersEnabled = chkOrthogonal.checked;
+        if (chkDynamic) isDynamicFlankersEnabled = chkDynamic.checked;
+        
         if (selectRedSide) redEyeSide = selectRedSide.value;
         if (selectLazySide) lazyEyeSide = selectLazySide.value;
         if (rangeStrongAttenuation) strongEyeContrastFactor = parseFloat(rangeStrongAttenuation.value) / 100;
@@ -1479,6 +1565,8 @@ function saveSettings() {
             flashDurationMode = 'adaptive';
             isPeripheralEnabled = false;
             isCrowdingEnabled = false;
+            isOrthogonalFlankersEnabled = false;
+            isDynamicFlankersEnabled = false;
             isStaticEnabled = false;
             isAnaglyphEnabled = false;
             allowWideVariance = false;
@@ -1489,6 +1577,8 @@ function saveSettings() {
             flashDurationMode = 'adaptive';
             isPeripheralEnabled = false;
             isCrowdingEnabled = true;
+            isOrthogonalFlankersEnabled = false;
+            isDynamicFlankersEnabled = false;
             isStaticEnabled = false;
             isAnaglyphEnabled = true;
             allowWideVariance = false;
@@ -1499,6 +1589,8 @@ function saveSettings() {
             flashDurationMode = '180';
             isPeripheralEnabled = true;
             isCrowdingEnabled = false;
+            isOrthogonalFlankersEnabled = false;
+            isDynamicFlankersEnabled = false;
             isStaticEnabled = false;
             isAnaglyphEnabled = true;
             allowWideVariance = false;
@@ -1509,6 +1601,8 @@ function saveSettings() {
             flashDurationMode = '100';
             isPeripheralEnabled = false;
             isCrowdingEnabled = false;
+            isOrthogonalFlankersEnabled = false;
+            isDynamicFlankersEnabled = false;
             isStaticEnabled = false;
             isAnaglyphEnabled = false;
             allowWideVariance = true;
@@ -1519,6 +1613,8 @@ function saveSettings() {
             flashDurationMode = 'adaptive';
             isPeripheralEnabled = false;
             isCrowdingEnabled = true;
+            isOrthogonalFlankersEnabled = false;
+            isDynamicFlankersEnabled = false;
             isStaticEnabled = true;
             isAnaglyphEnabled = true;
             allowWideVariance = false;
@@ -1551,6 +1647,8 @@ function saveSettings() {
         localStorage.setItem('gabor_flash_mode', flashDurationMode);
         localStorage.setItem('gabor_peripheral', isPeripheralEnabled ? "true" : "false");
         localStorage.setItem('gabor_crowding', isCrowdingEnabled ? "true" : "false");
+        localStorage.setItem('gabor_orthogonal', isOrthogonalFlankersEnabled ? "true" : "false");
+        localStorage.setItem('gabor_dynamic_flankers', isDynamicFlankersEnabled ? "true" : "false");
         localStorage.setItem('gabor_low_contrast', allowLowContrast ? "true" : "false");
         localStorage.setItem('gabor_wide_variance', allowWideVariance ? "true" : "false");
         localStorage.setItem('gabor_static', isStaticEnabled ? "true" : "false");
@@ -1617,12 +1715,12 @@ if (selectPresetMode) {
     });
 }
 
-const chkFusionLock = document.getElementById('chk-fusion-lock');
-
 if (chkPeripheral) {
     chkPeripheral.addEventListener('change', () => {
         if (chkPeripheral.checked) {
             if (chkCrowding) chkCrowding.checked = false;
+            if (chkOrthogonal) chkOrthogonal.checked = false;
+            if (chkDynamic) chkDynamic.checked = false;
         }
         syncStateFromUI();
     });
@@ -1632,6 +1730,30 @@ if (chkCrowding) {
     chkCrowding.addEventListener('change', () => {
         if (chkCrowding.checked) {
             if (chkPeripheral) chkPeripheral.checked = false;
+        } else {
+            // Cascading teardown: if main crowding is disabled, disable its sub-features
+            if (chkOrthogonal) chkOrthogonal.checked = false;
+            if (chkDynamic) chkDynamic.checked = false;
+        }
+        syncStateFromUI();
+    });
+}
+
+if (chkOrthogonal) {
+    chkOrthogonal.addEventListener('change', () => {
+        if (chkOrthogonal.checked) {
+            if (chkCrowding) chkCrowding.checked = true;
+            if (chkPeripheral) chkPeripheral.checked = false; // Crowding and peripheral are mutually exclusive
+        }
+        syncStateFromUI();
+    });
+}
+
+if (chkDynamic) {
+    chkDynamic.addEventListener('change', () => {
+        if (chkDynamic.checked) {
+            if (chkCrowding) chkCrowding.checked = true;
+            if (chkPeripheral) chkPeripheral.checked = false; // Crowding and peripheral are mutually exclusive
         }
         syncStateFromUI();
     });
@@ -1675,7 +1797,8 @@ if (chkFlicker) {
 const inputsToSync = [
     chkStageAdvance, selectFlashDuration, chkLowContrast,
     chkWideVariance, chkAnaglyph, selectRedSide, selectLazySide,
-    rangeStrongAttenuation, selectStartLevel, selectAutonext, selectSessionLimit, chkFusionLock
+    rangeStrongAttenuation, selectStartLevel, selectAutonext, selectSessionLimit, 
+    chkFusionLock
 ];
 inputsToSync.forEach(input => {
     if (input) input.addEventListener('change', syncStateFromUI);
