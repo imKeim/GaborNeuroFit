@@ -123,14 +123,19 @@ img.emoji {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: auto; 
+    margin: 12px 0; /* Enforce strict vertical spacing to eliminate overlapping on low-height viewports */
+    flex-shrink: 0; /* Prevent vertical layout compression on short screens */
+    border-radius: 16px; /* Elegant card framing to match the rest of the rounded UI elements */
+    overflow: hidden; /* Prevent canvas corners from bleeding outside the rounded container */
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15); /* Add visual depth and isolate the training zone */
 }
 
 canvas {
     background-color: #7f7f7f;
-    display: none;
+    display: block; /* Kept permanently visible to maintain stable peripheral motor fusion locks */
     width: 100%;
     height: 100%;
+    border-radius: 16px; /* Smooth card edges integration */
 }
 
 #cross {
@@ -403,4 +408,56 @@ canvas {
     margin-top: 4px;
     display: block;
     font-weight: 300;
+}
+
+/* Hardware-accelerated full-screen chromatic filter */
+#flash-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0;
+    will-change: opacity, background-color;
+    /* Extended to 500ms with a gentle easing curve to allow comfortable peripheral registration of the chromatic wave */
+    transition: opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+#flash-overlay.flash-success {
+    background-color: #0a4b5c; /* Subdued deep turquoise for comfortable dichoptic success feedback */
+    opacity: 0.22;
+}
+
+#flash-overlay.flash-error {
+    background-color: #5c161b; /* Softened deep crimson-burgundy for non-fatiguing error feedback */
+    opacity: 0.22;
+}
+
+/* Kinetic spring animation for successful hits */
+@keyframes successPulse {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.04); }
+    100% { transform: scale(1); }
+}
+
+.success-pulse {
+    animation: successPulse 0.25s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* Tactile horizontal vibration (shake) animation for missed hits */
+@keyframes errorShake {
+    0% { transform: translate(0, 0); }
+    15% { transform: translate(-8px, 0); }
+    30% { transform: translate(6px, 0); }
+    45% { transform: translate(-5px, 0); }
+    60% { transform: translate(4px, 0); }
+    75% { transform: translate(-2px, 0); }
+    90% { transform: translate(1px, 0); }
+    100% { transform: translate(0, 0); }
+}
+
+.error-shake {
+    animation: errorShake 0.25s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }

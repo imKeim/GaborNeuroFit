@@ -26,6 +26,8 @@ document.addEventListener('touchend', function (event) {
 const canvas = document.getElementById('gaborCanvas');
 const ctx = canvas.getContext('2d');
 const cross = document.getElementById('cross');
+const flashOverlay = document.getElementById('flash-overlay');
+const container = document.getElementById('container');
 
 const btnStart = document.getElementById('btn-start');
 const btnLeft = document.getElementById('btn-left');
@@ -747,6 +749,19 @@ function drawFusionLockFrame(targetCtx) {
     targetCtx.stroke();
 }
 
+// Clear the canvas to neutral gray background while preserving active peripheral fusion locks
+function drawIdleCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Flat gray fill ensures perfect, non-fatiguing foveal light adaptation at all times
+    ctx.fillStyle = '#7f7f7f';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (isFusionLockEnabled) {
+        drawFusionLockFrame(ctx);
+    }
+}
+
 function drawGabor(angleDeg, contrast, freq, sigma, offsetX = 0, offsetY = 0) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -1058,7 +1073,7 @@ function reFlashCurrentGabor() {
 
     if (!isStaticEnabled) {
         setTimeout(() => {
-            canvas.style.display = 'none';
+            drawIdleCanvas();
             cross.style.display = 'block';
             btnStart.innerText = t.reflashBtn;
         }, flashDuration);
@@ -1171,7 +1186,7 @@ function executeGaborFlash() {
 
     if (!isStaticEnabled) {
         setTimeout(() => {
-            canvas.style.display = 'none';
+            drawIdleCanvas();
             cross.style.display = 'block';
             btnStart.innerText = t.reflashBtn;
         }, flashDuration);
@@ -1191,11 +1206,19 @@ function executeGaborFlash() {
 function triggerMilestoneFlash(callback) {
     let count = 0;
     const interval = setInterval(() => {
-        document.body.style.backgroundColor = count % 2 === 0 ? "#244263" : "#7f7f7f";
+        const isEven = count % 2 === 0;
+        if (isEven) {
+            flashOverlay.classList.add('flash-success');
+            container.classList.add('success-pulse');
+        } else {
+            flashOverlay.classList.remove('flash-success');
+            container.classList.remove('success-pulse');
+        }
         count++;
         if (count >= 6) {
             clearInterval(interval);
-            document.body.style.backgroundColor = "#7f7f7f";
+            flashOverlay.classList.remove('flash-success');
+            container.classList.remove('success-pulse');
             if (callback) callback();
         }
     }, 120);
@@ -1209,7 +1232,6 @@ function checkAnswer(userChoice) {
         clearInterval(flickerIntervalId);
         flickerIntervalId = null;
     }
-    canvas.style.display = 'none';
     cross.style.display = 'block';
 
     if (nextFlashTimeoutId) {
@@ -1222,12 +1244,21 @@ function checkAnswer(userChoice) {
     
     const minContrast = allowLowContrast ? 0.01 : 0.05;
 
+    // Cancel active animations and force style recalculation on GPU layers
+    container.classList.remove('success-pulse', 'error-shake');
+    flashOverlay.classList.remove('flash-success', 'flash-error');
+    void container.offsetWidth;
+    void flashOverlay.offsetWidth;
+
     if (userChoice === correctAnswer) {
         score++;
         correctStreak++;
         staircaseStreak++;
         playSuccessTone(); 
-        document.body.style.backgroundColor = "#244263"; 
+        
+        // Trigger hardware-accelerated dopamine success feedback (Teal chromatic wave + expansion)
+        flashOverlay.classList.add('flash-success');
+        container.classList.add('success-pulse');
         
         if (staircaseStreak >= 3) {
             if (autoContrast <= minContrast) {
@@ -1244,7 +1275,11 @@ function checkAnswer(userChoice) {
         correctStreak = 0;
         staircaseStreak = 0;
         playErrorTone(); 
-        document.body.style.backgroundColor = "#4d2424"; 
+        
+        // Trigger hardware-accelerated tactile friction error feedback (Burgundy chromatic wave + vibration)
+        flashOverlay.classList.add('flash-error');
+        container.classList.add('error-shake');
+        
         if (allowStageAdvance && autoContrast >= 0.70 && currentLevel > 1) {
             currentLevel--;
             autoContrast = 0.30;
@@ -1253,7 +1288,13 @@ function checkAnswer(userChoice) {
         }
     }
 
-    setTimeout(() => { document.body.style.backgroundColor = "#7f7f7f"; }, 150);
+    // Instantly clear the central Gabor patch to preserve foveal gray state
+    drawIdleCanvas();
+
+    setTimeout(() => { 
+        flashOverlay.classList.remove('flash-success', 'flash-error');
+        container.classList.remove('success-pulse', 'error-shake');
+    }, 300);
     
     updateScoreBoardText();
     streakEl.innerText = correctStreak;
@@ -1656,7 +1697,7 @@ if (btnFusionTest) {
         } else {
             btnFusionTest.style.background = '#1a233a';
             btnFusionTest.style.color = '#3b90ff';
-            canvas.style.display = 'none';
+            drawIdleCanvas();
         }
     });
 }
@@ -1665,6 +1706,7 @@ window.addEventListener('load', () => {
     const savedLang = localStorage.getItem('gabor_lang') || 'en';
     loadSettings();
     setLanguage(savedLang);
+    drawIdleCanvas();
     if (window.twemoji) twemoji.parse(document.body);
 });
 
