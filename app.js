@@ -751,8 +751,8 @@ function updateStatusBarDisplay() {
 
 // High-performance hardware-accelerated drawing helper for zero-disparity fusions locks
 function drawFusionLockFrame(targetCtx) {
-    // Render zero-disparity frame using a neutral dark slate color to prevent chromatopica distortion
-    targetCtx.strokeStyle = '#2d3548';
+    // Render zero-disparity frame using the exact same neutral gray as the fixation cross to ensure filter neutrality
+    targetCtx.strokeStyle = '#2c2c2c';
     targetCtx.lineWidth = 2;
     
     // Continuous outer peripheral frame
@@ -1114,6 +1114,14 @@ function reFlashCurrentGabor() {
     const t = translations[currentLang] || translations['en'];
     btnStart.innerText = "...";
 
+    // Force dynamic hot-sync and clear older cycles to avoid rendering conflicts
+    if (flickerIntervalId) {
+        clearInterval(flickerIntervalId);
+        flickerIntervalId = null;
+    }
+    stopFlankerAnimation();
+    syncStateFromUI();
+
     if (isDynamicFlankersEnabled && isCrowdingEnabled) {
         startFlankerAnimation();
     } else {
@@ -1150,10 +1158,13 @@ function reFlashCurrentGabor() {
     } else {
         if (isFlickerEnabled) {
             let flickerState = true;
-            if (flickerIntervalId) clearInterval(flickerIntervalId);
             flickerIntervalId = setInterval(() => {
                 flickerState = !flickerState;
-                canvas.style.display = flickerState ? 'block' : 'none';
+                if (flickerState) {
+                    drawGabor(currentAngleDeg, autoContrast, lastRandomFreq, lastRandomSigma, lastOffsetX, lastOffsetY);
+                } else {
+                    drawIdleCanvas();
+                }
             }, 50); 
         }
         btnStart.innerText = t.reflashBtn;
@@ -1266,12 +1277,19 @@ function executeGaborFlash() {
             btnStart.innerText = t.reflashBtn;
         }, flashDuration);
     } else {
+        if (flickerIntervalId) {
+            clearInterval(flickerIntervalId);
+            flickerIntervalId = null;
+        }
         if (isFlickerEnabled) {
             let flickerState = true;
-            if (flickerIntervalId) clearInterval(flickerIntervalId);
             flickerIntervalId = setInterval(() => {
                 flickerState = !flickerState;
-                canvas.style.display = flickerState ? 'block' : 'none';
+                if (flickerState) {
+                    drawGabor(currentAngleDeg, autoContrast, lastRandomFreq, lastRandomSigma, lastOffsetX, lastOffsetY);
+                } else {
+                    drawIdleCanvas();
+                }
             }, 50); 
         }
         btnStart.innerText = t.reflashBtn;
