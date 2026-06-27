@@ -121,4 +121,4 @@ Yes! Perceptual learning operates at the absolute threshold of your sensory abil
 If you want to read the science that inspired this project:
 *   **Hess, R. F., et al. (2010).** *Binocular dichoptic training facilitates binocular vision in adults with amblyopia.* (Proves dichoptic training is superior to patching).
 *   **Polat, U., et al. (2004).** *Collinear stimuli facilitate visual acuity in adults with amblyopia.* (The foundation of Gabor-based perceptual learning).
-*   **Levi, D. M., & Li, R. W. (2009).** *Perceptual learning as a potential treatment for amblyopia: a mini-review.* (Explains synaptic plasticity in adult V1)."# GaborNeuroFit" 
+*   **Levi, D. M., & Li, R. W. (2009).** *Perceptual learning as a potential treatment for amblyopia: a mini-review.* (Explains synaptic plasticity in adult V1).

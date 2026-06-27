@@ -36,13 +36,13 @@ const levelEl = document.getElementById('current-level');
 const streakEl = document.getElementById('current-streak');
 const leaderboardList = document.getElementById('leaderboard-list');
 
-// Элементы конфигурационной панели
+// Configuration panel DOM elements
 const selectPresetMode = document.getElementById('select-preset-mode');
 const selectStartLevel = document.getElementById('select-start-level');
 const selectAutonext = document.getElementById('select-autonext');
 const selectSessionLimit = document.getElementById('select-session-limit');
 
-// Гранулярные элементы управления
+// Granular training controls
 const selectFlashDuration = document.getElementById('select-flash-duration');
 const chkStageAdvance = document.getElementById('chk-stage-advance');
 const chkPeripheral = document.getElementById('chk-peripheral');
@@ -53,7 +53,7 @@ const chkStatic = document.getElementById('chk-static');
 const chkAnaglyph = document.getElementById('chk-anaglyph');
 const chkFlicker = document.getElementById('chk-flicker');
 
-// Селекторы анаглифного режима
+// Anaglyph dichoptics controls
 const selectRedSide = document.getElementById('select-red-side');
 const selectLazySide = document.getElementById('select-lazy-side');
 const rangeStrongAttenuation = document.getElementById('range-strong-attenuation');
@@ -69,10 +69,10 @@ const settingsModal = document.getElementById('settings-modal');
 const btnSettings = document.getElementById('btn-settings');
 const btnCloseSettings = document.getElementById('btn-close-settings');
 
-let audioCtx = null; // Контекст Web Audio API
-let isMuted = false; // Локальный режим беззвучной работы
+let audioCtx = null; // Web Audio API context
+let isMuted = false; // Local silent run mode
 
-// Активация аудио-системы при самом первом жесте пользователя (требование безопасности современных браузеров)
+// Activate audio context on the first user interaction (browser security requirement)
 function initAudioOnFirstGesture() {
     try {
         if (!audioCtx) {
@@ -101,42 +101,43 @@ window.addEventListener('click', initAudioOnFirstGesture);
 window.addEventListener('touchstart', initAudioOnFirstGesture, { passive: true });
 window.addEventListener('keydown', initAudioOnFirstGesture);
 
-// Переменные состояния тренировки
-const sessionId = 'session_' + Date.now(); // Уникальный ID сессии при каждом запуске приложения
+// Core state variables
+const sessionId = 'session_' + Date.now(); // Unique session ID for local leaderboard tracking
 let currentAngleDeg = 0; 
 let isWaitingForAnswer = false;
 let score = 0;
 let total = 0;
 
 let autoContrast = 0.5; 
-let correctStreak = 0; // Отображаемый сквозной стрик
-let staircaseStreak = 0; // Внутренний стрик для изменения сложности (сбрасывается на 3)
+let correctStreak = 0; // Displayed accuracy streak
+let staircaseStreak = 0; // Internal difficulty counter (resets every 3 correct answers)
 let currentLevel = 1;
 let currentLang = 'en';
 
-// Переменные гранулярных настроек (дефолтные значения)
-let presetMode = 'occlusion'; // Классическая повязка по умолчанию (максимально простая точка входа)
+// Granular training state (default values)
+let presetMode = 'occlusion'; // Classic monocular patching as the default entry point
 let sessionLimit = 0;
 
-let allowStageAdvance = true; // Разрешено ли автоматическое движение по этапам
-let flashDurationMode = 'adaptive'; // adaptive, 100, 180, 200, 350
-let isPeripheralEnabled = false; // Смещение вбок
-let isCrowdingEnabled = true; // Дистракторы
-let allowLowContrast = false; // Контраст до 1%
-let allowWideVariance = false; // Случайное размытие/число полос
-let isStaticEnabled = false; // Статичный режим (без таймера скрытия)
-let isFlickerEnabled = false; // Фликкер-стимуляция (мигание на частоте 10 Гц)
+let allowStageAdvance = true; // Auto-advance/downgrade level based on accuracy
+let flashDurationMode = 'adaptive'; // Options: adaptive, 100, 180, 200, 350
+let isPeripheralEnabled = false; // Target peripheral eccentric shift
+let isCrowdingEnabled = true; // Visual crowding distractors (flankers)
+let allowLowContrast = false; // Permit contrast degradation down to 1%
+let allowWideVariance = false; // Randomize line density and blur values
+let isStaticEnabled = false; // Static mode (disable automatic stimulus hiding)
+let isFlickerEnabled = false; // 10 Hz flicker stimulation
+let isFusionLockEnabled = true; // High-performance zero-disparity frame stabilization
 
-// Переменные анаглифной дихоптики
+// Anaglyph dichoptics settings
 let isAnaglyphEnabled = true;
 let redEyeSide = 'left';
 let lazyEyeSide = 'left';
 let strongEyeContrastFactor = 0.3;
 let isAnaglyphTestActive = false;
 
-// Переменные для синхронизации флеша и фликкера
+// Temporal sync variables
 let nextFlashTimeoutId = null;
-let flickerIntervalId = null; // Хранит интервал мигания фликкера
+let flickerIntervalId = null; // Internal flicker interval handler
 let lastRandomFreq = 0.08;
 let lastRandomSigma = 40;
 let lastOffsetX = 0;
@@ -201,6 +202,7 @@ const translations = {
         lblSettingLazySide: "Lazy (Amblyopic) Eye:",
         lblSettingStrongAttenuation: "Strong Eye Contrast Balancer:",
         lblSettingFlicker: "Flicker Stimulation (10 Hz):",
+        lblSettingFusionLock: "Binocular Fusion Lock:",
         btnFusionTestLabel: "Toggle Fusion Alignment Test",
         optSideLeft: "Left Eye",
         optSideRight: "Right Eye",
@@ -213,7 +215,7 @@ const translations = {
         descModeExplanation: "Preset guidelines: Select an active protocol as a starting template. Modify any checkbox below to seamlessly transition into 'Custom' configuration mode.",
         optStage5: "Stage 5 (Extreme)",
         
-        // Встроенные микро-подсказки (EN)
+        // Settings Tooltips (EN)
         helpPresetMode: "Clinical pre-sets (active macros) designed for binocular, peripheral, or rapid temporal stimulation.",
         helpStartLevel: "Initial spatial frequency. Higher stages have ultra-fine lines requiring greater visual acuity.",
         helpFlashDuration: "Exposure duration. Short flashes prevent compensatory eye movements (saccades) and force instant processing.",
@@ -224,7 +226,8 @@ const translations = {
         helpWideVariance: "Randomizes the line density and blur of the Gabor patch with every flash to prevent neural adaptation.",
         helpStatic: "The Gabor patch stays visible indefinitely until you choose an answer (no auto-hiding).",
         helpFlicker: "Pulsates the target at 10 Hz (Alpha-resonance) to bypass chronic cortical suppression of the weak eye.",
-        helpAnaglyph: "Splits red/cyan color channels for dichoptic training. Requires Red-Cyan 3D glasses."
+        helpAnaglyph: "Splits red/cyan color channels for dichoptic training. Requires Red-Cyan 3D glasses.",
+        helpFusionLock: "Renders a zero-disparity frame and corner brackets to stabilize eye alignment and prevent dominant-eye suppression."
     },
     ru: {
         stage: "Этап",
@@ -232,71 +235,72 @@ const translations = {
         streak: "Серия",
         leaderboardTitle: "Таблица рекордов",
         noHistory: "История пуста",
-        startBtn: "СТАРТ",
-        nextBtn: "СЛЕДУЮЩИЙ",
-        reflashBtn: "ПОВТОРИТЬ",
+        startBtn: "Старт",
+        nextBtn: "Далее",
+        reflashBtn: "Повторить вспышку",
         leftBtn: "Влево",
         rightBtn: "Вправо",
-        correctLabel: "Угадано",
+        correctLabel: "Верно",
         totalLabel: "Всего",
         sessionCompleted: "Сессия завершена! Вы выполнили {limit} попыток. Рекомендуется дать глазам отдохнуть.",
         modalTitle: "Справка GaborNeuroFit",
-        secAboutTitle: "🧠 Суть метода: Тренировка мозга, а не глаз",
+        secAboutTitle: "🧠 Суть метода: тренировка мозга, а не глаз",
         secAboutText: "Амблиопия («ленивый глаз») — это не оптический дефект, а **неврологическое нарушение**. Со временем зрительная кора вашего мозга (затылочная доля, зона V1) учится активно подавлять (игнорировать) сигналы от слабого глаза. Полосы Габора — это «алфавит» нашей зрительной коры. Пытаясь распознать их наклон на грани видимости, вы запускаете механизмы нейропластичности, принудительно восстанавливая и укрепляя угасшие синаптические связи.",
-        secInstructionsTitle: "🩹 Сценарий I. С повязкой (Окклюзия)",
-        secInstructionsText: "<li><strong>Применение:</strong> Используйте для протоколов 🩹 <strong>Классическая окклюзия</strong> и ⚡ <strong>Корковый Блиц-Детектор</strong>.</li><li><strong>Окклюзия:</strong> Закройте здоровый (сильный) глаз плотной повязкой. Тренируется только ленивый глаз.</li><li><strong>Дистанция:</strong> Держите устройство на расстоянии вытянутой руки (50–70 см).</li><li><strong>Фиксация:</strong> Смотрите строго на центральный крест (+). Нажмите СТАРТ и угадывайте наклон ленивым глазом.</li>",
-        secLevelsTitle: "🕶️ Сценарий II. В 3D-очках (Дихоптика)",
-        secLevelsList: "<li>Используйте этот метод для протоколов 🕶️ <strong>Бинокулярный баланс</strong>, 🎯 <strong>Парафовеальный захват</strong> и 🌀 <strong>Фликкер-Резонанс</strong>.</li><li><strong>Инструкция:</strong> Надевать повязку НЕЛЬЗЯ. Наденьте красно-синие (Red-Cyan) 3D-очки (оба глаза должны быть открыты!).</li><li><strong>Калибровка:</strong> Откройте Настройки и запустите 'Тест слияния'. Закрыв правый глаз, вы должны видеть только букву 'L' (красную), закрыв левый — только букву 'R' (синюю).</li><li><strong>Баланс контраста:</strong> Если здоровый глаз полностью глушит ленивый, плавно снижайте слайдер 'Контраст здорового глаза' в Настройках до тех пор, пока картинка не соединится.</li>",
-        secAmblyopiaTitle: "🔊 Акустический прайминг: Звук как нейростимулятор",
-        secAmblyopiaText: "<li>🎋 <strong>Бамбуковый клик</strong> (Прайминг): звучит за 180 мс до вспышки, мгновенно мобилизуя внимание и подготавливая нейроны к приему изображения.</li><li>🔮 <strong>Хрустальный аккорд</strong> (Успех): приятный 3-нотный мажорный перелив (La-Do#-Mi) вызывает микро-выброс дофамина, давая мозгу команду закрепить успешную комбинацию связей.</li><li>🎵 <strong>Глухой слайд</strong> (Ошибка): низкий спадающий тон деликатно сообщает об ошибке, помогая мозгу перенастроить порог детекции.</li>",
+        secInstructionsTitle: "🩹 Сценарий I. С повязкой (окклюзия)",
+        secInstructionsText: "<li><strong>Применение:</strong> используйте для протоколов 🩹 <strong>Классическая окклюзия</strong> и ⚡ <strong>Корковый блиц-детектор</strong>.</li><li><strong>Окклюзия:</strong> закройте здоровый (сильный) глаз плотной повязкой. Тренируется только ленивый глаз.</li><li><strong>Дистанция:</strong> держите устройство на расстоянии вытянутой руки (50–70 см).</li><li><strong>Фиксация:</strong> смотрите строго на центральный крест (+). Нажмите Старт и угадывайте наклон ленивым глазом.</li>",
+        secLevelsTitle: "🕶️ Сценарий II. В 3D-очках (дихоптика)",
+        secLevelsList: "<li>Используйте этот метод для протоколов 🕶️ <strong>Бинокулярный баланс</strong>, 🎯 <strong>Парафовеальный захват</strong> и 🌀 <strong>Фликкер-резонанс</strong>.</li><li><strong>Инструкция:</strong> надевать повязку НЕЛЬЗЯ. Наденьте красно-синие (Red-Cyan) 3D-очки (оба глаза должны быть открыты!).</li><li><strong>Калибровка:</strong> откройте настройки и запустите 'Тест слияния'. Закрыв правый глаз, вы должны видеть только букву 'L' (красную), закрыв левый — только букву 'R' (синюю).</li><li><strong>Баланс контраста:</strong> если здоровый глаз полностью глушит ленивый, плавно снижайте слайдер 'Контраст здорового глаза' в настройках до тех пор, пока картинка не соединится.</li>",
+        secAmblyopiaTitle: "🔊 Акустический прайминг: звук как нейростимулятор",
+        secAmblyopiaText: "<li>🎋 <strong>Бамбуковый клик</strong> (прайминг): звучит за 180 мс до вспышки, мгновенно мобилизуя внимание и подготавливая нейроны к приему изображения.</li><li>🔮 <strong>Хрустальный аккорд</strong> (успех): приятный 3-нотный мажорный перелив (La-Do#-Mi) вызывает микро-выброс дофамина, давая мозгу команду закрепить успешную комбинацию связей.</li><li>🎵 <strong>Глухой слайд</strong> (ошибка): низкий спадающий тон деликатно сообщает об ошибке, помогая мозгу перенастроить порог детекции.</li>",
         secRecommendationsTitle: "⚠️ Золотые правила безопасности",
-        secRecommendationsText: "<li><strong>1. Фиксация:</strong> Смотрите строго на центральный крест (+). Ни в коем случае не бегайте глазами за паттерном. Считывание наклона боковым зрением тренирует рецептивные поля нейронов и исправляет косоглазие.</li><li><strong>2. Регулярность:</strong> Занимайтесь ежедневно по 100–150 попыток (около 15 минут). Мозгу нужен отдых для консолидации памяти, избыток тренировок приведет лишь к мышечной усталости.</li><li><strong>3. Предел боли:</strong> Если глаза начали слезиться или болеть — сразу прекратите сессию. Всегда приоритезируйте комфорт.</li>",
+        secRecommendationsText: "<li><strong>1. Фиксация:</strong> смотрите строго на центральный крест (+). Ни в коем случае не бегайте глазами за паттерном. Считывание наклона боковым зрением тренирует рецептивные поля нейронов и исправляет косоглазие.</li><li><strong>2. Регулярность:</strong> занимайтесь ежедневно по 100–150 попыток (около 15 минут). Мозгу нужен отдых для консолидации памяти, избыток тренировок приведет лишь к мышечной усталости.</li><li><strong>3. Предел боли:</strong> если глаза начали слезиться или болеть — сразу прекратите сессию. Всегда приоритезируйте комфорт.</li>",
         
-        // Settings UI Translations
+        // Settings UI Translations (RU Sentence Case)
         settingsTitle: "Панель настроек",
         lblSettingPreset: "Протокол тренировки:",
         lblSettingStartLevel: "Начальный этап:",
-        lblSettingAutonext: "Авто-переход:",
+        lblSettingAutonext: "Автоматический переход:",
         lblSettingLimit: "Лимит сессии:",
         
-        optPresetOcclusion: "🩹 Классическая окклюзия (Повязка)",
+        optPresetOcclusion: "🩹 Классическая окклюзия (повязка)",
         optPresetBinocular: "🕶️ Бинокулярный баланс (3D)",
         optPresetPeripheral: "🎯 Парафовеальный захват (3D)",
-        optPresetBlitz: "⚡ Корковый Блиц-Детектор",
-        optPresetFlicker: "🌀 Фликкер-Резонанс (3D)",
+        optPresetBlitz: "⚡ Корковый блиц-детектор",
+        optPresetFlicker: "🌀 Фликкер-резонанс (3D)",
         optPresetCustom: "⚙️ Ручной режим",
         
         lblSettingFlash: "Скорость вспышки:",
-        optFlashAdaptive: "Адаптивная (Быстро)",
+        optFlashAdaptive: "Адаптивная (быстро)",
         optFlash100: "Экстремальная (100 мс)",
         optFlash180: "Фиксированная (180 мс)",
-        optFlash200: "Standard (200 ms)",
-        optFlash350: "Comfort / Zen (350 ms)",
+        optFlash200: "Стандартная (200 мс)",
+        optFlash350: "Комфортная (350 мс)",
         
         lblSettingStageAdvance: "Движение по этапам:",
         lblSettingPeripheral: "Периферийный сдвиг:",
-        lblSettingCrowding: "Дистракторы (Краудинг):",
+        lblSettingCrowding: "Дистракторы (краудинг):",
         lblSettingLowContrast: "Сверхнизкий контраст (до 1%):",
-        lblSettingWideVariance: "Вариативность полос (2-15 лин.):",
-        lblSettingStatic: "Статичный стимул (Без скрытия):",
-        lblSettingAnaglyph: "3D Анаглифный режим (Red-Cyan):",
+        lblSettingWideVariance: "Вариативность полос (2–15 линий):",
+        lblSettingStatic: "Статичный стимул (без скрытия):",
+        lblSettingAnaglyph: "3D-анаглифный режим (Red-Cyan):",
         lblSettingRedSide: "Красный светофильтр на глазу:",
         lblSettingLazySide: "Ленивый (слабый) глаз:",
         lblSettingStrongAttenuation: "Контраст здорового глаза:",
         lblSettingFlicker: "Фликкер-стимуляция (10 Гц):",
+        lblSettingFusionLock: "Бинокулярная рамка-замок:",
         btnFusionTestLabel: "Запустить тест слияния",
         optSideLeft: "Левый глаз",
         optSideRight: "Правый глаз",
         
         optLimitOff: "Выкл",
-        optAutonextOn: "Вкл (Рекомендуется)",
-        optAutonextOff: "Выкл (Вручную)",
+        optAutonextOn: "Вкл (рекомендуется)",
+        optAutonextOff: "Выкл (вручную)",
         lblActiveMode: "Режим",
         lblActiveSpeed: "Скорость",
-        descModeExplanation: "Пояснение: Выберите нужный лечебный шаблон. Изменение любой галочки ниже автоматически переведет вас в ручной режим калибровки.",
-        optStage5: "Этап 5 (Экстремальный)",
+        descModeExplanation: "Пояснение: выберите нужный лечебный шаблон. Изменение любой галочки ниже автоматически переведет вас в ручной режим настройки.",
+        optStage5: "Этап 5 (экстремальный)",
 
-        // Встроенные микро-подсказки (RU)
+        // Settings Tooltips (RU Sentence Case)
         helpPresetMode: "Готовые клинические макросы, оптимизированные под бинокулярную, периферийную, скоростную или фликкер-терапию.",
         helpStartLevel: "Начальная частота полос. Чем выше этап, тем тоньше полосы и выше нагрузка на зрительную кору.",
         helpFlashDuration: "Время показа паттерна. Короткая вспышка заставляет мозг обрабатывать сигнал рефлекторно.",
@@ -307,7 +311,8 @@ const translations = {
         helpWideVariance: "Случайно меняет толщину и плотность полос при каждой вспышке, чтобы мозг не привыкал к одной частоте.",
         helpStatic: "Паттерн не исчезает с экрана сам, а висит до тех пор, пока вы не выберете ответ.",
         helpFlicker: "Заставляет паттерн мигать с частотой 10 Гц, резонансно взламывая глубокое подавление ленивого глаза.",
-        helpAnaglyph: "Разделяет цветовые каналы для тренировки в красно-синих 3D-очках."
+        helpAnaglyph: "Разделяет цветовые каналы для тренировки в красно-синих 3D-очках.",
+        helpFusionLock: "Отрисовывает рамку и уголки с нулевым сдвигом для стабилизации соосности глаз и предотвращения подавления."
     }
 };
 
@@ -349,31 +354,31 @@ function setLanguage(lang) {
     if (document.getElementById('lbl-btn-left')) document.getElementById('lbl-btn-left').innerText = t.leftBtn;
     if (document.getElementById('lbl-btn-right')) document.getElementById('lbl-btn-right').innerText = t.rightBtn;
 
-    // Справка
+    // Handbook modal
     if (document.getElementById('modal-title')) document.getElementById('modal-title').innerText = t.modalTitle;
     if (document.getElementById('sec-about-title')) document.getElementById('sec-about-title').innerText = t.secAboutTitle;
     if (document.getElementById('sec-about-text')) document.getElementById('sec-about-text').innerHTML = t.secAboutText;
     
     if (document.getElementById('sec-instructions-title')) document.getElementById('sec-instructions-title').innerText = t.secInstructionsTitle;
-    if (document.getElementById('sec-instructions-list')) document.getElementById('sec-instructions-list').innerHTML = t.secInstructionsText; // Используем innerHTML и семантический ul список
+    if (document.getElementById('sec-instructions-list')) document.getElementById('sec-instructions-list').innerHTML = t.secInstructionsText;
     
     if (document.getElementById('sec-levels-title')) document.getElementById('sec-levels-title').innerText = t.secLevelsTitle;
     if (document.getElementById('sec-levels-list')) document.getElementById('sec-levels-list').innerHTML = t.secLevelsList;
     
     if (document.getElementById('sec-amblyopia-title')) document.getElementById('sec-amblyopia-title').innerText = t.secAmblyopiaTitle;
-    if (document.getElementById('sec-amblyopia-list')) document.getElementById('sec-amblyopia-list').innerHTML = t.secAmblyopiaText; // Используем innerHTML и семантический ul список
+    if (document.getElementById('sec-amblyopia-list')) document.getElementById('sec-amblyopia-list').innerHTML = t.secAmblyopiaText;
     
     if (document.getElementById('sec-recommendations-title')) document.getElementById('sec-recommendations-title').innerText = t.secRecommendationsTitle;
-    if (document.getElementById('sec-recommendations-list')) document.getElementById('sec-recommendations-list').innerHTML = t.secRecommendationsText; // Используем innerHTML и семантический ul список
+    if (document.getElementById('sec-recommendations-list')) document.getElementById('sec-recommendations-list').innerHTML = t.secRecommendationsText;
 
-    // Настройки
+    // Settings modal
     if (document.getElementById('settings-title')) document.getElementById('settings-title').innerText = t.settingsTitle;
     if (document.getElementById('lbl-setting-mode')) document.getElementById('lbl-setting-mode').innerText = t.lblSettingPreset;
     if (document.getElementById('lbl-setting-start-level')) document.getElementById('lbl-setting-start-level').innerText = t.lblSettingStartLevel;
     if (document.getElementById('lbl-setting-autonext')) document.getElementById('lbl-setting-autonext').innerText = t.lblSettingAutonext;
     if (document.getElementById('lbl-setting-limit')) document.getElementById('lbl-setting-limit').innerText = t.lblSettingLimit;
     
-    // Локализация всех 5 этапов динамическим циклом
+    // Localize stages
     for (let i = 1; i <= 5; i++) {
         const el = document.getElementById('opt-stage-' + i);
         if (el) {
@@ -385,25 +390,25 @@ function setLanguage(lang) {
         }
     }
     
-    // Привязка текстов встроенных микро-подсказок
+    // Bind tooltips
     const helpSpans = [
         'help-preset-mode', 'help-start-level', 'help-flash-duration',
         'help-stage-advance', 'help-peripheral', 'help-crowding',
         'help-low-contrast', 'help-wide-variance', 'help-static',
-        'help-flicker', 'help-anaglyph'
+        'help-flicker', 'help-anaglyph', 'help-fusion-lock'
     ];
     const helpKeys = [
         'helpPresetMode', 'helpStartLevel', 'helpFlashDuration',
         'helpStageAdvance', 'helpPeripheral', 'helpCrowding',
         'helpLowContrast', 'helpWideVariance', 'helpStatic',
-        'helpFlicker', 'helpAnaglyph'
+        'helpFlicker', 'helpAnaglyph', 'helpFusionLock'
     ];
     for (let i = 0; i < helpSpans.length; i++) {
         const el = document.getElementById(helpSpans[i]);
         if (el) el.innerText = t[helpKeys[i]];
     }
     
-    // Новые локализации полей настроек
+    // Map settings names
     if (document.getElementById('opt-preset-occlusion')) document.getElementById('opt-preset-occlusion').innerText = t.optPresetOcclusion;
     if (document.getElementById('opt-preset-binocular')) document.getElementById('opt-preset-binocular').innerText = t.optPresetBinocular;
     if (document.getElementById('opt-preset-peripheral')) document.getElementById('opt-preset-peripheral').innerText = t.optPresetPeripheral;
@@ -429,9 +434,10 @@ function setLanguage(lang) {
     if (document.getElementById('lbl-setting-lazy-side')) document.getElementById('lbl-setting-lazy-side').innerText = t.lblSettingLazySide;
     if (document.getElementById('lbl-setting-strong-attenuation')) document.getElementById('lbl-setting-strong-attenuation').innerText = t.lblSettingStrongAttenuation;
     if (document.getElementById('lbl-setting-flicker')) document.getElementById('lbl-setting-flicker').innerText = t.lblSettingFlicker;
+    if (document.getElementById('lbl-setting-fusion-lock')) document.getElementById('lbl-setting-fusion-lock').innerText = t.lblSettingFusionLock;
     if (document.getElementById('btn-fusion-test')) document.getElementById('btn-fusion-test').innerText = t.btnFusionTestLabel;
 
-    // Перевод опций селекторов анаглифа
+    // Selector options
     const optRedLeft = document.getElementById('opt-red-left');
     const optRedRight = document.getElementById('opt-red-right');
     const optLazyLeft = document.getElementById('opt-lazy-left');
@@ -453,11 +459,11 @@ function setLanguage(lang) {
     updateLeaderboardDisplay();
     updateStatusBarDisplay();
     
-    // Перерисовываем эмодзи после обновления текстовых блоков
+    // Parse vector emojis
     if (window.twemoji) twemoji.parse(document.body);
 }
 
-// Поиск совпадений текущей конфигурации с научными шаблонами (макросами)
+// Check configuration patterns to identify matched clinical protocols (macros)
 function detectMatchingPreset() {
     if (
         allowStageAdvance === true &&
@@ -467,7 +473,8 @@ function detectMatchingPreset() {
         isStaticEnabled === false &&
         isAnaglyphEnabled === false &&
         allowWideVariance === false &&
-        isFlickerEnabled === false
+        isFlickerEnabled === false &&
+        isFusionLockEnabled === false
     ) return 'occlusion';
 
     if (
@@ -478,7 +485,8 @@ function detectMatchingPreset() {
         isStaticEnabled === false &&
         isAnaglyphEnabled === true &&
         allowWideVariance === false &&
-        isFlickerEnabled === false
+        isFlickerEnabled === false &&
+        isFusionLockEnabled === true
     ) return 'binocular';
 
     if (
@@ -489,7 +497,8 @@ function detectMatchingPreset() {
         isStaticEnabled === false &&
         isAnaglyphEnabled === true &&
         allowWideVariance === false &&
-        isFlickerEnabled === false
+        isFlickerEnabled === false &&
+        isFusionLockEnabled === true
     ) return 'peripheral';
 
     if (
@@ -500,7 +509,8 @@ function detectMatchingPreset() {
         isStaticEnabled === false &&
         isAnaglyphEnabled === false &&
         allowWideVariance === true &&
-        isFlickerEnabled === false
+        isFlickerEnabled === false &&
+        isFusionLockEnabled === false
     ) return 'blitz';
 
     if (
@@ -511,13 +521,14 @@ function detectMatchingPreset() {
         isStaticEnabled === true &&
         isAnaglyphEnabled === true &&
         allowWideVariance === false &&
-        isFlickerEnabled === true
+        isFlickerEnabled === true &&
+        isFusionLockEnabled === true
     ) return 'flicker';
 
     return 'custom';
 }
 
-// Применение настроек пресета только на уровне "параметров задачи" (без сброса калибровок глаз)
+// Apply visual templates for preset modes (retains hardware calibration states)
 function applyPresetTemplate(mode) {
     presetMode = mode;
     if (mode === 'occlusion') {
@@ -529,6 +540,7 @@ function applyPresetTemplate(mode) {
         isAnaglyphEnabled = false;
         allowWideVariance = false;
         isFlickerEnabled = false;
+        isFusionLockEnabled = false;
     } else if (mode === 'binocular') {
         allowStageAdvance = true;
         flashDurationMode = 'adaptive';
@@ -538,6 +550,7 @@ function applyPresetTemplate(mode) {
         isAnaglyphEnabled = true;
         allowWideVariance = false;
         isFlickerEnabled = false;
+        isFusionLockEnabled = true;
     } else if (mode === 'peripheral') {
         allowStageAdvance = true;
         flashDurationMode = '180';
@@ -547,6 +560,7 @@ function applyPresetTemplate(mode) {
         isAnaglyphEnabled = true;
         allowWideVariance = false;
         isFlickerEnabled = false;
+        isFusionLockEnabled = true;
     } else if (mode === 'blitz') {
         allowStageAdvance = true;
         flashDurationMode = '100';
@@ -556,6 +570,7 @@ function applyPresetTemplate(mode) {
         isAnaglyphEnabled = false;
         allowWideVariance = true;
         isFlickerEnabled = false;
+        isFusionLockEnabled = false;
     } else if (mode === 'flicker') {
         allowStageAdvance = true;
         flashDurationMode = 'adaptive';
@@ -565,9 +580,10 @@ function applyPresetTemplate(mode) {
         isAnaglyphEnabled = true;
         allowWideVariance = false;
         isFlickerEnabled = true;
+        isFusionLockEnabled = true;
     }
     
-    // Синхронизируем состояние визуальных чекбоксов интерфейса
+    // Sync checkbox controls
     if (chkStageAdvance) chkStageAdvance.checked = allowStageAdvance;
     if (selectFlashDuration) selectFlashDuration.value = flashDurationMode;
     if (chkPeripheral) chkPeripheral.checked = isPeripheralEnabled;
@@ -576,6 +592,7 @@ function applyPresetTemplate(mode) {
     if (chkAnaglyph) chkAnaglyph.checked = isAnaglyphEnabled;
     if (chkWideVariance) chkWideVariance.checked = allowWideVariance;
     if (chkFlicker) chkFlicker.checked = isFlickerEnabled;
+    if (chkFusionLock) chkFusionLock.checked = isFusionLockEnabled;
 
     if (anaglyphSettingsPanel) {
         anaglyphSettingsPanel.style.display = isAnaglyphEnabled ? 'block' : 'none';
@@ -584,7 +601,7 @@ function applyPresetTemplate(mode) {
     updateStatusBarDisplay();
 }
 
-// Считывание и синхронизация кастомной конфигурации на лету
+// Read parameters from custom UI forms
 function syncStateFromUI() {
     if (chkStageAdvance) allowStageAdvance = chkStageAdvance.checked;
     if (selectFlashDuration) flashDurationMode = selectFlashDuration.value;
@@ -595,8 +612,9 @@ function syncStateFromUI() {
     if (chkStatic) isStaticEnabled = chkStatic.checked;
     if (chkAnaglyph) isAnaglyphEnabled = chkAnaglyph.checked;
     if (chkFlicker) isFlickerEnabled = chkFlicker.checked;
+    if (chkFusionLock) isFusionLockEnabled = chkFusionLock.checked;
 
-    // Аппаратные константы (никогда не блокируются и не перезаписываются пресетами)
+    // Direct hardware parameters (not bound by preset transitions)
     if (selectRedSide) redEyeSide = selectRedSide.value;
     if (selectLazySide) lazyEyeSide = selectLazySide.value;
     if (rangeStrongAttenuation) strongEyeContrastFactor = parseFloat(rangeStrongAttenuation.value) / 100;
@@ -604,7 +622,7 @@ function syncStateFromUI() {
     if (selectAutonext) autoAdvance = (selectAutonext.value === "true");
     if (selectSessionLimit) sessionLimit = parseInt(selectSessionLimit.value);
 
-    // Автоматическое переключение режима (включая автоопределение кастомного режима)
+    // Auto-evaluate preset transitions
     presetMode = detectMatchingPreset();
     if (selectPresetMode) selectPresetMode.value = presetMode;
 
@@ -616,8 +634,7 @@ function syncStateFromUI() {
 }
 
 function updatePresetUI() {
-    // В новой неблокирующей системе все элементы всегда активны и никогда не блокируются через disabled!
-    // Кабинетные аппаратные константы всегда открыты для тонкой калибровки очков
+    // Keep configuration controls unlocked and completely accessible
     if (selectStartLevel) selectStartLevel.disabled = false;
     if (selectAutonext) selectAutonext.disabled = false;
     if (selectSessionLimit) selectSessionLimit.disabled = false;
@@ -626,7 +643,6 @@ function updatePresetUI() {
     if (rangeStrongAttenuation) rangeStrongAttenuation.disabled = false;
     if (btnFusionTest) btnFusionTest.disabled = false;
 
-    // Свободный доступ ко всем тумблерам задачи
     if (selectFlashDuration) selectFlashDuration.disabled = false;
     if (chkStageAdvance) chkStageAdvance.disabled = false;
     if (chkPeripheral) chkPeripheral.disabled = false;
@@ -636,6 +652,7 @@ function updatePresetUI() {
     if (chkStatic) chkStatic.disabled = false;
     if (chkAnaglyph) chkAnaglyph.disabled = false;
     if (chkFlicker) chkFlicker.disabled = false;
+    if (chkFusionLock) chkFusionLock.disabled = false;
 
     if (presetMode !== 'custom') {
         applyPresetTemplate(presetMode);
@@ -665,7 +682,6 @@ function updateStatusBarDisplay() {
         modeStr = t.optPresetCustom;
     }
 
-    // Рассчитываем скорость
     if (flashDurationMode === '100') {
         speedStr = "100 ms";
     } else if (flashDurationMode === '180') {
@@ -686,6 +702,49 @@ function updateStatusBarDisplay() {
     const valActiveSpeed = document.getElementById('val-active-speed');
     if (valActiveMode) valActiveMode.innerText = modeStr;
     if (valActiveSpeed) valActiveSpeed.innerText = speedStr;
+}
+
+// High-performance hardware-accelerated drawing helper for zero-disparity fusions locks
+function drawFusionLockFrame(targetCtx) {
+    // Render zero-disparity frame using a neutral dark slate color to prevent chromatopica distortion
+    targetCtx.strokeStyle = '#2d3548';
+    targetCtx.lineWidth = 2;
+    
+    // Continuous outer peripheral frame
+    targetCtx.beginPath();
+    targetCtx.rect(8, 8, 240, 240);
+    targetCtx.stroke();
+    
+    // Four corner L-brackets providing high spatial frequency alignment cues
+    targetCtx.lineWidth = 1.5;
+    
+    // Top-left bracket
+    targetCtx.beginPath();
+    targetCtx.moveTo(28, 14);
+    targetCtx.lineTo(14, 14);
+    targetCtx.lineTo(14, 28);
+    targetCtx.stroke();
+    
+    // Top-right bracket
+    targetCtx.beginPath();
+    targetCtx.moveTo(228, 14);
+    targetCtx.lineTo(242, 14);
+    targetCtx.lineTo(242, 28);
+    targetCtx.stroke();
+    
+    // Bottom-left bracket
+    targetCtx.beginPath();
+    targetCtx.moveTo(14, 228);
+    targetCtx.lineTo(14, 242);
+    targetCtx.lineTo(28, 242);
+    targetCtx.stroke();
+    
+    // Bottom-right bracket
+    targetCtx.beginPath();
+    targetCtx.moveTo(242, 228);
+    targetCtx.lineTo(242, 242);
+    targetCtx.lineTo(228, 242);
+    targetCtx.stroke();
 }
 
 function drawGabor(angleDeg, contrast, freq, sigma, offsetX = 0, offsetY = 0) {
@@ -709,13 +768,13 @@ function drawGabor(angleDeg, contrast, freq, sigma, offsetX = 0, offsetY = 0) {
             const dx = x - (cx + offsetX);
             const dy = y - (cy + offsetY);
 
-            // Модуляция центрального Gabor паттерна (для ленивого глаза)
+            // Modulate central Gabor target (specifically presented to amblyopic eye)
             const x_theta = dx * Math.cos(angleRad) + dy * Math.sin(angleRad);
             const y_theta = -dx * Math.sin(angleRad) + dy * Math.cos(angleRad);
             const gaussian = Math.exp(-(x_theta * x_theta + y_theta * y_theta) / (2 * sigma * sigma));
             const cosine = Math.cos(2 * Math.PI * x_theta * freq);
             
-            // Мягкое затухание краев холста по косинусу
+            // Soft fading of canvas borders
             const distFromCanvasCenter = Math.sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
             let fade = 1.0;
             if (distFromCanvasCenter > 85) {
@@ -728,7 +787,7 @@ function drawGabor(angleDeg, contrast, freq, sigma, offsetX = 0, offsetY = 0) {
 
             let centralGaborValue = gaussian * cosine * fade;
 
-            // Модуляция боковых дистракторов краудинга (для здорового доминирующего глаза)
+            // Modulate crowding distractors (presented to dominant eye)
             let flankerGaborValue = 0;
             if (isCrowding) {
                 const dy1 = y - (cy - flankerOffset);
@@ -749,27 +808,27 @@ function drawGabor(angleDeg, contrast, freq, sigma, offsetX = 0, offsetY = 0) {
             let B = 127;
 
             if (isAnaglyphEnabled) {
-                // Выделяем контрасты для ленивого глаза и приглушенный для здорового во избежание супрессии
+                // Apply specific ocular balance coefficients
                 const lazyContrast = contrast;
                 const strongContrast = contrast * strongEyeContrastFactor;
                 
-                // Проверяем, совпадает ли фильтр ленивого глаза со стороной красного стекла
+                // Red glass position mapping
                 const isLazyEyeRed = (lazyEyeSide === redEyeSide);
                 
                 let lazyVal = centralGaborValue * 127 * lazyContrast;
                 let strongVal = flankerGaborValue * 127 * strongContrast;
 
                 if (isLazyEyeRed) {
-                    R = 127 + lazyVal; // Ленивый красный глаз видит центральный патч в R канале
-                    G = 127 + strongVal; // Здоровый синий глаз видит дистракторы в G/B каналах
+                    R = 127 + lazyVal; 
+                    G = 127 + strongVal; 
                     B = 127 + strongVal;
                 } else {
-                    R = 127 + strongVal; // Здоровый синий глаз видит дистракторы в R канале
-                    G = 127 + lazyVal; // Ленивый красный глаз видит центральный патч в G/B каналах
+                    R = 127 + strongVal; 
+                    G = 127 + lazyVal; 
                     B = 127 + lazyVal;
                 }
             } else {
-                // Обычный монохромный режим рендеринга
+                // Classic monocular greyscale mode
                 let totalGaborValue = centralGaborValue + flankerGaborValue;
                 let intensity = 127 + totalGaborValue * 127 * contrast;
                 R = G = B = intensity;
@@ -787,20 +846,25 @@ function drawGabor(angleDeg, contrast, freq, sigma, offsetX = 0, offsetY = 0) {
         }
     }
     ctx.putImageData(imgData, 0, 0);
+
+    // Apply zero-disparity foveal-perfusion locks post Gabor generation
+    if (isFusionLockEnabled) {
+        drawFusionLockFrame(ctx);
+    }
 }
 
-// Функция генерации калибровочного паттерна теста слияния (Fusion Alignment Check)
+// Generate diagnostic calibration card
 function drawFusionTestPattern() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Заливаем нейтральный серый холст
+    // Set base neutral background
     ctx.fillStyle = '#7f7f7f';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     const cx = canvas.width / 2;
     const cy = canvas.height / 2;
     
-    // Отрисовываем реперные маркеры слияния в углах (черные квадраты видны обоим глазам)
+    // Draw monocular calibration markers
     ctx.fillStyle = '#2c2c2c';
     ctx.fillRect(15, 15, 20, 20);
     ctx.fillRect(canvas.width - 35, 15, 20, 20);
@@ -811,16 +875,21 @@ function drawFusionTestPattern() {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
-    // Буква L прорисована строго в Красном канале (видна только через КРАСНЫЙ фильтр)
+    // Isolation of Left (Red) target
     ctx.fillStyle = 'rgb(255, 127, 127)'; 
     ctx.fillText('L', cx - 55, cy);
     
-    // Буква R прорисована строго в Сине-зеленом канале (видна только через СИНИЙ фильтр)
+    // Isolation of Right (Cyan) target
     ctx.fillStyle = 'rgb(127, 255, 255)'; 
     ctx.fillText('R', cx + 55, cy);
+
+    // Keep fusion locks visual during test pattern to verify baseline alignment
+    if (isFusionLockEnabled) {
+        drawFusionLockFrame(ctx);
+    }
 }
 
-// Функция генерации органического бамбукового щелчка (упреждающий прайминг)
+// Play organic audio pre-cue click
 function playCueTone() {
     if (isMuted) return;
     try {
@@ -830,10 +899,10 @@ function playCueTone() {
         if (audioCtx.state === 'suspended') {
             audioCtx.resume();
         }
-        // Использование 15мс буфера lookahead полностью предотвращает "заглушение" и щелчки при лагах потока
+        // Use a tiny 15ms buffer lookahead to prevent glitch sounds
         const now = audioCtx.currentTime + 0.015;
         
-        // Основной резонансный тон бамбукового удара (950 Гц)
+        // Bamboo hit tone (950 Hz)
         const osc = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
         osc.type = 'triangle';
@@ -843,7 +912,7 @@ function playCueTone() {
         gainNode.gain.linearRampToValueAtTime(0.18, now + 0.002);
         gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
         
-        // Сверхкороткий высокочастотный металлический импульс на атаке (имитация удара)
+        // Metal edge hit component (1600 Hz)
         const clickOsc = audioCtx.createOscillator();
         const clickGain = audioCtx.createGain();
         clickOsc.type = 'sine';
@@ -866,7 +935,7 @@ function playCueTone() {
     }
 }
 
-// Функция генерации мягкого низкого звука ошибки (220 Гц со спадом частоты)
+// Play negative-feedback downward sweep tone (220 Hz to 140 Hz)
 function playErrorTone() {
     if (isMuted) return;
     try {
@@ -876,7 +945,6 @@ function playErrorTone() {
         if (audioCtx.state === 'suspended') {
             audioCtx.resume();
         }
-        // Использование 15мс буфера lookahead
         const now = audioCtx.currentTime + 0.015;
         
         const osc = audioCtx.createOscillator();
@@ -884,9 +952,9 @@ function playErrorTone() {
         
         osc.type = 'sine';
         osc.frequency.setValueAtTime(220, now);
-        osc.frequency.linearRampToValueAtTime(140, now + 0.20); // Слайд вниз для когнитивного маркера ошибки
+        osc.frequency.linearRampToValueAtTime(140, now + 0.20); 
         
-        // Психоакустическая компенсация: низкие частоты ухо слышит тише, поэтому гейн поднят до 0.38
+        // Psychoacoustic compensation
         gainNode.gain.setValueAtTime(0, now);
         gainNode.gain.linearRampToValueAtTime(0.38, now + 0.01);
         gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.20);
@@ -901,7 +969,7 @@ function playErrorTone() {
     }
 }
 
-// Функция генерации роскошного 3-нотного хрустального аккорда успеха (La-Do#-Mi)
+// Play crystal chime major chord (La-Do#-Mi)
 function playSuccessTone() {
     if (isMuted) return;
     try {
@@ -911,10 +979,9 @@ function playSuccessTone() {
         if (audioCtx.state === 'suspended') {
             audioCtx.resume();
         }
-        // Использование 15мс буфера lookahead
         const now = audioCtx.currentTime + 0.015;
         
-        // 1. Корень аккорда: La (880 Гц). Начинается сразу, затухает за 180 мс
+        // La root note (880 Hz)
         const osc1 = audioCtx.createOscillator();
         const gain1 = audioCtx.createGain();
         osc1.type = 'sine';
@@ -923,7 +990,7 @@ function playSuccessTone() {
         gain1.gain.linearRampToValueAtTime(0.12, now + 0.005);
         gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
         
-        // 2. Радостная мажорная терция: Do# (1100 Гц). Вступает с задержкой 30мс, затухает за 280 мс
+        // Do# third note (1100 Hz, delayed)
         const osc2 = audioCtx.createOscillator();
         const gain2 = audioCtx.createGain();
         osc2.type = 'sine';
@@ -932,7 +999,7 @@ function playSuccessTone() {
         gain2.gain.linearRampToValueAtTime(0.10, now + 0.035);
         gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
         
-        // 3. Хрустальная чистая квинта: Mi (1320 Гц). Вступает с задержкой 60мс, затухает за 450 мс для объемного "дофаминового" эха
+        // Mi perfect fifth note (1320 Hz, delayed)
         const osc3 = audioCtx.createOscillator();
         const gain3 = audioCtx.createGain();
         osc3.type = 'sine';
@@ -996,14 +1063,13 @@ function reFlashCurrentGabor() {
             btnStart.innerText = t.reflashBtn;
         }, flashDuration);
     } else {
-        // Логика работы ритмической фликкер-стимуляции (10 Гц)
         if (isFlickerEnabled) {
             let flickerState = true;
             if (flickerIntervalId) clearInterval(flickerIntervalId);
             flickerIntervalId = setInterval(() => {
                 flickerState = !flickerState;
                 canvas.style.display = flickerState ? 'block' : 'none';
-            }, 50); // 50мс светит, 50мс пауза = период 100мс (10 Гц)
+            }, 50); 
         }
         btnStart.innerText = t.reflashBtn;
     }
@@ -1051,7 +1117,6 @@ function executeGaborFlash() {
     const sigmaRange = levelSigmaRanges[currentLevel] || levelSigmaRanges[1];
     lastRandomSigma = Math.random() * (sigmaRange.max - sigmaRange.min) + sigmaRange.min;
 
-    // Кастомизация плотности и размытия по запросу пользователя
     if (allowWideVariance) {
         const randType = Math.random();
         if (randType < 0.35) {
@@ -1063,8 +1128,7 @@ function executeGaborFlash() {
         }
     }
 
-    // [Закон пространственной суммации] Contrast-to-Size Coupling
-    // При снижении контраста ниже 12% плавно масштабируем размер огибающей Гаусса (до +33% при лимите 1%)
+    // Spatial summation contrast-to-size coupling
     const summationThreshold = 0.12;
     if (autoContrast < summationThreshold) {
         const summationMultiplier = 1.0 + (summationThreshold - autoContrast) * 3.0;
@@ -1112,14 +1176,13 @@ function executeGaborFlash() {
             btnStart.innerText = t.reflashBtn;
         }, flashDuration);
     } else {
-        // Логика работы ритмической фликкер-стимуляции (10 Гц)
         if (isFlickerEnabled) {
             let flickerState = true;
             if (flickerIntervalId) clearInterval(flickerIntervalId);
             flickerIntervalId = setInterval(() => {
                 flickerState = !flickerState;
                 canvas.style.display = flickerState ? 'block' : 'none';
-            }, 50); // 50мс светит, 50мс пауза = период 100мс (10 Гц)
+            }, 50); 
         }
         btnStart.innerText = t.reflashBtn;
     }
@@ -1142,7 +1205,6 @@ function checkAnswer(userChoice) {
     if (!isWaitingForAnswer) return;
     isWaitingForAnswer = false; 
     
-    // Гарантированно убираем холст и останавливаем фликкер при ответе
     if (flickerIntervalId) {
         clearInterval(flickerIntervalId);
         flickerIntervalId = null;
@@ -1164,8 +1226,8 @@ function checkAnswer(userChoice) {
         score++;
         correctStreak++;
         staircaseStreak++;
-        playSuccessTone(); // Воспроизведение звука дофаминового подкрепления
-        document.body.style.backgroundColor = "#244263"; // Глубокий океанический синий (благородный тон)
+        playSuccessTone(); 
+        document.body.style.backgroundColor = "#244263"; 
         
         if (staircaseStreak >= 3) {
             if (autoContrast <= minContrast) {
@@ -1181,7 +1243,7 @@ function checkAnswer(userChoice) {
     } else {
         correctStreak = 0;
         staircaseStreak = 0;
-        playErrorTone(); // Запуск когнитивного звука ошибки
+        playErrorTone(); 
         document.body.style.backgroundColor = "#4d2424"; 
         if (allowStageAdvance && autoContrast >= 0.70 && currentLevel > 1) {
             currentLevel--;
@@ -1227,7 +1289,7 @@ function saveSession() {
     if (total === 0) return;
     const history = JSON.parse(localStorage.getItem('gabor_history_v2') || '[]');
     const currentSession = {
-        id: sessionId, // Используем уникальный ID текущей сессии
+        id: sessionId, 
         score: score,
         total: total,
         level: currentLevel,
@@ -1242,9 +1304,7 @@ function saveSession() {
         history.push(currentSession);
     }
     
-    // Сортируем таблицу лидеров по абсолютному значению набранных очков
     history.sort((a, b) => b.score - a.score);
-    // Храним в памяти локальной таблицы только топ-5 лучших сессий
     localStorage.setItem('gabor_history_v2', JSON.stringify(history.slice(0, 5)));
 }
 
@@ -1257,7 +1317,6 @@ function updateLeaderboardDisplay() {
         return;
     }
     
-    // Берем топ-5 лучших сессий для отображения
     const topSessions = history.slice(0, 5);
     leaderboardList.innerHTML = topSessions.map((item, idx) => {
         const resultsText = currentLang === 'ru' 
@@ -1283,7 +1342,7 @@ function updateScoreBoardText() {
 
 function loadSettings() {
     try {
-        presetMode = localStorage.getItem('gabor_preset_mode') || 'occlusion'; // Классический дефолт с повязкой
+        presetMode = localStorage.getItem('gabor_preset_mode') || 'occlusion'; 
         currentLevel = parseInt(localStorage.getItem('gabor_start_level') || '1');
         
         const savedAuto = localStorage.getItem('gabor_autonext');
@@ -1303,6 +1362,7 @@ function loadSettings() {
         lazyEyeSide = localStorage.getItem('gabor_lazy_side') || 'left';
         strongEyeContrastFactor = parseFloat(localStorage.getItem('gabor_strong_factor') || '0.3');
         isFlickerEnabled = localStorage.getItem('gabor_flicker') === 'true';
+        isFusionLockEnabled = localStorage.getItem('gabor_fusion_lock') !== 'false';
         isMuted = localStorage.getItem('gabor_muted') === 'true';
     } catch (e) {
         presetMode = 'occlusion';
@@ -1321,6 +1381,7 @@ function loadSettings() {
         lazyEyeSide = 'left';
         strongEyeContrastFactor = 0.3;
         isFlickerEnabled = false;
+        isFusionLockEnabled = true;
     }
     
     if (selectPresetMode) selectPresetMode.value = presetMode;
@@ -1337,6 +1398,7 @@ function loadSettings() {
     if (chkStatic) chkStatic.checked = isStaticEnabled;
     if (chkAnaglyph) chkAnaglyph.checked = isAnaglyphEnabled;
     if (chkFlicker) chkFlicker.checked = isFlickerEnabled;
+    if (chkFusionLock) chkFusionLock.checked = isFusionLockEnabled;
     
     if (selectRedSide) selectRedSide.value = redEyeSide;
     if (selectLazySide) selectLazySide.value = lazyEyeSide;
@@ -1365,12 +1427,12 @@ function saveSettings() {
         if (chkStatic) isStaticEnabled = chkStatic.checked;
         if (chkAnaglyph) isAnaglyphEnabled = chkAnaglyph.checked;
         if (chkFlicker) isFlickerEnabled = chkFlicker.checked;
+        if (chkFusionLock) isFusionLockEnabled = chkFusionLock.checked;
         
         if (selectRedSide) redEyeSide = selectRedSide.value;
         if (selectLazySide) lazyEyeSide = selectLazySide.value;
         if (rangeStrongAttenuation) strongEyeContrastFactor = parseFloat(rangeStrongAttenuation.value) / 100;
     } else {
-        // Синхронизируем внутренние переменные из новых пресетов
         if (presetMode === 'occlusion') {
             allowStageAdvance = true;
             flashDurationMode = 'adaptive';
@@ -1380,6 +1442,7 @@ function saveSettings() {
             isAnaglyphEnabled = false;
             allowWideVariance = false;
             isFlickerEnabled = false;
+            isFusionLockEnabled = false;
         } else if (presetMode === 'binocular') {
             allowStageAdvance = true;
             flashDurationMode = 'adaptive';
@@ -1389,6 +1452,7 @@ function saveSettings() {
             isAnaglyphEnabled = true;
             allowWideVariance = false;
             isFlickerEnabled = false;
+            isFusionLockEnabled = true;
         } else if (presetMode === 'peripheral') {
             allowStageAdvance = true;
             flashDurationMode = '180';
@@ -1398,6 +1462,7 @@ function saveSettings() {
             isAnaglyphEnabled = true;
             allowWideVariance = false;
             isFlickerEnabled = false;
+            isFusionLockEnabled = true;
         } else if (presetMode === 'blitz') {
             allowStageAdvance = true;
             flashDurationMode = '100';
@@ -1407,6 +1472,7 @@ function saveSettings() {
             isAnaglyphEnabled = false;
             allowWideVariance = true;
             isFlickerEnabled = false;
+            isFusionLockEnabled = false;
         } else if (presetMode === 'flicker') {
             allowStageAdvance = true;
             flashDurationMode = 'adaptive';
@@ -1416,10 +1482,10 @@ function saveSettings() {
             isAnaglyphEnabled = true;
             allowWideVariance = false;
             isFlickerEnabled = true;
+            isFusionLockEnabled = true;
         }
     }
     
-    // Сбрасываем диагностический тест при сохранении
     isAnaglyphTestActive = false;
     if (btnFusionTest) {
         btnFusionTest.style.background = '#1a233a';
@@ -1452,6 +1518,7 @@ function saveSettings() {
         localStorage.setItem('gabor_lazy_side', lazyEyeSide);
         localStorage.setItem('gabor_strong_factor', strongEyeContrastFactor.toString());
         localStorage.setItem('gabor_flicker', isFlickerEnabled ? "true" : "false");
+        localStorage.setItem('gabor_fusion_lock', isFusionLockEnabled ? "true" : "false");
     } catch (e) {
         console.warn("Storage saving bypassed:", e);
     }
@@ -1470,7 +1537,6 @@ if (btnStart) btnStart.addEventListener('click', runFlash);
 if (btnLeft) btnLeft.addEventListener('click', () => checkAnswer('left'));
 if (btnRight) btnRight.addEventListener('click', () => checkAnswer('right'));
 
-// Переключатель Mute (беззвучного режима)
 const btnMute = document.getElementById('btn-mute');
 if (btnMute) {
     btnMute.addEventListener('click', () => {
@@ -1483,7 +1549,6 @@ if (btnMute) {
 function updateMuteUI() {
     if (btnMute) {
         btnMute.innerText = isMuted ? '🔇' : '🔊';
-        // Обновляем эмодзи только внутри кнопки беззвучного режима
         if (window.twemoji) twemoji.parse(btnMute);
     }
 }
@@ -1511,7 +1576,8 @@ if (selectPresetMode) {
     });
 }
 
-// Логика взаимного исключения и блокировок для Кастомного режима
+const chkFusionLock = document.getElementById('chk-fusion-lock');
+
 if (chkPeripheral) {
     chkPeripheral.addEventListener('change', () => {
         if (chkPeripheral.checked) {
@@ -1530,7 +1596,6 @@ if (chkCrowding) {
     });
 }
 
-// Поведение чекбокса Анаглифа (сворачивание/разворачивание подпанели)
 if (chkAnaglyph) {
     chkAnaglyph.addEventListener('change', () => {
         isAnaglyphEnabled = chkAnaglyph.checked;
@@ -1538,7 +1603,6 @@ if (chkAnaglyph) {
     });
 }
 
-// Связывание числового значения со слайдером контраста здорового глаза
 if (rangeStrongAttenuation) {
     rangeStrongAttenuation.addEventListener('input', () => {
         if (valStrongAttenuation) {
@@ -1548,7 +1612,6 @@ if (rangeStrongAttenuation) {
     });
 }
 
-// Связывание чекбокса Статичности и Фликкера (мигание доступно только если статично)
 if (chkStatic) {
     chkStatic.addEventListener('change', () => {
         isStaticEnabled = chkStatic.checked;
@@ -1568,17 +1631,15 @@ if (chkFlicker) {
     });
 }
 
-// Реактивные подписки для неблокирующих пресетов (автоматический перевод в custom при любых изменениях)
 const inputsToSync = [
     chkStageAdvance, selectFlashDuration, chkLowContrast,
     chkWideVariance, chkAnaglyph, selectRedSide, selectLazySide,
-    rangeStrongAttenuation, selectStartLevel, selectAutonext, selectSessionLimit
+    rangeStrongAttenuation, selectStartLevel, selectAutonext, selectSessionLimit, chkFusionLock
 ];
 inputsToSync.forEach(input => {
     if (input) input.addEventListener('change', syncStateFromUI);
 });
 
-// Запуск интерактивного Теста Слияния (Fusion Check) прямо на игровом холсте
 if (btnFusionTest) {
     btnFusionTest.addEventListener('click', () => {
         isAnaglyphTestActive = !isAnaglyphTestActive;
@@ -1591,7 +1652,7 @@ if (btnFusionTest) {
             
             drawFusionTestPattern();
             canvas.style.display = 'block';
-            cross.style.display = 'block'; // Показываем крест как центральный бинокулярный замок
+            cross.style.display = 'block'; 
         } else {
             btnFusionTest.style.background = '#1a233a';
             btnFusionTest.style.color = '#3b90ff';
@@ -1607,7 +1668,7 @@ window.addEventListener('load', () => {
     if (window.twemoji) twemoji.parse(document.body);
 });
 
-// Управление с клавиатуры
+// Keyboard bindings
 window.addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
     
