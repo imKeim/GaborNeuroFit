@@ -1,0 +1,12 @@
+# Dependency directories (never push temporary node modules to GitHub)
+node_modules/
+
+# Build output directories
+dist/
+
+# Local configuration overrides
+.env*.local
+
+# OS metadata files
+.DS_Store
+Thumbs.db

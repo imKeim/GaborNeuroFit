@@ -21,8 +21,9 @@
             <div id="btn-info" class="control-btn">ℹ️</div>
             <div id="btn-settings" class="control-btn">🛠️</div>
             <div id="lang-selector">
-                <span class="lang-btn" id="lang-en" onclick="setLanguage('en')">🇬🇧</span>
-                <span class="lang-btn" id="lang-ru" onclick="setLanguage('ru')">🇷🇺</span>
+                <!-- Inline onclick handlers removed to comply with ES6 module scope isolation -->
+                <span class="lang-btn" id="lang-en">🇬🇧</span>
+                <span class="lang-btn" id="lang-ru">🇷🇺</span>
             </div>
         </div>
     </div>
@@ -74,11 +75,12 @@
                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                     <label id="lbl-setting-mode"></label>
                     <select id="select-preset-mode">
+                        <!-- Reordered to match a progressive clinical learning curve: Monocular -> Dichoptic Static -> Dichoptic Dynamic -> Advanced Motor Capture -->
                         <option value="occlusion" id="opt-preset-occlusion"></option>
-                        <option value="binocular" id="opt-preset-binocular"></option>
-                        <option value="peripheral" id="opt-preset-peripheral"></option>
                         <option value="blitz" id="opt-preset-blitz"></option>
+                        <option value="binocular" id="opt-preset-binocular"></option>
                         <option value="flicker" id="opt-preset-flicker"></option>
+                        <option value="peripheral" id="opt-preset-peripheral"></option>
                         <option value="custom" id="opt-preset-custom"></option>
                     </select>
                 </div>
@@ -254,9 +256,10 @@
                 <label id="lbl-setting-limit"></label>
                 <select id="select-session-limit">
                     <option value="0" id="opt-limit-off"></option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                    <option value="150">150</option>
+                    <option value="40">40</option>
+                    <option value="80">80</option>
+                    <option value="120">120</option>
+                    <option value="160">160</option>
                 </select>
             </div>
 
@@ -280,8 +283,8 @@
             <h4 id="sec-levels-title"></h4>
             <ul id="sec-levels-list"></ul>
 
-            <h4 id="sec-amblyopia-title"></h4>
-            <ul id="sec-amblyopia-list"></ul>
+            <h4 id="sec-presets-title"></h4>
+            <ul id="sec-presets-list"></ul>
 
             <h4 id="sec-recommendations-title"></h4>
             <ul id="sec-recommendations-list"></ul>
@@ -292,7 +295,7 @@
 
     <!-- Load Twemoji image-based vector system -->
     <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
-    <!-- Gabor core logic engine script -->
-    <script src="app.js"></script>
+    <!-- High-performance modular visual training engine -->
+    <script type="module" src="/src/app.js"></script>
 </body>
 </html>

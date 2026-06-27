@@ -1,3 +1,11 @@
+/*
+ * GaborNeuroFit - High-Performance Stylesheet & Hardware Animations
+ * Copyright (C) 2026 Pavel Korotkov
+ *
+ * This file contains layout rules, responsive viewport constraints,
+ * and hardware-accelerated animations for smooth transitions.
+ */
+
 * {
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
