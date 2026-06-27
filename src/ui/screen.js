@@ -99,19 +99,22 @@ export function updateStatusBar(state, translations) {
     } else if (state.flashDurationMode === '350') {
         speedStr = "350 ms";
     } else {
-        if (state.currentLevel === 1) speedStr = "220 ms";
+        // Adaptive temporal pacing scaling down to prevent saccadic ocular cheats at high stages
+        if (state.currentLevel === 1) speedStr = "240 ms";
         else if (state.currentLevel === 2) speedStr = "200 ms";
-        else if (state.currentLevel === 3) speedStr = "180 ms";
-        else if (state.currentLevel === 4) speedStr = "150 ms";
-        else if (state.currentLevel === 5) speedStr = "120 ms";
+        else if (state.currentLevel === 3) speedStr = "170 ms";
+        else if (state.currentLevel === 4) speedStr = "140 ms";
+        else if (state.currentLevel === 5) speedStr = "110 ms";
     }
 
     const valActiveMode = document.getElementById('val-active-mode');
     const valActiveSpeed = document.getElementById('val-active-speed');
+    
     if (valActiveMode) {
         valActiveMode.innerText = modeStr;
         // Hot-parse newly injected unicode characters into flat Twemoji vector assets
         if (window.twemoji) window.twemoji.parse(valActiveMode);
     }
+    
     if (valActiveSpeed) valActiveSpeed.innerText = speedStr;
 }

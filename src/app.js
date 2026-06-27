@@ -22,6 +22,7 @@ let flickerIntervalId = null;
 let flankerAnimationId = null;
 let flankerPhaseOffset = 0;
 let nextFlashTimeoutId = null;
+let stimulusHideTimeoutId = null; // Guard to track and cancel pending stimulus hide signals
 
 // Temporary coordinates cache for the active trial stimulus
 let currentAngleDeg = 0; 
@@ -307,7 +308,8 @@ function startFlankerAnimation() {
 
 // Stop the running phase drift animation and reset phase variables safely
 function stopFlankerAnimation() {
-    if (flankerAnimationId) {
+    // Forcefully cancel any existing animation frames to prevent "zombie loops"
+    if (flankerAnimationId !== null) {
         cancelAnimationFrame(flankerAnimationId);
         flankerAnimationId = null;
     }
@@ -357,11 +359,15 @@ function reFlashCurrentGabor() {
     canvas.style.display = 'block';
 
     if (!s.isStaticEnabled) {
-        setTimeout(() => {
+        // Clear any previous pending hide timeout before starting a new one
+        if (stimulusHideTimeoutId) clearTimeout(stimulusHideTimeoutId);
+        
+        stimulusHideTimeoutId = setTimeout(() => {
             stopFlankerAnimation();
             drawIdleState(canvas, ctx, s.isFusionLockEnabled);
             cross.style.display = 'block';
             btnStart.innerText = t.reflashBtn;
+            stimulusHideTimeoutId = null;
         }, flashDuration);
     } else {
         if (s.isFlickerEnabled) {
@@ -554,10 +560,16 @@ function checkAnswer(userChoice) {
     if (!s.isWaitingForAnswer) return;
     s.isWaitingForAnswer = false; 
     
+    // Safety: Instantly kill any pending stimulus hide or flicker intervals
+    if (stimulusHideTimeoutId) {
+        clearTimeout(stimulusHideTimeoutId);
+        stimulusHideTimeoutId = null;
+    }
     if (flickerIntervalId) {
         clearInterval(flickerIntervalId);
         flickerIntervalId = null;
     }
+    
     stopFlankerAnimation();
     cross.style.display = 'block';
 

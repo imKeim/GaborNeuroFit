@@ -9,12 +9,21 @@
 </p>
 
 <p align="center">
-  <a href="https://www.gnu.org/licenses/gpl-3.0">
-    <img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License: GPL v3">
-  </a>
+  <!-- Automated GitHub Actions Build & Deploy Status -->
+  <a href="https://github.com/imKeim/GaborNeuroFit/actions/workflows/deploy.yml"><img src="https://github.com/imKeim/GaborNeuroFit/actions/workflows/deploy.yml/badge.svg" alt="Build & Deploy Status"></a>
+  <!-- GNU GPL v3 License -->
+  <a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License: GPL v3"></a>
+  
+  <!-- Core Dev Tools & Languages -->
+  <img src="https://img.shields.io/badge/Vite-646CFF?style=flat&logo=Vite&logoColor=white" alt="Vite">
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black" alt="JavaScript">
   <img src="https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white" alt="HTML5">
   <img src="https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=css3&logoColor=white" alt="CSS3">
-  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black" alt="JavaScript">
+  
+  <!-- Clinical Audio Engine -->
+  <img src="https://img.shields.io/badge/Web%20Audio-FF5722?style=flat&logo=soundcharts&logoColor=white" alt="Web Audio API">
+  
+  <!-- Platforms & Open Source status -->
   <img src="https://img.shields.io/badge/Platform-Web%20%7C%20Mobile-brightgreen" alt="Platform">
   <img src="https://img.shields.io/badge/Open%20Source-%E2%9D%A4-red" alt="Open Source">
 </p>

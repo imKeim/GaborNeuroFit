@@ -189,19 +189,18 @@ canvas {
     max-width: 100%;
     background: rgba(11, 15, 24, 0.5); 
     border-radius: 12px;
-    padding: 8px 12px;
-    margin-top: 4px;
+    padding: 6px 10px; /* Reduced padding for vertical economy */
+    margin-top: 2px;
     font-size: 11px;
     color: #cbd5e1;
     border: 1px solid rgba(255, 255, 255, 0.04);
-    transition: max-height 0.2s ease;
 }
 
 #leaderboard h3 {
-    margin: 0 0 6px 0;
-    font-size: 12px;
+    margin: 0 0 4px 0;
+    font-size: 11px;
     text-align: center;
-    color: #fff;
+    color: rgba(255, 255, 255, 0.7);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -212,7 +211,14 @@ canvas {
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 2px;
+    max-height: 86px; /* Strict height limit to fit 5 rows on mobile  */
+    overflow-y: auto; /* Enable internal scrolling if data overflows */
+    scrollbar-width: none; /* Hide ugly scrollbars on Firefox */
+}
+
+#leaderboard-list::-webkit-scrollbar {
+    display: none; /* Hide ugly scrollbars on Chrome/Safari */
 }
 
 .leaderboard-item {
@@ -229,12 +235,12 @@ canvas {
 #controls-layout {
     width: calc(100% - 24px);
     max-width: 900px;
-    margin: 0 auto 12px auto;
+    margin: 0 auto 8px auto; /* Tighter bottom margin */
     display: flex;
     flex-direction: column;
     background: #131a26;
-    padding: 16px 16px 20px 16px;
-    gap: 12px;
+    padding: 12px 16px 14px 16px; /* Reduced vertical padding */
+    gap: 8px; /* Tighter spacing between buttons */
     border: 1px solid #202b3d;
     border-radius: 16px; 
 }
@@ -274,7 +280,7 @@ canvas {
 
 .action-btn {
     flex: 1;
-    height: min(16vh, 85px);
+    height: min(12vh, 72px); /* Tighter height to accommodate data rows on mobile */
     font-size: 16px;
     font-weight: 700;
     color: #fff;
