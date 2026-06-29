@@ -8,61 +8,64 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="./assets/index-75jTwR4R.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-C9mA_97m.css">
+  <script type="module" crossorigin src="./assets/index-B1uqJOKF.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-wtd7b796.css">
 </head>
+<body>
 <body>
     <!-- Hardware-accelerated chromatic flash layer -->
     <div id="flash-overlay"></div>
 
-    <div id="top-bar">
-        <div id="app-title">🧿 GaborNeuroFit</div>
-        <div id="top-controls">
-            <div id="btn-mute" class="control-btn">🔊</div>
-            <div id="btn-info" class="control-btn">ℹ️</div>
-            <div id="btn-settings" class="control-btn">🛠️</div>
-            <div id="lang-selector">
-                <!-- Inline onclick handlers removed to comply with ES6 module scope isolation -->
-                <span class="lang-btn" id="lang-en">🇬🇧</span>
-                <span class="lang-btn" id="lang-ru">🇷🇺</span>
+    <div id="app-wrapper">
+        <div id="top-bar">
+            <div id="app-title">🧿 GaborNeuroFit</div>
+            <div id="top-controls">
+                <div id="btn-mute" class="control-btn">🔊</div>
+                <div id="btn-info" class="control-btn">ℹ️</div>
+                <div id="btn-stats" class="control-btn">📊</div>
+                <div id="btn-settings" class="control-btn">🛠️</div>
+                <div id="lang-selector">
+                    <!-- Inline onclick handlers removed to comply with ES6 module scope isolation -->
+                    <span class="lang-btn" id="lang-en">🇬🇧</span>
+                    <span class="lang-btn" id="lang-ru">🇷🇺</span>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div id="container">
-        <div id="cross">+</div>
-        <canvas id="gaborCanvas" width="256" height="256"></canvas>
-    </div>
+        <div id="workspace">
+            <div id="container">
+                <div id="cross">+</div>
+                <canvas id="gaborCanvas" width="256" height="256"></canvas>
+            </div>
+        </div>
 
-    <div id="score-board">
-        <div id="score-text"></div>
-        <div id="indicators">
-            <span class="badge"><span id="lbl-stage"></span>: <span id="current-level">1</span>/5</span>
-            <span class="badge"><span id="lbl-contrast"></span>: <span id="current-contrast">50</span>%</span>
-            <span class="badge"><span id="lbl-streak"></span>: <span id="current-streak">0</span></span>
-        </div>
-    </div>
+        <div id="bottom-dock">
+            <div id="score-board">
+                <div id="score-text"></div>
+                <div id="indicators">
+                    <span class="badge"><span id="lbl-stage"></span>: <span id="current-level">1</span>/5</span>
+                    <span class="badge"><span id="lbl-contrast"></span>: <span id="current-contrast">50</span>%</span>
+                    <span class="badge"><span id="lbl-streak"></span>: <span id="current-streak">0</span></span>
+                </div>
+            </div>
 
-    <div id="controls-layout">
-        <div id="mode-status-bar">
-            <span><span id="lbl-active-mode">Mode</span>: <strong id="val-active-mode" style="color: #007aff;">Classic</strong></span>
-            <span><span id="lbl-active-speed">Speed</span>: <strong id="val-active-speed">Adaptive</strong></span>
-        </div>
-        <button id="btn-start"></button>
-        <div id="action-buttons">
-            <button class="action-btn" id="btn-left">
-                <span>◀</span>
-                <div class="btn-label" id="lbl-btn-left"></div>
-            </button>
-            <button class="action-btn" id="btn-right">
-                <span>▶</span>
-                <div class="btn-label" id="lbl-btn-right"></div>
-            </button>
-        </div>
-        <!-- Leaderboard layout embedded inside the bottom control dock to preserve screen space -->
-        <div id="leaderboard">
-            <h3 id="lbl-leaderboard-title"></h3>
-            <ul id="leaderboard-list"></ul>
+            <div id="controls-layout">
+                <div id="mode-status-bar">
+                    <span><span id="lbl-active-mode">Mode</span>: <strong id="val-active-mode" style="color: #007aff;">Classic</strong></span>
+                    <span><span id="lbl-active-speed">Speed</span>: <strong id="val-active-speed">Adaptive</strong></span>
+                </div>
+                <button id="btn-start"></button>
+                <div id="action-buttons">
+                    <button class="action-btn" id="btn-left">
+                        <span>◀</span>
+                        <div class="btn-label" id="lbl-btn-left"></div>
+                    </button>
+                    <button class="action-btn" id="btn-right">
+                        <span>▶</span>
+                        <div class="btn-label" id="lbl-btn-right"></div>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -71,200 +74,260 @@
         <div class="modal-content">
             <h2 id="settings-title"></h2>
             
-            <!-- 1. Training Preset Macro Select -->
-            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 15px;">
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <label id="lbl-setting-mode"></label>
-                    <select id="select-preset-mode">
-                        <!-- Reordered to match a progressive clinical learning curve: Monocular -> Dichoptic Static -> Dichoptic Dynamic -> Advanced Motor Capture -->
-                        <option value="occlusion" id="opt-preset-occlusion"></option>
-                        <option value="blitz" id="opt-preset-blitz"></option>
-                        <option value="binocular" id="opt-preset-binocular"></option>
-                        <option value="flicker" id="opt-preset-flicker"></option>
-                        <option value="peripheral" id="opt-preset-peripheral"></option>
-                        <option value="custom" id="opt-preset-custom"></option>
-                    </select>
+            <div class="modal-scroll-body">
+                <!-- Group 1: Core Setup (Expanded by default) -->
+                <div class="accordion-header" id="accordion-header-1">
+                    <span>🎯 Базовый протокол</span>
+                    <span class="accordion-arrow" id="accordion-arrow-1">▼</span>
                 </div>
-                <span class="settings-help" id="help-preset-mode"></span>
-            </div>
-
-            <!-- 2. Starting Level Selector -->
-            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <label id="lbl-setting-start-level"></label>
-                    <select id="select-start-level">
-                        <option value="1" id="opt-stage-1"></option>
-                        <option value="2" id="opt-stage-2"></option>
-                        <option value="3" id="opt-stage-3"></option>
-                        <option value="4" id="opt-stage-4"></option>
-                        <option value="5" id="opt-stage-5"></option>
-                    </select>
-                </div>
-                <span class="settings-help" id="help-start-level"></span>
-            </div>
-
-            <!-- 3. Granular Flash Duration Config -->
-            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <label id="lbl-setting-flash"></label>
-                    <select id="select-flash-duration">
-                        <option value="adaptive" id="opt-flash-adaptive"></option>
-                        <option value="100" id="opt-flash-100"></option>
-                        <option value="180" id="opt-flash-180"></option>
-                        <option value="200" id="opt-flash-200"></option>
-                        <option value="350" id="opt-flash-350"></option>
-                    </select>
-                </div>
-                <span class="settings-help" id="help-flash-duration"></span>
-            </div>
-
-            <!-- 4. Dynamic Stage Autoprogression Toggle -->
-            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <label id="lbl-setting-stage-advance"></label>
-                    <input type="checkbox" id="chk-stage-advance">
-                </div>
-                <span class="settings-help" id="help-stage-advance"></span>
-            </div>
-
-            <!-- 5. Peripheral Eccentricity Shift Toggle -->
-            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <label id="lbl-setting-peripheral"></label>
-                    <input type="checkbox" id="chk-peripheral">
-                </div>
-                <span class="settings-help" id="help-peripheral"></span>
-            </div>
-
-            <!-- 6. Visual Crowding Distractors Toggle -->
-            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <label id="lbl-setting-crowding"></label>
-                    <input type="checkbox" id="chk-crowding">
-                </div>
-                <span class="settings-help" id="help-crowding"></span>
-            </div>
-
-            <!-- 6.1 Orthogonal Distractor Orientation Toggle -->
-            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <label id="lbl-setting-orthogonal"></label>
-                    <input type="checkbox" id="chk-orthogonal-flankers">
-                </div>
-                <span class="settings-help" id="help-orthogonal"></span>
-            </div>
-
-            <!-- 6.2 Dynamic Distractor Phase Shift Toggle -->
-            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <label id="lbl-setting-dynamic"></label>
-                    <input type="checkbox" id="chk-dynamic-flankers">
-                </div>
-                <span class="settings-help" id="help-dynamic"></span>
-            </div>
-
-            <!-- 7. Low Contrast Floor Mode Toggle -->
-            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <label id="lbl-setting-low-contrast"></label>
-                    <input type="checkbox" id="chk-low-contrast">
-                </div>
-                <span class="settings-help" id="help-low-contrast"></span>
-            </div>
-
-            <!-- 8. Line Density & Blur Variance Toggle -->
-            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <label id="lbl-setting-wide-variance"></label>
-                    <input type="checkbox" id="chk-wide-variance">
-                </div>
-                <span class="settings-help" id="help-wide-variance"></span>
-            </div>
-
-            <!-- 8.5 Static Stimulation Mode Toggle -->
-            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <label id="lbl-setting-static"></label>
-                    <input type="checkbox" id="chk-static">
-                </div>
-                <span class="settings-help" id="help-static"></span>
-            </div>
-
-            <!-- 8.6 Flicker Stimulation Toggle -->
-            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <label id="lbl-setting-flicker"></label>
-                    <input type="checkbox" id="chk-flicker">
-                </div>
-                <span class="settings-help" id="help-flicker"></span>
-            </div>
-
-            <!-- 8.7 Zero-Disparity Fusion Lock Toggle -->
-            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <label id="lbl-setting-fusion-lock"></label>
-                    <input type="checkbox" id="chk-fusion-lock">
-                </div>
-                <span class="settings-help" id="help-fusion-lock"></span>
-            </div>
-
-            <!-- 8.8 Anaglyph 3D Mode Toggle -->
-            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <label id="lbl-setting-anaglyph"></label>
-                    <input type="checkbox" id="chk-anaglyph">
-                </div>
-                <span class="settings-help" id="help-anaglyph"></span>
-            </div>
-
-            <!-- Collapsible binocular calibration panel -->
-            <div id="anaglyph-settings-panel" style="display: none; border-top: 1px dashed #2b354a; padding-top: 12px; margin-top: 10px; margin-bottom: 14px;">
-                <div class="settings-row">
-                    <label id="lbl-setting-red-side"></label>
-                    <select id="select-red-side">
-                        <option value="left" id="opt-red-left"></option>
-                        <option value="right" id="opt-red-right"></option>
-                    </select>
-                </div>
-                <div class="settings-row">
-                    <label id="lbl-setting-lazy-side"></label>
-                    <select id="select-lazy-side">
-                        <option value="left" id="opt-lazy-left"></option>
-                        <option value="right" id="opt-lazy-right"></option>
-                    </select>
-                </div>
-                <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                    <div style="display: flex; justify-content: space-between; width: 100%;">
-                        <label id="lbl-setting-strong-attenuation"></label>
-                        <span id="val-strong-attenuation" style="color: #3b90ff; font-weight: bold;">30%</span>
+                <div class="accordion-content open" id="accordion-content-1">
+                    <!-- 1. Training Preset Macro Select -->
+                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 5px;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                            <label id="lbl-setting-mode"></label>
+                            <select id="select-preset-mode">
+                                <option value="occlusion" id="opt-preset-occlusion"></option>
+                                <option value="blitz" id="opt-preset-blitz"></option>
+                                <option value="binocular" id="opt-preset-binocular"></option>
+                                <option value="flicker" id="opt-preset-flicker"></option>
+                                <option value="peripheral" id="opt-preset-peripheral"></option>
+                                <option value="custom" id="opt-preset-custom"></option>
+                            </select>
+                        </div>
+                        <span class="settings-help" id="help-preset-mode"></span>
                     </div>
-                    <input type="range" id="range-strong-attenuation" min="10" max="100" step="5" value="30" style="width: 100%; accent-color: #007aff; cursor: pointer; margin-top: 6px;">
+
+                    <!-- 2. Starting Level Selector -->
+                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                            <label id="lbl-setting-start-level"></label>
+                            <select id="select-start-level">
+                                <option value="1" id="opt-stage-1"></option>
+                                <option value="2" id="opt-stage-2"></option>
+                                <option value="3" id="opt-stage-3"></option>
+                                <option value="4" id="opt-stage-4"></option>
+                                <option value="5" id="opt-stage-5"></option>
+                            </select>
+                        </div>
+                        <span class="settings-help" id="help-start-level"></span>
+                    </div>
+
+                    <!-- 9. Post-Answer Autonext Transition Config -->
+                    <div class="settings-row">
+                        <label id="lbl-setting-autonext"></label>
+                        <select id="select-autonext">
+                            <option value="true" id="opt-autonext-on"></option>
+                            <option value="false" id="opt-autonext-off"></option>
+                        </select>
+                    </div>
+
+                    <!-- 10. Session Progress Limit -->
+                    <div class="settings-row" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                        <label id="lbl-setting-limit"></label>
+                        <select id="select-session-limit">
+                            <option value="0" id="opt-limit-off"></option>
+                            <option value="40">40</option>
+                            <option value="80">80</option>
+                            <option value="120">120</option>
+                            <option value="160">160</option>
+                        </select>
+                    </div>
                 </div>
-                <button id="btn-fusion-test" class="close-btn" style="background: #1a233a; border: 1px solid #3b90ff; color: #3b90ff; margin-top: 14px; font-weight: bold;"></button>
-            </div>
 
-            <!-- 9. Post-Answer Autonext Transition Config -->
-            <div class="settings-row">
-                <label id="lbl-setting-autonext"></label>
-                <select id="select-autonext">
-                    <option value="true" id="opt-autonext-on"></option>
-                    <option value="false" id="opt-autonext-off"></option>
-                </select>
-            </div>
+                <!-- Group 2: Temporal Stimulation (Collapsed) -->
+                <div class="accordion-header" id="accordion-header-2">
+                    <span>⚡ Временная стимуляция</span>
+                    <span class="accordion-arrow" id="accordion-arrow-2">►</span>
+                </div>
+                <div class="accordion-content" id="accordion-content-2">
+                    <!-- 3. Granular Flash Duration Config -->
+                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                            <label id="lbl-setting-flash"></label>
+                            <select id="select-flash-duration">
+                                <option value="adaptive" id="opt-flash-adaptive"></option>
+                                <option value="100" id="opt-flash-100"></option>
+                                <option value="180" id="opt-flash-180"></option>
+                                <option value="200" id="opt-flash-200"></option>
+                                <option value="350" id="opt-flash-350"></option>
+                            </select>
+                        </div>
+                        <span class="settings-help" id="help-flash-duration"></span>
+                    </div>
 
-            <!-- 10. Session Progress Limit -->
-            <div class="settings-row">
-                <label id="lbl-setting-limit"></label>
-                <select id="select-session-limit">
-                    <option value="0" id="opt-limit-off"></option>
-                    <option value="40">40</option>
-                    <option value="80">80</option>
-                    <option value="120">120</option>
-                    <option value="160">160</option>
-                </select>
-            </div>
+                    <!-- 4. Dynamic Stage Autoprogression Toggle -->
+                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                            <label id="lbl-setting-stage-advance"></label>
+                            <input type="checkbox" id="chk-stage-advance">
+                        </div>
+                        <span class="settings-help" id="help-stage-advance"></span>
+                    </div>
 
-            <p style="font-size: 11px; color: #8e8e93; line-height: 1.3;" id="desc-mode-explanation"></p>
+                    <!-- 8.5 Static Stimulation Mode Toggle -->
+                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                            <label id="lbl-setting-static"></label>
+                            <input type="checkbox" id="chk-static">
+                        </div>
+                        <span class="settings-help" id="help-static"></span>
+                    </div>
+
+                    <!-- 8.6 Flicker Stimulation Toggle (Nested under Static) -->
+                    <div class="settings-row" id="row-flicker" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                            <label id="lbl-setting-flicker"></label>
+                            <input type="checkbox" id="chk-flicker">
+                        </div>
+                        <span class="settings-help" id="help-flicker"></span>
+                    </div>
+                </div>
+
+                <!-- Group 3: Spatial Acuity & Crowding (Collapsed) -->
+                <div class="accordion-header" id="accordion-header-3">
+                    <span>🩹 Пространственная сложность</span>
+                    <span class="accordion-arrow" id="accordion-arrow-3">►</span>
+                </div>
+                <div class="accordion-content" id="accordion-content-3">
+                    <!-- 7. Low Contrast Floor Mode Toggle -->
+                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                            <label id="lbl-setting-low-contrast"></label>
+                            <input type="checkbox" id="chk-low-contrast">
+                        </div>
+                        <span class="settings-help" id="help-low-contrast"></span>
+                    </div>
+
+                    <!-- 8. Line Density & Blur Variance Toggle -->
+                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                            <label id="lbl-setting-wide-variance"></label>
+                            <input type="checkbox" id="chk-wide-variance">
+                        </div>
+                        <span class="settings-help" id="help-wide-variance"></span>
+                    </div>
+
+                    <!-- 5. Peripheral Eccentricity Shift Toggle -->
+                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                            <label id="lbl-setting-peripheral"></label>
+                            <input type="checkbox" id="chk-peripheral">
+                        </div>
+                        <span class="settings-help" id="help-peripheral"></span>
+                    </div>
+
+                    <!-- 6. Visual Crowding Distractors Toggle -->
+                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                            <label id="lbl-setting-crowding"></label>
+                            <input type="checkbox" id="chk-crowding">
+                        </div>
+                        <span class="settings-help" id="help-crowding"></span>
+                    </div>
+
+                    <!-- 6.1 Orthogonal Distractor Orientation Toggle (Nested under Crowding) -->
+                    <div class="settings-row" id="row-orthogonal" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                            <label id="lbl-setting-orthogonal"></label>
+                            <input type="checkbox" id="chk-orthogonal-flankers">
+                        </div>
+                        <span class="settings-help" id="help-orthogonal"></span>
+                    </div>
+
+                    <!-- 6.2 Dynamic Distractor Phase Shift Toggle (Nested under Crowding) -->
+                    <div class="settings-row" id="row-dynamic" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                            <label id="lbl-setting-dynamic"></label>
+                            <input type="checkbox" id="chk-dynamic-flankers">
+                        </div>
+                        <span class="settings-help" id="help-dynamic"></span>
+                    </div>
+                </div>
+
+                <!-- Group 4: Binocular 3D Setup (Collapsed) -->
+                <div class="accordion-header" id="accordion-header-4">
+                    <span>🕶️ Бинокулярная 3D-настройка</span>
+                    <span class="accordion-arrow" id="accordion-arrow-4">►</span>
+                </div>
+                <div class="accordion-content" id="accordion-content-4">
+                    <!-- 8.8 Anaglyph 3D Mode Toggle -->
+                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                            <label id="lbl-setting-anaglyph"></label>
+                            <input type="checkbox" id="chk-anaglyph">
+                        </div>
+                        <span class="settings-help" id="help-anaglyph"></span>
+                    </div>
+
+                    <!-- Collapsible binocular calibration panel -->
+                    <div id="anaglyph-settings-panel" style="display: none; border-top: 1px dashed #2b354a; padding-top: 12px; margin-top: 10px; margin-bottom: 0;">
+                        <div class="settings-row">
+                            <label id="lbl-setting-red-side"></label>
+                            <select id="select-red-side">
+                                <option value="left" id="opt-red-left"></option>
+                                <option value="right" id="opt-red-right"></option>
+                            </select>
+                        </div>
+                        <div class="settings-row">
+                            <label id="lbl-setting-lazy-side"></label>
+                            <select id="select-lazy-side">
+                                <option value="left" id="opt-lazy-left"></option>
+                                <option value="right" id="opt-lazy-right"></option>
+                            </select>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%;">
+                                <label id="lbl-setting-strong-attenuation"></label>
+                                <span id="val-strong-attenuation" style="color: #3b90ff; font-weight: bold;">30%</span>
+                            </div>
+                            <input type="range" id="range-strong-attenuation" min="10" max="100" step="5" value="30" style="width: 100%; accent-color: #007aff; cursor: pointer; margin-top: 6px;">
+                        </div>
+
+                        <!-- 8.7 Zero-Disparity Fusion Lock Toggle -->
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label id="lbl-setting-fusion-lock"></label>
+                                <input type="checkbox" id="chk-fusion-lock">
+                            </div>
+                            <span class="settings-help" id="help-fusion-lock"></span>
+                        </div>
+
+                        <!-- Left Eye Color Calibration (Only Red slider!) -->
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <span id="lbl-setting-left-color" style="font-size: 13px; font-weight: 500;"></span>
+                            </div>
+                            <div style="width: 100%; display: flex; flex-direction: column; gap: 6px; padding-left: 4px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="width: 12px; font-size: 11px; font-weight: bold; color: #ef4444;">R</span>
+                                    <input type="range" id="slider-left-r" min="0" max="255" value="255" style="flex: 1; accent-color: #ef4444; height: 4px; cursor: pointer;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Eye Color Calibration (Only Green and Blue sliders!) -->
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 8px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <span id="lbl-setting-right-color" style="font-size: 13px; font-weight: 500;"></span>
+                            </div>
+                            <div style="width: 100%; display: flex; flex-direction: column; gap: 6px; padding-left: 4px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="width: 12px; font-size: 11px; font-weight: bold; color: #22c55e;">G</span>
+                                    <input type="range" id="slider-right-g" min="0" max="255" value="255" style="flex: 1; accent-color: #22c55e; height: 4px; cursor: pointer;">
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="width: 12px; font-size: 11px; font-weight: bold; color: #3b82f6;">B</span>
+                                    <input type="range" id="slider-right-b" min="0" max="255" value="255" style="flex: 1; accent-color: #3b82f6; height: 4px; cursor: pointer;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="btn-fusion-test" class="close-btn" style="background: #1a233a; border: 1px solid #3b90ff; color: #3b90ff; margin-top: 14px; font-weight: bold;"></button>
+                    </div>
+                </div>
+
+                <p style="font-size: 11px; color: #8e8e93; line-height: 1.3; margin-top: 15px;" id="desc-mode-explanation"></p>
+            </div>
 
             <button id="btn-close-settings" class="close-btn">OK</button>
         </div>
@@ -275,22 +338,37 @@
         <div class="modal-content">
             <h2 id="modal-title"></h2>
             
-            <h4 id="sec-about-title"></h4>
-            <p id="sec-about-text"></p>
+            <div class="modal-scroll-body">
+                <h4 id="sec-about-title"></h4>
+                <p id="sec-about-text"></p>
 
-            <h4 id="sec-instructions-title"></h4>
-            <ul id="sec-instructions-list"></ul>
-            
-            <h4 id="sec-levels-title"></h4>
-            <ul id="sec-levels-list"></ul>
+                <h4 id="sec-instructions-title"></h4>
+                <ul id="sec-instructions-list"></ul>
+                
+                <h4 id="sec-levels-title"></h4>
+                <ul id="sec-levels-list"></ul>
 
-            <h4 id="sec-presets-title"></h4>
-            <ul id="sec-presets-list"></ul>
+                <h4 id="sec-presets-title"></h4>
+                <ul id="sec-presets-list"></ul>
 
-            <h4 id="sec-recommendations-title"></h4>
-            <ul id="sec-recommendations-list"></ul>
+                <h4 id="sec-recommendations-title"></h4>
+                <ul id="sec-recommendations-list"></ul>
+            </div>
 
             <button id="btn-close-modal" class="close-btn">OK</button>
+        </div>
+    </div>
+
+    <!-- Statistics & Progress modal wrapper -->
+    <div id="stats-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="stats-title"></h2>
+            <div class="modal-scroll-body">
+                <div id="leaderboard" style="width: 100%; margin-top: 15px;">
+                    <ul id="leaderboard-list"></ul>
+                </div>
+            </div>
+            <button id="btn-close-stats" class="close-btn">OK</button>
         </div>
     </div>
 
