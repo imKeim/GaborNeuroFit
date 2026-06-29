@@ -50,13 +50,16 @@ export function bindInputControls(handlers) {
             return;
         }
         
-        // Stop routing keyboard shortcuts if either Handbook or Settings panel is currently visible
+        // Stop routing keyboard shortcuts if any modal panel is currently visible (supports both block and flex displays)
         const settingsModal = document.getElementById('settings-modal');
         const infoModal = document.getElementById('info-modal');
-        const isSettingsOpen = settingsModal && settingsModal.style.display === 'block';
-        const isInfoOpen = infoModal && infoModal.style.display === 'block';
+        const statsModal = document.getElementById('stats-modal');
         
-        if (isSettingsOpen || isInfoOpen) {
+        const isSettingsOpen = settingsModal && settingsModal.style.display !== 'none' && settingsModal.style.display !== '';
+        const isInfoOpen = infoModal && infoModal.style.display !== 'none' && infoModal.style.display !== '';
+        const isStatsOpen = statsModal && statsModal.style.display !== 'none' && statsModal.style.display !== '';
+        
+        if (isSettingsOpen || isInfoOpen || isStatsOpen) {
             return;
         }
 

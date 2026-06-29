@@ -41,6 +41,34 @@ export function updateScoreboard(state, translations) {
     if (streakEl) streakEl.innerText = state.correctStreak;
 }
 
+// Helper to resolve compact mode tags for the leaderboard view
+function getCompactPresetLabel(mode, lang) {
+    if (lang === 'ru') {
+        if (mode === 'occlusion') return 'Повязка';
+        if (mode === 'binocular') return '3D Баланс';
+        if (mode === 'peripheral') return '3D Перифер.';
+        if (mode === 'blitz') return 'Блиц';
+        if (mode === 'flicker') return '3D Фликкер';
+        return 'Ручной';
+    } else {
+        if (mode === 'occlusion') return 'Patching';
+        if (mode === 'binocular') return '3D Balance';
+        if (mode === 'peripheral') return '3D Capture';
+        if (mode === 'blitz') return 'Speed Blitz';
+        if (mode === 'flicker') return '3D Flicker';
+        return 'Custom';
+    }
+}
+
+// Helper to localize flash speed settings symmetrically
+function getSpeedName(speedMode, lang) {
+    if (speedMode === '100') return '100мс';
+    if (speedMode === '180') return '180мс';
+    if (speedMode === '200') return '200мс';
+    if (speedMode === '350') return '350мс';
+    return lang === 'ru' ? 'Адапт.' : 'Adapt.';
+}
+
 // Populate the local highscores leaderboard table with historical session metrics
 export function updateLeaderboard(historyList, translations, currentLang) {
     const leaderboardList = document.getElementById('leaderboard-list');
@@ -55,14 +83,39 @@ export function updateLeaderboard(historyList, translations, currentLang) {
     
     // Build and append list rows dynamically with hardware-optimal strings
     leaderboardList.innerHTML = historyList.map((item, idx) => {
-        const resultsText = currentLang === 'ru' 
-            ? `Очки: <strong>${item.score}/${item.total}</strong> | Этап: ${item.level} | Контр: ${item.contrast}%`
-            : `Score: <strong>${item.score}/${item.total}</strong> | Lvl: ${item.level} | Cont: ${item.contrast}%`;
+        // Fallbacks support for older session formats
+        const protocol = item.protocol || 'custom';
+        const speed = item.speed || 'adaptive';
+        const isAnaglyph = item.isAnaglyph !== undefined ? item.isAnaglyph : true;
+        const balance = item.balance !== undefined ? item.balance : 30;
+
+        // Row 2: Core Game Results (Score, Level, Contrast)
+        const line2Text = currentLang === 'ru' 
+            ? `Счет: <strong>${item.score}/${item.total}</strong> | Этап: ${item.level} | Контраст: ${item.contrast}%`
+            : `Score: <strong>${item.score}/${item.total}</strong> | Stage: ${item.level} | Contrast: ${item.contrast}%`;
         
+        // Row 3: Technical clinical settings (Speed, Attenuation balancer)
+        const line3Text = currentLang === 'ru'
+            ? `Экспозиция: ${getSpeedName(speed, 'ru')} | Контраст здорового глаза: ${isAnaglyph ? balance + '%' : 'Выкл'}`
+            : `Exposure: ${getSpeedName(speed, 'en')} | Strong Eye Contrast: ${isAnaglyph ? balance + '%' : 'Off'}`;
+
+        const localizedMode = getCompactPresetLabel(protocol, currentLang);
+
         return `
-            <li class="leaderboard-item">
-                <span>#${idx + 1} (${item.time || '00:00'})</span>
-                <span>${resultsText}</span>
+            <li class="leaderboard-item" style="flex-direction: column; align-items: flex-start; gap: 4px; padding-bottom: 8px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <!-- Row 1: Session Meta Header -->
+                <div style="width: 100%; display: flex; justify-content: space-between; font-weight: bold; color: rgba(255,255,255,0.4); font-size: 11px;">
+                    <span>#${idx + 1} (${item.time || '00:00'})</span>
+                    <span>${localizedMode}</span>
+                </div>
+                <!-- Row 2: Core Game Results -->
+                <div style="font-size: 13px; color: #f1f3f9; font-weight: 500; line-height: 1.35; word-wrap: break-word;">
+                    ${line2Text}
+                </div>
+                <!-- Row 3: Technical Clinical Settings -->
+                <div style="font-size: 11px; color: #a1a1aa; line-height: 1.35; word-wrap: break-word; width: 100%;">
+                    ${line3Text}
+                </div>
             </li>
         `;
     }).join('');

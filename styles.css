@@ -25,16 +25,29 @@ body {
     font-variant-numeric: tabular-nums; /* Prevent text shifting on score indicators */
     font-feature-settings: "tnum" 1; 
     display: flex;
+    align-items: center;
+    justify-content: center; /* Perfectly centers the modular app wrapper on desktop screen viewports */
+    height: 100dvh; 
+    overflow: hidden;
+    user-select: none;
+    transition: background-color 0.15s ease;
+}
+
+/* High-performance cohesive app-wrapper layout centering and limiting dimensions */
+#app-wrapper {
+    width: 100%;
+    height: 100%;
+    max-width: 480px; /* Standard mobile handheld form factor */
+    max-height: 740px; /* Optometrically optimal height to prevent foveal eye strain and fragmentation */
+    display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
-    height: 100vh;
-    height: -webkit-fill-available;
-    overflow: hidden;
-    user-select: none;
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    transition: background-color 0.15s ease;
+    padding: 8px 12px;
+    box-sizing: border-box;
+    margin: auto; /* Centers the card horizontally and vertically on desktop viewports */
+    padding-top: env(safe-area-inset-top, 8px);
+    padding-bottom: env(safe-area-inset-bottom, 8px);
 }
 
 /* Format Twemoji wrappers */
@@ -57,18 +70,18 @@ img.emoji {
 #top-bar {
     width: calc(100% - 24px);
     max-width: 900px;
-    margin: 12px auto 0 auto;
+    margin: 8px auto 0 auto; /* Compacted for vertical viewport economy on mobile devices */
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 20px;
+    padding: 10px 12px; /* Reduced horizontal padding to prevent flags overflow */
     background-color: #131a26;
     border: 1px solid #202b3d;
     border-radius: 16px; 
 }
 
 #app-title {
-    font-size: 18px;
+    font-size: 14px; /* Optimized readable font size preventing overflow */
     font-weight: 700;
     color: #3b90ff; 
     letter-spacing: 0.5px;
@@ -77,16 +90,16 @@ img.emoji {
 #top-controls {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px; /* Reduced gap to accommodate all tools on narrow viewports */
 }
 
 .control-btn {
-    font-size: 16px;
+    font-size: 13px; /* Compacted icons size */
     cursor: pointer;
     background: rgba(0, 122, 255, 0.15); 
     border-radius: 50%;
-    width: 32px;
-    height: 32px;
+    width: 28px; /* Compacted button footprint */
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -101,15 +114,15 @@ img.emoji {
 
 #lang-selector {
     display: flex;
-    gap: 6px;
+    gap: 4px; /* Tighter flag spacing */
     background: rgba(255, 255, 255, 0.15);
-    padding: 3px 6px;
-    border-radius: 16px;
+    padding: 2px 4px; /* Reduced padding */
+    border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .lang-btn {
-    font-size: 15px;
+    font-size: 13px; /* Snugger flags */
     cursor: pointer;
     opacity: 0.5;
     transition: opacity 0.2s;
@@ -119,18 +132,41 @@ img.emoji {
     opacity: 1;
 }
 
-#container {
-    position: relative;
-    width: min(70vw, 270px); 
-    height: min(70vw, 270px);
+/* Workspace elastic centering wrapper */
+#workspace {
+    flex: 1; /* Automatically absorbs 100% of the remaining vertical gap */
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 12px 0; /* Enforce strict vertical spacing to eliminate overlapping on low-height viewports */
-    flex-shrink: 0; /* Prevent vertical layout compression on short screens */
+    min-height: 0; /* Critical flexbox rule to allow internal containers shrinking */
+    overflow: hidden;
+}
+
+#container {
+    position: relative;
+    width: min(70vw, 40vh, 256px); /* Exact 1:1 pixel matching with canvas (256x256) for maximum Gabor sharpness, with adaptive vertical scaling */
+    height: min(70vw, 40vh, 256px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0; /* Centered automatically by the elastic workspace wrapper */
+    flex-shrink: 1; /* Enable fluid scaling on tight viewports */
     border-radius: 16px; /* Elegant card framing to match the rest of the rounded UI elements */
     overflow: hidden; /* Prevent canvas corners from bleeding outside the rounded container */
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15); /* Add visual depth and isolate the training zone */
+}
+
+/* Fixed bottom controls dock containing scoreboard and button panel close together */
+#bottom-dock {
+    flex: 0 0 auto; /* Height is completely fixed, never squeezed or clipped */
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px; /* Slightly increased gap for spacious, elegant vertical separation of the stats card */
+    margin-bottom: 8px; /* Symmetric bottom margin matching top-bar, bypassing browser env desktop fallback bugs */
 }
 
 canvas {
@@ -151,21 +187,22 @@ canvas {
 }
 
 #score-board {
-    width: 90%;
+    width: calc(100% - 24px);
     max-width: 360px;
     background: rgba(19, 26, 38, 0.85);
-    padding: 10px 14px;
+    padding: 8px 14px; /* Compacted padding */
     border-radius: 16px; 
     border: 1px solid rgba(255, 255, 255, 0.08);
-    margin-bottom: 6px;
+    margin: 0;
+    flex-shrink: 0;
 }
 
 #score-text {
-    font-size: 15px;
+    font-size: 13px; /* Enhanced density to prevent double-line wraps on narrow mobile phones */
     color: #f1f3f9;
-    font-weight: 600;
+    font-weight: 700;
     text-align: center;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 #indicators {
@@ -175,10 +212,10 @@ canvas {
 }
 
 .badge {
-    font-size: 11px;
+    font-size: 10px; /* Snugger typography for tight horizontal alignments */
     color: #3b90ff;
     background: rgba(0, 122, 255, 0.12);
-    padding: 3px 8px;
+    padding: 2px 6px; /* Tight padding to prevent wraps on 320px screens */
     border-radius: 10px; 
     font-weight: 600;
     border: 1px solid rgba(0, 122, 255, 0.15);
@@ -187,18 +224,18 @@ canvas {
 #leaderboard {
     width: 100%;
     max-width: 100%;
-    background: rgba(11, 15, 24, 0.5); 
+    background: rgba(11, 15, 24, 0.3); 
     border-radius: 12px;
-    padding: 6px 10px; /* Reduced padding for vertical economy */
-    margin-top: 2px;
-    font-size: 11px;
+    padding: 10px 14px;
+    margin-top: 15px;
+    font-size: 13px;
     color: #cbd5e1;
     border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 #leaderboard h3 {
     margin: 0 0 4px 0;
-    font-size: 11px;
+    font-size: 12px;
     text-align: center;
     color: rgba(255, 255, 255, 0.7);
     text-transform: uppercase;
@@ -211,10 +248,10 @@ canvas {
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    max-height: 86px; /* Strict height limit to fit 5 rows on mobile  */
-    overflow-y: auto; /* Enable internal scrolling if data overflows */
-    scrollbar-width: none; /* Hide ugly scrollbars on Firefox */
+    gap: 6px;
+    height: 100%;
+    overflow-y: auto;
+    scrollbar-width: none;
 }
 
 #leaderboard-list::-webkit-scrollbar {
@@ -225,7 +262,8 @@ canvas {
     display: flex;
     justify-content: space-between;
     border-bottom: 1px solid rgba(255,255,255,0.05);
-    padding-bottom: 2px;
+    padding-bottom: 6px;
+    font-size: 13px; /* Enhanced readability inside the dedicated modal */
 }
 
 .leaderboard-item:last-child {
@@ -235,23 +273,52 @@ canvas {
 #controls-layout {
     width: calc(100% - 24px);
     max-width: 900px;
-    margin: 0 auto 8px auto; /* Tighter bottom margin */
+    margin: 0; /* Managed by the bottom-dock parent */
     display: flex;
     flex-direction: column;
     background: #131a26;
-    padding: 12px 16px 14px 16px; /* Reduced vertical padding */
-    gap: 8px; /* Tighter spacing between buttons */
+    padding: 14px 16px 16px 16px; /* Expanded vertical padding for luxurious breathing room */
+    gap: 10px; /* Expanded gap to prevent button shadow overlapping and cramped visual clipping */
     border: 1px solid #202b3d;
     border-radius: 16px; 
+    flex-shrink: 0;
 }
 
 #mode-status-bar {
     display: flex;
     justify-content: space-between;
+    align-items: center;
+    gap: 16px; /* Safe margin preventing text elements collision */
     padding: 0 4px;
-    font-size: 12px;
+    font-size: 11px; /* Compacted text */
     color: #cbd5e1;
     font-weight: 500;
+    width: 100%;
+}
+
+/* Left side container holding Mode: [Active Mode] */
+#mode-status-bar > span:first-child {
+    display: flex;
+    min-width: 0; /* Critical flexbox rule allowing container to shrink dynamically */
+    flex: 1;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+#val-active-mode {
+    display: inline-block;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Smart dynamic truncation only when compressed on narrow viewports */
+    vertical-align: bottom;
+}
+
+/* Right side container holding Speed: [Active Speed] */
+#mode-status-bar > span:last-child {
+    flex: 0 0 auto; /* Locked fixed-width, never squeezed */
+    white-space: nowrap;
 }
 
 #btn-start {
@@ -280,8 +347,8 @@ canvas {
 
 .action-btn {
     flex: 1;
-    height: min(12vh, 72px); /* Tighter height to accommodate data rows on mobile */
-    font-size: 16px;
+    height: min(10vh, 60px); /* Optimized compact height to prevent out-of-screen overflow on smaller viewports */
+    font-size: 15px;
     font-weight: 700;
     color: #fff;
     background: linear-gradient(135deg, #242b35, #1a1f26);
@@ -291,7 +358,7 @@ canvas {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 4px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     cursor: pointer;
     transition: transform 0.1s;
@@ -309,7 +376,7 @@ canvas {
 
 /* Modal window styling rules */
 .modal {
-    display: none;
+    display: none; /* Controlled dynamically by JS (toggled between 'none' and 'flex') */
     position: fixed;
     top: 0;
     left: 0;
@@ -320,16 +387,53 @@ canvas {
     padding: 20px;
     box-sizing: border-box;
     overflow-y: auto;
+    /* Flexbox overlay centering to perfectly position modal cards vertically and horizontally */
+    align-items: center;
+    justify-content: center;
 }
 
 .modal-content {
     background: #1c2331;
     border-radius: 18px; 
-    padding: 24px;
-    width: 94%;
+    padding: 24px; /* Luxurious inner padding */
+    width: 90%;
     max-width: 680px; 
-    margin: 20px auto;
+    height: min(82dvh, 760px); /* Proportional height: roomy card on desktop, safely scales on mobile */
+    margin: auto; /* Clean vertical and horizontal centering */
     border: 1px solid #2b354a;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45); /* High-end depth shadow */
+}
+
+/* Scrollable body wrapper separating fields from fixed header and footer */
+.modal-scroll-body {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 16px; /* Added padding to prevent input fields from touching the scrollbar track */
+    margin-bottom: 12px;
+    scrollbar-width: thin;
+    scrollbar-color: #2b354a rgba(255, 255, 255, 0.02); /* Custom scrollbar color for Firefox */
+}
+
+/* Custom ultra-thin elegant scrollbar inside the modal scroll body for Webkit browsers */
+.modal-scroll-body::-webkit-scrollbar {
+    width: 6px; /* High-end ultra-thin footprint */
+}
+
+.modal-scroll-body::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+}
+
+.modal-scroll-body::-webkit-scrollbar-thumb {
+    background: #2b354a; /* Slate-blue matching outer borders */
+    border-radius: 10px;
+    transition: background 0.2s;
+}
+
+.modal-scroll-body::-webkit-scrollbar-thumb:hover {
+    background: #3b90ff; /* Highlights blue on hover */
 }
 
 .modal-content h2 {
@@ -411,8 +515,7 @@ canvas {
 
 /* Descriptive granular help text tags */
 .settings-help {
-    font-size: 11px;
-    color: #8e8e93; 
+    font-size: 11px;    color: #8e8e93; 
     line-height: 1.35;
     margin-top: 4px;
     display: block;
@@ -469,4 +572,86 @@ canvas {
 
 .error-shake {
     animation: errorShake 0.25s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* ==========================================================================
+   Bespoke Desktop and Tablet Layout Scaling (Viewport Width >= 768px)
+   ========================================================================== */
+@media (min-width: 768px) {
+    #app-wrapper {
+        max-width: 560px; /* Spacious, custom-designed desktop clinical container card */
+        max-height: 880px;
+        padding: 20px 20px;
+    }
+
+    #container {
+        width: min(75vw, 75vh, 320px); /* Medically prominent 320px maximum size for optimal foveal stimulation at desktop distances */
+        height: min(75vw, 75vh, 320px);
+    }
+
+    #score-board {
+        max-width: 880px; /* Symmetrical expanded layout */
+    }
+
+    #controls-layout {
+        max-width: 880px; /* Symmetrical expanded layout */
+    }
+
+    #bottom-dock {
+        gap: 14px; /* Luxurious vertical separation */
+    }
+}
+
+/* ==========================================================================
+   Collapsible Accordion Cards for Settings Modal (Clean Clinical UX)
+   ========================================================================== */
+.accordion-header {
+    background: #131a26;
+    border: 1px solid #2b354a;
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin-top: 10px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    font-size: 13px;
+    color: #3b90ff;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease, opacity 0.2s ease;
+}
+
+.accordion-header:hover {
+    background: #1a233a;
+    border-color: #3b90ff;
+}
+
+.accordion-arrow {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    font-family: monospace;
+}
+
+.accordion-content {
+    display: none; /* Collapsed by default */
+    padding: 10px 14px;
+    background: rgba(19, 26, 38, 0.4);
+    border-left: 1px dashed #2b354a;
+    border-right: 1px dashed #2b354a;
+    border-bottom: 1px dashed #2b354a;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    margin-bottom: 10px;
+    animation: fadeIn 0.15s ease-out;
+}
+
+.accordion-content.open {
+    display: block; /* Expanded state */
+}
+
+/* Sub-row dynamic unfolding animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
 }

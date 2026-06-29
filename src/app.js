@@ -8,80 +8,29 @@
 
 // Import core dependencies
 import { Store } from './store.js';
-import { renderGabor, drawFusionLockFrame, drawFusionTestPattern } from './engine/gabor.js';
-import { initAudio, playCue, playSuccess, playError } from './engine/audio.js';
+import { drawFusionTestPattern } from './engine/gabor.js';
+import { initAudio } from './engine/audio.js';
 import { updateScoreboard, updateLeaderboard, drawIdleState, updateStatusBar } from './ui/screen.js';
 import { initModals } from './ui/modal.js';
-import { bindInputControls } from './ui/controls.js'; // FIXED: Added missing input binder import
+import { bindInputControls } from './ui/controls.js';
+import { TrialController, TrialState } from './controller/trial.js';
+import { SettingsController } from './controller/settings.js';
 
 // Global cache for the active localization dictionary
 let activeTranslations = {};
 
-// Ephemeral runtime timer and animation references
-let flickerIntervalId = null;
-let flankerAnimationId = null;
-let flankerPhaseOffset = 0;
-let nextFlashTimeoutId = null;
-let stimulusHideTimeoutId = null; // Guard to track and cancel pending stimulus hide signals
+// References to our core OOP controllers instances
+let trialController = null;
+let settingsController = null;
 
-// Temporary coordinates cache for the active trial stimulus
-let currentAngleDeg = 0; 
-let lastRandomFreq = 0.08;
-let lastRandomSigma = 40;
-let lastRandomAspectRatio = 1.0; // Dynamic Gabor aspect ratio cache
-let lastOffsetX = 0;
-let lastOffsetY = 0;
-let isAnaglyphTestActive = false;
-
-// Frequency and sigma ranges calibrated for organic, mathematically smooth progression boundaries
-const levelFreqRanges = {
-    1: { min: 0.03, max: 0.05 }, // Stage 1 (Introductory): low cpd, fat 2-3 stripe Gabor support
-    2: { min: 0.05, max: 0.08 }, // Stage 2 (Early Intermediate): perfect overlapping buffer with Stage 1
-    3: { min: 0.08, max: 0.12 }, // Stage 3 (Intermediate): standard therapeutic spatial frequencies
-    4: { min: 0.12, max: 0.17 }, // Stage 4 (Late Intermediate): thin line density limits
-    5: { min: 0.17, max: 0.24 }  // Stage 5 (Extreme): ultra-fine foveal details targeting V1 simple cells
-};
-
-const levelSigmaRanges = {
-    1: { min: 40, max: 50 }, // Balanced size targeting large low-frequency receptive fields
-    2: { min: 32, max: 40 },
-    3: { min: 24, max: 31 },
-    4: { min: 18, max: 23 },
-    5: { min: 12, max: 17 }  // Small foveal aperture preventing peripheral ocular compensations
-};
-
-// DOM Input References
-const selectPresetMode = document.getElementById('select-preset-mode');
-const selectStartLevel = document.getElementById('select-start-level');
-const selectAutonext = document.getElementById('select-autonext');
-const selectSessionLimit = document.getElementById('select-session-limit');
-const selectFlashDuration = document.getElementById('select-flash-duration');
-
-const chkStageAdvance = document.getElementById('chk-stage-advance');
-const chkPeripheral = document.getElementById('chk-peripheral');
-const chkCrowding = document.getElementById('chk-crowding');
-const chkOrthogonal = document.getElementById('chk-orthogonal-flankers');
-const chkDynamic = document.getElementById('chk-dynamic-flankers');
-const chkLowContrast = document.getElementById('chk-low-contrast');
-const chkWideVariance = document.getElementById('chk-wide-variance');
-const chkStatic = document.getElementById('chk-static');
-const chkAnaglyph = document.getElementById('chk-anaglyph');
-const chkFlicker = document.getElementById('chk-flicker');
-const chkFusionLock = document.getElementById('chk-fusion-lock');
-
-const selectRedSide = document.getElementById('select-red-side');
-const selectLazySide = document.getElementById('select-lazy-side');
-const rangeStrongAttenuation = document.getElementById('range-strong-attenuation');
-const valStrongAttenuation = document.getElementById('val-strong-attenuation');
-const btnFusionTest = document.getElementById('btn-fusion-test');
-const anaglyphSettingsPanel = document.getElementById('anaglyph-settings-panel');
-
+// Primary DOM References for view rendering
 const canvas = document.getElementById('gaborCanvas');
 const ctx = canvas.getContext('2d');
 const cross = document.getElementById('cross');
 const flashOverlay = document.getElementById('flash-overlay');
 const container = document.getElementById('container');
 const btnStart = document.getElementById('btn-start');
+const btnFusionTest = document.getElementById('btn-fusion-test');
 
 // Asynchronously load translations from external static JSON bundles
 export async function setLanguage(lang) {
@@ -192,6 +141,8 @@ export async function setLanguage(lang) {
     if (document.getElementById('lbl-setting-fusion-lock')) document.getElementById('lbl-setting-fusion-lock').innerText = t.lblSettingFusionLock;
     if (document.getElementById('lbl-setting-orthogonal')) document.getElementById('lbl-setting-orthogonal').innerText = t.lblSettingOrthogonal;
     if (document.getElementById('lbl-setting-dynamic')) document.getElementById('lbl-setting-dynamic').innerText = t.lblSettingDynamic;
+    if (document.getElementById('lbl-setting-left-color')) document.getElementById('lbl-setting-left-color').innerText = t.lblSettingLeftColor;
+    if (document.getElementById('lbl-setting-right-color')) document.getElementById('lbl-setting-right-color').innerText = t.lblSettingRightColor;
     if (btnFusionTest) btnFusionTest.innerText = t.btnFusionTestLabel;
 
     const optRedLeft = document.getElementById('opt-red-left');
@@ -211,561 +162,28 @@ export async function setLanguage(lang) {
     if (document.getElementById('lbl-active-mode')) document.getElementById('lbl-active-mode').innerText = t.lblActiveMode;
     if (document.getElementById('lbl-active-speed')) document.getElementById('lbl-active-speed').innerText = t.lblActiveSpeed;
 
+    // Localize Statistics Title
+    if (document.getElementById('stats-title')) {
+        document.getElementById('stats-title').innerText = t.statsTitle;
+    }
+
     // Trigger reactive View panel redraws
     updateScoreboard(Store.state, activeTranslations);
     updateStatusBar(Store.state, activeTranslations);
-    updateLeaderboard(Store.getHistory(), activeTranslations, lang);
     
     // Parse vector emojis using Twemoji loader
     if (window.twemoji) twemoji.parse(document.body);
 }
 
-// Read settings values from the HTML Form inputs and sync them to the Store
-function syncStateFromUI() {
-    const s = Store.state;
-    
-    if (chkStageAdvance) s.allowStageAdvance = chkStageAdvance.checked;
-    if (selectFlashDuration) s.flashDurationMode = selectFlashDuration.value;
-    if (chkPeripheral) s.isPeripheralEnabled = chkPeripheral.checked;
-    if (chkCrowding) s.isCrowdingEnabled = chkCrowding.checked;
-    if (chkOrthogonal) s.isOrthogonalFlankersEnabled = chkOrthogonal.checked;
-    if (chkDynamic) s.isDynamicFlankersEnabled = chkDynamic.checked;
-    if (chkLowContrast) s.allowLowContrast = chkLowContrast.checked;
-    if (chkWideVariance) s.allowWideVariance = chkWideVariance.checked;
-    if (chkStatic) s.isStaticEnabled = chkStatic.checked;
-    if (chkAnaglyph) s.isAnaglyphEnabled = chkAnaglyph.checked;
-    if (chkFlicker) s.isFlickerEnabled = chkFlicker.checked;
-    if (chkFusionLock) s.isFusionLockEnabled = chkFusionLock.checked;
-
-    if (selectRedSide) s.redEyeSide = selectRedSide.value;
-    if (selectLazySide) s.lazyEyeSide = selectLazySide.value;
-    if (rangeStrongAttenuation) s.strongEyeContrastFactor = parseFloat(rangeStrongAttenuation.value) / 100;
-    if (selectStartLevel) s.currentLevel = parseInt(selectStartLevel.value);
-    if (selectAutonext) s.autoAdvance = (selectAutonext.value === "true");
-    if (selectSessionLimit) s.sessionLimit = parseInt(selectSessionLimit.value);
-
-    // Auto-detect and sync matched macro presets
-    s.presetMode = Store.detectMatchingPreset();
-    if (selectPresetMode) selectPresetMode.value = s.presetMode;
-
-    if (anaglyphSettingsPanel) {
-        anaglyphSettingsPanel.style.display = s.isAnaglyphEnabled ? 'block' : 'none';
-    }
-
-    updateStatusBar(s, activeTranslations);
-}
-
-// Write settings values from the Store back to the HTML Form inputs
-function updatePresetUI() {
-    const s = Store.state;
-    
-    if (s.presetMode !== 'custom') {
-        Store.applyPresetTemplate(s.presetMode);
-    }
-
-    if (chkStageAdvance) chkStageAdvance.checked = s.allowStageAdvance;
-    if (selectFlashDuration) selectFlashDuration.value = s.flashDurationMode;
-    if (chkPeripheral) chkPeripheral.checked = s.isPeripheralEnabled;
-    if (chkCrowding) chkCrowding.checked = s.isCrowdingEnabled;
-    if (chkStatic) chkStatic.checked = s.isStaticEnabled;
-    if (chkAnaglyph) chkAnaglyph.checked = s.isAnaglyphEnabled;
-    if (chkWideVariance) chkWideVariance.checked = s.allowWideVariance;
-    if (chkFlicker) chkFlicker.checked = s.isFlickerEnabled;
-    if (chkFusionLock) chkFusionLock.checked = s.isFusionLockEnabled;
-    if (chkOrthogonal) chkOrthogonal.checked = s.isOrthogonalFlankersEnabled;
-    if (chkDynamic) chkDynamic.checked = s.isDynamicFlankersEnabled;
-
-    if (selectStartLevel) selectStartLevel.value = s.currentLevel;
-    if (selectAutonext) selectAutonext.value = s.autoAdvance ? "true" : "false";
-    if (selectSessionLimit) selectSessionLimit.value = s.sessionLimit;
-    if (selectRedSide) selectRedSide.value = s.redEyeSide;
-    if (selectLazySide) selectLazySide.value = s.lazyEyeSide;
-    
-    if (rangeStrongAttenuation) {
-        rangeStrongAttenuation.value = Math.round(s.strongEyeContrastFactor * 100);
-        if (valStrongAttenuation) valStrongAttenuation.innerText = Math.round(s.strongEyeContrastFactor * 100) + '%';
-    }
-
-    if (anaglyphSettingsPanel) {
-        anaglyphSettingsPanel.style.display = s.isAnaglyphEnabled ? 'block' : 'none';
-    }
-
-    updateStatusBar(s, activeTranslations);
-}
-
-// Start continuous high-performance phase drifting animation loop for moving flankers
-function startFlankerAnimation() {
-    if (flankerAnimationId) cancelAnimationFrame(flankerAnimationId);
-    
-    function animate() {
-        flankerPhaseOffset += 0.12; 
-        renderGabor(canvas, ctx, Store.state, currentAngleDeg, Store.state.autoContrast, lastRandomFreq, lastRandomSigma, lastOffsetX, lastOffsetY, flankerPhaseOffset, lastRandomAspectRatio);
-        flankerAnimationId = requestAnimationFrame(animate);
-    }
-    
-    flankerAnimationId = requestAnimationFrame(animate);
-}
-
-// Stop the running phase drift animation and reset phase variables safely
-function stopFlankerAnimation() {
-    // Forcefully cancel any existing animation frames to prevent "zombie loops"
-    if (flankerAnimationId !== null) {
-        cancelAnimationFrame(flankerAnimationId);
-        flankerAnimationId = null;
-    }
-    flankerPhaseOffset = 0;
-}
-
-// Hot-reload settings and clean up active loops on re-flash click
-function reFlashCurrentGabor() {
-    const t = activeTranslations;
-    btnStart.innerText = "...";
-
-    // Force dynamic hot-sync and clear older cycles to avoid rendering conflicts
-    if (flickerIntervalId) {
-        clearInterval(flickerIntervalId);
-        flickerIntervalId = null;
-    }
-    stopFlankerAnimation();
-    syncStateFromUI();
-
-    const s = Store.state;
-
-    if (s.isDynamicFlankersEnabled && s.isCrowdingEnabled) {
-        startFlankerAnimation();
-    } else {
-        renderGabor(canvas, ctx, s, currentAngleDeg, s.autoContrast, lastRandomFreq, lastRandomSigma, lastOffsetX, lastOffsetY, flankerPhaseOffset, lastRandomAspectRatio);
-    }
-
-    let flashDuration = 200;
-    if (s.flashDurationMode === '100') {
-        flashDuration = 100;
-    } else if (s.flashDurationMode === '180') {
-        flashDuration = 180;
-    } else if (s.flashDurationMode === '200') {
-        flashDuration = 200;
-    } else if (s.flashDurationMode === '350') {
-        flashDuration = 350;
-    } else {
-        // Adaptive temporal pacing scaling down to prevent saccadic ocular cheats at high stages
-        if (s.currentLevel === 1) flashDuration = 240;
-        else if (s.currentLevel === 2) flashDuration = 200;
-        else if (s.currentLevel === 3) flashDuration = 170;
-        else if (s.currentLevel === 4) flashDuration = 140;
-        else if (s.currentLevel === 5) flashDuration = 110;
-    }
-
-    cross.style.display = 'none';
-    canvas.style.display = 'block';
-
-    if (!s.isStaticEnabled) {
-        // Clear any previous pending hide timeout before starting a new one
-        if (stimulusHideTimeoutId) clearTimeout(stimulusHideTimeoutId);
-        
-        stimulusHideTimeoutId = setTimeout(() => {
-            stopFlankerAnimation();
-            drawIdleState(canvas, ctx, s.isFusionLockEnabled);
-            cross.style.display = 'block';
-            btnStart.innerText = t.reflashBtn;
-            stimulusHideTimeoutId = null;
-        }, flashDuration);
-    } else {
-        if (s.isFlickerEnabled) {
-            let flickerState = true;
-            flickerIntervalId = setInterval(() => {
-                flickerState = !flickerState;
-                if (flickerState) {
-                    renderGabor(canvas, ctx, s, currentAngleDeg, s.autoContrast, lastRandomFreq, lastRandomSigma, lastOffsetX, lastOffsetY, flankerPhaseOffset, lastRandomAspectRatio);
-                } else {
-                    drawIdleState(canvas, ctx, s.isFusionLockEnabled);
-                }
-            }, 50); 
-        }
-        btnStart.innerText = t.reflashBtn;
-    }
-}
-
-// Play acoustic pre-cue click and schedule stimulus flash after 180ms
+// We delegate high-frequency cycles to the active trialController instance
 function runFlash() {
-    // Automatically deactivate and clear calibration test card when starting a new flash
-    if (isAnaglyphTestActive) {
-        isAnaglyphTestActive = false;
-        if (btnFusionTest) {
-            btnFusionTest.style.background = '#1a233a';
-            btnFusionTest.style.color = '#3b90ff';
-        }
-    }
+    // Ultimate hard lock: completely ignore any space/enter key triggers while calibration test is active
+    if (trialController.isAnaglyphTestActive) return;
 
     if (Store.state.isWaitingForAnswer) {
-        playCue(Store.state.isMuted);
-        setTimeout(reFlashCurrentGabor, 180);
-        return;
-    }
-
-    if (nextFlashTimeoutId) {
-        clearTimeout(nextFlashTimeoutId);
-        nextFlashTimeoutId = null;
-    }
-    
-    btnStart.innerText = "...";
-    playCue(Store.state.isMuted);
-    setTimeout(executeGaborFlash, 180);
-}
-
-// Generate mathematical Gabor coordinates and execute visual flash
-function executeGaborFlash() {
-    const t = activeTranslations;
-    const s = Store.state;
-
-    // Generate non-trivial angle coordinates to ensure clear visual resolution challenges
-    do {
-        currentAngleDeg = Math.floor(Math.random() * 160) - 80;
-    } while (Math.abs(currentAngleDeg) < 15);
-    
-    // Push settings variables to indicators scoreboard
-    document.getElementById('current-contrast').innerText = Math.round(s.autoContrast * 100);
-    document.getElementById('current-level').innerText = s.currentLevel;
-    document.getElementById('current-streak').innerText = s.correctStreak;
-    
-    // Scale central fixation cross size dynamically according to active stage depth
-    let crossSize = 36;
-    if (s.currentLevel === 1) crossSize = 36;
-    else if (s.currentLevel === 2) crossSize = 28;
-    else if (s.currentLevel === 3) crossSize = 22;
-    else if (s.currentLevel === 4) crossSize = 16;
-    else if (s.currentLevel === 5) crossSize = 12;
-    cross.style.fontSize = crossSize + 'px';
-    
-    // Load and randomize line density configurations inside safe levels ranges
-    const freqRange = levelFreqRanges[s.currentLevel] || levelFreqRanges[1];
-    lastRandomFreq = Math.random() * (freqRange.max - freqRange.min) + freqRange.min;
-    
-    const sigmaRange = levelSigmaRanges[s.currentLevel] || levelSigmaRanges[1];
-    lastRandomSigma = Math.random() * (sigmaRange.max - sigmaRange.min) + sigmaRange.min;
-
-    lastRandomAspectRatio = 1.0; // Reset to perfect circular symmetry by default
-    if (s.allowWideVariance) {
-        const randType = Math.random();
-        if (randType < 0.35) {
-            lastRandomFreq = Math.random() * (0.04 - 0.03) + 0.03;
-            lastRandomSigma = Math.random() * (45 - 35) + 35;
-        } else if (randType < 0.50) {
-            lastRandomFreq = Math.random() * (0.16 - 0.12) + 0.12;
-            lastRandomSigma = Math.random() * (40 - 32) + 32;
-        }
-        // Synthesize dynamic Gabor aspect ratio on each flash under shape variance protocols
-        lastRandomAspectRatio = Math.random() * (2.0 - 0.5) + 0.5;
-    }
-
-    // Apply spatial summation contrast-to-size coupling rule
-    const summationThreshold = 0.12;
-    if (s.autoContrast < summationThreshold) {
-        const summationMultiplier = 1.0 + (summationThreshold - s.autoContrast) * 3.0;
-        lastRandomSigma = lastRandomSigma * summationMultiplier;
-    }
-    
-    // Apply optional eccentric foveal shift
-    lastOffsetX = 0;
-    lastOffsetY = 0;
-    if (s.isPeripheralEnabled) {
-        const angle = Math.random() * 2 * Math.PI;
-        const distance = 55; 
-        lastOffsetX = Math.cos(angle) * distance;
-        lastOffsetY = Math.sin(angle) * distance;
-    }
-
-    // Render visual Gabor buffer with dynamic shape variance support
-    renderGabor(canvas, ctx, s, currentAngleDeg, s.autoContrast, lastRandomFreq, lastRandomSigma, lastOffsetX, lastOffsetY, flankerPhaseOffset, lastRandomAspectRatio);
-    
-    let flashDuration = 200;
-    if (s.flashDurationMode === '100') {
-        flashDuration = 100;
-    } else if (s.flashDurationMode === '180') {
-        flashDuration = 180;
-    } else if (s.flashDurationMode === '200') {
-        flashDuration = 200;
-    } else if (s.flashDurationMode === '350') {
-        flashDuration = 350;
+        trialController.reFlashCurrentGabor();
     } else {
-        // Adaptive temporal pacing scaling down to prevent saccadic ocular cheats at high stages
-        if (s.currentLevel === 1) flashDuration = 240;
-        else if (s.currentLevel === 2) flashDuration = 200;
-        else if (s.currentLevel === 3) flashDuration = 170;
-        else if (s.currentLevel === 4) flashDuration = 140;
-        else if (s.currentLevel === 5) flashDuration = 110;
-    }
-
-    updateStatusBar(s, activeTranslations);
-    
-    cross.style.display = 'none';
-    canvas.style.display = 'block';
-    s.isWaitingForAnswer = true;
-
-    if (s.isDynamicFlankersEnabled && s.isCrowdingEnabled) {
-        startFlankerAnimation();
-    }
-
-    if (!s.isStaticEnabled) {
-        setTimeout(() => {
-            stopFlankerAnimation();
-            drawIdleState(canvas, ctx, s.isFusionLockEnabled);
-            cross.style.display = 'block';
-            btnStart.innerText = t.reflashBtn;
-        }, flashDuration);
-    } else {
-        if (flickerIntervalId) {
-            clearInterval(flickerIntervalId);
-            flickerIntervalId = null;
-        }
-        if (s.isFlickerEnabled) {
-            let flickerState = true;
-            flickerIntervalId = setInterval(() => {
-                flickerState = !flickerState;
-                if (flickerState) {
-                    renderGabor(canvas, ctx, s, currentAngleDeg, s.autoContrast, lastRandomFreq, lastRandomSigma, lastOffsetX, lastOffsetY, flankerPhaseOffset, lastRandomAspectRatio);
-                } else {
-                    drawIdleState(canvas, ctx, s.isFusionLockEnabled);
-                }
-            }, 50); 
-        }
-        btnStart.innerText = t.reflashBtn;
-    }
-}
-
-// Play milestone victory sequence upon session limit completions
-function triggerMilestoneFlash(callback) {
-    let count = 0;
-    const interval = setInterval(() => {
-        const isEven = count % 2 === 0;
-        if (isEven) {
-            flashOverlay.classList.add('flash-success');
-            container.classList.add('success-pulse');
-        } else {
-            flashOverlay.classList.remove('flash-success');
-            container.classList.remove('success-pulse');
-        }
-        count++;
-        if (count >= 6) {
-            clearInterval(interval);
-            flashOverlay.classList.remove('flash-success');
-            container.classList.remove('success-pulse');
-            if (callback) callback();
-        }
-    }, 120);
-}
-
-// Evaluate user answer and update Model & View states accordingly
-function checkAnswer(userChoice) {
-    const s = Store.state;
-    if (!s.isWaitingForAnswer) return;
-    s.isWaitingForAnswer = false; 
-    
-    // Safety: Instantly kill any pending stimulus hide or flicker intervals
-    if (stimulusHideTimeoutId) {
-        clearTimeout(stimulusHideTimeoutId);
-        stimulusHideTimeoutId = null;
-    }
-    if (flickerIntervalId) {
-        clearInterval(flickerIntervalId);
-        flickerIntervalId = null;
-    }
-    
-    stopFlankerAnimation();
-    cross.style.display = 'block';
-
-    if (nextFlashTimeoutId) {
-        clearTimeout(nextFlashTimeoutId);
-        nextFlashTimeoutId = null;
-    }
-
-    const correctAnswer = currentAngleDeg < 0 ? 'left' : 'right';
-    const isCorrect = (userChoice === correctAnswer);
-    
-    // Cancel active hardware animations and force reflow
-    container.classList.remove('success-pulse', 'error-shake');
-    flashOverlay.classList.remove('flash-success', 'flash-error');
-    void container.offsetWidth;
-    void flashOverlay.offsetWidth;
-
-    // Mutate state inside Store Model
-    Store.registerResult(isCorrect);
-
-    if (isCorrect) {
-        playSuccess(s.isMuted);
-        
-        // Trigger hardware-accelerated dopamine success feedback (Teal chromatic wave + expansion)
-        flashOverlay.classList.add('flash-success');
-        container.classList.add('success-pulse');
-    } else {
-        playError(s.isMuted);
-        
-        // Trigger hardware-accelerated tactile friction error feedback (Burgundy chromatic wave + vibration)
-        flashOverlay.classList.add('flash-error');
-        container.classList.add('error-shake');
-    }
-
-    // Instantly clear Gabor stimulus post-decision to preserve foveal gray state
-    drawIdleState(canvas, ctx, s.isFusionLockEnabled);
-
-    // Revert hardware flash overlays back to neutral alpha
-    setTimeout(() => { 
-        flashOverlay.classList.remove('flash-success', 'flash-error');
-        container.classList.remove('success-pulse', 'error-shake');
-    }, 300);
-    
-    // Update scoreboards and write to local leaderboard history
-    updateScoreboard(s, activeTranslations);
-    Store.saveSession();
-    updateLeaderboard(Store.getHistory(), activeTranslations, s.currentLang);
-
-    // Check for elite cortical saturation milestone (Stage 5 mastery at minimum contrast limit)
-    const minContrastLimit = s.allowLowContrast ? 0.01 : 0.05;
-    if (s.currentLevel === 5 && s.autoContrast <= minContrastLimit && s.correctStreak >= 12) {
-        setTimeout(() => {
-            triggerMilestoneFlash(() => {
-                alert(activeTranslations.sessionMastered);
-            });
-        }, 400);
-        return; // Intercept further gameplay and prevent auto-advance
-    }
-
-    // Check session limit thresholds
-    if (s.sessionLimit > 0 && s.total >= s.sessionLimit) {
-        setTimeout(() => {
-            triggerMilestoneFlash(() => {
-                alert(activeTranslations.sessionCompleted.replace("{limit}", s.sessionLimit));
-            });
-        }, 400);
-        return;
-    }
-
-    if (s.autoAdvance) {
-        btnStart.innerText = "...";
-        nextFlashTimeoutId = setTimeout(runFlash, 900);
-    } else {
-        btnStart.innerText = activeTranslations.nextBtn;
-    }
-}
-
-// Map settings panel form inputs to the DOM events
-function bindSettingsInteractions() {
-    if (selectPresetMode) {
-        selectPresetMode.addEventListener('change', () => {
-            Store.state.presetMode = selectPresetMode.value;
-            updatePresetUI();
-        });
-    }
-
-    if (chkPeripheral) {
-        chkPeripheral.addEventListener('change', () => {
-            if (chkPeripheral.checked) {
-                if (chkCrowding) chkCrowding.checked = false;
-                if (chkOrthogonal) chkOrthogonal.checked = false;
-                if (chkDynamic) chkDynamic.checked = false;
-            }
-            syncStateFromUI();
-        });
-    }
-
-    if (chkCrowding) {
-        chkCrowding.addEventListener('change', () => {
-            if (chkCrowding.checked) {
-                if (chkPeripheral) chkPeripheral.checked = false;
-            } else {
-                if (chkOrthogonal) chkOrthogonal.checked = false;
-                if (chkDynamic) chkDynamic.checked = false;
-            }
-            syncStateFromUI();
-        });
-    }
-
-    if (chkOrthogonal) {
-        chkOrthogonal.addEventListener('change', () => {
-            if (chkOrthogonal.checked) {
-                if (chkCrowding) chkCrowding.checked = true;
-                if (chkPeripheral) chkPeripheral.checked = false;
-            }
-            syncStateFromUI();
-        });
-    }
-
-    if (chkDynamic) {
-        chkDynamic.addEventListener('change', () => {
-            if (chkDynamic.checked) {
-                if (chkCrowding) chkCrowding.checked = true;
-                if (chkPeripheral) chkPeripheral.checked = false;
-            }
-            syncStateFromUI();
-        });
-    }
-
-    if (chkAnaglyph) {
-        chkAnaglyph.addEventListener('change', () => {
-            Store.state.isAnaglyphEnabled = chkAnaglyph.checked;
-            syncStateFromUI();
-        });
-    }
-
-    if (rangeStrongAttenuation) {
-        rangeStrongAttenuation.addEventListener('input', () => {
-            if (valStrongAttenuation) {
-                valStrongAttenuation.innerText = rangeStrongAttenuation.value + '%';
-            }
-            syncStateFromUI();
-        });
-    }
-
-    if (chkStatic) {
-        chkStatic.addEventListener('change', () => {
-            Store.state.isStaticEnabled = chkStatic.checked;
-            if (!Store.state.isStaticEnabled) {
-                if (chkFlicker) chkFlicker.checked = false;
-            }
-            syncStateFromUI();
-        });
-    }
-
-    if (chkFlicker) {
-        chkFlicker.addEventListener('change', () => {
-            if (chkFlicker.checked) {
-                if (chkStatic) chkStatic.checked = true;
-            }
-            syncStateFromUI();
-        });
-    }
-
-    // Connect global form elements change listeners
-    const inputsToSync = [
-        chkStageAdvance, selectFlashDuration, chkLowContrast,
-        chkWideVariance, chkAnaglyph, selectRedSide, selectLazySide,
-        rangeStrongAttenuation, selectStartLevel, selectAutonext, selectSessionLimit, 
-        chkFusionLock
-    ];
-    inputsToSync.forEach(input => {
-        if (input) input.addEventListener('change', syncStateFromUI);
-    });
-
-    // Diagnostic calibration test pattern toggle
-    if (btnFusionTest) {
-        btnFusionTest.addEventListener('click', () => {
-            isAnaglyphTestActive = !isAnaglyphTestActive;
-            if (isAnaglyphTestActive) {
-                btnFusionTest.style.background = '#3b90ff';
-                btnFusionTest.style.color = '#131a26';
-                
-                if (selectRedSide) Store.state.redEyeSide = selectRedSide.value;
-                if (selectLazySide) Store.state.lazyEyeSide = selectLazySide.value;
-                
-                drawFusionTestPattern(canvas, ctx, Store.state);
-                canvas.style.display = 'block';
-                cross.style.display = 'none'; // Hide HTML cross to prevent double-rendering and CSS alignment offsets
-            } else {
-                btnFusionTest.style.background = '#1a233a';
-                btnFusionTest.style.color = '#3b90ff';
-                drawIdleState(canvas, ctx, Store.state.isFusionLockEnabled);
-                cross.style.display = 'block'; // Restore the static HTML foveation cross
-            }
-        });
+        trialController.triggerTrial();
     }
 }
 
@@ -779,17 +197,30 @@ function bindLangSelectors() {
 
 // Orchestrator initialization block
 window.addEventListener('load', async () => {
-    Store.loadSettings(); // Load Model from localStorage
+    Store.loadSettings();
+
+    // Instantiate our unified OOP controllers
+    trialController = new TrialController(
+        canvas, 
+        ctx, 
+        cross, 
+        container, 
+        flashOverlay, 
+        btnStart, 
+        () => activeTranslations
+    );
+
+    settingsController = new SettingsController(() => {
+        // Callback triggered whenever settings forms are synchronized
+        updateStatusBar(Store.state, activeTranslations);
+    });
     
-    // Connect top bar manual triggers, bindings and Settings dialog
     initModals(
         () => {
-            // Settings Open Callback: sync HTML form settings with active Store values
             Store.loadSettings();
             
-            // Synchronize the test button's visual styling dynamically with the active engine state
             if (btnFusionTest) {
-                if (isAnaglyphTestActive) {
+                if (trialController.isAnaglyphTestActive) {
                     btnFusionTest.style.background = '#3b90ff';
                     btnFusionTest.style.color = '#131a26';
                 } else {
@@ -798,17 +229,19 @@ window.addEventListener('load', async () => {
                 }
             }
             
-            updatePresetUI();
+            settingsController.updatePresetUI();
         },
         () => {
-            // Settings Close Callback: save HTML forms variables to Store and persistent memory
             saveSettingsFromUI();
+        },
+        () => {
+            // Render the leaderboard dynamically on demand only when the statistics modal is actually opened!
+            updateLeaderboard(Store.getHistory(), activeTranslations, Store.state.currentLang);
         }
     );
 
-    // Bind physical input devices, click events, and Safari double-click blockers
     bindInputControls({
-        onAnswer: (choice) => checkAnswer(choice),
+        onAnswer: (choice) => trialController.submitAnswer(choice),
         onStartFlash: () => runFlash(),
         onMuteToggle: () => {
             Store.state.isMuted = !Store.state.isMuted;
@@ -816,42 +249,50 @@ window.addEventListener('load', async () => {
             updateMuteBtnUI();
         },
         onEscape: () => {
-            // Close Settings modal if opened and save variables safely
             const settingsModal = document.getElementById('settings-modal');
-            if (settingsModal && settingsModal.style.display === 'block') {
+            const infoModal = document.getElementById('info-modal');
+            const statsModal = document.getElementById('stats-modal');
+
+            // Universally detects active modals regardless of 'block' or 'flex' layout engines
+            if (settingsModal && settingsModal.style.display !== 'none' && settingsModal.style.display !== '') {
                 saveSettingsFromUI();
                 settingsModal.style.display = 'none';
             }
-            const infoModal = document.getElementById('info-modal');
-            if (infoModal && infoModal.style.display === 'block') {
+            if (infoModal && infoModal.style.display !== 'none' && infoModal.style.display !== '') {
                 infoModal.style.display = 'none';
+            }
+            if (statsModal && statsModal.style.display !== 'none' && statsModal.style.display !== '') {
+                statsModal.style.display = 'none';
             }
         }
     });
 
-    // Helper functions for settings panel triggers
     function saveSettingsFromUI() {
-        syncStateFromUI();
+        settingsController.syncStateFromUI();
         Store.saveSettings();
         
-        // Reset adaptive progress when training rules are altered
+        // Completely reset session progress parameters
         Store.state.autoContrast = 0.40;
         Store.state.correctStreak = 0;
         Store.state.staircaseStreak = 0;
+        Store.state.isWaitingForAnswer = false; // Reset waiting status
 
-        if (nextFlashTimeoutId) {
-            clearTimeout(nextFlashTimeoutId);
-            nextFlashTimeoutId = null;
-        }
+        // Hard reset the FSM state machine to idle
+        trialController.tracker.clearAll();
+        trialController.currentState = TrialState.IDLE;
 
-        // Only reset canvas to blank gray if the calibration test pattern is not actively running
-        if (!isAnaglyphTestActive) {
+        if (!trialController.isAnaglyphTestActive) {
             drawIdleState(canvas, ctx, Store.state.isFusionLockEnabled);
+            
+            // Ensure all controls (START, Left, Right buttons) are fully unlocked on save
+            setControlsLockState(false);
         } else {
-            // Re-render calibration card upon saving to apply updated Red/Cyan eye configurations instantly
             drawFusionTestPattern(canvas, ctx, Store.state);
+            
+            // Keep all controls physically locked on save if calibration is still running
+            setControlsLockState(true);
         }
-        setLanguage(Store.state.currentLang); // Re-render translated texts
+        setLanguage(Store.state.currentLang);
     }
 
     function updateMuteBtnUI() {
@@ -862,24 +303,77 @@ window.addEventListener('load', async () => {
         }
     }
 
-    // Set mute visual state on startup
-    updateMuteBtnUI();
+    // Unified helper to lock/unlock all main action and answer buttons cleanly
+    function setControlsLockState(isLocked) {
+        const btnLeft = document.getElementById('btn-left');
+        const btnRight = document.getElementById('btn-right');
+        const buttons = [btnStart, btnLeft, btnRight];
+        
+        buttons.forEach(btn => {
+            if (!btn) return;
+            btn.disabled = isLocked;
+            btn.style.opacity = isLocked ? '0.35' : '1';
+            btn.style.cursor = isLocked ? 'not-allowed' : 'pointer';
+        });
 
-    // Bind other settings forms behaviors
-    bindSettingsInteractions();
+        if (btnStart) {
+            if (isLocked) {
+                btnStart.innerText = Store.state.currentLang === 'ru' ? 'Калибровка...' : 'Calibrating...';
+            } else {
+                btnStart.innerText = activeTranslations.startBtn;
+            }
+        }
+    }
+
+    // Secure click listener for the calibration test pattern toggle 
+    // strictly bound after controller initialization to prevent startup crashes
+    if (btnFusionTest) {
+        btnFusionTest.addEventListener('click', () => {
+            trialController.isAnaglyphTestActive = !trialController.isAnaglyphTestActive;
+            if (trialController.isAnaglyphTestActive) {
+                btnFusionTest.style.background = '#3b90ff';
+                btnFusionTest.style.color = '#131a26';
+                
+                const selectRedSide = document.getElementById('select-red-side');
+                const selectLazySide = document.getElementById('select-lazy-side');
+                if (selectRedSide) Store.state.redEyeSide = selectRedSide.value;
+                if (selectLazySide) Store.state.lazyEyeSide = selectLazySide.value;
+                
+                drawFusionTestPattern(canvas, ctx, Store.state);
+                canvas.style.display = 'block';
+                cross.style.display = 'none';
+
+                // Physically lock the entire interface (START, Left, Right buttons)
+                setControlsLockState(true);
+            } else {
+                btnFusionTest.style.background = '#1a233a';
+                btnFusionTest.style.color = '#3b90ff';
+                drawIdleState(canvas, ctx, Store.state.isFusionLockEnabled);
+                cross.style.display = 'block';
+
+                // Restore the entire interface to active
+                setControlsLockState(false);
+            }
+        });
+    }
+
+    // Secure click listener for the primary action button
+    if (btnStart) {
+        btnStart.addEventListener('click', runFlash);
+    }
+
+    updateMuteBtnUI();
+    settingsController.bindSettingsInteractions();
     bindLangSelectors();
 
-    // Secure procedural Web Audio init triggers on first gesture
     window.addEventListener('click', initAudio, { once: true });
     window.addEventListener('touchstart', initAudio, { once: true, passive: true });
     window.addEventListener('keydown', initAudio, { once: true });
 
-    // Boot app language and clear canvas to default idle gray state
     await setLanguage(Store.state.currentLang);
     drawIdleState(canvas, ctx, Store.state.isFusionLockEnabled);
 });
 
-// Bind primary START FLASH button listener
 if (btnStart) {
     btnStart.addEventListener('click', runFlash);
 }

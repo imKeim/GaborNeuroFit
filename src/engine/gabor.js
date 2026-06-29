@@ -71,13 +71,15 @@ export function drawFusionTestPattern(canvas, ctx, state) {
     ctx.font = 'bold 42px Overpass';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    
-    // Render Left (Red channel) target text with font-metric vertical offset correction
-    ctx.fillStyle = 'rgb(255, 127, 127)'; 
+
+    // Render Left (Red channel) target text. To make it vanish under the Cyan lens,
+    // we lock G and B to exactly match the neutral gray background (127), leaving R fully adjustable via calibratorLeftR.
+    ctx.fillStyle = `rgb(${state.calibratorLeftR}, 127, 127)`; 
     ctx.fillText('L', cx - 55, cy + 4);
     
-    // Render Right (Cyan channel) target text with font-metric vertical offset correction
-    ctx.fillStyle = 'rgb(127, 255, 255)'; 
+    // Render Right (Cyan channel) target text. To make it vanish under the Red lens,
+    // we lock R to exactly match the neutral gray background (127), leaving G and B fully adjustable via calibrators.
+    ctx.fillStyle = `rgb(127, ${state.calibratorRightG}, ${state.calibratorRightB})`; 
     ctx.fillText('R', cx + 55, cy + 4);
 
     // Draw mathematically perfect, pixel-aligned central fixation cross
@@ -163,23 +165,27 @@ export function renderGabor(canvas, ctx, state, angleDeg, contrast, freq, sigma,
             let B = 127;
 
             if (state.isAnaglyphEnabled) {
-                // Execute chromatic anaglyph split (dichoptics)
+                // Execute dynamic subpixel-split blending
                 const lazyContrast = contrast;
                 const strongContrast = contrast * state.strongEyeContrastFactor;
                 const isLazyEyeRed = (state.lazyEyeSide === state.redEyeSide);
-                
+
                 const lazyVal = centralGaborValue * 127 * lazyContrast;
                 const strongVal = flankerGaborValue * 127 * strongContrast;
 
-                // Bind isolated Gabor stimuli signals to specific color filter channels
+                // Hardware-level absolute subpixel scaling: non-active channels are locked to 0 for modulation!
+                const leftScale = state.calibratorLeftR / 255;
+                const rightGScale = state.calibratorRightG / 255;
+                const rightBScale = state.calibratorRightB / 255;
+
                 if (isLazyEyeRed) {
-                    R = 127 + lazyVal; 
-                    G = 127 + strongVal; 
-                    B = 127 + strongVal;
+                    R = 127 + lazyVal * leftScale;
+                    G = 127 + strongVal * rightGScale;
+                    B = 127 + strongVal * rightBScale;
                 } else {
-                    R = 127 + strongVal; 
-                    G = 127 + lazyVal; 
-                    B = 127 + lazyVal;
+                    R = 127 + strongVal * leftScale;
+                    G = 127 + lazyVal * rightGScale;
+                    B = 127 + lazyVal * rightBScale;
                 }
             } else {
                 // Execute standard monocular greyscale render

@@ -38,6 +38,9 @@ export const Store = {
         isFlickerEnabled: false,
         isFusionLockEnabled: true,
         isMuted: false,
+        calibratorLeftR: 255,   // Pure Left R subpixel value [0-255]
+        calibratorRightG: 255,  // Pure Right G subpixel value [0-255]
+        calibratorRightB: 255,  // Pure Right B subpixel value [0-255]
         trialHistory: [] // Ephemeral session history for double-track macro transitions
     },
 
@@ -65,6 +68,9 @@ export const Store = {
             this.state.isFusionLockEnabled = localStorage.getItem('gabor_fusion_lock') !== 'false';
             this.state.isMuted = localStorage.getItem('gabor_muted') === 'true';
             this.state.currentLang = localStorage.getItem('gabor_lang') || 'en';
+            this.state.calibratorLeftR = parseInt(localStorage.getItem('gabor_calib_left_r') || '255');
+            this.state.calibratorRightG = parseInt(localStorage.getItem('gabor_calib_right_g') || '255');
+            this.state.calibratorRightB = parseInt(localStorage.getItem('gabor_calib_right_b') || '255');
         } catch (e) {
             console.warn("Local storage read failed, keeping default parameters:", e);
         }
@@ -99,6 +105,9 @@ export const Store = {
             localStorage.setItem('gabor_fusion_lock', this.state.isFusionLockEnabled ? "true" : "false");
             localStorage.setItem('gabor_muted', this.state.isMuted ? "true" : "false");
             localStorage.setItem('gabor_lang', this.state.currentLang);
+            localStorage.setItem('gabor_calib_left_r', this.state.calibratorLeftR.toString());
+            localStorage.setItem('gabor_calib_right_g', this.state.calibratorRightG.toString());
+            localStorage.setItem('gabor_calib_right_b', this.state.calibratorRightB.toString());
         } catch (e) {
             console.warn("Local storage write failed, active settings only cached in RAM:", e);
         }
@@ -333,7 +342,12 @@ export const Store = {
                 total: this.state.total,
                 level: this.state.currentLevel,
                 contrast: Math.round(this.state.autoContrast * 100),
-                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                // Rich clinical biomarkers schema integration
+                protocol: this.state.presetMode,
+                speed: this.state.flashDurationMode,
+                isAnaglyph: this.state.isAnaglyphEnabled,
+                balance: Math.round(this.state.strongEyeContrastFactor * 100)
             };
             
             const existingIdx = history.findIndex(h => h.id === this.state.sessionId);
@@ -345,7 +359,7 @@ export const Store = {
             
             // Sort list by highest score
             history.sort((a, b) => b.score - a.score);
-            localStorage.setItem('gabor_history_v2', JSON.stringify(history.slice(0, 5)));
+            localStorage.setItem('gabor_history_v2', JSON.stringify(history.slice(0, 7))); // Expanded from 5 to 7 records limit
         } catch (e) {
             console.warn("Leaderboard persistency write failed:", e);
         }

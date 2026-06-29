@@ -7,7 +7,7 @@
  */
 
 // Initialize click listeners for settings and manual popup modals
-export function initModals(onSettingsOpen, onSettingsSave) {
+export function initModals(onSettingsOpen, onSettingsSave, onStatsOpen) {
     // Select Handbook modal DOM nodes
     const infoModal = document.getElementById('info-modal');
     const btnInfo = document.getElementById('btn-info');
@@ -18,10 +18,15 @@ export function initModals(onSettingsOpen, onSettingsSave) {
     const btnSettings = document.getElementById('btn-settings');
     const btnCloseSettings = document.getElementById('btn-close-settings');
 
+    // Select Statistics modal DOM nodes
+    const statsModal = document.getElementById('stats-modal');
+    const btnStats = document.getElementById('btn-stats');
+    const btnCloseStats = document.getElementById('btn-close-stats');
+
     // Bind manual modal triggers
     if (btnInfo && infoModal) {
         btnInfo.addEventListener('click', () => {
-            infoModal.style.display = 'block';
+            infoModal.style.display = 'flex'; // Uses flex overlay for perfect vertical centering
         });
     }
     if (btnCloseModal && infoModal) {
@@ -37,7 +42,7 @@ export function initModals(onSettingsOpen, onSettingsSave) {
             if (typeof onSettingsOpen === 'function') {
                 onSettingsOpen();
             }
-            settingsModal.style.display = 'block';
+            settingsModal.style.display = 'flex'; // Uses flex overlay for perfect vertical centering
         });
     }
     
@@ -48,6 +53,22 @@ export function initModals(onSettingsOpen, onSettingsSave) {
                 onSettingsSave();
             }
             settingsModal.style.display = 'none';
+        });
+    }
+
+    // Bind statistics modal triggers
+    if (btnStats && statsModal) {
+        btnStats.addEventListener('click', () => {
+            if (typeof onStatsOpen === 'function') {
+                onStatsOpen();
+            }
+            statsModal.style.display = 'flex'; // Uses flex overlay for perfect vertical centering
+        });
+    }
+
+    if (btnCloseStats && statsModal) {
+        btnCloseStats.addEventListener('click', () => {
+            statsModal.style.display = 'none';
         });
     }
 }
