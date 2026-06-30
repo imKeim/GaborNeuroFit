@@ -8,11 +8,13 @@
 
 import { Store } from '../store.js';
 import { AsyncResourceTracker } from '../utils/tracker.js';
-import { renderGabor, drawFusionLockFrame } from '../engine/gabor.js';
+import { renderGabor } from '../engine/gabor.js';
 import { playCue, playSuccess, playError } from '../engine/audio.js';
-import { updateScoreboard, updateLeaderboard, drawIdleState, updateStatusBar } from '../ui/screen.js';
+import { updateScoreboard, updateStatusBar, drawIdleState } from '../ui/screen.js';
 
-// Formal finite state definitions for the visual cycle
+/**
+ * Finite State Machine declarations for strict visual execution tracking
+ */
 export const TrialState = {
     IDLE: 'IDLE',
     PRE_CUE: 'PRE_CUE',
@@ -21,6 +23,9 @@ export const TrialState = {
     FEEDBACK: 'FEEDBACK'
 };
 
+/**
+ * Optometric spatial frequency bands mapped to individual difficulty stages
+ */
 const levelFreqRanges = {
     1: { min: 0.03, max: 0.05 },
     2: { min: 0.05, max: 0.08 },
@@ -29,6 +34,9 @@ const levelFreqRanges = {
     5: { min: 0.17, max: 0.24 }
 };
 
+/**
+ * Gaussian envelope standard deviations (Sigma) mapping foveal focus fields
+ */
 const levelSigmaRanges = {
     1: { min: 40, max: 50 },
     2: { min: 32, max: 40 },
@@ -45,7 +53,7 @@ export class TrialController {
         this.container = container;
         this.flashOverlay = flashOverlay;
         this.btnStart = btnStart;
-        this.getTranslations = translationsGetter; // Callback targeting active app translations dictionary
+        this.getTranslations = translationsGetter;
 
         this.currentState = TrialState.IDLE;
         this.tracker = new AsyncResourceTracker();
@@ -62,44 +70,110 @@ export class TrialController {
         this.isAnaglyphTestActive = false;
     }
 
-    // Securely transitions FSM state and guarantees asynchronous cleanup
+    /**
+     * Safely transitions the finite state machine and purges timers from the previous phase
+     */
     transitionTo(nextState) {
         this.currentState = nextState;
-        this.tracker.clearAll(); // Clean slate: completely purges the memory of the previous phase
+        this.tracker.clearAll();
     }
 
-    // Handles the acoustic pre-cue warning phase (PRE_CUE)
+    /**
+     * Handles the acoustic pre-cue warning phase
+     */
     triggerTrial() {
         if (this.currentState === TrialState.PRE_CUE || this.currentState === TrialState.FEEDBACK) {
-            return; // Hard lock against rapid double-triggers
+            return; // Guard lock against rapid execution triggers
         }
 
         this.transitionTo(TrialState.PRE_CUE);
         this.btnStart.innerText = "...";
         playCue(Store.state.isMuted);
 
-        // Schedule visual flash exactly 180ms after the auditory pre-cue click
+        // Schedule visual flash execution exactly 180ms after the auditory pre-cue click
         this.tracker.setTimeout(() => {
-            this.executeGaborFlash();
+            this._runRenderCycle(true);
         }, 180);
     }
 
-    // Synthesizes the dynamic parameters and renders Gabor stimulus (STIMULUS_ACTIVE)
-    executeGaborFlash() {
+    /**
+     * Repeats the exposure of the active trial's visual parameters
+     */
+    reFlashCurrentGabor() {
+        if (this.currentState === TrialState.PRE_CUE || this.currentState === TrialState.FEEDBACK) {
+            return; // Guard lock during active transitions
+        }
+
+        this.transitionTo(TrialState.PRE_CUE);
+        this.btnStart.innerText = "...";
+        playCue(Store.state.isMuted);
+
+        // Schedule visual re-flash exactly 180ms after the warning click
+        this.tracker.setTimeout(() => {
+            this._runRenderCycle(false);
+        }, 180);
+    }
+
+    /**
+     * Unified visual execution pipeline handling parameters configuration, rendering, and lifecycle timers
+     * @param {boolean} isNewTrial - If true, randomizes new Gabor parameters. If false, preserves existing parameters.
+     */
+    _runRenderCycle(isNewTrial) {
         const t = this.getTranslations();
         const s = Store.state;
 
         this.transitionTo(TrialState.STIMULUS_ACTIVE);
 
-        // Calculate visual parameters
-        do {
-            this.currentAngleDeg = Math.floor(Math.random() * 160) - 80;
-        } while (Math.abs(this.currentAngleDeg) < 15);
+        if (isNewTrial) {
+            // Generate a secure randomized stimulus angle outside of dead-zones
+            do {
+                this.currentAngleDeg = Math.floor(Math.random() * 160) - 80;
+            } while (Math.abs(this.currentAngleDeg) < 15);
 
+            // Compute randomized spatial frequency and Gaussian envelope sizes for current Stage
+            const freqRange = levelFreqRanges[s.currentLevel] || levelFreqRanges[1];
+            this.lastRandomFreq = Math.random() * (freqRange.max - freqRange.min) + freqRange.min;
+
+            const sigmaRange = levelSigmaRanges[s.currentLevel] || levelSigmaRanges[1];
+            this.lastRandomSigma = Math.random() * (sigmaRange.max - sigmaRange.min) + sigmaRange.min;
+
+            this.lastRandomAspectRatio = 1.0;
+            if (s.allowWideVariance) {
+                const randType = Math.random();
+                if (randType < 0.35) {
+                    this.lastRandomFreq = Math.random() * (0.04 - 0.03) + 0.03;
+                    this.lastRandomSigma = Math.random() * (45 - 35) + 35;
+                } else if (randType < 0.50) {
+                    this.lastRandomFreq = Math.random() * (0.16 - 0.12) + 0.12;
+                    this.lastRandomSigma = Math.random() * (40 - 32) + 32;
+                }
+                this.lastRandomAspectRatio = Math.random() * (2.0 - 0.5) + 0.5;
+            }
+
+            // Apply spatial summation adaptation for ultra-low contrast thresholds
+            const summationThreshold = 0.12;
+            if (s.autoContrast < summationThreshold) {
+                const summationMultiplier = 1.0 + (summationThreshold - s.autoContrast) * 3.0;
+                this.lastRandomSigma = this.lastRandomSigma * summationMultiplier;
+            }
+
+            // Calculate randomized peripheral offsets if eccentric fixation is enabled
+            this.lastOffsetX = 0;
+            this.lastOffsetY = 0;
+            if (s.isPeripheralEnabled) {
+                const angle = Math.random() * 2 * Math.PI;
+                const distance = 55;
+                this.lastOffsetX = Math.cos(angle) * distance;
+                this.lastOffsetY = Math.sin(angle) * distance;
+            }
+        }
+
+        // Synchronize numeric counters on the active user dashboard
         document.getElementById('current-contrast').innerText = Math.round(s.autoContrast * 100);
         document.getElementById('current-level').innerText = s.currentLevel;
         document.getElementById('current-streak').innerText = s.correctStreak;
 
+        // Scale central fixation cross size inversely with spatial Stage difficulty
         let crossSize = 36;
         if (s.currentLevel === 1) crossSize = 36;
         else if (s.currentLevel === 2) crossSize = 28;
@@ -108,40 +182,7 @@ export class TrialController {
         else if (s.currentLevel === 5) crossSize = 12;
         this.cross.style.fontSize = crossSize + 'px';
 
-        const freqRange = levelFreqRanges[s.currentLevel] || levelFreqRanges[1];
-        this.lastRandomFreq = Math.random() * (freqRange.max - freqRange.min) + freqRange.min;
-
-        const sigmaRange = levelSigmaRanges[s.currentLevel] || levelSigmaRanges[1];
-        this.lastRandomSigma = Math.random() * (sigmaRange.max - sigmaRange.min) + sigmaRange.min;
-
-        this.lastRandomAspectRatio = 1.0;
-        if (s.allowWideVariance) {
-            const randType = Math.random();
-            if (randType < 0.35) {
-                this.lastRandomFreq = Math.random() * (0.04 - 0.03) + 0.03;
-                this.lastRandomSigma = Math.random() * (45 - 35) + 35;
-            } else if (randType < 0.50) {
-                this.lastRandomFreq = Math.random() * (0.16 - 0.12) + 0.12;
-                this.lastRandomSigma = Math.random() * (40 - 32) + 32;
-            }
-            this.lastRandomAspectRatio = Math.random() * (2.0 - 0.5) + 0.5;
-        }
-
-        const summationThreshold = 0.12;
-        if (s.autoContrast < summationThreshold) {
-            const summationMultiplier = 1.0 + (summationThreshold - s.autoContrast) * 3.0;
-            this.lastRandomSigma = this.lastRandomSigma * summationMultiplier;
-        }
-
-        this.lastOffsetX = 0;
-        this.lastOffsetY = 0;
-        if (s.isPeripheralEnabled) {
-            const angle = Math.random() * 2 * Math.PI;
-            const distance = 55;
-            this.lastOffsetX = Math.cos(angle) * distance;
-            this.lastOffsetY = Math.sin(angle) * distance;
-        }
-
+        // Render Gabor patch using mathematical engine
         renderGabor(this.canvas, this.ctx, s, this.currentAngleDeg, s.autoContrast, this.lastRandomFreq, this.lastRandomSigma, this.lastOffsetX, this.lastOffsetY, 0, this.lastRandomAspectRatio);
 
         let flashDuration = this.getFlashDuration(s);
@@ -156,6 +197,7 @@ export class TrialController {
         }
 
         if (!s.isStaticEnabled) {
+            // Transient exposure (auto-hide after configured duration)
             this.tracker.setTimeout(() => {
                 this.stopFlankerAnimation();
                 drawIdleState(this.canvas, this.ctx, s.isFusionLockEnabled);
@@ -176,14 +218,16 @@ export class TrialController {
                 }, 50);
             }
             this.btnStart.innerText = t.reflashBtn;
-            this.currentState = TrialState.AWAITING_INPUT; // Quietly change state without running clearAll(), keeping flicker running!
+            this.currentState = TrialState.AWAITING_INPUT;
         }
     }
 
-    // Handles the response assessment and visual feedback animation trigger (FEEDBACK)
+    /**
+     * Evaluates answer submissions and executes tactile visual/acoustic feedback animations
+     */
     submitAnswer(userChoice) {
         if (this.currentState !== TrialState.AWAITING_INPUT && this.currentState !== TrialState.STIMULUS_ACTIVE) {
-            return; // Guard to completely ignore keyboard/touch inputs outside active answer phases
+            return; // Guard to ignore keyboard/tap inputs outside active response phases
         }
 
         const s = Store.state;
@@ -214,12 +258,16 @@ export class TrialController {
 
         drawIdleState(this.canvas, this.ctx, s.isFusionLockEnabled);
 
+        // Initiate smooth chromatic flash fade-out after 300ms
         this.tracker.setTimeout(() => {
-            this.flashOverlay.classList.remove('flash-success', 'flash-error');
+            this.flashOverlay.classList.add('fade-out');
             this.container.classList.remove('success-pulse', 'error-shake');
             
-            // Softly reset the state to IDLE upon feedback completion 
-            // without destroying the active 900ms auto-advance timeouts inside the tracker
+            // Completely purge all color classes once the opacity transition completes
+            this.tracker.setTimeout(() => {
+                this.flashOverlay.classList.remove('flash-success', 'flash-error', 'fade-out');
+            }, 500);
+
             if (this.currentState === TrialState.FEEDBACK) {
                 this.currentState = TrialState.IDLE;
             }
@@ -256,67 +304,14 @@ export class TrialController {
             }, 900);
         } else {
             this.btnStart.innerText = this.getTranslations().nextBtn;
-            this.transitionTo(TrialState.IDLE);
+            // Softly change FSM state status without synchronously wiping out active feedback timers
+            this.currentState = TrialState.IDLE;
         }
     }
 
-    // Implements user manual trigger to show the exact same visual target again
-    reFlashCurrentGabor() {
-        if (this.currentState === TrialState.PRE_CUE || this.currentState === TrialState.FEEDBACK) {
-            return; // Guard lock during active transitions
-        }
-
-        this.transitionTo(TrialState.PRE_CUE);
-        this.btnStart.innerText = "...";
-        playCue(Store.state.isMuted);
-
-        // Schedule visual re-flash exactly 180ms after the warning click
-        this.tracker.setTimeout(() => {
-            this.executeGaborReFlash();
-        }, 180);
-    }
-
-    // Handles the actual rendering of the repeated stimulus after the pre-cue delay
-    executeGaborReFlash() {
-        const t = this.getTranslations();
-        const s = Store.state;
-        this.transitionTo(TrialState.STIMULUS_ACTIVE);
-
-        if (s.isDynamicFlankersEnabled && s.isCrowdingEnabled) {
-            this.startFlankerAnimation();
-        } else {
-            renderGabor(this.canvas, this.ctx, s, this.currentAngleDeg, s.autoContrast, this.lastRandomFreq, this.lastRandomSigma, this.lastOffsetX, this.lastOffsetY, 0, this.lastRandomAspectRatio);
-        }
-
-        let flashDuration = this.getFlashDuration(s);
-        this.cross.style.display = 'none';
-        this.canvas.style.display = 'block';
-
-        if (!s.isStaticEnabled) {
-            this.tracker.setTimeout(() => {
-                this.stopFlankerAnimation();
-                drawIdleState(this.canvas, this.ctx, s.isFusionLockEnabled);
-                this.cross.style.display = 'block';
-                this.btnStart.innerText = t.reflashBtn;
-                this.transitionTo(TrialState.AWAITING_INPUT);
-            }, flashDuration);
-        } else {
-            if (s.isFlickerEnabled) {
-                let flickerState = true;
-                this.tracker.setInterval(() => {
-                    flickerState = !flickerState;
-                    if (flickerState) {
-                        renderGabor(this.canvas, this.ctx, s, this.currentAngleDeg, s.autoContrast, this.lastRandomFreq, this.lastRandomSigma, this.lastOffsetX, this.lastOffsetY, this.flankerPhaseOffset, this.lastRandomAspectRatio);
-                    } else {
-                        drawIdleState(this.canvas, this.ctx, s.isFusionLockEnabled);
-                    }
-                }, 50);
-            }
-            this.btnStart.innerText = t.reflashBtn;
-            this.currentState = TrialState.AWAITING_INPUT; // Quietly change state without running clearAll(), keeping flicker running!
-        }
-    }
-
+    /**
+     * Resolves the current target exposure duration mapped to active Stage constraints
+     */
     getFlashDuration(state) {
         if (state.flashDurationMode === '100') return 100;
         if (state.flashDurationMode === '180') return 180;
@@ -330,6 +325,9 @@ export class TrialController {
         return 110;
     }
 
+    /**
+     * Executes ongoing frame updates to create moving flanker wave sequences
+     */
     startFlankerAnimation() {
         this.flankerPhaseOffset = 0;
         const animate = () => {
@@ -344,6 +342,9 @@ export class TrialController {
         this.flankerPhaseOffset = 0;
     }
 
+    /**
+     * Triggers repeated flashing sequence during milestone acquisitions or breaks
+     */
     triggerMilestoneFlash(callback) {
         let count = 0;
         this.tracker.setInterval(() => {

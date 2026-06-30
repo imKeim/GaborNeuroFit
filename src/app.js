@@ -32,7 +32,9 @@ const container = document.getElementById('container');
 const btnStart = document.getElementById('btn-start');
 const btnFusionTest = document.getElementById('btn-fusion-test');
 
-// Asynchronously load translations from external static JSON bundles
+/**
+ * Asynchronously loads translations from external static JSON bundles and updates DOM
+ */
 export async function setLanguage(lang) {
     try {
         const response = await fetch(`./i18n/${lang}.json`);
@@ -44,11 +46,6 @@ export async function setLanguage(lang) {
 
     Store.state.currentLang = lang;
     Store.saveSettings();
-
-    // Toggle language button active states
-    document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
-    const activeLangBtn = document.getElementById(`lang-${lang}`);
-    if (activeLangBtn) activeLangBtn.classList.add('active');
 
     const t = activeTranslations;
     
@@ -66,6 +63,12 @@ export async function setLanguage(lang) {
     
     if (document.getElementById('lbl-btn-left')) document.getElementById('lbl-btn-left').innerText = t.leftBtn;
     if (document.getElementById('lbl-btn-right')) document.getElementById('lbl-btn-right').innerText = t.rightBtn;
+
+    // Localize settings accordion group headers dynamically
+    if (document.getElementById('lbl-setting-group-1')) document.getElementById('lbl-setting-group-1').innerText = t.lblSettingGroup1;
+    if (document.getElementById('lbl-setting-group-2')) document.getElementById('lbl-setting-group-2').innerText = t.lblSettingGroup2;
+    if (document.getElementById('lbl-setting-group-3')) document.getElementById('lbl-setting-group-3').innerText = t.lblSettingGroup3;
+    if (document.getElementById('lbl-setting-group-4')) document.getElementById('lbl-setting-group-4').innerText = t.lblSettingGroup4;
 
     // Localize Handbook modal text nodes
     if (document.getElementById('modal-title')) document.getElementById('modal-title').innerText = t.modalTitle;
@@ -86,6 +89,12 @@ export async function setLanguage(lang) {
     if (document.getElementById('lbl-setting-start-level')) document.getElementById('lbl-setting-start-level').innerText = t.lblSettingStartLevel;
     if (document.getElementById('lbl-setting-autonext')) document.getElementById('lbl-setting-autonext').innerText = t.lblSettingAutonext;
     if (document.getElementById('lbl-setting-limit')) document.getElementById('lbl-setting-limit').innerText = t.lblSettingLimit;
+    if (document.getElementById('lbl-setting-lang')) document.getElementById('lbl-setting-lang').innerText = t.lblSettingLang;
+    if (document.getElementById('rotation-text')) document.getElementById('rotation-text').innerText = t.lblRotationBlock;
+
+    // Synchronize the language selection dropdown value
+    const selectLang = document.getElementById('select-lang');
+    if (selectLang) selectLang.value = lang;
     
     for (let i = 1; i <= 5; i++) {
         const el = document.getElementById('opt-stage-' + i);
@@ -141,8 +150,8 @@ export async function setLanguage(lang) {
     if (document.getElementById('lbl-setting-fusion-lock')) document.getElementById('lbl-setting-fusion-lock').innerText = t.lblSettingFusionLock;
     if (document.getElementById('lbl-setting-orthogonal')) document.getElementById('lbl-setting-orthogonal').innerText = t.lblSettingOrthogonal;
     if (document.getElementById('lbl-setting-dynamic')) document.getElementById('lbl-setting-dynamic').innerText = t.lblSettingDynamic;
-    if (document.getElementById('lbl-setting-left-color')) document.getElementById('lbl-setting-left-color').innerText = t.lblSettingLeftColor;
-    if (document.getElementById('lbl-setting-right-color')) document.getElementById('lbl-setting-right-color').innerText = t.lblSettingRightColor;
+    if (document.getElementById('lbl-setting-left-color')) document.getElementById('lbl-setting-left-color').innerHTML = t.lblSettingLeftColor;
+    if (document.getElementById('lbl-setting-right-color')) document.getElementById('lbl-setting-right-color').innerHTML = t.lblSettingRightColor;
     if (btnFusionTest) btnFusionTest.innerText = t.btnFusionTestLabel;
 
     const optRedLeft = document.getElementById('opt-red-left');
@@ -171,13 +180,18 @@ export async function setLanguage(lang) {
     updateScoreboard(Store.state, activeTranslations);
     updateStatusBar(Store.state, activeTranslations);
     
-    // Parse vector emojis using Twemoji loader
-    if (window.twemoji) twemoji.parse(document.body);
+    // Parse vector emojis using Twemoji loader strictly on active dynamic panels to eliminate document-wide reflow lag
+    if (window.twemoji) {
+        twemoji.parse(document.getElementById('top-bar'));
+        twemoji.parse(document.getElementById('bottom-dock'));
+    }
 }
 
-// We delegate high-frequency cycles to the active trialController instance
+/**
+ * Triggers Gabor exposures based on current waiting state
+ */
 function runFlash() {
-    // Ultimate hard lock: completely ignore any space/enter key triggers while calibration test is active
+    // Lock start triggers while the calibration test pattern is active
     if (trialController.isAnaglyphTestActive) return;
 
     if (Store.state.isWaitingForAnswer) {
@@ -187,19 +201,23 @@ function runFlash() {
     }
 }
 
-// Connect language selections inside top bar
+/**
+ * Connect language dropdown selectors inside the settings panel
+ */
 function bindLangSelectors() {
-    const langEnBtn = document.getElementById('lang-en');
-    const langRuBtn = document.getElementById('lang-ru');
-    if (langEnBtn) langEnBtn.addEventListener('click', () => setLanguage('en'));
-    if (langRuBtn) langRuBtn.addEventListener('click', () => setLanguage('ru'));
+    const selectLang = document.getElementById('select-lang');
+    if (selectLang) {
+        selectLang.addEventListener('change', () => setLanguage(selectLang.value));
+    }
 }
 
-// Orchestrator initialization block
+/**
+ * Orchestrator bootstrap initialization block
+ */
 window.addEventListener('load', async () => {
     Store.loadSettings();
 
-    // Instantiate our unified OOP controllers
+    // Instantiate core controllers
     trialController = new TrialController(
         canvas, 
         ctx, 
@@ -211,7 +229,6 @@ window.addEventListener('load', async () => {
     );
 
     settingsController = new SettingsController(() => {
-        // Callback triggered whenever settings forms are synchronized
         updateStatusBar(Store.state, activeTranslations);
     });
     
@@ -235,7 +252,6 @@ window.addEventListener('load', async () => {
             saveSettingsFromUI();
         },
         () => {
-            // Render the leaderboard dynamically on demand only when the statistics modal is actually opened!
             updateLeaderboard(Store.getHistory(), activeTranslations, Store.state.currentLang);
         }
     );
@@ -253,7 +269,6 @@ window.addEventListener('load', async () => {
             const infoModal = document.getElementById('info-modal');
             const statsModal = document.getElementById('stats-modal');
 
-            // Universally detects active modals regardless of 'block' or 'flex' layout engines
             if (settingsModal && settingsModal.style.display !== 'none' && settingsModal.style.display !== '') {
                 saveSettingsFromUI();
                 settingsModal.style.display = 'none';
@@ -271,25 +286,21 @@ window.addEventListener('load', async () => {
         settingsController.syncStateFromUI();
         Store.saveSettings();
         
-        // Completely reset session progress parameters
+        // Reset session progress variables
         Store.state.autoContrast = 0.40;
         Store.state.correctStreak = 0;
         Store.state.staircaseStreak = 0;
-        Store.state.isWaitingForAnswer = false; // Reset waiting status
+        Store.state.isWaitingForAnswer = false;
 
-        // Hard reset the FSM state machine to idle
+        // Reset the trial execution state machine to idle
         trialController.tracker.clearAll();
         trialController.currentState = TrialState.IDLE;
 
         if (!trialController.isAnaglyphTestActive) {
             drawIdleState(canvas, ctx, Store.state.isFusionLockEnabled);
-            
-            // Ensure all controls (START, Left, Right buttons) are fully unlocked on save
             setControlsLockState(false);
         } else {
             drawFusionTestPattern(canvas, ctx, Store.state);
-            
-            // Keep all controls physically locked on save if calibration is still running
             setControlsLockState(true);
         }
         setLanguage(Store.state.currentLang);
@@ -303,7 +314,9 @@ window.addEventListener('load', async () => {
         }
     }
 
-    // Unified helper to lock/unlock all main action and answer buttons cleanly
+    /**
+     * Helper to modify interactive controls availability based on calibration state
+     */
     function setControlsLockState(isLocked) {
         const btnLeft = document.getElementById('btn-left');
         const btnRight = document.getElementById('btn-right');
@@ -325,14 +338,18 @@ window.addEventListener('load', async () => {
         }
     }
 
-    // Secure click listener for the calibration test pattern toggle 
-    // strictly bound after controller initialization to prevent startup crashes
+    // Connect alignment test pattern toggle listener
     if (btnFusionTest) {
         btnFusionTest.addEventListener('click', () => {
+            const settingsModal = document.getElementById('settings-modal');
             trialController.isAnaglyphTestActive = !trialController.isAnaglyphTestActive;
+            
             if (trialController.isAnaglyphTestActive) {
                 btnFusionTest.style.background = '#3b90ff';
                 btnFusionTest.style.color = '#131a26';
+                
+                // Toggle calibration bottom sheet layout class
+                if (settingsModal) settingsModal.classList.add('calibration-mode');
                 
                 const selectRedSide = document.getElementById('select-red-side');
                 const selectLazySide = document.getElementById('select-lazy-side');
@@ -343,21 +360,23 @@ window.addEventListener('load', async () => {
                 canvas.style.display = 'block';
                 cross.style.display = 'none';
 
-                // Physically lock the entire interface (START, Left, Right buttons)
                 setControlsLockState(true);
             } else {
                 btnFusionTest.style.background = '#1a233a';
                 btnFusionTest.style.color = '#3b90ff';
+                
+                // Remove calibration bottom sheet layout class
+                if (settingsModal) settingsModal.classList.remove('calibration-mode');
+                
                 drawIdleState(canvas, ctx, Store.state.isFusionLockEnabled);
                 cross.style.display = 'block';
 
-                // Restore the entire interface to active
                 setControlsLockState(false);
             }
         });
     }
 
-    // Secure click listener for the primary action button
+    // Connect primary exposure triggers click listener
     if (btnStart) {
         btnStart.addEventListener('click', runFlash);
     }
@@ -366,6 +385,7 @@ window.addEventListener('load', async () => {
     settingsController.bindSettingsInteractions();
     bindLangSelectors();
 
+    // Register audio activation listeners
     window.addEventListener('click', initAudio, { once: true });
     window.addEventListener('touchstart', initAudio, { once: true, passive: true });
     window.addEventListener('keydown', initAudio, { once: true });
@@ -373,7 +393,3 @@ window.addEventListener('load', async () => {
     await setLanguage(Store.state.currentLang);
     drawIdleState(canvas, ctx, Store.state.isFusionLockEnabled);
 });
-
-if (btnStart) {
-    btnStart.addEventListener('click', runFlash);
-}

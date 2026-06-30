@@ -27,6 +27,7 @@ export function initModals(onSettingsOpen, onSettingsSave, onStatsOpen) {
     if (btnInfo && infoModal) {
         btnInfo.addEventListener('click', () => {
             infoModal.style.display = 'flex'; // Uses flex overlay for perfect vertical centering
+            if (window.twemoji) window.twemoji.parse(infoModal); // Lazy-parse handbook on demand
         });
     }
     if (btnCloseModal && infoModal) {
@@ -43,6 +44,7 @@ export function initModals(onSettingsOpen, onSettingsSave, onStatsOpen) {
                 onSettingsOpen();
             }
             settingsModal.style.display = 'flex'; // Uses flex overlay for perfect vertical centering
+            if (window.twemoji) window.twemoji.parse(settingsModal); // Lazy-parse settings on demand
         });
     }
     
@@ -63,6 +65,7 @@ export function initModals(onSettingsOpen, onSettingsSave, onStatsOpen) {
                 onStatsOpen();
             }
             statsModal.style.display = 'flex'; // Uses flex overlay for perfect vertical centering
+            if (window.twemoji) window.twemoji.parse(statsModal); // Lazy-parse statistics on demand
         });
     }
 

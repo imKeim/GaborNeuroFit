@@ -71,6 +71,14 @@ export class SettingsController {
             this.selectPresetMode.value = s.presetMode;
         }
 
+        // Live-update numeric badges while sliding
+        const valR = document.getElementById('val-calib-r');
+        const valG = document.getElementById('val-calib-g');
+        const valB = document.getElementById('val-calib-b');
+        if (valR) valR.innerText = s.calibratorLeftR;
+        if (valG) valG.innerText = s.calibratorRightG;
+        if (valB) valB.innerText = s.calibratorRightB;
+
         this.updateVisibilityPanels();
         
         if (typeof this.onSyncCallback === 'function') {
@@ -115,6 +123,14 @@ export class SettingsController {
         if (sRightG) sRightG.value = s.calibratorRightG;
         if (sRightB) sRightB.value = s.calibratorRightB;
 
+        // Render current numeric values inside calibration badges on load
+        const valR = document.getElementById('val-calib-r');
+        const valG = document.getElementById('val-calib-g');
+        const valB = document.getElementById('val-calib-b');
+        if (valR) valR.innerText = s.calibratorLeftR;
+        if (valG) valG.innerText = s.calibratorRightG;
+        if (valB) valB.innerText = s.calibratorRightB;
+
         if (this.selectPresetMode) {
             this.selectPresetMode.value = s.presetMode;
         }
@@ -152,7 +168,7 @@ export class SettingsController {
                 headerAnaglyph.style.pointerEvents = 'none';
                 if (contentAnaglyph) contentAnaglyph.classList.remove('open');
                 const arrow = headerAnaglyph.querySelector('.accordion-arrow');
-                if (arrow) arrow.innerText = '►';
+                if (arrow) arrow.classList.remove('active');
             } else {
                 headerAnaglyph.style.opacity = '1';
                 headerAnaglyph.style.pointerEvents = 'auto';
@@ -187,7 +203,7 @@ export class SettingsController {
                         if (c) c.classList.remove('open');
                         if (h) {
                             const arrow = h.querySelector('.accordion-arrow');
-                            if (arrow) arrow.innerText = '►';
+                            if (arrow) arrow.classList.remove('active');
                         }
                     }
 
@@ -195,7 +211,7 @@ export class SettingsController {
                     if (!isOpen) {
                         content.classList.add('open');
                         const arrow = header.querySelector('.accordion-arrow');
-                        if (arrow) arrow.innerText = '▼';
+                        if (arrow) arrow.classList.add('active');
                     }
                 });
             }
@@ -239,6 +255,7 @@ export class SettingsController {
                     if (chkOrthogonal) chkOrthogonal.checked = false;
                     if (chkDynamic) chkDynamic.checked = false;
                 }
+                Store.state.isCrowdingEnabled = chkCrowding.checked;
                 this.syncStateFromUI();
             });
         }
