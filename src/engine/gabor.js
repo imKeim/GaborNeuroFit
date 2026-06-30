@@ -99,7 +99,7 @@ export function drawFusionTestPattern(canvas, ctx, state) {
 }
 
 // Low-level high-performance procedural rendering of Gabor patches & crowd flankers
-export function renderGabor(canvas, ctx, state, angleDeg, contrast, freq, sigma, offsetX = 0, offsetY = 0, flankerPhaseOffset = 0, aspectRatio = 1.0) {
+export function renderGabor(canvas, ctx, state, angleDeg, contrast, freq, sigma, offsetX = 0, offsetY = 0, flankerPhaseOffset = 0, aspectRatio = 1.0, hideCentral = false) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     const width = canvas.width;
@@ -140,7 +140,8 @@ export function renderGabor(canvas, ctx, state, angleDeg, contrast, freq, sigma,
                 fade = 0.0;
             }
 
-            const centralGaborValue = gaussian * cosine * fade;
+            // Advanced Pleoptic Flicker: Zero-out central Gabor amplitude dynamically while keeping flanker calculations intact
+            const centralGaborValue = hideCentral ? 0 : (gaussian * cosine * fade);
 
             // Compute flanking distractors (crowding flankers)
             let flankerGaborValue = 0;

@@ -68,6 +68,7 @@ export class TrialController {
         this.flankerPhaseOffset = 0;
 
         this.isAnaglyphTestActive = false;
+        this.isFlickerOffState = false; /* Keeps track of the active 10 Hz flicker cycle to synchronize with 60 FPS animations */
     }
 
     /**
@@ -75,6 +76,7 @@ export class TrialController {
      */
     transitionTo(nextState) {
         this.currentState = nextState;
+        this.isFlickerOffState = false; // Reset flicker state on FSM transition
         this.tracker.clearAll();
     }
 
@@ -123,6 +125,11 @@ export class TrialController {
         const s = Store.state;
 
         this.transitionTo(TrialState.STIMULUS_ACTIVE);
+
+        // Fail-safe fallback: flicker stimulation strictly requires static exposure to loop intervals
+        if (s.isFlickerEnabled) {
+            s.isStaticEnabled = true;
+        }
 
         if (isNewTrial) {
             // Generate a secure randomized stimulus angle outside of dead-zones
@@ -210,10 +217,19 @@ export class TrialController {
                 let flickerState = true;
                 this.tracker.setInterval(() => {
                     flickerState = !flickerState;
-                    if (flickerState) {
-                        renderGabor(this.canvas, this.ctx, s, this.currentAngleDeg, s.autoContrast, this.lastRandomFreq, this.lastRandomSigma, this.lastOffsetX, this.lastOffsetY, this.flankerPhaseOffset, this.lastRandomAspectRatio);
-                    } else {
-                        drawIdleState(this.canvas, this.ctx, s.isFusionLockEnabled);
+                    this.isFlickerOffState = !flickerState; // Sync global state property
+
+                    // If 60 FPS flanker animation is running, it handles rendering itself using this.isFlickerOffState
+                    if (!s.isDynamicFlankersEnabled || !s.isCrowdingEnabled) {
+                        if (flickerState) {
+                            renderGabor(this.canvas, this.ctx, s, this.currentAngleDeg, s.autoContrast, this.lastRandomFreq, this.lastRandomSigma, this.lastOffsetX, this.lastOffsetY, this.flankerPhaseOffset, this.lastRandomAspectRatio, false);
+                        } else {
+                            if (s.isCrowdingEnabled) {
+                                renderGabor(this.canvas, this.ctx, s, this.currentAngleDeg, s.autoContrast, this.lastRandomFreq, this.lastRandomSigma, this.lastOffsetX, this.lastOffsetY, this.flankerPhaseOffset, this.lastRandomAspectRatio, true);
+                            } else {
+                                drawIdleState(this.canvas, this.ctx, s.isFusionLockEnabled);
+                            }
+                        }
                     }
                 }, 50);
             }
@@ -332,7 +348,8 @@ export class TrialController {
         this.flankerPhaseOffset = 0;
         const animate = () => {
             this.flankerPhaseOffset += 0.12;
-            renderGabor(this.canvas, this.ctx, Store.state, this.currentAngleDeg, Store.state.autoContrast, this.lastRandomFreq, this.lastRandomSigma, this.lastOffsetX, this.lastOffsetY, this.flankerPhaseOffset, this.lastRandomAspectRatio);
+            // Synchronize with active 10 Hz flicker state dynamically
+            renderGabor(this.canvas, this.ctx, Store.state, this.currentAngleDeg, Store.state.autoContrast, this.lastRandomFreq, this.lastRandomSigma, this.lastOffsetX, this.lastOffsetY, this.flankerPhaseOffset, this.lastRandomAspectRatio, this.isFlickerOffState);
             this.tracker.requestAnimationFrame(animate);
         };
         this.tracker.requestAnimationFrame(animate);
