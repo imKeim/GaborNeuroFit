@@ -8,15 +8,20 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="./assets/index-B1uqJOKF.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-wtd7b796.css">
+  <script type="module" crossorigin src="./assets/index-aJlhCTqY.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-C60Sm1K1.css">
 </head>
 <body>
-<body>
-    <!-- Hardware-accelerated chromatic flash layer -->
+    <!-- Hardware-accelerated feedback flash layer -->
     <div id="flash-overlay"></div>
 
+    <!-- Global Dynamic Landscape Rotation Blocker -->
+    <div id="rotation-blocker">
+        <div id="rotation-text"></div>
+    </div>
+
     <div id="app-wrapper">
+        <!-- Top Utility Header Panel -->
         <div id="top-bar">
             <div id="app-title">🧿 GaborNeuroFit</div>
             <div id="top-controls">
@@ -24,14 +29,10 @@
                 <div id="btn-info" class="control-btn">ℹ️</div>
                 <div id="btn-stats" class="control-btn">📊</div>
                 <div id="btn-settings" class="control-btn">🛠️</div>
-                <div id="lang-selector">
-                    <!-- Inline onclick handlers removed to comply with ES6 module scope isolation -->
-                    <span class="lang-btn" id="lang-en">🇬🇧</span>
-                    <span class="lang-btn" id="lang-ru">🇷🇺</span>
-                </div>
             </div>
         </div>
 
+        <!-- Central Training Workspace -->
         <div id="workspace">
             <div id="container">
                 <div id="cross">+</div>
@@ -39,6 +40,7 @@
             </div>
         </div>
 
+        <!-- Bottom Interface & Controls Panel -->
         <div id="bottom-dock">
             <div id="score-board">
                 <div id="score-text"></div>
@@ -69,7 +71,7 @@
         </div>
     </div>
 
-    <!-- Configuration modal wrapper -->
+    <!-- Configuration Panel Modal -->
     <div id="settings-modal" class="modal">
         <div class="modal-content">
             <h2 id="settings-title"></h2>
@@ -77,13 +79,21 @@
             <div class="modal-scroll-body">
                 <!-- Group 1: Core Setup (Expanded by default) -->
                 <div class="accordion-header" id="accordion-header-1">
-                    <span>🎯 Базовый протокол</span>
-                    <span class="accordion-arrow" id="accordion-arrow-1">▼</span>
+                    <span id="lbl-setting-group-1"></span>
+                    <span class="accordion-arrow active" id="accordion-arrow-1">›</span>
                 </div>
                 <div class="accordion-content open" id="accordion-content-1">
-                    <!-- 1. Training Preset Macro Select -->
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 5px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                    <!-- Global Application Language Settings Row -->
+                    <div class="settings-row">
+                        <label id="lbl-setting-lang"></label>
+                        <select id="select-lang">
+                            <option value="en">🇬🇧 English</option>
+                            <option value="ru">🇷🇺 Русский</option>
+                        </select>
+                    </div>
+
+                    <!-- Training Preset Macro Select -->
+                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 5px;">                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label id="lbl-setting-mode"></label>
                             <select id="select-preset-mode">
                                 <option value="occlusion" id="opt-preset-occlusion"></option>
@@ -97,7 +107,7 @@
                         <span class="settings-help" id="help-preset-mode"></span>
                     </div>
 
-                    <!-- 2. Starting Level Selector -->
+                    <!-- Starting Level Selector -->
                     <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label id="lbl-setting-start-level"></label>
@@ -112,7 +122,7 @@
                         <span class="settings-help" id="help-start-level"></span>
                     </div>
 
-                    <!-- 9. Post-Answer Autonext Transition Config -->
+                    <!-- Post-Answer Autonext Transition Config -->
                     <div class="settings-row">
                         <label id="lbl-setting-autonext"></label>
                         <select id="select-autonext">
@@ -121,7 +131,7 @@
                         </select>
                     </div>
 
-                    <!-- 10. Session Progress Limit -->
+                    <!-- Session Progress Limit -->
                     <div class="settings-row" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                         <label id="lbl-setting-limit"></label>
                         <select id="select-session-limit">
@@ -136,11 +146,11 @@
 
                 <!-- Group 2: Temporal Stimulation (Collapsed) -->
                 <div class="accordion-header" id="accordion-header-2">
-                    <span>⚡ Временная стимуляция</span>
-                    <span class="accordion-arrow" id="accordion-arrow-2">►</span>
+                    <span id="lbl-setting-group-2"></span>
+                    <span class="accordion-arrow" id="accordion-arrow-2">›</span>
                 </div>
                 <div class="accordion-content" id="accordion-content-2">
-                    <!-- 3. Granular Flash Duration Config -->
+                    <!-- Flash Exposure Speed Config -->
                     <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label id="lbl-setting-flash"></label>
@@ -155,7 +165,7 @@
                         <span class="settings-help" id="help-flash-duration"></span>
                     </div>
 
-                    <!-- 4. Dynamic Stage Autoprogression Toggle -->
+                    <!-- Dynamic Stage Autoprogression Toggle -->
                     <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label id="lbl-setting-stage-advance"></label>
@@ -164,7 +174,7 @@
                         <span class="settings-help" id="help-stage-advance"></span>
                     </div>
 
-                    <!-- 8.5 Static Stimulation Mode Toggle -->
+                    <!-- Static Stimulation Mode Toggle -->
                     <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label id="lbl-setting-static"></label>
@@ -173,7 +183,7 @@
                         <span class="settings-help" id="help-static"></span>
                     </div>
 
-                    <!-- 8.6 Flicker Stimulation Toggle (Nested under Static) -->
+                    <!-- Flicker Stimulation Toggle (Dynamic under Static) -->
                     <div class="settings-row" id="row-flicker" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label id="lbl-setting-flicker"></label>
@@ -185,11 +195,11 @@
 
                 <!-- Group 3: Spatial Acuity & Crowding (Collapsed) -->
                 <div class="accordion-header" id="accordion-header-3">
-                    <span>🩹 Пространственная сложность</span>
-                    <span class="accordion-arrow" id="accordion-arrow-3">►</span>
+                    <span id="lbl-setting-group-3"></span>
+                    <span class="accordion-arrow" id="accordion-arrow-3">›</span>
                 </div>
                 <div class="accordion-content" id="accordion-content-3">
-                    <!-- 7. Low Contrast Floor Mode Toggle -->
+                    <!-- Low Contrast Floor Mode Toggle -->
                     <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label id="lbl-setting-low-contrast"></label>
@@ -198,7 +208,7 @@
                         <span class="settings-help" id="help-low-contrast"></span>
                     </div>
 
-                    <!-- 8. Line Density & Blur Variance Toggle -->
+                    <!-- Shape & Line Density Randomization Toggle -->
                     <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label id="lbl-setting-wide-variance"></label>
@@ -207,7 +217,7 @@
                         <span class="settings-help" id="help-wide-variance"></span>
                     </div>
 
-                    <!-- 5. Peripheral Eccentricity Shift Toggle -->
+                    <!-- Peripheral Eccentricity Shift Toggle -->
                     <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label id="lbl-setting-peripheral"></label>
@@ -216,7 +226,7 @@
                         <span class="settings-help" id="help-peripheral"></span>
                     </div>
 
-                    <!-- 6. Visual Crowding Distractors Toggle -->
+                    <!-- Visual Crowding Distractors Toggle -->
                     <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label id="lbl-setting-crowding"></label>
@@ -225,7 +235,7 @@
                         <span class="settings-help" id="help-crowding"></span>
                     </div>
 
-                    <!-- 6.1 Orthogonal Distractor Orientation Toggle (Nested under Crowding) -->
+                    <!-- Orthogonal Flankers Orientation Toggle (Dynamic under Crowding) -->
                     <div class="settings-row" id="row-orthogonal" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label id="lbl-setting-orthogonal"></label>
@@ -234,7 +244,7 @@
                         <span class="settings-help" id="help-orthogonal"></span>
                     </div>
 
-                    <!-- 6.2 Dynamic Distractor Phase Shift Toggle (Nested under Crowding) -->
+                    <!-- Dynamic Flanker Phase Shift Toggle (Dynamic under Crowding) -->
                     <div class="settings-row" id="row-dynamic" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label id="lbl-setting-dynamic"></label>
@@ -246,11 +256,11 @@
 
                 <!-- Group 4: Binocular 3D Setup (Collapsed) -->
                 <div class="accordion-header" id="accordion-header-4">
-                    <span>🕶️ Бинокулярная 3D-настройка</span>
-                    <span class="accordion-arrow" id="accordion-arrow-4">►</span>
+                    <span id="lbl-setting-group-4"></span>
+                    <span class="accordion-arrow" id="accordion-arrow-4">›</span>
                 </div>
                 <div class="accordion-content" id="accordion-content-4">
-                    <!-- 8.8 Anaglyph 3D Mode Toggle -->
+                    <!-- Anaglyph 3D Mode Toggle -->
                     <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label id="lbl-setting-anaglyph"></label>
@@ -259,7 +269,7 @@
                         <span class="settings-help" id="help-anaglyph"></span>
                     </div>
 
-                    <!-- Collapsible binocular calibration panel -->
+                    <!-- Interactive calibration panel (Renders as sheet during test) -->
                     <div id="anaglyph-settings-panel" style="display: none; border-top: 1px dashed #2b354a; padding-top: 12px; margin-top: 10px; margin-bottom: 0;">
                         <div class="settings-row">
                             <label id="lbl-setting-red-side"></label>
@@ -283,7 +293,7 @@
                             <input type="range" id="range-strong-attenuation" min="10" max="100" step="5" value="30" style="width: 100%; accent-color: #007aff; cursor: pointer; margin-top: 6px;">
                         </div>
 
-                        <!-- 8.7 Zero-Disparity Fusion Lock Toggle -->
+                        <!-- Zero-Disparity Fusion Lock Toggle -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                                 <label id="lbl-setting-fusion-lock"></label>
@@ -292,10 +302,11 @@
                             <span class="settings-help" id="help-fusion-lock"></span>
                         </div>
 
-                        <!-- Left Eye Color Calibration (Only Red slider!) -->
+                        <!-- Left Eye Subpixel Red Balance Slider -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                                 <span id="lbl-setting-left-color" style="font-size: 13px; font-weight: 500;"></span>
+                                <span id="val-calib-r" style="color: #ef4444; font-weight: bold; font-size: 13px;">255</span>
                             </div>
                             <div style="width: 100%; display: flex; flex-direction: column; gap: 6px; padding-left: 4px;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
@@ -305,12 +316,16 @@
                             </div>
                         </div>
 
-                        <!-- Right Eye Color Calibration (Only Green and Blue sliders!) -->
+                        <!-- Right Eye Subpixel Green/Blue Balance Sliders -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 8px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                                 <span id="lbl-setting-right-color" style="font-size: 13px; font-weight: 500;"></span>
+                                <div style="display: flex; gap: 8px; font-size: 13px; font-weight: bold;">
+                                    <span style="color: #22c55e;">G: <span id="val-calib-g">255</span></span>
+                                    <span style="color: #3b82f6;">B: <span id="val-calib-b">255</span></span>
+                                </div>
                             </div>
-                            <div style="width: 100%; display: flex; flex-direction: column; gap: 6px; padding-left: 4px;">
+                            <div style="width: 100%; flex-direction: column; gap: 6px; padding-left: 4px;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <span style="width: 12px; font-size: 11px; font-weight: bold; color: #22c55e;">G</span>
                                     <input type="range" id="slider-right-g" min="0" max="255" value="255" style="flex: 1; accent-color: #22c55e; height: 4px; cursor: pointer;">
@@ -322,6 +337,7 @@
                             </div>
                         </div>
 
+                        <!-- Fusion Alignment Test Launcher Toggle -->
                         <button id="btn-fusion-test" class="close-btn" style="background: #1a233a; border: 1px solid #3b90ff; color: #3b90ff; margin-top: 14px; font-weight: bold;"></button>
                     </div>
                 </div>
@@ -333,7 +349,7 @@
         </div>
     </div>
 
-    <!-- Interactive manual modal wrapper -->
+    <!-- Educational Clinical Manual Modal -->
     <div id="info-modal" class="modal">
         <div class="modal-content">
             <h2 id="modal-title"></h2>
@@ -359,7 +375,7 @@
         </div>
     </div>
 
-    <!-- Statistics & Progress modal wrapper -->
+    <!-- Highscore Stats & History Modal -->
     <div id="stats-modal" class="modal">
         <div class="modal-content">
             <h2 id="stats-title"></h2>
@@ -372,8 +388,7 @@
         </div>
     </div>
 
-    <!-- Load Twemoji image-based vector system -->
+    <!-- External assets dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
-    <!-- High-performance modular visual training engine -->
 </body>
 </html>
