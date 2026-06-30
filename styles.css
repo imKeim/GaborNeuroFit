@@ -575,7 +575,9 @@ canvas {
     display: none !important;
 }
 
-#settings-modal.calibration-mode #accordion-content-4 > .settings-row:not(:nth-last-child(-n+3)),
+/* Target the children of the nested anaglyph panel instead of the accordion parent to fix the selector visibility bug */
+#settings-modal.calibration-mode #anaglyph-settings-panel > .settings-row:not(:nth-last-child(-n+3)),
+#settings-modal.calibration-mode #accordion-content-4 > .settings-row,
 #settings-modal.calibration-mode #accordion-content-4 > p {
     display: none !important;
 }

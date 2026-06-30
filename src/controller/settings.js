@@ -71,13 +71,23 @@ export class SettingsController {
             this.selectPresetMode.value = s.presetMode;
         }
 
-        // Live-update numeric badges while sliding
+        // Live-update numeric badges while sliding, mapped to a highly intuitive -127 to +128 equilibrium scale
         const valR = document.getElementById('val-calib-r');
         const valG = document.getElementById('val-calib-g');
         const valB = document.getElementById('val-calib-b');
-        if (valR) valR.innerText = s.calibratorLeftR;
-        if (valG) valG.innerText = s.calibratorRightG;
-        if (valB) valB.innerText = s.calibratorRightB;
+        
+        if (valR) {
+            const offsetR = s.calibratorLeftR - 127;
+            valR.innerText = offsetR > 0 ? `+${offsetR}` : offsetR;
+        }
+        if (valG) {
+            const offsetG = s.calibratorRightG - 127;
+            valG.innerText = offsetG > 0 ? `+${offsetG}` : offsetG;
+        }
+        if (valB) {
+            const offsetB = s.calibratorRightB - 127;
+            valB.innerText = offsetB > 0 ? `+${offsetB}` : offsetB;
+        }
 
         this.updateVisibilityPanels();
         
@@ -123,13 +133,23 @@ export class SettingsController {
         if (sRightG) sRightG.value = s.calibratorRightG;
         if (sRightB) sRightB.value = s.calibratorRightB;
 
-        // Render current numeric values inside calibration badges on load
+        // Render current numeric values mapped to a highly intuitive -127 to +128 equilibrium scale on load
         const valR = document.getElementById('val-calib-r');
         const valG = document.getElementById('val-calib-g');
         const valB = document.getElementById('val-calib-b');
-        if (valR) valR.innerText = s.calibratorLeftR;
-        if (valG) valG.innerText = s.calibratorRightG;
-        if (valB) valB.innerText = s.calibratorRightB;
+        
+        if (valR) {
+            const offsetR = s.calibratorLeftR - 127;
+            valR.innerText = offsetR > 0 ? `+${offsetR}` : offsetR;
+        }
+        if (valG) {
+            const offsetG = s.calibratorRightG - 127;
+            valG.innerText = offsetG > 0 ? `+${offsetG}` : offsetG;
+        }
+        if (valB) {
+            const offsetB = s.calibratorRightB - 127;
+            valB.innerText = offsetB > 0 ? `+${offsetB}` : offsetB;
+        }
 
         if (this.selectPresetMode) {
             this.selectPresetMode.value = s.presetMode;

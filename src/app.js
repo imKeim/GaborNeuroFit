@@ -229,7 +229,13 @@ window.addEventListener('load', async () => {
     );
 
     settingsController = new SettingsController(() => {
+        // Callback triggered whenever settings forms are synchronized
         updateStatusBar(Store.state, activeTranslations);
+        
+        // Instantly redraw the calibration test pattern to reflect real-time slider value shifts
+        if (trialController && trialController.isAnaglyphTestActive) {
+            drawFusionTestPattern(canvas, ctx, Store.state);
+        }
     });
     
     initModals(
@@ -269,6 +275,12 @@ window.addEventListener('load', async () => {
             const infoModal = document.getElementById('info-modal');
             const statsModal = document.getElementById('stats-modal');
 
+            // Block Escape key closing strictly when 3D calibration mode is active to prevent accidental window loss
+            if (trialController && trialController.isAnaglyphTestActive) {
+                return;
+            }
+
+            // Universally detects active modals regardless of 'block' or 'flex' layout engines
             if (settingsModal && settingsModal.style.display !== 'none' && settingsModal.style.display !== '') {
                 saveSettingsFromUI();
                 settingsModal.style.display = 'none';
@@ -298,10 +310,8 @@ window.addEventListener('load', async () => {
 
         if (!trialController.isAnaglyphTestActive) {
             drawIdleState(canvas, ctx, Store.state.isFusionLockEnabled);
-            setControlsLockState(false);
         } else {
             drawFusionTestPattern(canvas, ctx, Store.state);
-            setControlsLockState(true);
         }
         setLanguage(Store.state.currentLang);
     }
@@ -311,30 +321,6 @@ window.addEventListener('load', async () => {
         if (btnMute) {
             btnMute.innerText = Store.state.isMuted ? '🔇' : '🔊';
             if (window.twemoji) twemoji.parse(btnMute);
-        }
-    }
-
-    /**
-     * Helper to modify interactive controls availability based on calibration state
-     */
-    function setControlsLockState(isLocked) {
-        const btnLeft = document.getElementById('btn-left');
-        const btnRight = document.getElementById('btn-right');
-        const buttons = [btnStart, btnLeft, btnRight];
-        
-        buttons.forEach(btn => {
-            if (!btn) return;
-            btn.disabled = isLocked;
-            btn.style.opacity = isLocked ? '0.35' : '1';
-            btn.style.cursor = isLocked ? 'not-allowed' : 'pointer';
-        });
-
-        if (btnStart) {
-            if (isLocked) {
-                btnStart.innerText = Store.state.currentLang === 'ru' ? 'Калибровка...' : 'Calibrating...';
-            } else {
-                btnStart.innerText = activeTranslations.startBtn;
-            }
         }
     }
 
@@ -349,7 +335,12 @@ window.addEventListener('load', async () => {
                 btnFusionTest.style.color = '#131a26';
                 
                 // Toggle calibration bottom sheet layout class
-                if (settingsModal) settingsModal.classList.add('calibration-mode');
+                if (settingsModal) {
+                    settingsModal.classList.add('calibration-mode');
+                    // Reset scroll body position to the top to align calibration sliders perfectly
+                    const scrollBody = settingsModal.querySelector('.modal-scroll-body');
+                    if (scrollBody) scrollBody.scrollTop = 0;
+                }
                 
                 const selectRedSide = document.getElementById('select-red-side');
                 const selectLazySide = document.getElementById('select-lazy-side');
@@ -359,8 +350,6 @@ window.addEventListener('load', async () => {
                 drawFusionTestPattern(canvas, ctx, Store.state);
                 canvas.style.display = 'block';
                 cross.style.display = 'none';
-
-                setControlsLockState(true);
             } else {
                 btnFusionTest.style.background = '#1a233a';
                 btnFusionTest.style.color = '#3b90ff';
@@ -370,8 +359,6 @@ window.addEventListener('load', async () => {
                 
                 drawIdleState(canvas, ctx, Store.state.isFusionLockEnabled);
                 cross.style.display = 'block';
-
-                setControlsLockState(false);
             }
         });
     }
