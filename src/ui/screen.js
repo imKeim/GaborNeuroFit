@@ -8,17 +8,28 @@
 
 import { drawFusionLockFrame } from '../engine/gabor.js';
 
-// Clean the Gabor canvas back to stable, non-fatiguing foveal neutral gray state
-export function drawIdleState(canvas, ctx, isFusionLockEnabled) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Fill with exactly 50% luminance gray to prevent retina adaptation drift
-    ctx.fillStyle = '#7f7f7f';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+// Clean both Gabor and HUD canvases back to stable, non-fatiguing foveal neutral gray states
+export function drawIdleState(gaborCanvas, gaborCtx, overlayCanvas, overlayCtx, isFusionLockEnabled) {
+    // 1. Clear and fill bottom GPU canvas with sRGB neutral gray
+    if (gaborCanvas.getContext('webgl') || gaborCanvas.getContext('experimental-webgl')) {
+        const gl = gaborCanvas.getContext('webgl') || gaborCanvas.getContext('experimental-webgl');
+        if (gl) {
+            gl.clearColor(0.498, 0.498, 0.498, 1.0); // Exactly sRGB gray value 127 (#7f7f7f)
+            gl.clear(gl.COLOR_BUFFER_BIT);
+        }
+    } else {
+        const actualGaborCtx = gaborCtx || gaborCanvas.getContext('2d');
+        actualGaborCtx.clearRect(0, 0, gaborCanvas.width, gaborCanvas.height);
+        actualGaborCtx.fillStyle = '#7f7f7f';
+        actualGaborCtx.fillRect(0, 0, gaborCanvas.width, gaborCanvas.height);
+    }
 
-    // Retain visual stabilization frames during pauses
+    // 2. Clear top transparent HUD canvas
+    overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+    // Retain visual stabilization frames on top transparent overlay layer during pauses
     if (isFusionLockEnabled) {
-        drawFusionLockFrame(canvas, ctx);
+        drawFusionLockFrame(overlayCanvas, overlayCtx);
     }
 }
 

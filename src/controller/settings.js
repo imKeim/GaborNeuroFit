@@ -46,31 +46,35 @@ export class SettingsController {
 
     // Declaratively reads input forms values and commits them to the Store Model
     syncStateFromUI() {
-        const s = Store.state;
-        
+        const s = Store.state; // Safely restore state reference to prevent ReferenceError on RGB badges
+
         CONFIG_SCHEMA.forEach(field => {
             const el = document.getElementById(field.id);
             if (!el) return;
-
+    
+            let val;
             if (field.type === 'checkbox') {
-                s[field.key] = el.checked;
+                val = el.checked;
             } else if (field.type === 'value') {
-                s[field.key] = el.value;
+                val = el.value;
             } else if (field.type === 'int') {
-                s[field.key] = parseInt(el.value) || 0;
+                val = parseInt(el.value) || 0;
             } else if (field.type === 'boolean') {
-                s[field.key] = (el.value === 'true');
+                val = (el.value === 'true');
             } else if (field.type === 'percent') {
-                s[field.key] = parseFloat(el.value) / 100;
+                val = parseFloat(el.value) / 100;
             }
+            
+            Store.updateState(field.key, val);
         });
-
+    
         // Automatically re-detect macro match after checkboxes are toggled
-        s.presetMode = Store.detectMatchingPreset();
+        const detectedPreset = Store.detectMatchingPreset();
+        Store.updateState('presetMode', detectedPreset);
         if (this.selectPresetMode) {
-            this.selectPresetMode.value = s.presetMode;
+            this.selectPresetMode.value = detectedPreset;
         }
-
+    
         // Live-update numeric badges while sliding, mapped to a highly intuitive -127 to +128 equilibrium scale
         const valR = document.getElementById('val-calib-r');
         const valG = document.getElementById('val-calib-g');
@@ -200,7 +204,7 @@ export class SettingsController {
     bindSettingsInteractions() {
         if (this.selectPresetMode) {
             this.selectPresetMode.addEventListener('change', () => {
-                Store.state.presetMode = this.selectPresetMode.value;
+                Store.updateState('presetMode', this.selectPresetMode.value);
                 this.updatePresetUI();
                 if (typeof this.onSyncCallback === 'function') {
                     this.onSyncCallback();

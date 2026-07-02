@@ -25,7 +25,9 @@ let settingsController = null;
 
 // Primary DOM References for view rendering
 const canvas = document.getElementById('gaborCanvas');
-const ctx = canvas.getContext('2d');
+const ctx = null; // Do not lock the canvas into 2D context here to allow WebGL!
+const overlayCanvas = document.getElementById('overlayCanvas');
+const overlayCtx = overlayCanvas.getContext('2d');
 const cross = document.getElementById('cross');
 const flashOverlay = document.getElementById('flash-overlay');
 const container = document.getElementById('container');
@@ -217,10 +219,12 @@ function bindLangSelectors() {
 window.addEventListener('load', async () => {
     Store.loadSettings();
 
-    // Instantiate core controllers
+    // Instantiate core controllers with both GPU and Overlay Contexts
     trialController = new TrialController(
         canvas, 
         ctx, 
+        overlayCanvas,
+        overlayCtx,
         cross, 
         container, 
         flashOverlay, 
@@ -232,9 +236,9 @@ window.addEventListener('load', async () => {
         // Callback triggered whenever settings forms are synchronized
         updateStatusBar(Store.state, activeTranslations);
         
-        // Instantly redraw the calibration test pattern to reflect real-time slider value shifts
+        // Instantly redraw the calibration test pattern on the transparent overlay layer
         if (trialController && trialController.isAnaglyphTestActive) {
-            drawFusionTestPattern(canvas, ctx, Store.state);
+            drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
         }
     });
     
@@ -304,14 +308,13 @@ window.addEventListener('load', async () => {
         Store.state.staircaseStreak = 0;
         Store.state.isWaitingForAnswer = false;
 
-        // Reset the trial execution state machine to idle
-        trialController.tracker.clearAll();
-        trialController.currentState = TrialState.IDLE;
+        // Gracefully abort the trial execution state machine without direct FSM mutations
+        trialController.abort();
 
         if (!trialController.isAnaglyphTestActive) {
-            drawIdleState(canvas, ctx, Store.state.isFusionLockEnabled);
+            drawIdleState(canvas, ctx, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
         } else {
-            drawFusionTestPattern(canvas, ctx, Store.state);
+            drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
         }
         setLanguage(Store.state.currentLang);
     }
@@ -347,8 +350,11 @@ window.addEventListener('load', async () => {
                 if (selectRedSide) Store.state.redEyeSide = selectRedSide.value;
                 if (selectLazySide) Store.state.lazyEyeSide = selectLazySide.value;
                 
-                drawFusionTestPattern(canvas, ctx, Store.state);
+                // Clear the lower WebGL canvas to stable neutral gray first, then draw vector letters on top
+                drawIdleState(canvas, ctx, overlayCanvas, overlayCtx, false);
+                drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
                 canvas.style.display = 'block';
+                overlayCanvas.style.display = 'block';
                 cross.style.display = 'none';
             } else {
                 btnFusionTest.style.background = '#1a233a';
@@ -357,7 +363,7 @@ window.addEventListener('load', async () => {
                 // Remove calibration bottom sheet layout class
                 if (settingsModal) settingsModal.classList.remove('calibration-mode');
                 
-                drawIdleState(canvas, ctx, Store.state.isFusionLockEnabled);
+                drawIdleState(canvas, ctx, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
                 cross.style.display = 'block';
             }
         });
@@ -378,5 +384,5 @@ window.addEventListener('load', async () => {
     window.addEventListener('keydown', initAudio, { once: true });
 
     await setLanguage(Store.state.currentLang);
-    drawIdleState(canvas, ctx, Store.state.isFusionLockEnabled);
+    drawIdleState(canvas, ctx, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
 });

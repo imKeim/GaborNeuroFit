@@ -195,13 +195,26 @@ img.emoji {
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
     cursor: pointer;
     transition: transform 0.2s ease-out;
+    touch-action: manipulation;
 }
 
 canvas {
-    background-color: #7f7f7f;
     display: block;
     width: 100%;
     height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+#gaborCanvas {
+    background-color: #7f7f7f;
+}
+
+#overlayCanvas {
+    background-color: transparent;
+    pointer-events: none; /* Touches pass through to the interactive Gabor layer underneath */
+    z-index: 10;
 }
 
 #cross {
@@ -211,6 +224,7 @@ canvas {
     display: block;
     font-weight: 300;
     transition: font-size 0.2s ease;
+    z-index: 15; /* Render above all canvas elements */
 }
 
 /* ==========================================================================

@@ -45,10 +45,23 @@ const levelSigmaRanges = {
     5: { min: 12, max: 17 }
 };
 
+/**
+ * Strict state transition matrix to enforce safe clinical FSM flow
+ */
+const ALLOWED_TRANSITIONS = {
+    [TrialState.IDLE]: [TrialState.PRE_CUE],
+    [TrialState.PRE_CUE]: [TrialState.STIMULUS_ACTIVE],
+    [TrialState.STIMULUS_ACTIVE]: [TrialState.AWAITING_INPUT, TrialState.FEEDBACK],
+    [TrialState.AWAITING_INPUT]: [TrialState.PRE_CUE, TrialState.FEEDBACK],
+    [TrialState.FEEDBACK]: [TrialState.IDLE]
+};
+
 export class TrialController {
-    constructor(canvas, context, cross, container, flashOverlay, btnStart, translationsGetter) {
+    constructor(canvas, context, overlayCanvas, overlayContext, cross, container, flashOverlay, btnStart, translationsGetter) {
         this.canvas = canvas;
         this.ctx = context;
+        this.overlayCanvas = overlayCanvas;
+        this.overlayCtx = overlayContext;
         this.cross = cross;
         this.container = container;
         this.flashOverlay = flashOverlay;
@@ -72,23 +85,41 @@ export class TrialController {
     }
 
     /**
+     * Instantly aborts current session and resets FSM (used cleanly when exiting settings)
+     */
+    abort() {
+        this.tracker.clearAll();
+        this.currentState = TrialState.IDLE;
+        this.isFlickerOffState = false;
+    }
+
+    /**
      * Safely transitions the finite state machine and purges timers from the previous phase
      */
     transitionTo(nextState) {
+        const allowed = ALLOWED_TRANSITIONS[this.currentState];
+        if (!allowed || !allowed.includes(nextState)) {
+            return false; // Prevent illegal state transition (e.g. clicking while active)
+        }
+
         this.currentState = nextState;
         this.isFlickerOffState = false; // Reset flicker state on FSM transition
-        this.tracker.clearAll();
+        
+        // Destructively clear active timers ONLY during cue preparation or feedback phases
+        if (nextState === TrialState.PRE_CUE || nextState === TrialState.FEEDBACK) {
+            this.tracker.clearAll();
+        }
+        return true;
     }
 
     /**
      * Handles the acoustic pre-cue warning phase
      */
     triggerTrial() {
-        if (this.currentState === TrialState.PRE_CUE || this.currentState === TrialState.FEEDBACK) {
+        if (!this.transitionTo(TrialState.PRE_CUE)) {
             return; // Guard lock against rapid execution triggers
         }
 
-        this.transitionTo(TrialState.PRE_CUE);
         this.btnStart.innerText = "...";
         playCue(Store.state.isMuted);
 
@@ -102,11 +133,10 @@ export class TrialController {
      * Repeats the exposure of the active trial's visual parameters
      */
     reFlashCurrentGabor() {
-        if (this.currentState === TrialState.PRE_CUE || this.currentState === TrialState.FEEDBACK) {
+        if (!this.transitionTo(TrialState.PRE_CUE)) {
             return; // Guard lock during active transitions
         }
 
-        this.transitionTo(TrialState.PRE_CUE);
         this.btnStart.innerText = "...";
         playCue(Store.state.isMuted);
 
@@ -199,42 +229,24 @@ export class TrialController {
         this.canvas.style.display = 'block';
         Store.state.isWaitingForAnswer = true;
 
-        if (s.isDynamicFlankersEnabled && s.isCrowdingEnabled) {
-            this.startFlankerAnimation();
+        const isAnimating = (s.isDynamicFlankersEnabled && s.isCrowdingEnabled) || s.isFlickerEnabled;
+
+        if (isAnimating) {
+            this.startUnifiedRenderingLoop();
         }
 
         if (!s.isStaticEnabled) {
             // Transient exposure (auto-hide after configured duration)
             this.tracker.setTimeout(() => {
-                this.stopFlankerAnimation();
-                drawIdleState(this.canvas, this.ctx, s.isFusionLockEnabled);
+                this.stopUnifiedRenderingLoop();
+                drawIdleState(this.canvas, this.ctx, this.overlayCanvas, this.overlayCtx, s.isFusionLockEnabled);
                 this.cross.style.display = 'block';
                 this.btnStart.innerText = t.reflashBtn;
                 this.transitionTo(TrialState.AWAITING_INPUT);
             }, flashDuration);
         } else {
-            if (s.isFlickerEnabled) {
-                let flickerState = true;
-                this.tracker.setInterval(() => {
-                    flickerState = !flickerState;
-                    this.isFlickerOffState = !flickerState; // Sync global state property
-
-                    // If 60 FPS flanker animation is running, it handles rendering itself using this.isFlickerOffState
-                    if (!s.isDynamicFlankersEnabled || !s.isCrowdingEnabled) {
-                        if (flickerState) {
-                            renderGabor(this.canvas, this.ctx, s, this.currentAngleDeg, s.autoContrast, this.lastRandomFreq, this.lastRandomSigma, this.lastOffsetX, this.lastOffsetY, this.flankerPhaseOffset, this.lastRandomAspectRatio, false);
-                        } else {
-                            if (s.isCrowdingEnabled) {
-                                renderGabor(this.canvas, this.ctx, s, this.currentAngleDeg, s.autoContrast, this.lastRandomFreq, this.lastRandomSigma, this.lastOffsetX, this.lastOffsetY, this.flankerPhaseOffset, this.lastRandomAspectRatio, true);
-                            } else {
-                                drawIdleState(this.canvas, this.ctx, s.isFusionLockEnabled);
-                            }
-                        }
-                    }
-                }, 50);
-            }
             this.btnStart.innerText = t.reflashBtn;
-            this.currentState = TrialState.AWAITING_INPUT;
+            this.transitionTo(TrialState.AWAITING_INPUT);
         }
     }
 
@@ -272,7 +284,7 @@ export class TrialController {
             this.container.classList.add('error-shake');
         }
 
-        drawIdleState(this.canvas, this.ctx, s.isFusionLockEnabled);
+        drawIdleState(this.canvas, this.ctx, this.overlayCanvas, this.overlayCtx, s.isFusionLockEnabled);
 
         // Initiate smooth chromatic flash fade-out after 300ms
         this.tracker.setTimeout(() => {
@@ -342,21 +354,66 @@ export class TrialController {
     }
 
     /**
-     * Executes ongoing frame updates to create moving flanker wave sequences
+     * Highly optimized, V-Sync synchronized unified loop handling both animations and 10 Hz flicker
      */
-    startFlankerAnimation() {
+    startUnifiedRenderingLoop() {
+        const s = Store.state;
+        let lastFlickerToggleTime = performance.now();
         this.flankerPhaseOffset = 0;
-        const animate = () => {
-            this.flankerPhaseOffset += 0.12;
-            // Synchronize with active 10 Hz flicker state dynamically
-            renderGabor(this.canvas, this.ctx, Store.state, this.currentAngleDeg, Store.state.autoContrast, this.lastRandomFreq, this.lastRandomSigma, this.lastOffsetX, this.lastOffsetY, this.flankerPhaseOffset, this.lastRandomAspectRatio, this.isFlickerOffState);
-            this.tracker.requestAnimationFrame(animate);
+        this.isFlickerOffState = false;
+
+        const loop = (timestamp) => {
+            // Guard: If calibration alignment test is toggled on, immediately suspend Gabor rendering
+            if (this.isAnaglyphTestActive) {
+                const gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl');
+                if (gl) {
+                    gl.clearColor(0.498, 0.498, 0.498, 1.0);
+                    gl.clear(gl.COLOR_BUFFER_BIT);
+                }
+                return; // Break the recursive animation frame loop to freeze GPU drawing during calibration
+            }
+
+            // 1. Safe phase advance clamped to 2*PI to prevent mobile GPU precision loss
+            if (s.isDynamicFlankersEnabled && s.isCrowdingEnabled) {
+                this.flankerPhaseOffset = (this.flankerPhaseOffset + 0.12) % (2.0 * Math.PI);
+            }
+
+            // 2. High-precision 10 Hz flicker interval tracking (50ms cycles)
+            if (s.isFlickerEnabled) {
+                const elapsed = timestamp - lastFlickerToggleTime;
+                if (elapsed >= 50.0) {
+                    this.isFlickerOffState = !this.isFlickerOffState;
+                    lastFlickerToggleTime = timestamp;
+                }
+            } else {
+                this.isFlickerOffState = false;
+            }
+
+            // 3. Render exactly once per frame buffer refresh (V-Sync)
+            renderGabor(
+                this.canvas, 
+                this.ctx, 
+                s, 
+                this.currentAngleDeg, 
+                s.autoContrast, 
+                this.lastRandomFreq, 
+                this.lastRandomSigma, 
+                this.lastOffsetX, 
+                this.lastOffsetY, 
+                this.flankerPhaseOffset, 
+                this.lastRandomAspectRatio, 
+                this.isFlickerOffState
+            );
+
+            this.tracker.requestAnimationFrame(loop);
         };
-        this.tracker.requestAnimationFrame(animate);
+
+        this.tracker.requestAnimationFrame(loop);
     }
 
-    stopFlankerAnimation() {
+    stopUnifiedRenderingLoop() {
         this.flankerPhaseOffset = 0;
+        this.isFlickerOffState = false;
     }
 
     /**

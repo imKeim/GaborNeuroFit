@@ -155,8 +155,8 @@ export function bindInputControls(handlers) {
     let lastTouchEnd = 0;
     document.addEventListener('touchend', (event) => {
         const now = (new Date()).getTime();
-        // Zero out click latencies on action buttons, bypass mobile Safari 300ms click delays
-        if (event.target.closest('.action-btn') || event.target.closest('#btn-start')) {
+        // Zero out click latencies on action buttons and main canvas workspace, bypass mobile Safari 300ms click delays
+        if (event.target.closest('.action-btn') || event.target.closest('#btn-start') || event.target.closest('#container')) {
             if (now - lastTouchEnd <= 300) {
                 event.preventDefault();
             }

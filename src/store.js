@@ -44,6 +44,19 @@ export const Store = {
         trialHistory: [] // Ephemeral session history for double-track macro transitions
     },
 
+    // Safely write settings properties with boundary validations (Information Hiding)
+    updateState(key, value) {
+        if (key === 'currentLevel') {
+            this.state.currentLevel = Math.max(1, Math.min(5, parseInt(value) || 1));
+            return;
+        }
+        if (key === 'strongEyeContrastFactor') {
+            this.state.strongEyeContrastFactor = Math.max(0.1, Math.min(1.0, parseFloat(value) || 0.3));
+            return;
+        }
+        this.state[key] = value;
+    },
+
     // Initialize state from localStorage or falls back to robust defaults
     loadSettings() {
         try {
@@ -287,8 +300,8 @@ export const Store = {
         // Track B (Macro-block regression): evaluate recent failure rate to prevent stress
         if (s.allowStageAdvance && s.trialHistory.length >= 15) {
             const last15 = s.trialHistory.slice(-15);
-            const correctCount = lastSessionCount => lastSessionCount.reduce((a, b) => a + b, 0);
-            const accuracy = correctCount(last15) / 15;
+            const correctCount = last15.reduce((a, b) => a + b, 0);
+            const accuracy = correctCount / 15;
             if (accuracy < 0.60) {
                 if (s.currentLevel > 1) {
                     s.currentLevel--;
