@@ -4,9 +4,14 @@ GaborNeuroFit/
 │   └── workflows/
 │       └── deploy.yml          # GitHub Actions CI/CD deployment pipeline
 ├── public/                     # Static assets that Vite serves untouched
-│   └── i18n/                   # Externalized translation JSON files
-│       ├── en.json             # English dictionary
-│       └── ru.json             # Russian dictionary (with Sentence case labels)
+│   ├── emojis/                 # Localized vector Twemoji assets (offline use)
+    │   ├── i18n/                   # Externalized translation JSON files
+    │   │   ├── en.json             # English dictionary
+    │   │   └── ru.json             # Russian dictionary (with Sentence case labels)
+    │   ├── icon-192.png            # Generated PWA launcher icon (192x192)
+    │   └── icon-512.png            # Generated PWA launcher icon (512x512)
+├── scripts/                    # Automated build-time task runner
+│   └── generate-assets.js      # Offline assets compiler & image processor
 ├── src/                        # Modular JavaScript source code
 │   ├── app.js                  # Core bootstrap and event routing (Entry Point)
 │   ├── store.js                # State machine \& localStorage management
@@ -22,4 +27,3 @@ GaborNeuroFit/
 ├── package.json                # Project dependencies \& npm scripts
 └── vite.config.js              # Vite compiler configuration
 ```
-
