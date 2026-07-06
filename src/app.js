@@ -19,6 +19,19 @@ import { SettingsController } from './controller/settings.js';
 // Global cache for the active localization dictionary
 let activeTranslations = {};
 
+// Intercept Twemoji parser globally to enforce absolute offline local path loading
+if (window.twemoji) {
+    const originalParse = window.twemoji.parse;
+    window.twemoji.parse = function (target, options) {
+        const localOptions = Object.assign({
+            folder: 'emojis',
+            ext: '.svg',
+            base: './'
+        }, options);
+        return originalParse.call(window.twemoji, target, localOptions);
+    };
+}
+
 // References to our core OOP controllers instances
 let trialController = null;
 let settingsController = null;
@@ -385,4 +398,10 @@ window.addEventListener('load', async () => {
 
     await setLanguage(Store.state.currentLang);
     drawIdleState(canvas, ctx, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
+
+    // Register Service Worker for offline-capable clinical execution
+    if ('serviceWorker' in navigator && !import.meta.env.DEV) {
+        navigator.serviceWorker.register('./sw.js')
+            .catch(err => console.warn('PWA service worker registration bypassed:', err));
+    }
 });
