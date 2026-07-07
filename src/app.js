@@ -38,7 +38,6 @@ let settingsController = null;
 
 // Primary DOM References for view rendering
 const canvas = document.getElementById('gaborCanvas');
-const ctx = null; // Do not lock the canvas into 2D context here to allow WebGL!
 const overlayCanvas = document.getElementById('overlayCanvas');
 const overlayCtx = overlayCanvas.getContext('2d');
 const cross = document.getElementById('cross');
@@ -140,10 +139,9 @@ function bindLangSelectors() {
 window.addEventListener('load', async () => {
     Store.loadSettings();
 
-    // Instantiate core controllers with both GPU and Overlay Contexts
+    // Instantiate core controllers with WebGL Canvas and Overlay Context
     trialController = new TrialController(
         canvas, 
-        ctx, 
         overlayCanvas,
         overlayCtx,
         cross, 
@@ -227,13 +225,13 @@ window.addEventListener('load', async () => {
         Store.state.autoContrast = 0.40;
         Store.state.correctStreak = 0;
         Store.state.staircaseStreak = 0;
-        Store.state.isWaitingForAnswer = false;
+        Store.updateState('isWaitingForAnswer', false);
 
         // Gracefully abort the trial execution state machine without direct FSM mutations
         trialController.abort();
 
         if (!trialController.isAnaglyphTestActive) {
-            drawIdleState(canvas, ctx, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
+            drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
         } else {
             drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
         }
@@ -281,7 +279,7 @@ window.addEventListener('load', async () => {
                 overlayCanvas.height = physicalSize;
                 
                 // Clear the lower WebGL canvas to stable neutral gray first, then draw vector letters on top
-                drawIdleState(canvas, ctx, overlayCanvas, overlayCtx, false);
+                drawIdleState(canvas, null, overlayCanvas, overlayCtx, false);
                 drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
                 canvas.style.display = 'block';
                 overlayCanvas.style.display = 'block';
@@ -293,7 +291,7 @@ window.addEventListener('load', async () => {
                 // Remove calibration bottom sheet layout class
                 if (settingsModal) settingsModal.classList.remove('calibration-mode');
                 
-                drawIdleState(canvas, ctx, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
+                drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
                 cross.style.display = 'block';
             }
         });
@@ -314,7 +312,7 @@ window.addEventListener('load', async () => {
     window.addEventListener('keydown', initAudio, { once: true });
 
     await setLanguage(Store.state.currentLang);
-    drawIdleState(canvas, ctx, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
+    drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
 
     // Register Service Worker for offline-capable clinical execution
     if ('serviceWorker' in navigator && !import.meta.env.DEV) {

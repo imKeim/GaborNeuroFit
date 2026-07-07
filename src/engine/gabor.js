@@ -222,96 +222,6 @@ class WebGLResourceManager {
     }
 }
 
-// Low-level high-performance procedural rendering fallback for CPU (Canvas 2D)
-function renderGaborCPU(canvas, ctx, state, angleDeg, centralContrast, flankerContrast, freq, sigma, offsetX, offsetY, flankerPhaseOffset, aspectRatio, hideCentral, scale) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const width = canvas.width;
-    const height = canvas.height;
-    const imgData = ctx.createImageData(width, height);
-    const data = imgData.data;
-
-    const angleRad = (angleDeg * Math.PI) / 180;
-    const isCrowding = state.isCrowdingEnabled;
-    const flankerAngleRad = state.isOrthogonalFlankersEnabled ? (angleRad + Math.PI / 2) : 0;
-    const flankerOffset = sigma * 2.0;
-    const L_bg = 0.21763;
-
-    const isLazyEyeRed = (state.lazyEyeSide === state.redEyeSide);
-    const leftScale = state.calibratorLeftR / 255;
-    const rightGScale = state.calibratorRightG / 255;
-    const rightBScale = state.calibratorRightB / 255;
-
-    // Normalizing CPU grid iterations to logical 256 boundaries via scale coefficient
-    const lcx = 128.0;
-    const lcy = 128.0;
-
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            const lx = x / scale;
-            const ly = y / scale;
-
-            const dx = lx - (lcx + offsetX);
-            const dy = ly - (lcy + offsetY);
-
-            const x_theta = dx * Math.cos(angleRad) + dy * Math.sin(angleRad);
-            const y_theta = -dx * Math.sin(angleRad) + dy * Math.cos(angleRad);
-            const gaussian = Math.exp(-(x_theta * x_theta + aspectRatio * aspectRatio * y_theta * y_theta) / (2 * sigma * sigma));
-            const cosine = Math.cos(2 * Math.PI * x_theta * freq);
-
-            const dist = Math.sqrt((lx - lcx) * (lx - lcx) + (ly - lcy) * (ly - lcy));
-            let fade = 1.0;
-            if (dist > 85.0) {
-                const t = Math.min(1.0, (dist - 85.0) / (128.0 - 85.0));
-                fade = 0.5 + 0.5 * Math.cos(Math.PI * t);
-            }
-            if (dist >= 128.0) fade = 0.0;
-
-            const centralGaborValue = hideCentral ? 0 : (gaussian * cosine * fade);
-            let flankerGaborValue = 0;
-
-            if (isCrowding) {
-                const dy1 = ly - (lcy - flankerOffset);
-                const x_t1 = dx * Math.cos(flankerAngleRad) + dy1 * Math.sin(flankerAngleRad);
-                const y_t1 = -dx * Math.sin(flankerAngleRad) + dy1 * Math.cos(flankerAngleRad);
-                const g1 = Math.exp(-(x_t1 * x_t1 + aspectRatio * aspectRatio * y_t1 * y_t1) / (2 * sigma * sigma)) * Math.cos(2 * Math.PI * x_t1 * freq + flankerPhaseOffset);
-
-                const dy2 = ly - (lcy + flankerOffset);
-                const x_t2 = dx * Math.cos(flankerAngleRad) + dy2 * Math.sin(flankerAngleRad);
-                const y_t2 = -dx * Math.sin(flankerAngleRad) + dy2 * Math.cos(flankerAngleRad);
-                const g2 = Math.exp(-(x_t2 * x_t2 + aspectRatio * aspectRatio * y_t2 * y_t2) / (2 * sigma * sigma)) * Math.cos(2 * Math.PI * x_t2 * freq + flankerPhaseOffset);
-
-                flankerGaborValue = (g1 + g2) * 0.55 * fade;
-            }
-
-            let R, G, B;
-            if (state.isAnaglyphEnabled) {
-                const L_lazy = L_bg + (centralGaborValue * L_bg * lazyContrast);
-                const L_strong = L_bg + (flankerGaborValue * L_bg * strongContrast * state.strongEyeContrastFactor);
-                if (isLazyEyeRed) {
-                    R = Math.pow(Math.max(0, L_lazy * leftScale), 1 / 2.2) * 255;
-                    G = Math.pow(Math.max(0, L_strong * rightGScale), 1 / 2.2) * 255;
-                    B = Math.pow(Math.max(0, L_strong * rightBScale), 1 / 2.2) * 255;
-                } else {
-                    R = Math.pow(Math.max(0, L_strong * leftScale), 1 / 2.2) * 255;
-                    G = Math.pow(Math.max(0, L_lazy * rightGScale), 1 / 2.2) * 255;
-                    B = Math.pow(Math.max(0, L_lazy * rightBScale), 1 / 2.2) * 255;
-                }
-            } else {
-                const totalGaborValue = centralGaborValue + flankerGaborValue;
-                const L_total = L_bg + (totalGaborValue * L_bg * contrast);
-                R = G = B = Math.pow(Math.max(0, L_total), 1 / 2.2) * 255;
-            }
-
-            const idx = (y * width + x) * 4;
-            data[idx] = Math.max(0, Math.min(255, R));
-            data[idx + 1] = Math.max(0, Math.min(255, G));
-            data[idx + 2] = Math.max(0, Math.min(255, B));
-            data[idx + 3] = 255;
-        }
-    }
-    ctx.putImageData(imgData, 0, 0);
-}
-
 // Draw persistent zero-disparity visual stabilization lock frame (Executed on top transparent layer)
 export function drawFusionLockFrame(canvas, ctx, scale = 1.0) {
     ctx.save();
@@ -412,7 +322,7 @@ export function drawFusionTestPattern(canvas, ctx, state) {
     ctx.restore();
 }
 
-// Modern unified entry point for Gabor rendering with transparent GPU-to-CPU execution routing
+// Modern unified entry point for Gabor rendering with transparent GPU execution.
 export function renderGabor(canvas, ctx, state, angleDeg, centralContrast, flankerContrast, freq, sigma, offsetX = 0, offsetY = 0, flankerPhaseOffset = 0, aspectRatio = 1.0, hideCentral = false) {
     if (!webGLManagerInstance || webGLManagerInstance.canvas !== canvas) {
         webGLManagerInstance = new WebGLResourceManager(canvas);
@@ -423,6 +333,7 @@ export function renderGabor(canvas, ctx, state, angleDeg, centralContrast, flank
     if (webGLManagerInstance.isReady) {
         webGLManagerInstance.render(state, angleDeg, centralContrast, flankerContrast, freq, sigma, offsetX, offsetY, flankerPhaseOffset, aspectRatio, hideCentral, scale);
     } else {
-        renderGaborCPU(canvas, ctx, state, angleDeg, centralContrast, flankerContrast, freq, sigma, offsetX, offsetY, flankerPhaseOffset, aspectRatio, hideCentral, scale);
+        // Fallback to error logging if WebGL initialization failed (e.g. hardware acceleration disabled)
+        console.error("WebGL 1.0 initialization failed. GaborNeuroFit requires GPU hardware acceleration to maintain clinical 10 Hz visual temporal pacing.");
     }
 }

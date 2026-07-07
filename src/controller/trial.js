@@ -87,8 +87,7 @@ const ALLOWED_TRANSITIONS = {
  */
 export class TrialController {
     /**
-     * @param {HTMLCanvasElement} canvas - The primary WebGL/2D Gabor stimulus canvas.
-     * @param {CanvasRenderingContext2D|WebGLRenderingContext|null} context - The rendering context for the primary canvas.
+     * @param {HTMLCanvasElement} canvas - The primary WebGL Gabor stimulus canvas.
      * @param {HTMLCanvasElement} overlayCanvas - The transparent HUD and fusion lock canvas.
      * @param {CanvasRenderingContext2D} overlayContext - The rendering context for the overlay canvas.
      * @param {HTMLElement} cross - The central fixation cross DOM element.
@@ -97,9 +96,9 @@ export class TrialController {
      * @param {HTMLButtonElement} btnStart - The primary action/reflash trigger button.
      * @param {function(): Object} translationsGetter - Callback function returning the active localization bundle.
      */
-    constructor(canvas, context, overlayCanvas, overlayContext, cross, container, flashOverlay, btnStart, translationsGetter) {
+    constructor(canvas, overlayCanvas, overlayContext, cross, container, flashOverlay, btnStart, translationsGetter) {
         this.canvas = canvas;
-        this.ctx = context;
+        this.ctx = null;
         this.overlayCanvas = overlayCanvas;
         this.overlayCtx = overlayContext;
         this.cross = cross;
@@ -137,8 +136,6 @@ export class TrialController {
 
         /** @type {boolean} */
         this.isAnaglyphTestActive = false;
-        /** @type {boolean} */
-        this.isFlickerOffState = false;
     }
 
     /**
@@ -151,7 +148,6 @@ export class TrialController {
     abort() {
         this.tracker.clearAll();
         this.currentState = TrialState.IDLE;
-        this.isFlickerOffState = false;
     }
 
     /**
@@ -170,7 +166,6 @@ export class TrialController {
         }
 
         this.currentState = nextState;
-        this.isFlickerOffState = false;
         
         if (nextState === TrialState.PRE_CUE || nextState === TrialState.FEEDBACK) {
             this.tracker.clearAll();
@@ -320,7 +315,7 @@ export class TrialController {
 
         this.cross.style.display = 'none';
         this.canvas.style.display = 'block';
-        Store.state.isWaitingForAnswer = true;
+        Store.updateState('isWaitingForAnswer', true);
 
         const isAnimating = (s.isDynamicFlankersEnabled && s.isCrowdingEnabled) || s.isFlickerEnabled;
 
@@ -358,7 +353,7 @@ export class TrialController {
         }
 
         const s = Store.state;
-        Store.state.isWaitingForAnswer = false;
+        Store.updateState('isWaitingForAnswer', false);
 
         this.transitionTo(TrialState.FEEDBACK);
         this.cross.style.display = 'block';
@@ -469,7 +464,6 @@ export class TrialController {
     startUnifiedRenderingLoop() {
         const s = Store.state;
         this.flankerPhaseOffset = 0;
-        this.isFlickerOffState = false;
 
         const startTime = performance.now();
         const optimalFrequencyCoeff = 0.062831853; 
@@ -528,7 +522,6 @@ export class TrialController {
      */
     stopUnifiedRenderingLoop() {
         this.flankerPhaseOffset = 0;
-        this.isFlickerOffState = false;
     }
 
     /**
