@@ -20,9 +20,9 @@ const FRAGMENT_SHADER_SOURCE = `
     precision highp float;
     uniform vec2 u_resolution;
     uniform float u_scale;
-    uniform vec4 u_gabor_main; // [angleRad, contrast, freq, sigma]
-    uniform vec3 u_gabor_geom; // [offsetX, -offsetY, aspectRatio]
-    uniform vec4 u_flanker_main; // [flankerAngleRad, contrast, flankerOffset, phaseOffset]
+    uniform vec4 u_gabor_main; // [angleRad, centralContrast, freq, sigma]
+    uniform vec3 u_gabor_geom; // [offsetX, offsetY, aspectRatio]
+    uniform vec4 u_flanker_main; // [flankerAngleRad, flankerContrast, flankerOffset, phaseOffset]
     uniform vec3 u_calib_scale; // [leftScale, rightGScale, rightBScale]
     uniform vec4 u_flags; // [isAnaglyph, isCrowding, isLazyEyeRed, hideCentral]
 
@@ -31,7 +31,7 @@ const FRAGMENT_SHADER_SOURCE = `
         vec2 center = u_resolution / 2.0;
 
         float angleRad = u_gabor_main.x;
-        float contrast = u_gabor_main.y;
+        float centralContrast = u_gabor_main.y;
         float freq = u_gabor_main.z;
         float sigma = u_gabor_main.w;
 
@@ -50,7 +50,7 @@ const FRAGMENT_SHADER_SOURCE = `
         bool hideCentral = u_flags.w > 0.5;
 
         // Normalized relative coordinates in the virtual 256x256 space via u_scale
-        vec2 d = (st - (center + u_gabor_geom.xy * u_scale)) / u_scale;
+        vec2 d = (st - (center + vec2(offsetX, offsetY) * u_scale)) / u_scale;
 
         // Central Gabor calculations
         float x_theta = d.x * cos(angleRad) + d.y * sin(angleRad);
@@ -73,13 +73,13 @@ const FRAGMENT_SHADER_SOURCE = `
         float flankerGaborValue = 0.0;
         if (isCrowding) {
             // Top flanker normalized to logical coordinates
-            vec2 d1 = (st - (center + vec2(u_gabor_geom.x, u_gabor_geom.y - flankerOffset) * u_scale)) / u_scale;
+            vec2 d1 = (st - (center + vec2(offsetX, offsetY - flankerOffset) * u_scale)) / u_scale;
             float x_t1 = d1.x * cos(flankerAngleRad) + d1.y * sin(flankerAngleRad);
             float y_t1 = -d1.x * sin(flankerAngleRad) + d1.y * cos(flankerAngleRad);
             float g1 = exp(-(x_t1 * x_t1 + aspectRatio * aspectRatio * y_t1 * y_t1) / (2.0 * sigma * sigma)) * cos(2.0 * 3.14159265 * x_t1 * freq + flankerPhaseOffset);
 
             // Bottom flanker normalized to logical coordinates
-            vec2 d2 = (st - (center + vec2(u_gabor_geom.x, u_gabor_geom.y + flankerOffset) * u_scale)) / u_scale;
+            vec2 d2 = (st - (center + vec2(offsetX, offsetY + flankerOffset) * u_scale)) / u_scale;
             float x_t2 = d2.x * cos(flankerAngleRad) + d2.y * sin(flankerAngleRad);
             float y_t2 = -d2.x * sin(flankerAngleRad) + d2.y * cos(flankerAngleRad);
             float g2 = exp(-(x_t2 * x_t2 + aspectRatio * aspectRatio * y_t2 * y_t2) / (2.0 * sigma * sigma)) * cos(2.0 * 3.14159265 * x_t2 * freq + flankerPhaseOffset);
@@ -92,7 +92,7 @@ const FRAGMENT_SHADER_SOURCE = `
 
         if (isAnaglyph) {
             // Apply calibration scales ONLY to dynamic Gabor wave oscillations (deltas)
-            float delta_lazy = centralGaborValue * L_bg * contrast;
+            float delta_lazy = centralGaborValue * L_bg * centralContrast;
             float delta_strong = flankerGaborValue * L_bg * flankerContrast;
 
             if (isLazyEyeRed) {
@@ -105,7 +105,7 @@ const FRAGMENT_SHADER_SOURCE = `
                 color.b = L_bg + (delta_lazy * u_calib_scale.z);
             }
         } else {
-            float L_total = L_bg + ((centralGaborValue + flankerGaborValue) * L_bg * contrast);
+            float L_total = L_bg + (centralGaborValue * L_bg * centralContrast) + (flankerGaborValue * L_bg * flankerContrast);
             color = vec3(L_total);
         }
 
@@ -195,8 +195,14 @@ class WebGLResourceManager {
         return shader;
     }
 
-    render(state, angleDeg, contrast, freq, sigma, offsetX, offsetY, flankerPhaseOffset, aspectRatio, hideCentral, scale) {
+    render(state, angleDeg, centralContrast, flankerContrast, freq, sigma, offsetX, offsetY, flankerPhaseOffset, aspectRatio, hideCentral, scale) {
         const gl = this.gl;
+        
+        // CRITICAL WebGL Clear: Explicitly clear color buffer with sRGB neutral gray before rendering.
+        // This completely prevents GPU frame memory leakage (flicker ghosts/moiré patterns) under rapid temporal modulation.
+        gl.clearColor(0.21763, 0.21763, 0.21763, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
         gl.viewport(0, 0, this.canvas.width, this.canvas.height);
         gl.useProgram(this.program);
 
@@ -206,9 +212,9 @@ class WebGLResourceManager {
 
         gl.uniform2f(this.u_resolution, this.canvas.width, this.canvas.height);
         gl.uniform1f(this.u_scale, scale);
-        gl.uniform4f(this.u_gabor_main, -angleRad, contrast, freq, sigma);
+        gl.uniform4f(this.u_gabor_main, -angleRad, centralContrast, freq, sigma);
         gl.uniform3f(this.u_gabor_geom, offsetX, -offsetY, aspectRatio);
-        gl.uniform4f(this.u_flanker_main, -flankerAngleRad, contrast * state.strongEyeContrastFactor, flankerOffset, flankerPhaseOffset);
+        gl.uniform4f(this.u_flanker_main, -flankerAngleRad, flankerContrast * state.strongEyeContrastFactor, flankerOffset, flankerPhaseOffset);
         gl.uniform3f(this.u_calib_scale, state.calibratorLeftR / 255, state.calibratorRightG / 255, state.calibratorRightB / 255);
         gl.uniform4f(this.u_flags, state.isAnaglyphEnabled ? 1.0 : 0.0, state.isCrowdingEnabled ? 1.0 : 0.0, (state.lazyEyeSide === state.redEyeSide) ? 1.0 : 0.0, hideCentral ? 1.0 : 0.0);
 
@@ -217,7 +223,7 @@ class WebGLResourceManager {
 }
 
 // Low-level high-performance procedural rendering fallback for CPU (Canvas 2D)
-function renderGaborCPU(canvas, ctx, state, angleDeg, contrast, freq, sigma, offsetX, offsetY, flankerPhaseOffset, aspectRatio, hideCentral, scale) {
+function renderGaborCPU(canvas, ctx, state, angleDeg, centralContrast, flankerContrast, freq, sigma, offsetX, offsetY, flankerPhaseOffset, aspectRatio, hideCentral, scale) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const width = canvas.width;
     const height = canvas.height;
@@ -230,8 +236,6 @@ function renderGaborCPU(canvas, ctx, state, angleDeg, contrast, freq, sigma, off
     const flankerOffset = sigma * 2.0;
     const L_bg = 0.21763;
 
-    const lazyContrast = contrast;
-    const strongContrast = contrast * state.strongEyeContrastFactor;
     const isLazyEyeRed = (state.lazyEyeSide === state.redEyeSide);
     const leftScale = state.calibratorLeftR / 255;
     const rightGScale = state.calibratorRightG / 255;
@@ -282,7 +286,7 @@ function renderGaborCPU(canvas, ctx, state, angleDeg, contrast, freq, sigma, off
             let R, G, B;
             if (state.isAnaglyphEnabled) {
                 const L_lazy = L_bg + (centralGaborValue * L_bg * lazyContrast);
-                const L_strong = L_bg + (flankerGaborValue * L_bg * strongContrast);
+                const L_strong = L_bg + (flankerGaborValue * L_bg * strongContrast * state.strongEyeContrastFactor);
                 if (isLazyEyeRed) {
                     R = Math.pow(Math.max(0, L_lazy * leftScale), 1 / 2.2) * 255;
                     G = Math.pow(Math.max(0, L_strong * rightGScale), 1 / 2.2) * 255;
@@ -409,7 +413,7 @@ export function drawFusionTestPattern(canvas, ctx, state) {
 }
 
 // Modern unified entry point for Gabor rendering with transparent GPU-to-CPU execution routing
-export function renderGabor(canvas, ctx, state, angleDeg, contrast, freq, sigma, offsetX = 0, offsetY = 0, flankerPhaseOffset = 0, aspectRatio = 1.0, hideCentral = false) {
+export function renderGabor(canvas, ctx, state, angleDeg, centralContrast, flankerContrast, freq, sigma, offsetX = 0, offsetY = 0, flankerPhaseOffset = 0, aspectRatio = 1.0, hideCentral = false) {
     if (!webGLManagerInstance || webGLManagerInstance.canvas !== canvas) {
         webGLManagerInstance = new WebGLResourceManager(canvas);
     }
@@ -417,8 +421,8 @@ export function renderGabor(canvas, ctx, state, angleDeg, contrast, freq, sigma,
     const scale = canvas.width / 256.0;
 
     if (webGLManagerInstance.isReady) {
-        webGLManagerInstance.render(state, angleDeg, contrast, freq, sigma, offsetX, offsetY, flankerPhaseOffset, aspectRatio, hideCentral, scale);
+        webGLManagerInstance.render(state, angleDeg, centralContrast, flankerContrast, freq, sigma, offsetX, offsetY, flankerPhaseOffset, aspectRatio, hideCentral, scale);
     } else {
-        renderGaborCPU(canvas, ctx, state, angleDeg, contrast, freq, sigma, offsetX, offsetY, flankerPhaseOffset, aspectRatio, hideCentral, scale);
+        renderGaborCPU(canvas, ctx, state, angleDeg, centralContrast, flankerContrast, freq, sigma, offsetX, offsetY, flankerPhaseOffset, aspectRatio, hideCentral, scale);
     }
 }

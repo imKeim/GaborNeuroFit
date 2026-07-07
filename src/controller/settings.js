@@ -8,7 +8,8 @@
 
 import { Store } from '../store.js';
 
-// Metadata schema for declarative mapping between DOM Inputs and Store State fields
+// Metadata schema for declarative mapping between DOM Inputs and Store State fields.
+// WARNING: Do not modify these IDs or keys. They bind DOM elements directly to Store.state variables.
 const CONFIG_SCHEMA = [
     { id: 'chk-stage-advance', key: 'allowStageAdvance', type: 'checkbox' },
     { id: 'select-flash-duration', key: 'flashDurationMode', type: 'value' },
@@ -36,16 +37,15 @@ const CONFIG_SCHEMA = [
 
 export class SettingsController {
     constructor(onSyncCallback) {
-        this.onSyncCallback = onSyncCallback; // Callback to notify App orchestrator of changes
-        
-        // Resolve persistent DOM panel elements
+        this.onSyncCallback = onSyncCallback;
         this.anaglyphPanel = document.getElementById('anaglyph-settings-panel');
         this.valStrongAttenuation = document.getElementById('val-strong-attenuation');
         this.selectPresetMode = document.getElementById('select-preset-mode');
         this.rangeStrongAttenuation = document.getElementById('range-strong-attenuation');
     }
 
-    // Declaratively reads input forms values and commits them to the Store Model
+    // SYNCHRONIZATION PASS (DOM -> Store): Reads all configured DOM elements, 
+    // tracks the last changed field to resolve logical conflicts, and triggers state updates.
     syncStateFromUI() {
         const s = Store.state;
         let lastActiveTrigger = null;
@@ -57,6 +57,8 @@ export class SettingsController {
             let val;
             if (field.type === 'checkbox') {
                 val = el.checked;
+                // Active Interaction Override: Compares new DOM state against old Store state 
+                // to detect which checkbox was clicked last, avoiding dead-locks during conflicts.
                 if (s[field.key] !== val) {
                     if (field.key === 'isPeripheralEnabled') lastActiveTrigger = 'peripheral';
                     if (field.key === 'isCrowdingEnabled') lastActiveTrigger = 'crowding';
@@ -72,7 +74,6 @@ export class SettingsController {
             } else if (field.type === 'percent') {
                 val = parseFloat(el.value) / 100;
             }
-            
             Store.updateState(field.key, val);
         });
 
@@ -86,30 +87,22 @@ export class SettingsController {
             this.selectPresetMode.value = detectedPreset;
         }
 
-        // Live-update numeric badges while sliding, mapped to a highly intuitive -127 to +128 equilibrium scale
+        // SUBPIXEL CALIBRATION OFFSET: Translates pure RGB channels (0-255) 
+        // to a visually balanced, offset scale (-127 to +128) on load.
         const valR = document.getElementById('val-calib-r');
         const valG = document.getElementById('val-calib-g');
         const valB = document.getElementById('val-calib-b');
         
-        if (valR) {
-            const offsetR = s.calibratorLeftR - 127;
-            valR.innerText = offsetR > 0 ? `+${offsetR}` : offsetR;
-        }
-        if (valG) {
-            const offsetG = s.calibratorRightG - 127;
-            valG.innerText = offsetG > 0 ? `+${offsetG}` : offsetG;
-        }
-        if (valB) {
-            const offsetB = s.calibratorRightB - 127;
-            valB.innerText = offsetB > 0 ? `+${offsetB}` : offsetB;
-        }
+        if (valR) { valR.innerText = (s.calibratorLeftR - 127 > 0 ? '+' : '') + (s.calibratorLeftR - 127); }
+        if (valG) { valG.innerText = (s.calibratorRightG - 127 > 0 ? '+' : '') + (s.calibratorRightG - 127); }
+        if (valB) { valB.innerText = (s.calibratorRightB - 127 > 0 ? '+' : '') + (s.calibratorRightB - 127); }
 
         if (typeof this.onSyncCallback === 'function') {
             this.onSyncCallback();
         }
     }
 
-    // Declaratively reads Store Model state and writes values to the active HTML inputs
+    // RENDER PASS (Store -> DOM): Forces all physical DOM controls to match the current, validated Store state variables.
     updatePresetUI() {
         const s = Store.state;
 
@@ -121,60 +114,35 @@ export class SettingsController {
             const el = document.getElementById(field.id);
             if (!el) return;
 
-            if (field.type === 'checkbox') {
-                el.checked = s[field.key];
-            } else if (field.type === 'value') {
-                el.value = s[field.key];
-            } else if (field.type === 'int') {
-                el.value = s[field.key].toString();
-            } else if (field.type === 'boolean') {
-                el.value = s[field.key] ? 'true' : 'false';
-            } else if (field.type === 'percent') {
+            if (field.type === 'checkbox') el.checked = s[field.key];
+            else if (field.type === 'value') el.value = s[field.key];
+            else if (field.type === 'int') el.value = s[field.key].toString();
+            else if (field.type === 'boolean') el.value = s[field.key] ? 'true' : 'false';
+            else if (field.type === 'percent') {
                 el.value = Math.round(s[field.key] * 100).toString();
-                if (this.valStrongAttenuation) {
-                    this.valStrongAttenuation.innerText = el.value + '%';
-                }
+                if (this.valStrongAttenuation) this.valStrongAttenuation.innerText = el.value + '%';
             }
         });
 
         // Direct numeric sliders bindings (Pure RGB calibration, zero obsolete Hex fields)
         const sLeftR = document.getElementById('slider-left-r');
         if (sLeftR) sLeftR.value = s.calibratorLeftR;
-
         const sRightG = document.getElementById('slider-right-g');
         const sRightB = document.getElementById('slider-right-b');
         if (sRightG) sRightG.value = s.calibratorRightG;
         if (sRightB) sRightB.value = s.calibratorRightB;
 
-        // Render current numeric values mapped to a highly intuitive -127 to +128 equilibrium scale on load
-        const valR = document.getElementById('val-calib-r');
-        const valG = document.getElementById('val-calib-g');
-        const valB = document.getElementById('val-calib-b');
-        
-        if (valR) {
-            const offsetR = s.calibratorLeftR - 127;
-            valR.innerText = offsetR > 0 ? `+${offsetR}` : offsetR;
-        }
-        if (valG) {
-            const offsetG = s.calibratorRightG - 127;
-            valG.innerText = offsetG > 0 ? `+${offsetG}` : offsetG;
-        }
-        if (valB) {
-            const offsetB = s.calibratorRightB - 127;
-            valB.innerText = offsetB > 0 ? `+${offsetB}` : offsetB;
-        }
-
-        if (this.selectPresetMode) {
-            this.selectPresetMode.value = s.presetMode;
-        }
+        if (this.selectPresetMode) this.selectPresetMode.value = s.presetMode;
 
         this.updateVisibilityPanels();
     }
 
+    // DYNAMIC ACCORDION VISIBILITY: Enforces responsive opacities, hides irrelevant sub-sections,
+    // and disables child elements to prevent Cumulative Layout Shifts (CLS) on mobile viewports.
     updateVisibilityPanels() {
         const s = Store.state;
 
-        // 1. Accordion 2: Flicker row control (Always display flex, opacity & disabled toggle)
+        // Group 2: Flicker row (always display flex, opacity & disabled toggle)
         const chkFlicker = document.getElementById('chk-flicker');
         const rowFlicker = document.getElementById('row-flicker');
         if (chkFlicker) chkFlicker.disabled = !s.isStaticEnabled;
@@ -183,7 +151,7 @@ export class SettingsController {
             rowFlicker.style.opacity = s.isStaticEnabled ? '1' : '0.5';
         }
 
-        // 2. Accordion 3: Crowding sub-rows control (Always display flex, opacity & disabled toggle)
+        // Group 3: Crowding sub-rows (always display flex, opacity & disabled toggle)
         const chkOrthogonal = document.getElementById('chk-orthogonal-flankers');
         const chkDynamic = document.getElementById('chk-dynamic-flankers');
         const rowOrthogonal = document.getElementById('row-orthogonal');
@@ -201,24 +169,21 @@ export class SettingsController {
             rowDynamic.style.opacity = s.isCrowdingEnabled ? '1' : '0.5';
         }
 
-        // 3. Accordion 4: Anaglyph calibration panel control (Always display block, opacity & disabled toggle for all child inputs)
+        // Group 4: Anaglyph calibration panel (always display block, opacity & disabled toggle)
         if (this.anaglyphPanel) {
             this.anaglyphPanel.style.display = 'block';
             this.anaglyphPanel.style.opacity = s.isAnaglyphEnabled ? '1' : '0.4';
-
-            const calibInputs = this.anaglyphPanel.querySelectorAll('input, select, button');
-            calibInputs.forEach(input => {
+            this.anaglyphPanel.querySelectorAll('input, select, button').forEach(input => {
                 input.disabled = !s.isAnaglyphEnabled;
             });
         }
 
-        // 4. Clinical Selective Disclosure: Gray out the entire 3D accordion header if monocular preset is selected
+        // Accordion 4 Monocular Block: Hard-locks the 3D calibration accordion if a strictly monocular preset is active
         const headerAnaglyph = document.getElementById('accordion-header-4');
         const contentAnaglyph = document.getElementById('accordion-content-4');
         if (headerAnaglyph) {
             const isMonocularPreset = (s.presetMode === 'occlusion' || s.presetMode === 'blitz');
             const shouldDisable3D = !s.isAnaglyphEnabled && isMonocularPreset;
-
             if (shouldDisable3D) {
                 headerAnaglyph.style.opacity = '0.35';
                 headerAnaglyph.style.pointerEvents = 'none';
@@ -232,28 +197,24 @@ export class SettingsController {
         }
     }
 
-    // Binds events and enforces clinical options validation (mutual exclusions)
+    // EVENT BINDINGS: Hooks up real-time slider inputs and binds change events
+    // to the CONFIG_SCHEMA to trigger the re-active sync-resolve-render loop.
     bindSettingsInteractions() {
         if (this.selectPresetMode) {
             this.selectPresetMode.value = Store.state.presetMode;
             this.selectPresetMode.addEventListener('change', () => {
                 Store.updateState('presetMode', this.selectPresetMode.value);
                 this.updatePresetUI();
-                if (typeof this.onSyncCallback === 'function') {
-                    this.onSyncCallback();
-                }
+                if (typeof this.onSyncCallback === 'function') this.onSyncCallback();
             });
         }
 
-        // Bind interactive collapsible accordion cards clicks
         for (let i = 1; i <= 4; i++) {
             const header = document.getElementById(`accordion-header-${i}`);
             const content = document.getElementById(`accordion-content-${i}`);
             if (header && content) {
                 header.addEventListener('click', () => {
                     const isOpen = content.classList.contains('open');
-                    
-                    // Collapse all other groups first for pristine vertical screen space economy
                     for (let j = 1; j <= 4; j++) {
                         const c = document.getElementById(`accordion-content-${j}`);
                         const h = document.getElementById(`accordion-header-${j}`);
@@ -263,8 +224,6 @@ export class SettingsController {
                             if (arrow) arrow.classList.remove('active');
                         }
                     }
-
-                    // If clicked header was closed, expand it!
                     if (!isOpen) {
                         content.classList.add('open');
                         const arrow = header.querySelector('.accordion-arrow');
@@ -274,43 +233,31 @@ export class SettingsController {
             }
         }
 
-        // Bind live dynamic slider updates directly to active canvas
         const activeSliders = ['slider-left-r', 'slider-right-g', 'slider-right-b'];
         activeSliders.forEach(id => {
             const el = document.getElementById(id);
-            if (el) {
-                el.addEventListener('input', () => {
-                    this.syncStateFromUI();
-                });
-            }
+            if (el) el.addEventListener('input', () => this.syncStateFromUI());
         });
 
+        // CRITICAL: rangeStrongAttenuation 'input' event does NOT trigger updatePresetUI().
+        // This prevents the slider thumb from glitching/lagging during rapid drag actions.
         if (this.rangeStrongAttenuation) {
             this.rangeStrongAttenuation.addEventListener('input', () => {
-                if (this.valStrongAttenuation) {
-                    this.valStrongAttenuation.innerText = this.rangeStrongAttenuation.value + '%';
-                }
+                if (this.valStrongAttenuation) this.valStrongAttenuation.innerText = this.rangeStrongAttenuation.value + '%';
                 this.syncStateFromUI();
             });
         }
 
-        // Automatic binding for all schema fields changes to run syncStateFromUI() and force visual update
         CONFIG_SCHEMA.forEach(field => {
             const el = document.getElementById(field.id);
             if (!el) return;
-
-            const skipIds = [
-                'select-preset-mode', 'range-strong-attenuation',
-                'slider-left-r', 'slider-right-g', 'slider-right-b'
-            ];
+            const skipIds = ['select-preset-mode', 'range-strong-attenuation', 'slider-left-r', 'slider-right-g', 'slider-right-b'];
             if (skipIds.includes(field.id)) return;
 
             el.addEventListener('change', () => {
                 this.syncStateFromUI();
                 this.updatePresetUI();
-                if (typeof this.onSyncCallback === 'function') {
-                    this.onSyncCallback();
-                }
+                if (typeof this.onSyncCallback === 'function') this.onSyncCallback();
             });
         });
     }

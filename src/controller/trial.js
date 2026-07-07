@@ -8,7 +8,7 @@
 
 import { Store } from '../store.js';
 import { AsyncResourceTracker } from '../utils/tracker.js';
-import { renderGabor } from '../engine/gabor.js';
+import { renderGabor, drawFusionLockFrame } from '../engine/gabor.js';
 import { playCue, playSuccess, playError } from '../engine/audio.js';
 import { updateScoreboard, updateStatusBar, drawIdleState } from '../ui/screen.js';
 
@@ -173,6 +173,14 @@ export class TrialController {
             this.overlayCanvas.height = physicalSize;
         }
 
+        // CRITICAL First-Flash Frame Fix: Always clear and redraw the dynamic overlay lock frame
+        // after any backing-store resize event to prevent the borders from disappearing on first launch.
+        this.overlayCtx.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
+        if (s.isFusionLockEnabled) {
+            const scale = this.canvas.width / 256.0;
+            drawFusionLockFrame(this.overlayCanvas, this.overlayCtx, scale);
+        }
+
         if (isNewTrial) {
             // Generate a secure randomized stimulus angle outside of dead-zones
             do {
@@ -235,7 +243,7 @@ export class TrialController {
         this.cross.style.fontSize = crossSize + 'px';
 
         // Render Gabor patch using mathematical engine
-        renderGabor(this.canvas, this.ctx, s, this.currentAngleDeg, s.autoContrast, this.lastRandomFreq, this.lastRandomSigma, this.lastOffsetX, this.lastOffsetY, 0, this.lastRandomAspectRatio);
+        renderGabor(this.canvas, this.ctx, s, this.currentAngleDeg, s.autoContrast, s.autoContrast, this.lastRandomFreq, this.lastRandomSigma, this.lastOffsetX, this.lastOffsetY, 0, this.lastRandomAspectRatio);
 
         let flashDuration = this.getFlashDuration(s);
         updateStatusBar(s, t);
@@ -430,18 +438,26 @@ export class TrialController {
             }
 
             // 2. High-precision Phase-Reversing Contrast Modulation (Bipolar Sine-Wave) calibrated to device refresh rate
-            let activeContrast = s.autoContrast;
+            // Smoothly oscillates contrast from +max to -max (swapping stripe phases).
+            // CLINICAL ISOLATION: Flankers remain steady to provide background noise, ONLY central target flickers.
+            let centralContrast = s.autoContrast;
+            let flankerContrast = s.autoContrast;
+
             if (s.isFlickerEnabled) {
-                activeContrast = s.autoContrast * Math.sin(accumulatedTime * optimalFrequencyCoeff);
+                // 10 Hz cycle maps to 20*PI radians per second (0.062831853 rad per millisecond)
+                centralContrast = s.autoContrast * Math.sin(accumulatedTime * optimalFrequencyCoeff);
             }
 
             // 3. Render exactly once per frame buffer refresh (V-Sync)
+            // Note: We read dimensions only inside _runRenderCycle. 
+            // Reading DOM layout bounds here at 60Hz/120Hz would cause layout thrashing and frame drops.
             renderGabor(
                 this.canvas, 
                 this.ctx, 
                 s, 
                 this.currentAngleDeg, 
-                activeContrast, 
+                centralContrast,
+                flankerContrast,
                 this.lastRandomFreq, 
                 this.lastRandomSigma, 
                 this.lastOffsetX, 

@@ -7,7 +7,8 @@
  */
 
 export const Store = {
-    // Single Source of Truth for the entire training configuration and session stats
+    // STATE SCHEMA: Single Source of Truth for the active session, indicators, and configuration parameters.
+    // WARNING: Do not prune, rename, or delete any keys. They map 1:1 to DOM CONFIG_SCHEMA fields.
     state: {
         sessionId: 'session_' + Date.now(),
         currentAngleDeg: 0,
@@ -39,13 +40,13 @@ export const Store = {
         isFlickerEnabled: false,
         isFusionLockEnabled: true,
         isMuted: false,
-        calibratorLeftR: 255,   // Pure Left R subpixel value [0-255]
-        calibratorRightG: 255,  // Pure Right G subpixel value [0-255]
-        calibratorRightB: 255,  // Pure Right B subpixel value [0-255]
-        trialHistory: [] // Ephemeral session history for double-track macro transitions
+        calibratorLeftR: 255, // Pure Left subpixel Red balance [0-255]
+        calibratorRightG: 255, // Pure Right subpixel Green balance [0-255]
+        calibratorRightB: 255, // Pure Right subpixel Blue balance [0-255]
+        trialHistory: [] // Ephemeral sliding window (max 30 items) for block progression checks
     },
 
-    // Safely write settings properties with boundary validations (Information Hiding)
+    // BOUNDARY PROTECTION: Hard-locks critical clinical parameters to prevent DOM UI crashes
     updateState(key, value) {
         if (key === 'currentLevel') {
             this.state.currentLevel = Math.max(1, Math.min(5, parseInt(value) || 1));
@@ -58,45 +59,39 @@ export const Store = {
         this.state[key] = value;
     },
 
-    // Central mathematical validation engine: Synchronously resolves settings conflicts with Active Interaction Override
+    // ACTIVE INTERACTION OVERRIDE: Resolves conflicting optometric constraints symmetrically.
+    // Uses lastActiveTrigger to determine which checkbox wins, completely avoiding dead-locks in UI.
     resolveConflicts(lastActiveTrigger = null) {
         const s = this.state;
 
-        // Rule 1: Peripheral vs Crowding mutual exclusion (Active Interaction Override)
+        // Rule 1: Peripheral shifts vs Crowding flankers (Mutual Exclusion)
         if (lastActiveTrigger === 'peripheral') {
-            if (s.isPeripheralEnabled) {
-                s.isCrowdingEnabled = false;
-            }
+            if (s.isPeripheralEnabled) s.isCrowdingEnabled = false;
         } else if (lastActiveTrigger === 'crowding') {
-            if (s.isCrowdingEnabled) {
-                s.isPeripheralEnabled = false;
-            }
+            if (s.isCrowdingEnabled) s.isPeripheralEnabled = false;
         } else {
-            // Fallback for load/init passes: Peripheral takes precedent if both are true
-            if (s.isPeripheralEnabled && s.isCrowdingEnabled) {
-                s.isCrowdingEnabled = false;
-            }
+            // Cold boot fallback
+            if (s.isPeripheralEnabled && s.isCrowdingEnabled) s.isCrowdingEnabled = false;
         }
 
-        // Rule 2: Orthogonal and Dynamic modulations require basic Crowding flankers to be active
+        // Rule 2: Dynamic and Orthogonal flankers strictly require Crowding to be active
         if (!s.isCrowdingEnabled) {
             s.isOrthogonalFlankersEnabled = false;
             s.isDynamicFlankersEnabled = false;
         }
 
-        // Rule 3: Flicker Alpha-resonance at 10 Hz strictly requires static target exposure to loop interval cycles
-        // Active Interaction Override: Prevent static mode from fighting user input
+        // Rule 3: 10 Hz Flicker strictly requires a static, non-hiding background container (SSVEP lock)
         if (lastActiveTrigger === 'static' && !s.isStaticEnabled) {
             s.isFlickerEnabled = false;
         } else if (lastActiveTrigger === 'flicker' && s.isFlickerEnabled) {
             s.isStaticEnabled = true;
         } else if (!lastActiveTrigger && s.isFlickerEnabled) {
-            // Fallback for initialization load pass
             s.isStaticEnabled = true;
         }
     },
 
-    // Initialize state from localStorage or falls back to robust defaults
+    // PERSISTENCE ENGINE: Safely synchronizes model state with localStorage.
+    // Gracefully falls back to robust default values if parsing or browser security policies fail.
     loadSettings() {
         try {
             this.state.presetMode = localStorage.getItem('gabor_preset_mode') || 'occlusion';
@@ -124,20 +119,14 @@ export const Store = {
             this.state.calibratorLeftR = parseInt(localStorage.getItem('gabor_calib_left_r') || '255');
             this.state.calibratorRightG = parseInt(localStorage.getItem('gabor_calib_right_g') || '255');
             this.state.calibratorRightB = parseInt(localStorage.getItem('gabor_calib_right_b') || '255');
-        } catch (e) {
-            console.warn("Local storage read failed, keeping default parameters:", e);
-        }
+        } catch (e) {}
         
-        // Align default visual templates for selected macro preset
         if (this.state.presetMode !== 'custom') {
             this.applyPresetTemplate(this.state.presetMode);
         }
-
-        // Sanitize loaded persistent state to resolve any legacy structural conflicts
         this.resolveConflicts(null);
     },
 
-    // Commit current state variables to persistent localStorage
     saveSettings() {
         try {
             localStorage.setItem('gabor_preset_mode', this.state.presetMode);
@@ -165,240 +154,93 @@ export const Store = {
             localStorage.setItem('gabor_calib_left_r', this.state.calibratorLeftR.toString());
             localStorage.setItem('gabor_calib_right_g', this.state.calibratorRightG.toString());
             localStorage.setItem('gabor_calib_right_b', this.state.calibratorRightB.toString());
-        } catch (e) {
-            console.warn("Local storage write failed, active settings only cached in RAM:", e);
-        }
+        } catch (e) {}
     },
 
-    // Enforce matching preset macros depending on active checkboxes configuration
+    // CLINICAL PRESETS MATRIX: Maps active macro checkboxes. 
+    // WARNING: Any change to the state schema must be registered here to avoid custom-mode leakages.
     detectMatchingPreset() {
         const s = this.state;
-        if (
-            s.allowStageAdvance === true &&
-            s.flashDurationMode === 'adaptive' &&
-            s.isPeripheralEnabled === false &&
-            s.isCrowdingEnabled === false &&
-            s.isOrthogonalFlankersEnabled === false &&
-            s.isDynamicFlankersEnabled === false &&
-            s.isStaticEnabled === false &&
-            s.isAnaglyphEnabled === false &&
-            s.allowWideVariance === false &&
-            s.allowShapeVariance === false &&
-            s.isFlickerEnabled === false &&
-            s.isFusionLockEnabled === false
-        ) return 'occlusion';
-
-        if (
-            s.allowStageAdvance === true &&
-            s.flashDurationMode === 'adaptive' &&
-            s.isPeripheralEnabled === false &&
-            s.isCrowdingEnabled === true &&
-            s.isOrthogonalFlankersEnabled === false &&
-            s.isDynamicFlankersEnabled === false &&
-            s.isStaticEnabled === false &&
-            s.isAnaglyphEnabled === true &&
-            s.allowWideVariance === false &&
-            s.allowShapeVariance === false &&
-            s.isFlickerEnabled === false &&
-            s.isFusionLockEnabled === true
-        ) return 'binocular';
-
-        if (
-            s.allowStageAdvance === true &&
-            s.flashDurationMode === '180' &&
-            s.isPeripheralEnabled === true &&
-            s.isCrowdingEnabled === false &&
-            s.isOrthogonalFlankersEnabled === false &&
-            s.isDynamicFlankersEnabled === false &&
-            s.isStaticEnabled === false &&
-            s.isAnaglyphEnabled === true &&
-            s.allowWideVariance === false &&
-            s.allowShapeVariance === false &&
-            s.isFlickerEnabled === false &&
-            s.isFusionLockEnabled === true
-        ) return 'peripheral';
-
-        if (
-            s.allowStageAdvance === true &&
-            s.flashDurationMode === '100' &&
-            s.isPeripheralEnabled === false &&
-            s.isCrowdingEnabled === false &&
-            s.isOrthogonalFlankersEnabled === false &&
-            s.isDynamicFlankersEnabled === false &&
-            s.isStaticEnabled === false &&
-            s.isAnaglyphEnabled === false &&
-            s.allowWideVariance === true &&
-            s.allowShapeVariance === true &&
-            s.isFlickerEnabled === false &&
-            s.isFusionLockEnabled === false
-        ) return 'blitz';
-
-        if (
-            s.allowStageAdvance === true &&
-            s.flashDurationMode === 'adaptive' &&
-            s.isPeripheralEnabled === false &&
-            s.isCrowdingEnabled === true &&
-            s.isOrthogonalFlankersEnabled === false &&
-            s.isDynamicFlankersEnabled === false &&
-            s.isStaticEnabled === true &&
-            s.isAnaglyphEnabled === true &&
-            s.allowWideVariance === false &&
-            s.allowShapeVariance === false &&
-            s.isFlickerEnabled === true &&
-            s.isFusionLockEnabled === true
-        ) return 'flicker';
-
+        if (s.allowStageAdvance === true && s.flashDurationMode === 'adaptive' && s.isPeripheralEnabled === false && s.isCrowdingEnabled === false && s.isOrthogonalFlankersEnabled === false && s.isDynamicFlankersEnabled === false && s.isStaticEnabled === false && s.isAnaglyphEnabled === false && s.allowWideVariance === false && s.allowShapeVariance === false && s.isFlickerEnabled === false && s.isFusionLockEnabled === false) return 'occlusion';
+        if (s.allowStageAdvance === true && s.flashDurationMode === 'adaptive' && s.isPeripheralEnabled === false && s.isCrowdingEnabled === true && s.isOrthogonalFlankersEnabled === false && s.isDynamicFlankersEnabled === false && s.isStaticEnabled === false && s.isAnaglyphEnabled === true && s.allowWideVariance === false && s.allowShapeVariance === false && s.isFlickerEnabled === false && s.isFusionLockEnabled === true) return 'binocular';
+        if (s.allowStageAdvance === true && s.flashDurationMode === '180' && s.isPeripheralEnabled === true && s.isCrowdingEnabled === false && s.isOrthogonalFlankersEnabled === false && s.isDynamicFlankersEnabled === false && s.isStaticEnabled === false && s.isAnaglyphEnabled === true && s.allowWideVariance === false && s.allowShapeVariance === false && s.isFlickerEnabled === false && s.isFusionLockEnabled === true) return 'peripheral';
+        if (s.allowStageAdvance === true && s.flashDurationMode === '100' && s.isPeripheralEnabled === false && s.isCrowdingEnabled === false && s.isOrthogonalFlankersEnabled === false && s.isDynamicFlankersEnabled === false && s.isStaticEnabled === false && s.isAnaglyphEnabled === false && s.allowWideVariance === true && s.allowShapeVariance === true && s.isFlickerEnabled === false && s.isFusionLockEnabled === false) return 'blitz';
+        if (s.allowStageAdvance === true && s.flashDurationMode === 'adaptive' && s.isPeripheralEnabled === false && s.isCrowdingEnabled === true && s.isOrthogonalFlankersEnabled === false && s.isDynamicFlankersEnabled === false && s.isStaticEnabled === true && s.isAnaglyphEnabled === true && s.allowWideVariance === false && s.allowShapeVariance === false && s.isFlickerEnabled === true && s.isFusionLockEnabled === true) return 'flicker';
         return 'custom';
     },
 
-    // Apply strict predefined configuration templates for target preset mode
     applyPresetTemplate(mode) {
         this.state.presetMode = mode;
         if (mode === 'occlusion') {
-            this.state.allowStageAdvance = true;
-            this.state.flashDurationMode = 'adaptive';
-            this.state.isPeripheralEnabled = false;
-            this.state.isCrowdingEnabled = false;
-            this.state.isOrthogonalFlankersEnabled = false;
-            this.state.isDynamicFlankersEnabled = false;
-            this.state.isStaticEnabled = false;
-            this.state.isAnaglyphEnabled = false;
-            this.state.allowWideVariance = false;
-            this.state.allowShapeVariance = false;
-            this.state.isFlickerEnabled = false;
-            this.state.isFusionLockEnabled = false;
+            this.state.allowStageAdvance = true; this.state.flashDurationMode = 'adaptive'; this.state.isPeripheralEnabled = false; this.state.isCrowdingEnabled = false; this.state.isOrthogonalFlankersEnabled = false; this.state.isDynamicFlankersEnabled = false; this.state.isStaticEnabled = false; this.state.isAnaglyphEnabled = false; this.state.allowWideVariance = false; this.state.allowShapeVariance = false; this.state.isFlickerEnabled = false; this.state.isFusionLockEnabled = false;
         } else if (mode === 'binocular') {
-            this.state.allowStageAdvance = true;
-            this.state.flashDurationMode = 'adaptive';
-            this.state.isPeripheralEnabled = false;
-            this.state.isCrowdingEnabled = true;
-            this.state.isOrthogonalFlankersEnabled = false;
-            this.state.isDynamicFlankersEnabled = false;
-            this.state.isStaticEnabled = false;
-            this.state.isAnaglyphEnabled = true;
-            this.state.allowWideVariance = false;
-            this.state.allowShapeVariance = false;
-            this.state.isFlickerEnabled = false;
-            this.state.isFusionLockEnabled = true;
+            this.state.allowStageAdvance = true; this.state.flashDurationMode = 'adaptive'; this.state.isPeripheralEnabled = false; this.state.isCrowdingEnabled = true; this.state.isOrthogonalFlankersEnabled = false; this.state.isDynamicFlankersEnabled = false; this.state.isStaticEnabled = false; this.state.isAnaglyphEnabled = true; this.state.allowWideVariance = false; this.state.allowShapeVariance = false; this.state.isFlickerEnabled = false; this.state.isFusionLockEnabled = true;
         } else if (mode === 'peripheral') {
-            this.state.allowStageAdvance = true;
-            this.state.flashDurationMode = '180';
-            this.state.isPeripheralEnabled = true;
-            this.state.isCrowdingEnabled = false;
-            this.state.isOrthogonalFlankersEnabled = false;
-            this.state.isDynamicFlankersEnabled = false;
-            this.state.isStaticEnabled = false;
-            this.state.isAnaglyphEnabled = true;
-            this.state.allowWideVariance = false;
-            this.state.allowShapeVariance = false;
-            this.state.isFlickerEnabled = false;
-            this.state.isFusionLockEnabled = true;
+            this.state.allowStageAdvance = true; this.state.flashDurationMode = '180'; this.state.isPeripheralEnabled = true; this.state.isCrowdingEnabled = false; this.state.isOrthogonalFlankersEnabled = false; this.state.isDynamicFlankersEnabled = false; this.state.isStaticEnabled = false; this.state.isAnaglyphEnabled = true; this.state.allowWideVariance = false; this.state.allowShapeVariance = false; this.state.isFlickerEnabled = false; this.state.isFusionLockEnabled = true;
         } else if (mode === 'blitz') {
-            this.state.allowStageAdvance = true;
-            this.state.flashDurationMode = '100';
-            this.state.isPeripheralEnabled = false;
-            this.state.isCrowdingEnabled = false;
-            this.state.isOrthogonalFlankersEnabled = false;
-            this.state.isDynamicFlankersEnabled = false;
-            this.state.isStaticEnabled = false;
-            this.state.isAnaglyphEnabled = false;
-            this.state.allowWideVariance = true;
-            this.state.allowShapeVariance = true;
-            this.state.isFlickerEnabled = false;
-            this.state.isFusionLockEnabled = false;
+            this.state.allowStageAdvance = true; this.state.flashDurationMode = '100'; this.state.isPeripheralEnabled = false; this.state.isCrowdingEnabled = false; this.state.isOrthogonalFlankersEnabled = false; this.state.isDynamicFlankersEnabled = false; this.state.isStaticEnabled = false; this.state.isAnaglyphEnabled = false; this.state.allowWideVariance = true; this.state.allowShapeVariance = true; this.state.isFlickerEnabled = false; this.state.isFusionLockEnabled = false;
         } else if (mode === 'flicker') {
-            this.state.allowStageAdvance = true;
-            this.state.flashDurationMode = 'adaptive';
-            this.state.isPeripheralEnabled = false;
-            this.state.isCrowdingEnabled = true;
-            this.state.isOrthogonalFlankersEnabled = false;
-            this.state.isDynamicFlankersEnabled = false;
-            this.state.isStaticEnabled = true;
-            this.state.isAnaglyphEnabled = true;
-            this.state.allowWideVariance = false;
-            this.state.allowShapeVariance = false;
-            this.state.isFlickerEnabled = true;
-            this.state.isFusionLockEnabled = true;
+            this.state.allowStageAdvance = true; this.state.flashDurationMode = 'adaptive'; this.state.isPeripheralEnabled = false; this.state.isCrowdingEnabled = true; this.state.isOrthogonalFlankersEnabled = false; this.state.isDynamicFlankersEnabled = false; this.state.isStaticEnabled = true; this.state.isAnaglyphEnabled = true; this.state.allowWideVariance = false; this.state.allowShapeVariance = false; this.state.isFlickerEnabled = true; this.state.isFusionLockEnabled = true;
         }
     },
 
-    // Pure mathematical Gabor Contrast Adaptive Staircase logic with double-track macro progress
+    // ADAPTIVE STAIRCASE ENGINE: Implements optometric 3-down 1-up clinical feedback loop.
+    // Coordinates micro-staircase contrast adjustments and macro-block (sliding window) stage transitions.
     registerResult(isCorrect) {
         const s = this.state;
         s.total++;
         const minContrast = s.allowLowContrast ? 0.01 : 0.05;
 
-        // Push current result to session history array
         if (!s.trialHistory) s.trialHistory = [];
         s.trialHistory.push(isCorrect ? 1 : 0);
         if (s.trialHistory.length > 30) s.trialHistory.shift();
 
-        // Track B (Macro-block progression): evaluate block accuracy to prevent contrast traps
+        // Macro-Track B Progression: 20-trial sliding window. If success rate >= 85%, advance spatial stage difficulty
         if (s.trialHistory.length >= 20) {
-            const last20 = s.trialHistory.slice(-20);
-            const correctCount = last20.reduce((acc, val) => acc + val, 0);
-            const accuracy20 = correctCount / 20;
-            if (accuracy20 >= 0.85) {
+            const correctCount = s.trialHistory.slice(-20).reduce((a, b) => a + b, 0);
+            if (correctCount / 20 >= 0.85) {
                 if (s.currentLevel < 5) {
-                    s.currentLevel++;
-                    s.autoContrast = 0.40; // Elevate stage and reset contrast to baseline
-                    s.correctStreak = 0;
-                    s.staircaseStreak = 0;
-                    s.trialHistory = []; // Reset block history to prevent instant triggers cascade
-                    if (isCorrect) s.score++; // Still record the score point
+                    s.currentLevel++; s.autoContrast = 0.40; s.correctStreak = 0; s.staircaseStreak = 0; s.trialHistory = [];
+                    if (isCorrect) s.score++;
                     return;
                 }
             }
         }
 
-        // Track B (Macro-block regression): evaluate recent failure rate to prevent stress
+        // Macro-Track B Regression: 15-trial sliding window. If success rate < 60%, regress spatial stage to avoid stress
         if (s.allowStageAdvance && s.trialHistory.length >= 15) {
-            const last15 = s.trialHistory.slice(-15);
-            const correctCount = last15.reduce((a, b) => a + b, 0);
-            const accuracy = correctCount / 15;
-            if (accuracy < 0.60) {
+            const correctCount = s.trialHistory.slice(-15).reduce((a, b) => a + b, 0);
+            if (correctCount / 15 < 0.60) {
                 if (s.currentLevel > 1) {
-                    s.currentLevel--;
-                    s.autoContrast = 0.50; // Drop stage and reset contrast to comfort zone
-                    s.correctStreak = 0;
-                    s.staircaseStreak = 0;
-                    s.trialHistory = []; // Reset block history
+                    s.currentLevel--; s.autoContrast = 0.50; s.correctStreak = 0; s.staircaseStreak = 0; s.trialHistory = [];
                     return;
                 }
             }
         }
 
-        // Track A (Micro-staircase): standard trial-by-trial 3-down 1-up staircase
+        // Micro-Track A: Standard trial-by-trial staircase. 3 correct answers drop contrast; 1 error raises contrast.
         if (isCorrect) {
-            s.score++;
-            s.correctStreak++;
-            s.staircaseStreak++;
-            
+            s.score++; s.correctStreak++; s.staircaseStreak++;
             if (s.staircaseStreak >= 3) {
                 if (s.autoContrast <= minContrast) {
-                    if (s.currentLevel < 5) {
-                        s.currentLevel++;
-                        s.autoContrast = 0.40; // Reset contrast baseline for next spatial frequency band
-                    }
+                    if (s.currentLevel < 5) { s.currentLevel++; s.autoContrast = 0.40; }
                 } else {
                     s.autoContrast = Math.max(minContrast, s.autoContrast - 0.05);
                 }
                 s.staircaseStreak = 0;
             }
         } else {
-            s.correctStreak = 0;
-            s.staircaseStreak = 0;
-            
+            s.correctStreak = 0; s.staircaseStreak = 0;
             if (s.allowStageAdvance && s.autoContrast >= 0.70 && s.currentLevel > 1) {
-                s.currentLevel--;
-                s.autoContrast = 0.30; // Downgrade stage and present easier visual stimuli
+                s.currentLevel--; s.autoContrast = 0.30;
             } else {
                 s.autoContrast = Math.min(1.0, s.autoContrast + 0.08);
             }
         }
     },
 
-    // Save session snapshot to local highscores leaderboard
+    // PERSISTENCE LEADERBOARD: Saves active session state. 
+    // Preserves legacy flat list (gabor_history_v2) with a maximum cap of 7 records.
     saveSession() {
         if (this.state.total === 0) return;
         try {
@@ -410,7 +252,6 @@ export const Store = {
                 level: this.state.currentLevel,
                 contrast: Math.round(this.state.autoContrast * 100),
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                // Rich clinical biomarkers schema integration
                 protocol: this.state.presetMode,
                 speed: this.state.flashDurationMode,
                 isAnaglyph: this.state.isAnaglyphEnabled,
@@ -424,21 +265,14 @@ export const Store = {
                 history.push(currentSession);
             }
             
-            // Sort list by highest score
             history.sort((a, b) => b.score - a.score);
-            localStorage.setItem('gabor_history_v2', JSON.stringify(history.slice(0, 7))); // Expanded from 5 to 7 records limit
-        } catch (e) {
-            console.warn("Leaderboard persistency write failed:", e);
-        }
+            localStorage.setItem('gabor_history_v2', JSON.stringify(history.slice(0, 7)));
+        } catch (e) {}
     },
 
-    // Read top 5 recorded highscore sessions
     getHistory() {
         try {
             return JSON.parse(localStorage.getItem('gabor_history_v2') || '[]');
-        } catch (e) {
-            console.warn("Leaderboard read failed:", e);
-            return [];
-        }
+        } catch (e) { return []; }
     }
 };

@@ -9,7 +9,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    <!-- Progressive Web Application Meta & Capabilities -->
     <link rel="manifest" href="./manifest.webmanifest">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -18,16 +17,16 @@
     <meta name="theme-color" content="#131a26">
 </head>
 <body>
-    <!-- Hardware-accelerated feedback flash layer -->
+    <!-- CRITICAL: Fullscreen hardware-accelerated overlay for success/error flash feedback -->
     <div id="flash-overlay"></div>
 
-    <!-- Global Dynamic Landscape Rotation Blocker -->
+    <!-- CRITICAL: Prevents mobile landscape layout breaks. Forced via CSS media queries -->
     <div id="rotation-blocker">
         <div id="rotation-text" data-i18n="lblRotationBlock"></div>
     </div>
 
     <div id="app-wrapper">
-        <!-- Top Utility Header Panel -->
+        <!-- TOP HUD: Holds main settings and diagnostic triggers -->
         <div id="top-bar">
             <div id="app-title">🧿 GaborNeuroFit</div>
             <div id="top-controls">
@@ -38,7 +37,9 @@
             </div>
         </div>
 
-        <!-- Central Training Workspace -->
+        <!-- WORKSPACE: Aspect-ratio locked (1:1) training area. 
+             CRITICAL: gaborCanvas (WebGL/CPU) and overlayCanvas (2D Transparent HUD) 
+             MUST sit absolutely stacked over each other at 100% width/height. -->
         <div id="workspace">
             <div id="container">
                 <div id="cross">+</div>
@@ -47,11 +48,12 @@
             </div>
         </div>
 
-        <!-- Bottom Interface & Controls Panel -->
+        <!-- BOTTOM HUD: Session scoreboard, status descriptors, and user tactile inputs -->
         <div id="bottom-dock">
             <div id="score-board">
                 <div id="score-text"></div>
                 <div id="indicators">
+                    <!-- i18n Engine: Uses data-i18n for secure plain-text content injection (textContent) -->
                     <span class="badge"><span data-i18n="stage"></span>: <span id="current-level">1</span>/5</span>
                     <span class="badge"><span data-i18n="contrast"></span>: <span id="current-contrast">50</span>%</span>
                     <span class="badge"><span data-i18n="streak"></span>: <span id="current-streak">0</span></span>
@@ -63,6 +65,7 @@
                     <span><span data-i18n="lblActiveMode">Mode</span>: <strong id="val-active-mode" style="color: #007aff;">Classic</strong></span>
                     <span><span data-i18n="lblActiveSpeed">Speed</span>: <strong id="val-active-speed">Adaptive</strong></span>
                 </div>
+                <!-- CRITICAL: btn-start is dynamically populated procedurally in app.js on load/state change. No static i18n. -->
                 <button id="btn-start"></button>
                 <div id="action-buttons">
                     <button class="action-btn" id="btn-left">
@@ -78,19 +81,19 @@
         </div>
     </div>
 
-    <!-- Configuration Panel Modal -->
+    <!-- CONFIGURATION PANEL MODAL: Scrollable settings cards -->
     <div id="settings-modal" class="modal">
         <div class="modal-content">
             <h2 data-i18n="settingsTitle"></h2>
             
             <div class="modal-scroll-body">
-                <!-- Group 1: Core Setup (Expanded by default) -->
+                
+                <!-- GROUP 1: Core clinical setup (Default expanded) -->
                 <div class="accordion-header" id="accordion-header-1">
                     <span data-i18n="lblSettingGroup1"></span>
                     <span class="accordion-arrow active" id="accordion-arrow-1">›</span>
                 </div>
                 <div class="accordion-content open" id="accordion-content-1">
-                    <!-- Global Application Language Settings Row -->
                     <div class="settings-row">
                         <label data-i18n="lblSettingLang"></label>
                         <select id="select-lang">
@@ -98,10 +101,11 @@
                             <option value="ru">🇷🇺 Русский</option>
                         </select>
                     </div>
-
-                    <!-- Training Preset Macro Select -->
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 5px;">                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 5px;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label data-i18n="lblSettingPreset"></label>
+                            <!-- CRITICAL: Always preserve complete closing select tags. Do not truncate brackets. 
+                                 Option tags utilize data-i18n for dynamic language injection. -->
                             <select id="select-preset-mode">
                                 <option value="occlusion" data-i18n="optPresetOcclusion"></option>
                                 <option value="blitz" data-i18n="optPresetBlitz"></option>
@@ -113,8 +117,6 @@
                         </div>
                         <span class="settings-help" data-i18n="helpPresetMode" id="help-preset-mode"></span>
                     </div>
-
-                    <!-- Starting Level Selector -->
                     <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label data-i18n="lblSettingStartLevel"></label>
@@ -128,8 +130,6 @@
                         </div>
                         <span class="settings-help" data-i18n="helpStartLevel" id="help-start-level"></span>
                     </div>
-
-                    <!-- Post-Answer Autonext Transition Config -->
                     <div class="settings-row">
                         <label data-i18n="lblSettingAutonext"></label>
                         <select id="select-autonext">
@@ -137,8 +137,6 @@
                             <option value="false" data-i18n="optAutonextOff"></option>
                         </select>
                     </div>
-
-                    <!-- Session Progress Limit -->
                     <div class="settings-row" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                         <label data-i18n="lblSettingLimit"></label>
                         <select id="select-session-limit">
@@ -151,13 +149,12 @@
                     </div>
                 </div>
 
-                <!-- Group 2: Temporal Stimulation (Collapsed) -->
+                <!-- GROUP 2: Temporal stimulation pacing (Default collapsed) -->
                 <div class="accordion-header" id="accordion-header-2">
                     <span data-i18n="lblSettingGroup2"></span>
                     <span class="accordion-arrow" id="accordion-arrow-2">›</span>
                 </div>
                 <div class="accordion-content" id="accordion-content-2">
-                    <!-- Flash Exposure Speed Config -->
                     <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label data-i18n="lblSettingFlash"></label>
@@ -171,8 +168,6 @@
                         </div>
                         <span class="settings-help" data-i18n="helpFlashDuration" id="help-flash-duration"></span>
                     </div>
-
-                    <!-- Dynamic Stage Autoprogression Toggle -->
                     <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label data-i18n="lblSettingStageAdvance"></label>
@@ -180,8 +175,6 @@
                         </div>
                         <span class="settings-help" id="help-stage-advance"></span>
                     </div>
-
-                    <!-- Static Stimulation Mode Toggle -->
                     <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label data-i18n="lblSettingStatic"></label>
@@ -189,8 +182,7 @@
                         </div>
                         <span class="settings-help" data-i18n="helpStatic" id="help-static"></span>
                     </div>
-
-                    <!-- Flicker Stimulation Toggle (Dynamic under Static) -->
+                    <!-- CRITICAL: row-flicker visibility is tied re-actively to chk-static in settings.js -->
                     <div class="settings-row" id="row-flicker" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label data-i18n="lblSettingFlicker"></label>
@@ -200,13 +192,12 @@
                     </div>
                 </div>
 
-                <!-- Group 3: Spatial Acuity & Crowding (Collapsed) -->
+                <!-- GROUP 3: Spatial configuration & anti-crowding (Default collapsed) -->
                 <div class="accordion-header" id="accordion-header-3">
                     <span data-i18n="lblSettingGroup3"></span>
                     <span class="accordion-arrow" id="accordion-arrow-3">›</span>
                 </div>
                 <div class="accordion-content" id="accordion-content-3">
-                    <!-- Low Contrast Floor Mode Toggle -->
                     <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label data-i18n="lblSettingLowContrast"></label>
@@ -214,8 +205,6 @@
                         </div>
                         <span class="settings-help" data-i18n="helpLowContrast" id="help-low-contrast"></span>
                     </div>
-
-                    <!-- Shape & Line Density Randomization Toggle -->
                     <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label data-i18n="lblSettingWideVariance"></label>
@@ -223,8 +212,6 @@
                         </div>
                         <span class="settings-help" data-i18n="helpWideVariance" id="help-wide-variance"></span>
                     </div>
-
-                    <!-- Aspect Ratio Shape Jitter Toggle -->
                     <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label data-i18n="lblSettingShapeVariance"></label>
@@ -232,8 +219,6 @@
                         </div>
                         <span class="settings-help" data-i18n="helpShapeVariance" id="help-shape-variance"></span>
                     </div>
-
-                    <!-- Peripheral Eccentricity Shift Toggle -->
                     <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label data-i18n="lblSettingPeripheral"></label>
@@ -241,8 +226,6 @@
                         </div>
                         <span class="settings-help" data-i18n="helpPeripheral" id="help-peripheral"></span>
                     </div>
-
-                    <!-- Visual Crowding Distractors Toggle -->
                     <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label data-i18n="lblSettingCrowding"></label>
@@ -250,8 +233,7 @@
                         </div>
                         <span class="settings-help" data-i18n="helpCrowding" id="help-crowding"></span>
                     </div>
-
-                    <!-- Orthogonal Flankers Orientation Toggle (Dynamic under Crowding) -->
+                    <!-- CRITICAL: row-orthogonal and row-dynamic visibility/opacities are tied re-actively to chk-crowding in settings.js -->
                     <div class="settings-row" id="row-orthogonal" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label data-i18n="lblSettingOrthogonal"></label>
@@ -259,8 +241,6 @@
                         </div>
                         <span class="settings-help" data-i18n="helpOrthogonal" id="help-orthogonal"></span>
                     </div>
-
-                    <!-- Dynamic Flanker Phase Shift Toggle (Dynamic under Crowding) -->
                     <div class="settings-row" id="row-dynamic" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label data-i18n="lblSettingDynamic"></label>
@@ -270,13 +250,12 @@
                     </div>
                 </div>
 
-                <!-- Group 4: Binocular 3D Setup (Collapsed) -->
+                <!-- GROUP 4: Binocular 3D Setup & sub-pixel RGB sliders -->
                 <div class="accordion-header" id="accordion-header-4">
                     <span data-i18n="lblSettingGroup4"></span>
                     <span class="accordion-arrow" id="accordion-arrow-4">›</span>
                 </div>
                 <div class="accordion-content" id="accordion-content-4">
-                    <!-- Anaglyph 3D Mode Toggle -->
                     <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label data-i18n="lblSettingAnaglyph"></label>
@@ -285,7 +264,7 @@
                         <span class="settings-help" data-i18n="helpAnaglyph" id="help-anaglyph"></span>
                     </div>
 
-                    <!-- Interactive calibration panel (Renders as sheet during test) -->
+                    <!-- CRITICAL: anaglyph-settings-panel opacity and disabled states are controlled re-actively by chk-anaglyph in settings.js -->
                     <div id="anaglyph-settings-panel" style="border-top: 1px dashed #2b354a; padding-top: 12px; margin-top: 10px; margin-bottom: 0;">
                         <div class="settings-row">
                             <label data-i18n="lblSettingRedSide"></label>
@@ -308,8 +287,6 @@
                             </div>
                             <input type="range" id="range-strong-attenuation" min="10" max="100" step="5" value="30" style="width: 100%; accent-color: #007aff; cursor: pointer; margin-top: 6px;">
                         </div>
-
-                        <!-- Zero-Disparity Fusion Lock Toggle -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                                 <label data-i18n="lblSettingFusionLock"></label>
@@ -317,10 +294,10 @@
                             </div>
                             <span class="settings-help" data-i18n="helpFusionLock" id="help-fusion-lock"></span>
                         </div>
-
-                        <!-- Left Eye Subpixel Red Balance Slider -->
+                        <!-- Left Lens Calibration (Subpixel Red balance) -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <!-- i18n-html: Used for rendering translated nodes that contain embedded rich html tags (like <br>) -->
                                 <span data-i18n-html="lblSettingLeftColor" style="font-size: 13px; font-weight: 500;"></span>
                                 <span id="val-calib-r" style="color: #ef4444; font-weight: bold; font-size: 13px;">255</span>
                             </div>
@@ -331,8 +308,7 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Right Eye Subpixel Green/Blue Balance Sliders -->
+                        <!-- Right Lens Calibration (Subpixel Green/Blue balance) -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 8px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                                 <span data-i18n-html="lblSettingRightColor" style="font-size: 13px; font-weight: 500;"></span>
@@ -352,8 +328,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Fusion Alignment Test Launcher Toggle -->
                         <button id="btn-fusion-test" class="close-btn" data-i18n="btnFusionTestLabel" style="background: #1a233a; border: 1px solid #3b90ff; color: #3b90ff; margin-top: 14px; font-weight: bold;"></button>
                     </div>
                 </div>
@@ -365,33 +339,27 @@
         </div>
     </div>
 
-    <!-- Educational Clinical Manual Modal -->
+    <!-- INFO HANDBOOK MODAL -->
     <div id="info-modal" class="modal">
         <div class="modal-content">
             <h2 data-i18n="modalTitle"></h2>
-            
             <div class="modal-scroll-body">
                 <h4 data-i18n="secAboutTitle"></h4>
                 <p data-i18n-html="secAboutText"></p>
-
                 <h4 data-i18n="secInstructionsTitle"></h4>
                 <ul data-i18n-html="secInstructionsText" id="sec-instructions-list"></ul>
-                
                 <h4 data-i18n="secLevelsTitle"></h4>
                 <ul data-i18n-html="secLevelsList" id="sec-levels-list"></ul>
-
                 <h4 data-i18n="secPresetsTitle"></h4>
                 <ul data-i18n-html="secPresetsText" id="sec-presets-list"></ul>
-
                 <h4 data-i18n="secRecommendationsTitle"></h4>
                 <ul data-i18n-html="secRecommendationsText" id="sec-recommendations-list"></ul>
             </div>
-
             <button id="btn-close-modal" class="close-btn">OK</button>
         </div>
     </div>
 
-    <!-- Highscore Stats & History Modal -->
+    <!-- HISTORICAL LEADERBOARD MODAL (Classic flat version, limits up to 7 records) -->
     <div id="stats-modal" class="modal">
         <div class="modal-content">
             <h2 data-i18n="statsTitle"></h2>
@@ -404,7 +372,6 @@
         </div>
     </div>
 
-    <!-- External assets dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
     <script type="module" src="/src/app.js"></script>
 </body>
