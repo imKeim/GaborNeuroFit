@@ -63,132 +63,50 @@ export async function setLanguage(lang) {
     Store.saveSettings();
 
     const t = activeTranslations;
-    
-    // Localize scoreboard and labels
-    if (document.getElementById('lbl-stage')) document.getElementById('lbl-stage').innerText = t.stage;
-    if (document.getElementById('lbl-contrast')) document.getElementById('lbl-contrast').innerText = t.contrast;
-    if (document.getElementById('lbl-streak')) document.getElementById('lbl-streak').innerText = t.streak;
-    if (document.getElementById('lbl-leaderboard-title')) document.getElementById('lbl-leaderboard-title').innerText = t.leaderboardTitle;
-    
+
+    // Declaratively resolve all plain text localization nodes safely via textContent
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (t[key] !== undefined) {
+            el.textContent = t[key];
+        }
+    });
+
+    // Resolve elements containing rich formatting markup safely via innerHTML
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+        const key = el.getAttribute('data-i18n-html');
+        if (t[key] !== undefined) {
+            el.innerHTML = t[key];
+        }
+    });
+
+    // Symmetrically handle procedural stage selector options
+    for (let i = 1; i <= 5; i++) {
+        const el = document.getElementById('opt-stage-' + i);
+        if (el) {
+            el.textContent = i === 5 ? t.optStage5 : (lang === 'ru' ? `Этап ${i}` : `Stage ${i}`);
+        }
+    }
+
+    // Synchronize the language selection dropdown value
+    const selectLang = document.getElementById('select-lang');
+    if (selectLang) selectLang.value = lang;
+
+    // Procedurally assign the dynamic state-dependent Start button text on load
     if (!Store.state.isWaitingForAnswer) {
         btnStart.innerText = (Store.state.total > 0 && !Store.state.autoAdvance) ? t.nextBtn : t.startBtn;
     } else {
         btnStart.innerText = t.reflashBtn;
     }
+
+    // Trigger reactive View panel redraws to initialize HUD on load
+    updateScoreboard(Store.state, activeTranslations);
+    updateStatusBar(Store.state, activeTranslations);
     
-    if (document.getElementById('lbl-btn-left')) document.getElementById('lbl-btn-left').innerText = t.leftBtn;
-    if (document.getElementById('lbl-btn-right')) document.getElementById('lbl-btn-right').innerText = t.rightBtn;
-
-    // Localize settings accordion group headers dynamically
-    if (document.getElementById('lbl-setting-group-1')) document.getElementById('lbl-setting-group-1').innerText = t.lblSettingGroup1;
-    if (document.getElementById('lbl-setting-group-2')) document.getElementById('lbl-setting-group-2').innerText = t.lblSettingGroup2;
-    if (document.getElementById('lbl-setting-group-3')) document.getElementById('lbl-setting-group-3').innerText = t.lblSettingGroup3;
-    if (document.getElementById('lbl-setting-group-4')) document.getElementById('lbl-setting-group-4').innerText = t.lblSettingGroup4;
-
-    // Localize Handbook modal text nodes
-    if (document.getElementById('modal-title')) document.getElementById('modal-title').innerText = t.modalTitle;
-    if (document.getElementById('sec-about-title')) document.getElementById('sec-about-title').innerText = t.secAboutTitle;
-    if (document.getElementById('sec-about-text')) document.getElementById('sec-about-text').innerHTML = t.secAboutText;
-    if (document.getElementById('sec-instructions-title')) document.getElementById('sec-instructions-title').innerText = t.secInstructionsTitle;
-    if (document.getElementById('sec-instructions-list')) document.getElementById('sec-instructions-list').innerHTML = t.secInstructionsText;
-    if (document.getElementById('sec-levels-title')) document.getElementById('sec-levels-title').innerText = t.secLevelsTitle;
-    if (document.getElementById('sec-levels-list')) document.getElementById('sec-levels-list').innerHTML = t.secLevelsList;
-    if (document.getElementById('sec-presets-title')) document.getElementById('sec-presets-title').innerText = t.secPresetsTitle;
-    if (document.getElementById('sec-presets-list')) document.getElementById('sec-presets-list').innerHTML = t.secPresetsText;
-    if (document.getElementById('sec-recommendations-title')) document.getElementById('sec-recommendations-title').innerText = t.secRecommendationsTitle;
-    if (document.getElementById('sec-recommendations-list')) document.getElementById('sec-recommendations-list').innerHTML = t.secRecommendationsText;
-
-    // Localize Configuration panel text nodes
-    if (document.getElementById('settings-title')) document.getElementById('settings-title').innerText = t.settingsTitle;
-    if (document.getElementById('lbl-setting-mode')) document.getElementById('lbl-setting-mode').innerText = t.lblSettingPreset;
-    if (document.getElementById('lbl-setting-start-level')) document.getElementById('lbl-setting-start-level').innerText = t.lblSettingStartLevel;
-    if (document.getElementById('lbl-setting-autonext')) document.getElementById('lbl-setting-autonext').innerText = t.lblSettingAutonext;
-    if (document.getElementById('lbl-setting-limit')) document.getElementById('lbl-setting-limit').innerText = t.lblSettingLimit;
-    if (document.getElementById('lbl-setting-lang')) document.getElementById('lbl-setting-lang').innerText = t.lblSettingLang;
-    if (document.getElementById('rotation-text')) document.getElementById('rotation-text').innerText = t.lblRotationBlock;
-
-    // Synchronize the language selection dropdown value
-    const selectLang = document.getElementById('select-lang');
-    if (selectLang) selectLang.value = lang;
-    
-    for (let i = 1; i <= 5; i++) {
-        const el = document.getElementById('opt-stage-' + i);
-        if (el) {
-            el.innerText = i === 5 ? t.optStage5 : (lang === 'ru' ? `Этап ${i}` : `Stage ${i}`);
-        }
-    }
-    
-    // Localize forms descriptors/tooltips
-    const helpSpans = [
-        'help-preset-mode', 'help-start-level', 'help-flash-duration',
-        'help-stage-advance', 'help-peripheral', 'help-crowding',
-        'help-low-contrast', 'help-wide-variance', 'help-static',
-        'help-flicker', 'help-anaglyph', 'help-fusion-lock', 'help-orthogonal', 'help-dynamic'
-    ];
-    const helpKeys = [
-        'helpPresetMode', 'helpStartLevel', 'helpFlashDuration',
-        'helpStageAdvance', 'helpPeripheral', 'helpCrowding',
-        'helpLowContrast', 'helpWideVariance', 'helpStatic',
-        'helpFlicker', 'helpAnaglyph', 'helpFusionLock', 'helpOrthogonal', 'helpDynamic'
-    ];
-    for (let i = 0; i < helpSpans.length; i++) {
-        const el = document.getElementById(helpSpans[i]);
-        if (el) el.innerText = t[helpKeys[i]];
-    }
-    
-    // Localize preset select option nodes
-    if (document.getElementById('opt-preset-occlusion')) document.getElementById('opt-preset-occlusion').innerText = t.optPresetOcclusion;
-    if (document.getElementById('opt-preset-binocular')) document.getElementById('opt-preset-binocular').innerText = t.optPresetBinocular;
-    if (document.getElementById('opt-preset-peripheral')) document.getElementById('opt-preset-peripheral').innerText = t.optPresetPeripheral;
-    if (document.getElementById('opt-preset-blitz')) document.getElementById('opt-preset-blitz').innerText = t.optPresetBlitz;
-    if (document.getElementById('opt-preset-flicker')) document.getElementById('opt-preset-flicker').innerText = t.optPresetFlicker;
-    if (document.getElementById('opt-preset-custom')) document.getElementById('opt-preset-custom').innerText = t.optPresetCustom;
-    
-    if (document.getElementById('lbl-setting-flash')) document.getElementById('lbl-setting-flash').innerText = t.lblSettingFlash;
-    if (document.getElementById('opt-flash-adaptive')) document.getElementById('opt-flash-adaptive').innerText = t.optFlashAdaptive;
-    if (document.getElementById('opt-flash-100')) document.getElementById('opt-flash-100').innerText = t.optFlash100;
-    if (document.getElementById('opt-flash-180')) document.getElementById('opt-flash-180').innerText = t.optFlash180;
-    if (document.getElementById('opt-flash-200')) document.getElementById('opt-flash-200').innerText = t.optFlash200;
-    if (document.getElementById('opt-flash-350')) document.getElementById('opt-flash-350').innerText = t.optFlash350;
-    
-    if (document.getElementById('lbl-setting-stage-advance')) document.getElementById('lbl-setting-stage-advance').innerText = t.lblSettingStageAdvance;
-    if (document.getElementById('lbl-setting-peripheral')) document.getElementById('lbl-setting-peripheral').innerText = t.lblSettingPeripheral;
-    if (document.getElementById('lbl-setting-crowding')) document.getElementById('lbl-setting-crowding').innerText = t.lblSettingCrowding;
-    if (document.getElementById('lbl-setting-low-contrast')) document.getElementById('lbl-setting-low-contrast').innerText = t.lblSettingLowContrast;
-    if (document.getElementById('lbl-setting-wide-variance')) document.getElementById('lbl-setting-wide-variance').innerText = t.lblSettingWideVariance;
-    if (document.getElementById('lbl-setting-static')) document.getElementById('lbl-setting-static').innerText = t.lblSettingStatic;
-    if (document.getElementById('lbl-setting-anaglyph')) document.getElementById('lbl-setting-anaglyph').innerText = t.lblSettingAnaglyph;
-    if (document.getElementById('lbl-setting-red-side')) document.getElementById('lbl-setting-red-side').innerText = t.lblSettingRedSide;
-    if (document.getElementById('lbl-setting-lazy-side')) document.getElementById('lbl-setting-lazy-side').innerText = t.lblSettingLazySide;
-    if (document.getElementById('lbl-setting-strong-attenuation')) document.getElementById('lbl-setting-strong-attenuation').innerText = t.lblSettingStrongAttenuation;
-    if (document.getElementById('lbl-setting-flicker')) document.getElementById('lbl-setting-flicker').innerText = t.lblSettingFlicker;
-    if (document.getElementById('lbl-setting-fusion-lock')) document.getElementById('lbl-setting-fusion-lock').innerText = t.lblSettingFusionLock;
-    if (document.getElementById('lbl-setting-orthogonal')) document.getElementById('lbl-setting-orthogonal').innerText = t.lblSettingOrthogonal;
-    if (document.getElementById('lbl-setting-dynamic')) document.getElementById('lbl-setting-dynamic').innerText = t.lblSettingDynamic;
-    if (document.getElementById('lbl-setting-left-color')) document.getElementById('lbl-setting-left-color').innerHTML = t.lblSettingLeftColor;
-    if (document.getElementById('lbl-setting-right-color')) document.getElementById('lbl-setting-right-color').innerHTML = t.lblSettingRightColor;
-    if (btnFusionTest) btnFusionTest.innerText = t.btnFusionTestLabel;
-
-    const optRedLeft = document.getElementById('opt-red-left');
-    const optRedRight = document.getElementById('opt-red-right');
-    const optLazyLeft = document.getElementById('opt-lazy-left');
-    const optLazyRight = document.getElementById('opt-lazy-right');
-    if (optRedLeft) optRedLeft.innerText = t.optSideLeft;
-    if (optRedRight) optRedRight.innerText = t.optSideRight;
-    if (optLazyLeft) optLazyLeft.innerText = t.optSideLeft;
-    if (optLazyRight) optLazyRight.innerText = t.optSideRight;
-
-    if (document.getElementById('opt-limit-off')) document.getElementById('opt-limit-off').innerText = t.optLimitOff;
-    if (document.getElementById('opt-autonext-on')) document.getElementById('opt-autonext-on').innerText = t.optAutonextOn;
-    if (document.getElementById('opt-autonext-off')) document.getElementById('opt-autonext-off').innerText = t.optAutonextOff;
-    if (document.getElementById('desc-mode-explanation')) document.getElementById('desc-mode-explanation').innerText = t.descModeExplanation;
-
-    if (document.getElementById('lbl-active-mode')) document.getElementById('lbl-active-mode').innerText = t.lblActiveMode;
-    if (document.getElementById('lbl-active-speed')) document.getElementById('lbl-active-speed').innerText = t.lblActiveSpeed;
-
-    // Localize Statistics Title
-    if (document.getElementById('stats-title')) {
-        document.getElementById('stats-title').innerText = t.statsTitle;
+    // Parse vector emojis using Twemoji loader strictly on active dynamic panels to eliminate document-wide reflow lag
+    if (window.twemoji) {
+        twemoji.parse(document.getElementById('top-bar'));
+        twemoji.parse(document.getElementById('bottom-dock'));
     }
 
     // Trigger reactive View panel redraws

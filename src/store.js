@@ -57,6 +57,44 @@ export const Store = {
         this.state[key] = value;
     },
 
+    // Central mathematical validation engine: Synchronously resolves settings conflicts with Active Interaction Override
+    resolveConflicts(lastActiveTrigger = null) {
+        const s = this.state;
+
+        // Rule 1: Peripheral vs Crowding mutual exclusion (Active Interaction Override)
+        if (lastActiveTrigger === 'peripheral') {
+            if (s.isPeripheralEnabled) {
+                s.isCrowdingEnabled = false;
+            }
+        } else if (lastActiveTrigger === 'crowding') {
+            if (s.isCrowdingEnabled) {
+                s.isPeripheralEnabled = false;
+            }
+        } else {
+            // Fallback for load/init passes: Peripheral takes precedent if both are true
+            if (s.isPeripheralEnabled && s.isCrowdingEnabled) {
+                s.isCrowdingEnabled = false;
+            }
+        }
+
+        // Rule 2: Orthogonal and Dynamic modulations require basic Crowding flankers to be active
+        if (!s.isCrowdingEnabled) {
+            s.isOrthogonalFlankersEnabled = false;
+            s.isDynamicFlankersEnabled = false;
+        }
+
+        // Rule 3: Flicker Alpha-resonance at 10 Hz strictly requires static target exposure to loop interval cycles
+        // Active Interaction Override: Prevent static mode from fighting user input
+        if (lastActiveTrigger === 'static' && !s.isStaticEnabled) {
+            s.isFlickerEnabled = false;
+        } else if (lastActiveTrigger === 'flicker' && s.isFlickerEnabled) {
+            s.isStaticEnabled = true;
+        } else if (!lastActiveTrigger && s.isFlickerEnabled) {
+            // Fallback for initialization load pass
+            s.isStaticEnabled = true;
+        }
+    },
+
     // Initialize state from localStorage or falls back to robust defaults
     loadSettings() {
         try {
@@ -92,6 +130,9 @@ export const Store = {
         if (this.state.presetMode !== 'custom') {
             this.applyPresetTemplate(this.state.presetMode);
         }
+
+        // Sanitize loaded persistent state to resolve any legacy structural conflicts
+        this.resolveConflicts(null);
     },
 
     // Commit current state variables to persistent localStorage

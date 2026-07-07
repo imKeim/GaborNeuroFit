@@ -46,7 +46,8 @@ export class SettingsController {
 
     // Declaratively reads input forms values and commits them to the Store Model
     syncStateFromUI() {
-        const s = Store.state; // Safely restore state reference to prevent ReferenceError on RGB badges
+        const s = Store.state;
+        let lastActiveTrigger = null;
 
         CONFIG_SCHEMA.forEach(field => {
             const el = document.getElementById(field.id);
@@ -55,6 +56,12 @@ export class SettingsController {
             let val;
             if (field.type === 'checkbox') {
                 val = el.checked;
+                if (s[field.key] !== val) {
+                    if (field.key === 'isPeripheralEnabled') lastActiveTrigger = 'peripheral';
+                    if (field.key === 'isCrowdingEnabled') lastActiveTrigger = 'crowding';
+                    if (field.key === 'isStaticEnabled') lastActiveTrigger = 'static';
+                    if (field.key === 'isFlickerEnabled') lastActiveTrigger = 'flicker';
+                }
             } else if (field.type === 'value') {
                 val = el.value;
             } else if (field.type === 'int') {
@@ -67,6 +74,9 @@ export class SettingsController {
             
             Store.updateState(field.key, val);
         });
+
+        // Resolve setting constraints in central memory with active trigger detection
+        Store.resolveConflicts(lastActiveTrigger);
     
         // Automatically re-detect macro match after checkboxes are toggled
         const detectedPreset = Store.detectMatchingPreset();
@@ -74,7 +84,7 @@ export class SettingsController {
         if (this.selectPresetMode) {
             this.selectPresetMode.value = detectedPreset;
         }
-    
+
         // Live-update numeric badges while sliding, mapped to a highly intuitive -127 to +128 equilibrium scale
         const valR = document.getElementById('val-calib-r');
         const valG = document.getElementById('val-calib-g');
@@ -93,8 +103,6 @@ export class SettingsController {
             valB.innerText = offsetB > 0 ? `+${offsetB}` : offsetB;
         }
 
-        this.updateVisibilityPanels();
-        
         if (typeof this.onSyncCallback === 'function') {
             this.onSyncCallback();
         }
@@ -164,26 +172,49 @@ export class SettingsController {
 
     updateVisibilityPanels() {
         const s = Store.state;
-        if (this.anaglyphPanel) {
-            this.anaglyphPanel.style.display = s.isAnaglyphEnabled ? 'block' : 'none';
-        }
 
-        // Real-time dynamic sub-rows unfolding inside accordions
+        // 1. Accordion 2: Flicker row control (Always display flex, opacity & disabled toggle)
+        const chkFlicker = document.getElementById('chk-flicker');
         const rowFlicker = document.getElementById('row-flicker');
+        if (chkFlicker) chkFlicker.disabled = !s.isStaticEnabled;
         if (rowFlicker) {
-            rowFlicker.style.display = s.isStaticEnabled ? 'flex' : 'none';
+            rowFlicker.style.display = 'flex';
+            rowFlicker.style.opacity = s.isStaticEnabled ? '1' : '0.5';
         }
 
+        // 2. Accordion 3: Crowding sub-rows control (Always display flex, opacity & disabled toggle)
+        const chkOrthogonal = document.getElementById('chk-orthogonal-flankers');
+        const chkDynamic = document.getElementById('chk-dynamic-flankers');
         const rowOrthogonal = document.getElementById('row-orthogonal');
         const rowDynamic = document.getElementById('row-dynamic');
-        if (rowOrthogonal) rowOrthogonal.style.display = s.isCrowdingEnabled ? 'flex' : 'none';
-        if (rowDynamic) rowDynamic.style.display = s.isCrowdingEnabled ? 'flex' : 'none';
 
-        // Clinical Selective Disclosure: Gray out the entire 3D accordion header if monocular preset is selected
+        if (chkOrthogonal) chkOrthogonal.disabled = !s.isCrowdingEnabled;
+        if (chkDynamic) chkDynamic.disabled = !s.isCrowdingEnabled;
+
+        if (rowOrthogonal) {
+            rowOrthogonal.style.display = 'flex';
+            rowOrthogonal.style.opacity = s.isCrowdingEnabled ? '1' : '0.5';
+        }
+        if (rowDynamic) {
+            rowDynamic.style.display = 'flex';
+            rowDynamic.style.opacity = s.isCrowdingEnabled ? '1' : '0.5';
+        }
+
+        // 3. Accordion 4: Anaglyph calibration panel control (Always display block, opacity & disabled toggle for all child inputs)
+        if (this.anaglyphPanel) {
+            this.anaglyphPanel.style.display = 'block';
+            this.anaglyphPanel.style.opacity = s.isAnaglyphEnabled ? '1' : '0.4';
+
+            const calibInputs = this.anaglyphPanel.querySelectorAll('input, select, button');
+            calibInputs.forEach(input => {
+                input.disabled = !s.isAnaglyphEnabled;
+            });
+        }
+
+        // 4. Clinical Selective Disclosure: Gray out the entire 3D accordion header if monocular preset is selected
         const headerAnaglyph = document.getElementById('accordion-header-4');
         const contentAnaglyph = document.getElementById('accordion-content-4');
         if (headerAnaglyph) {
-            // Hard lock the 3D accordion header ONLY if a strictly monocular preset (occlusion/blitz) is active AND 3D is disabled
             const isMonocularPreset = (s.presetMode === 'occlusion' || s.presetMode === 'blitz');
             const shouldDisable3D = !s.isAnaglyphEnabled && isMonocularPreset;
 
@@ -203,6 +234,7 @@ export class SettingsController {
     // Binds events and enforces clinical options validation (mutual exclusions)
     bindSettingsInteractions() {
         if (this.selectPresetMode) {
+            this.selectPresetMode.value = Store.state.presetMode;
             this.selectPresetMode.addEventListener('change', () => {
                 Store.updateState('presetMode', this.selectPresetMode.value);
                 this.updatePresetUI();
@@ -241,81 +273,16 @@ export class SettingsController {
             }
         }
 
-        // DOM references for mutual exclusions validation
-        const chkPeripheral = document.getElementById('chk-peripheral');
-        const chkCrowding = document.getElementById('chk-crowding');
-        const chkOrthogonal = document.getElementById('chk-orthogonal-flankers');
-        const chkDynamic = document.getElementById('chk-dynamic-flankers');
-        const chkAnaglyph = document.getElementById('chk-anaglyph');
-        const chkStatic = document.getElementById('chk-static');
-        const chkFlicker = document.getElementById('chk-flicker');
-
-        // Bind live dynamic slide updates directly to the active canvas
+        // Bind live dynamic slider updates directly to active canvas
         const activeSliders = ['slider-left-r', 'slider-right-g', 'slider-right-b'];
         activeSliders.forEach(id => {
             const el = document.getElementById(id);
             if (el) {
-                el.addEventListener('input', () => this.syncStateFromUI());
+                el.addEventListener('input', () => {
+                    this.syncStateFromUI();
+                });
             }
         });
-
-        // Rule: Peripheral is completely incompatible with spatial crowding flankers
-        if (chkPeripheral) {
-            chkPeripheral.addEventListener('change', () => {
-                if (chkPeripheral.checked) {
-                    if (chkCrowding) chkCrowding.checked = false;
-                    if (chkOrthogonal) chkOrthogonal.checked = false;
-                    if (chkDynamic) chkDynamic.checked = false;
-                }
-                this.syncStateFromUI();
-            });
-        }
-
-        if (chkCrowding) {
-            chkCrowding.addEventListener('change', () => {
-                if (chkCrowding.checked) {
-                    if (chkPeripheral) chkPeripheral.checked = false;
-                } else {
-                    if (chkOrthogonal) chkOrthogonal.checked = false;
-                    if (chkDynamic) chkDynamic.checked = false;
-                }
-                Store.state.isCrowdingEnabled = chkCrowding.checked;
-                this.syncStateFromUI();
-            });
-        }
-
-        if (chkOrthogonal) {
-            chkOrthogonal.addEventListener('change', () => {
-                if (chkOrthogonal.checked) {
-                    if (chkCrowding) chkCrowding.checked = true;
-                    if (chkPeripheral) chkPeripheral.checked = false;
-                }
-                this.syncStateFromUI();
-            });
-        }
-
-        if (chkDynamic) {
-            chkDynamic.addEventListener('change', () => {
-                if (chkDynamic.checked) {
-                    if (chkCrowding) chkCrowding.checked = true;
-                    if (chkPeripheral) chkPeripheral.checked = false;
-                }
-                this.syncStateFromUI();
-            });
-        }
-
-        if (chkAnaglyph) {
-            chkAnaglyph.addEventListener('change', () => {
-                Store.state.isAnaglyphEnabled = chkAnaglyph.checked;
-                this.syncStateFromUI();
-                
-                // If 3D mode was turned off, collapse its accordion
-                if (!Store.state.isAnaglyphEnabled) {
-                    const contentAnaglyph = document.getElementById('accordion-content-4');
-                    if (contentAnaglyph) contentAnaglyph.classList.remove('open');
-                }
-            });
-        }
 
         if (this.rangeStrongAttenuation) {
             this.rangeStrongAttenuation.addEventListener('input', () => {
@@ -326,40 +293,24 @@ export class SettingsController {
             });
         }
 
-        // Rule: Flicker frequency locks require static indefinitely visible stimuli
-        if (chkStatic) {
-            chkStatic.addEventListener('change', () => {
-                Store.state.isStaticEnabled = chkStatic.checked;
-                if (!Store.state.isStaticEnabled) {
-                    if (chkFlicker) chkFlicker.checked = false;
-                }
-                this.syncStateFromUI();
-            });
-        }
-
-        if (chkFlicker) {
-            chkFlicker.addEventListener('change', () => {
-                if (chkFlicker.checked) {
-                    if (chkStatic) chkStatic.checked = true;
-                }
-                this.syncStateFromUI();
-            });
-        }
-
-        // Automatic binding for all other schema fields changes to run syncStateFromUI()
+        // Automatic binding for all schema fields changes to run syncStateFromUI() and force visual update
         CONFIG_SCHEMA.forEach(field => {
             const el = document.getElementById(field.id);
             if (!el) return;
 
             const skipIds = [
-                'select-preset-mode', 'chk-peripheral', 'chk-crowding', 
-                'chk-orthogonal-flankers', 'chk-dynamic-flankers', 
-                'chk-anaglyph', 'range-strong-attenuation', 'chk-static', 'chk-flicker',
+                'select-preset-mode', 'range-strong-attenuation',
                 'slider-left-r', 'slider-right-g', 'slider-right-b'
             ];
             if (skipIds.includes(field.id)) return;
 
-            el.addEventListener('change', () => this.syncStateFromUI());
+            el.addEventListener('change', () => {
+                this.syncStateFromUI();
+                this.updatePresetUI();
+                if (typeof this.onSyncCallback === 'function') {
+                    this.onSyncCallback();
+                }
+            });
         });
     }
 }
