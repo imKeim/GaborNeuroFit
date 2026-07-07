@@ -18,6 +18,7 @@ const CONFIG_SCHEMA = [
     { id: 'chk-dynamic-flankers', key: 'isDynamicFlankersEnabled', type: 'checkbox' },
     { id: 'chk-low-contrast', key: 'allowLowContrast', type: 'checkbox' },
     { id: 'chk-wide-variance', key: 'allowWideVariance', type: 'checkbox' },
+    { id: 'chk-shape-variance', key: 'allowShapeVariance', type: 'checkbox' },
     { id: 'chk-static', key: 'isStaticEnabled', type: 'checkbox' },
     { id: 'chk-anaglyph', key: 'isAnaglyphEnabled', type: 'checkbox' },
     { id: 'chk-flicker', key: 'isFlickerEnabled', type: 'checkbox' },

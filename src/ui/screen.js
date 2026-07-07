@@ -29,7 +29,8 @@ export function drawIdleState(gaborCanvas, gaborCtx, overlayCanvas, overlayCtx, 
 
     // Retain visual stabilization frames on top transparent overlay layer during pauses
     if (isFusionLockEnabled) {
-        drawFusionLockFrame(overlayCanvas, overlayCtx);
+        const scale = gaborCanvas.width / 256.0;
+        drawFusionLockFrame(overlayCanvas, overlayCtx, scale);
     }
 }
 

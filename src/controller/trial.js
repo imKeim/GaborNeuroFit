@@ -161,6 +161,18 @@ export class TrialController {
             s.isStaticEnabled = true;
         }
 
+        // Dynamically scale canvas backing store to prevent interpolation blur on High-DPI screens
+        const rect = this.canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        const physicalSize = Math.min(1024, Math.round(rect.width * dpr));
+
+        if (this.canvas.width !== physicalSize) {
+            this.canvas.width = physicalSize;
+            this.canvas.height = physicalSize;
+            this.overlayCanvas.width = physicalSize;
+            this.overlayCanvas.height = physicalSize;
+        }
+
         if (isNewTrial) {
             // Generate a secure randomized stimulus angle outside of dead-zones
             do {
@@ -184,6 +196,9 @@ export class TrialController {
                     this.lastRandomFreq = Math.random() * (0.16 - 0.12) + 0.12;
                     this.lastRandomSigma = Math.random() * (40 - 32) + 32;
                 }
+            }
+
+            if (s.allowShapeVariance) {
                 this.lastRandomAspectRatio = Math.random() * (2.0 - 0.5) + 0.5;
             }
 
@@ -358,9 +373,13 @@ export class TrialController {
      */
     startUnifiedRenderingLoop() {
         const s = Store.state;
-        let lastFlickerToggleTime = performance.now();
         this.flankerPhaseOffset = 0;
         this.isFlickerOffState = false;
+
+        let lastFrameTime = performance.now();
+        let accumulatedTime = 0;
+        let frameCount = 0;
+        let optimalFrequencyCoeff = 0.062831853; // Balanced 10Hz coefficient default fallback
 
         const loop = (timestamp) => {
             // Guard: If calibration alignment test is toggled on, immediately suspend Gabor rendering
@@ -373,20 +392,47 @@ export class TrialController {
                 return; // Break the recursive animation frame loop to freeze GPU drawing during calibration
             }
 
+            // Calculate highly stable, low-pass filtered Delta Time to prevent OS-level temporal judder
+            let dt = timestamp - lastFrameTime;
+            lastFrameTime = timestamp;
+
+            // Clamp delta-time to avoid wild contrast jumps during system garbage collection freezes
+            if (dt > 32.0) {
+                dt = 16.67; // Fallback to steady 60Hz frame pacing
+            }
+            accumulatedTime += dt;
+
+            // Dynamically estimate device refresh rate (Hz) over the first 15 frames to adapt the sine wave
+            if (frameCount < 15) {
+                frameCount++;
+                if (frameCount === 15) {
+                    const avgFrameDuration = accumulatedTime / 15;
+                    const estimatedHz = Math.round(1000 / avgFrameDuration);
+                    let detectedHz = 60;
+
+                    if (estimatedHz >= 130) {
+                        detectedHz = 144;
+                    } else if (estimatedHz >= 90) {
+                        detectedHz = 120;
+                    } else {
+                        detectedHz = 60;
+                    }
+
+                    // Perfect temporal alignment (12 frames per cycle rule to eliminate FRC matrix beats)
+                    const targetFlickerHz = detectedHz / 12;
+                    optimalFrequencyCoeff = (targetFlickerHz * 2.0 * Math.PI) / 1000;
+                }
+            }
+
             // 1. Safe phase advance clamped to 2*PI to prevent mobile GPU precision loss
             if (s.isDynamicFlankersEnabled && s.isCrowdingEnabled) {
                 this.flankerPhaseOffset = (this.flankerPhaseOffset + 0.12) % (2.0 * Math.PI);
             }
 
-            // 2. High-precision 10 Hz flicker interval tracking (50ms cycles)
+            // 2. High-precision Phase-Reversing Contrast Modulation (Bipolar Sine-Wave) calibrated to device refresh rate
+            let activeContrast = s.autoContrast;
             if (s.isFlickerEnabled) {
-                const elapsed = timestamp - lastFlickerToggleTime;
-                if (elapsed >= 50.0) {
-                    this.isFlickerOffState = !this.isFlickerOffState;
-                    lastFlickerToggleTime = timestamp;
-                }
-            } else {
-                this.isFlickerOffState = false;
+                activeContrast = s.autoContrast * Math.sin(accumulatedTime * optimalFrequencyCoeff);
             }
 
             // 3. Render exactly once per frame buffer refresh (V-Sync)
@@ -395,14 +441,14 @@ export class TrialController {
                 this.ctx, 
                 s, 
                 this.currentAngleDeg, 
-                s.autoContrast, 
+                activeContrast, 
                 this.lastRandomFreq, 
                 this.lastRandomSigma, 
                 this.lastOffsetX, 
                 this.lastOffsetY, 
                 this.flankerPhaseOffset, 
                 this.lastRandomAspectRatio, 
-                this.isFlickerOffState
+                false // hideCentral is locked to false, contrast modulation handles flicker natively
             );
 
             this.tracker.requestAnimationFrame(loop);

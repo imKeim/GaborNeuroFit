@@ -108,16 +108,6 @@ export async function setLanguage(lang) {
         twemoji.parse(document.getElementById('top-bar'));
         twemoji.parse(document.getElementById('bottom-dock'));
     }
-
-    // Trigger reactive View panel redraws
-    updateScoreboard(Store.state, activeTranslations);
-    updateStatusBar(Store.state, activeTranslations);
-    
-    // Parse vector emojis using Twemoji loader strictly on active dynamic panels to eliminate document-wide reflow lag
-    if (window.twemoji) {
-        twemoji.parse(document.getElementById('top-bar'));
-        twemoji.parse(document.getElementById('bottom-dock'));
-    }
 }
 
 /**
@@ -280,6 +270,15 @@ window.addEventListener('load', async () => {
                 const selectLazySide = document.getElementById('select-lazy-side');
                 if (selectRedSide) Store.state.redEyeSide = selectRedSide.value;
                 if (selectLazySide) Store.state.lazyEyeSide = selectLazySide.value;
+
+                // Dynamically scale canvas backing store to prevent calibration test blur
+                const rect = canvas.getBoundingClientRect();
+                const dpr = window.devicePixelRatio || 1;
+                const physicalSize = Math.min(1024, Math.round(rect.width * dpr));
+                canvas.width = physicalSize;
+                canvas.height = physicalSize;
+                overlayCanvas.width = physicalSize;
+                overlayCanvas.height = physicalSize;
                 
                 // Clear the lower WebGL canvas to stable neutral gray first, then draw vector letters on top
                 drawIdleState(canvas, ctx, overlayCanvas, overlayCtx, false);

@@ -30,6 +30,7 @@ export const Store = {
         isDynamicFlankersEnabled: false,
         allowLowContrast: false,
         allowWideVariance: false,
+        allowShapeVariance: false,
         isStaticEnabled: false,
         isAnaglyphEnabled: true,
         redEyeSide: 'left',
@@ -110,6 +111,7 @@ export const Store = {
             this.state.isDynamicFlankersEnabled = localStorage.getItem('gabor_dynamic_flankers') === 'true';
             this.state.allowLowContrast = localStorage.getItem('gabor_low_contrast') === 'true';
             this.state.allowWideVariance = localStorage.getItem('gabor_wide_variance') === 'true';
+            this.state.allowShapeVariance = localStorage.getItem('gabor_shape_variance') === 'true';
             this.state.isStaticEnabled = localStorage.getItem('gabor_static') === 'true';
             this.state.isAnaglyphEnabled = localStorage.getItem('gabor_anaglyph') === 'true';
             this.state.redEyeSide = localStorage.getItem('gabor_red_side') || 'left';
@@ -150,6 +152,7 @@ export const Store = {
             localStorage.setItem('gabor_dynamic_flankers', this.state.isDynamicFlankersEnabled ? "true" : "false");
             localStorage.setItem('gabor_low_contrast', this.state.allowLowContrast ? "true" : "false");
             localStorage.setItem('gabor_wide_variance', this.state.allowWideVariance ? "true" : "false");
+            localStorage.setItem('gabor_shape_variance', this.state.allowShapeVariance ? "true" : "false");
             localStorage.setItem('gabor_static', this.state.isStaticEnabled ? "true" : "false");
             localStorage.setItem('gabor_anaglyph', this.state.isAnaglyphEnabled ? "true" : "false");
             localStorage.setItem('gabor_red_side', this.state.redEyeSide);
@@ -180,6 +183,7 @@ export const Store = {
             s.isStaticEnabled === false &&
             s.isAnaglyphEnabled === false &&
             s.allowWideVariance === false &&
+            s.allowShapeVariance === false &&
             s.isFlickerEnabled === false &&
             s.isFusionLockEnabled === false
         ) return 'occlusion';
@@ -194,6 +198,7 @@ export const Store = {
             s.isStaticEnabled === false &&
             s.isAnaglyphEnabled === true &&
             s.allowWideVariance === false &&
+            s.allowShapeVariance === false &&
             s.isFlickerEnabled === false &&
             s.isFusionLockEnabled === true
         ) return 'binocular';
@@ -208,6 +213,7 @@ export const Store = {
             s.isStaticEnabled === false &&
             s.isAnaglyphEnabled === true &&
             s.allowWideVariance === false &&
+            s.allowShapeVariance === false &&
             s.isFlickerEnabled === false &&
             s.isFusionLockEnabled === true
         ) return 'peripheral';
@@ -222,6 +228,7 @@ export const Store = {
             s.isStaticEnabled === false &&
             s.isAnaglyphEnabled === false &&
             s.allowWideVariance === true &&
+            s.allowShapeVariance === true &&
             s.isFlickerEnabled === false &&
             s.isFusionLockEnabled === false
         ) return 'blitz';
@@ -236,6 +243,7 @@ export const Store = {
             s.isStaticEnabled === true &&
             s.isAnaglyphEnabled === true &&
             s.allowWideVariance === false &&
+            s.allowShapeVariance === false &&
             s.isFlickerEnabled === true &&
             s.isFusionLockEnabled === true
         ) return 'flicker';
@@ -256,6 +264,7 @@ export const Store = {
             this.state.isStaticEnabled = false;
             this.state.isAnaglyphEnabled = false;
             this.state.allowWideVariance = false;
+            this.state.allowShapeVariance = false;
             this.state.isFlickerEnabled = false;
             this.state.isFusionLockEnabled = false;
         } else if (mode === 'binocular') {
@@ -268,6 +277,7 @@ export const Store = {
             this.state.isStaticEnabled = false;
             this.state.isAnaglyphEnabled = true;
             this.state.allowWideVariance = false;
+            this.state.allowShapeVariance = false;
             this.state.isFlickerEnabled = false;
             this.state.isFusionLockEnabled = true;
         } else if (mode === 'peripheral') {
@@ -280,6 +290,7 @@ export const Store = {
             this.state.isStaticEnabled = false;
             this.state.isAnaglyphEnabled = true;
             this.state.allowWideVariance = false;
+            this.state.allowShapeVariance = false;
             this.state.isFlickerEnabled = false;
             this.state.isFusionLockEnabled = true;
         } else if (mode === 'blitz') {
@@ -292,6 +303,7 @@ export const Store = {
             this.state.isStaticEnabled = false;
             this.state.isAnaglyphEnabled = false;
             this.state.allowWideVariance = true;
+            this.state.allowShapeVariance = true;
             this.state.isFlickerEnabled = false;
             this.state.isFusionLockEnabled = false;
         } else if (mode === 'flicker') {
@@ -304,6 +316,7 @@ export const Store = {
             this.state.isStaticEnabled = true;
             this.state.isAnaglyphEnabled = true;
             this.state.allowWideVariance = false;
+            this.state.allowShapeVariance = false;
             this.state.isFlickerEnabled = true;
             this.state.isFusionLockEnabled = true;
         }
