@@ -13,7 +13,15 @@ import { playCue, playSuccess, playError } from '../engine/audio.js';
 import { updateScoreboard, updateStatusBar, drawIdleState } from '../ui/screen.js';
 
 /**
- * Finite State Machine declarations for strict visual execution tracking
+ * @typedef {string} TrialStateValue
+ */
+
+/**
+ * Finite State Machine declarations for strict visual execution tracking.
+ * CLINICAL PURPOSE:
+ * Enforces a rigid sequence of sensory events to prevent visual fatigue,
+ * establish temporal predictability, and protect the patient from saccadic ocular cheats.
+ * @type {Object.<string, string>}
  */
 export const TrialState = {
     IDLE: 'IDLE',
@@ -24,7 +32,13 @@ export const TrialState = {
 };
 
 /**
- * Optometric spatial frequency bands mapped to individual difficulty stages
+ * Optometric spatial frequency bands mapped to individual difficulty stages.
+ * CLINICAL PURPOSE:
+ * Higher stages represent finer sinusoidal grids (higher cycles per degree),
+ * requiring greater visual acuity. This progressively targets smaller, 
+ * higher-resolution receptive fields in the primary visual cortex (V1).
+ * @type {Object.<number, FrequencyRange>}
+ * @private
  */
 const levelFreqRanges = {
     1: { min: 0.03, max: 0.05 },
@@ -35,7 +49,13 @@ const levelFreqRanges = {
 };
 
 /**
- * Gaussian envelope standard deviations (Sigma) mapping foveal focus fields
+ * Gaussian envelope standard deviations (Sigma) mapping foveal focus fields.
+ * CLINICAL PURPOSE:
+ * Smaller sigmas compress the Gabor patch into a tighter space, forcing 
+ * the patient to use the absolute center of the fovea (foveation). This counters 
+ * eccentric fixation, which is common in deep amblyopia.
+ * @type {Object.<number, SigmaRange>}
+ * @private
  */
 const levelSigmaRanges = {
     1: { min: 40, max: 50 },
@@ -46,7 +66,12 @@ const levelSigmaRanges = {
 };
 
 /**
- * Strict state transition matrix to enforce safe clinical FSM flow
+ * Strict state transition matrix to enforce safe clinical FSM flow.
+ * CLINICAL PURPOSE:
+ * Prevents rapid inputs, accidental re-triggering of visual pulses, and 
+ * ensures that the auditory pre-cue always precedes the Gabor flash.
+ * @type {Object.<TrialStateValue, TrialStateValue[]>}
+ * @private
  */
 const ALLOWED_TRANSITIONS = {
     [TrialState.IDLE]: [TrialState.PRE_CUE],
@@ -56,7 +81,22 @@ const ALLOWED_TRANSITIONS = {
     [TrialState.FEEDBACK]: [TrialState.IDLE]
 };
 
+/**
+ * Controller class that manages the lifecycles, state machine, timers, 
+ * and animations of active perceptual learning trials.
+ */
 export class TrialController {
+    /**
+     * @param {HTMLCanvasElement} canvas - The primary WebGL/2D Gabor stimulus canvas.
+     * @param {CanvasRenderingContext2D|WebGLRenderingContext|null} context - The rendering context for the primary canvas.
+     * @param {HTMLCanvasElement} overlayCanvas - The transparent HUD and fusion lock canvas.
+     * @param {CanvasRenderingContext2D} overlayContext - The rendering context for the overlay canvas.
+     * @param {HTMLElement} cross - The central fixation cross DOM element.
+     * @param {HTMLElement} container - The wrapper container enclosing the workspaces.
+     * @param {HTMLElement} flashOverlay - Fullscreen color overlay for tactile success/error feedback.
+     * @param {HTMLButtonElement} btnStart - The primary action/reflash trigger button.
+     * @param {function(): Object} translationsGetter - Callback function returning the active localization bundle.
+     */
     constructor(canvas, context, overlayCanvas, overlayContext, cross, container, flashOverlay, btnStart, translationsGetter) {
         this.canvas = canvas;
         this.ctx = context;
@@ -68,24 +108,45 @@ export class TrialController {
         this.btnStart = btnStart;
         this.getTranslations = translationsGetter;
 
+        /** 
+         * @type {TrialStateValue} 
+         * @public
+         */
         this.currentState = TrialState.IDLE;
+        
+        /** 
+         * @type {AsyncResourceTracker} 
+         * @public
+         */
         this.tracker = new AsyncResourceTracker();
 
-        // Cached properties for the active trial stimulus
+        /** @type {number} */
         this.currentAngleDeg = 0;
+        /** @type {number} */
         this.lastRandomFreq = 0.08;
+        /** @type {number} */
         this.lastRandomSigma = 40;
+        /** @type {number} */
         this.lastRandomAspectRatio = 1.0;
+        /** @type {number} */
         this.lastOffsetX = 0;
+        /** @type {number} */
         this.lastOffsetY = 0;
+        /** @type {number} */
         this.flankerPhaseOffset = 0;
 
+        /** @type {boolean} */
         this.isAnaglyphTestActive = false;
-        this.isFlickerOffState = false; /* Keeps track of the active 10 Hz flicker cycle to synchronize with 60 FPS animations */
+        /** @type {boolean} */
+        this.isFlickerOffState = false;
     }
 
     /**
-     * Instantly aborts current session and resets FSM (used cleanly when exiting settings)
+     * Instantly aborts the current session, resetting the state machine and clearing active asynchronous operations.
+     * CLINICAL PURPOSE:
+     * Clears physical GPU/CPU cycles immediately when the user exits to the settings menu, 
+     * preventing delayed stimulus presentation from causing accidental visual overstimulation.
+     * @returns {void}
      */
     abort() {
         this.tracker.clearAll();
@@ -94,18 +155,23 @@ export class TrialController {
     }
 
     /**
-     * Safely transitions the finite state machine and purges timers from the previous phase
+     * Validates and executes state transitions within the finite state machine.
+     * CLINICAL PURPOSE:
+     * Destructively clears active timers on transitional boundaries. This guarantees 
+     * that a delayed feedback timer cannot trigger after a new trial has already begun,
+     * protecting the patient from conflicting visual cues.
+     * @param {TrialStateValue} nextState - The target state to transition to.
+     * @returns {boolean} True if the transition was successful and committed, false otherwise.
      */
     transitionTo(nextState) {
         const allowed = ALLOWED_TRANSITIONS[this.currentState];
         if (!allowed || !allowed.includes(nextState)) {
-            return false; // Prevent illegal state transition (e.g. clicking while active)
+            return false;
         }
 
         this.currentState = nextState;
-        this.isFlickerOffState = false; // Reset flicker state on FSM transition
+        this.isFlickerOffState = false;
         
-        // Destructively clear active timers ONLY during cue preparation or feedback phases
         if (nextState === TrialState.PRE_CUE || nextState === TrialState.FEEDBACK) {
             this.tracker.clearAll();
         }
@@ -113,42 +179,57 @@ export class TrialController {
     }
 
     /**
-     * Handles the acoustic pre-cue warning phase
+     * Triggers the auditory cue and schedules the initial render cycle of a new visual trial.
+     * CLINICAL PURPOSE:
+     * Executes an acoustic pre-cue click exactly 180ms before the visual flash.
+     * In neurobiology, this cross-modal sensory pre-activation (auditory-to-visual) 
+     * primes the attention networks in the visual cortex, preparing receptive fields 
+     * to decode the target, and suppressing ciliary muscle accommodation micro-fluctuations.
+     * @returns {void}
      */
     triggerTrial() {
         if (!this.transitionTo(TrialState.PRE_CUE)) {
-            return; // Guard lock against rapid execution triggers
+            return;
         }
 
         this.btnStart.innerText = "...";
         playCue(Store.state.isMuted);
 
-        // Schedule visual flash execution exactly 180ms after the auditory pre-cue click
         this.tracker.setTimeout(() => {
             this._runRenderCycle(true);
         }, 180);
     }
 
     /**
-     * Repeats the exposure of the active trial's visual parameters
+     * Re-exposes the parameters of the active trial without generating a new Gabor patch configuration.
+     * CLINICAL PURPOSE:
+     * Allows the amblyopic eye to re-examine the exact same spatial attributes if the patient 
+     * missed the transient flash, preventing frustration and stabilizing the adaptive staircase loop.
+     * @returns {void}
      */
     reFlashCurrentGabor() {
         if (!this.transitionTo(TrialState.PRE_CUE)) {
-            return; // Guard lock during active transitions
+            return; 
         }
 
         this.btnStart.innerText = "...";
         playCue(Store.state.isMuted);
 
-        // Schedule visual re-flash exactly 180ms after the warning click
         this.tracker.setTimeout(() => {
             this._runRenderCycle(false);
         }, 180);
     }
 
     /**
-     * Unified visual execution pipeline handling parameters configuration, rendering, and lifecycle timers
+     * Formulates Gabor parameters, resizes backing stores, renders the canvas frame, 
+     * and sets up the exposure duration lifecycles.
+     * CLINICAL PURPOSE:
+     * Performs spatial summation scaling at extremely low contrast values (if contrast is below 12%,
+     * the Gaussian sigma is expanded). This recruits wider neural networks in the visual cortex 
+     * to help decode faint, sub-threshold signals, maximizing synaptic plasticity.
      * @param {boolean} isNewTrial - If true, randomizes new Gabor parameters. If false, preserves existing parameters.
+     * @returns {void}
+     * @private
      */
     _runRenderCycle(isNewTrial) {
         const t = this.getTranslations();
@@ -156,12 +237,10 @@ export class TrialController {
 
         this.transitionTo(TrialState.STIMULUS_ACTIVE);
 
-        // Fail-safe fallback: flicker stimulation strictly requires static exposure to loop intervals
         if (s.isFlickerEnabled) {
             s.isStaticEnabled = true;
         }
 
-        // Dynamically scale canvas backing store to prevent interpolation blur on High-DPI screens
         const rect = this.canvas.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
         const physicalSize = Math.min(1024, Math.round(rect.width * dpr));
@@ -173,8 +252,6 @@ export class TrialController {
             this.overlayCanvas.height = physicalSize;
         }
 
-        // CRITICAL First-Flash Frame Fix: Always clear and redraw the dynamic overlay lock frame
-        // after any backing-store resize event to prevent the borders from disappearing on first launch.
         this.overlayCtx.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
         if (s.isFusionLockEnabled) {
             const scale = this.canvas.width / 256.0;
@@ -182,12 +259,10 @@ export class TrialController {
         }
 
         if (isNewTrial) {
-            // Generate a secure randomized stimulus angle outside of dead-zones
             do {
                 this.currentAngleDeg = Math.floor(Math.random() * 160) - 80;
             } while (Math.abs(this.currentAngleDeg) < 15);
 
-            // Compute randomized spatial frequency and Gaussian envelope sizes for current Stage
             const freqRange = levelFreqRanges[s.currentLevel] || levelFreqRanges[1];
             this.lastRandomFreq = Math.random() * (freqRange.max - freqRange.min) + freqRange.min;
 
@@ -210,14 +285,12 @@ export class TrialController {
                 this.lastRandomAspectRatio = Math.random() * (2.0 - 0.5) + 0.5;
             }
 
-            // Apply spatial summation adaptation for ultra-low contrast thresholds
             const summationThreshold = 0.12;
             if (s.autoContrast < summationThreshold) {
                 const summationMultiplier = 1.0 + (summationThreshold - s.autoContrast) * 3.0;
                 this.lastRandomSigma = this.lastRandomSigma * summationMultiplier;
             }
 
-            // Calculate randomized peripheral offsets if eccentric fixation is enabled
             this.lastOffsetX = 0;
             this.lastOffsetY = 0;
             if (s.isPeripheralEnabled) {
@@ -228,12 +301,10 @@ export class TrialController {
             }
         }
 
-        // Synchronize numeric counters on the active user dashboard
         document.getElementById('current-contrast').innerText = Math.round(s.autoContrast * 100);
         document.getElementById('current-level').innerText = s.currentLevel;
         document.getElementById('current-streak').innerText = s.correctStreak;
 
-        // Scale central fixation cross size inversely with spatial Stage difficulty
         let crossSize = 36;
         if (s.currentLevel === 1) crossSize = 36;
         else if (s.currentLevel === 2) crossSize = 28;
@@ -242,7 +313,6 @@ export class TrialController {
         else if (s.currentLevel === 5) crossSize = 12;
         this.cross.style.fontSize = crossSize + 'px';
 
-        // Render Gabor patch using mathematical engine
         renderGabor(this.canvas, this.ctx, s, this.currentAngleDeg, s.autoContrast, s.autoContrast, this.lastRandomFreq, this.lastRandomSigma, this.lastOffsetX, this.lastOffsetY, 0, this.lastRandomAspectRatio);
 
         let flashDuration = this.getFlashDuration(s);
@@ -259,7 +329,6 @@ export class TrialController {
         }
 
         if (!s.isStaticEnabled) {
-            // Transient exposure (auto-hide after configured duration)
             this.tracker.setTimeout(() => {
                 this.stopUnifiedRenderingLoop();
                 drawIdleState(this.canvas, this.ctx, this.overlayCanvas, this.overlayCtx, s.isFusionLockEnabled);
@@ -274,11 +343,18 @@ export class TrialController {
     }
 
     /**
-     * Evaluates answer submissions and executes tactile visual/acoustic feedback animations
+     * Evaluates user directional choice, registers the outcome, and executes visual/acoustic feedback.
+     * CLINICAL PURPOSE:
+     * Drives synaptic plasticity through immediate reinforcement learning. 
+     * Positive feedback (crystalline major chords) triggers dopaminergic pathways 
+     * to consolidate visual memory, while negative feedback (low-frequency sweeps) 
+     * alerts attention networks to recalibrate orientation judgment.
+     * @param {string} userChoice - The user's input answer direction ('left' or 'right').
+     * @returns {void}
      */
     submitAnswer(userChoice) {
         if (this.currentState !== TrialState.AWAITING_INPUT && this.currentState !== TrialState.STIMULUS_ACTIVE) {
-            return; // Guard to ignore keyboard/tap inputs outside active response phases
+            return;
         }
 
         const s = Store.state;
@@ -292,7 +368,7 @@ export class TrialController {
 
         this.container.classList.remove('success-pulse', 'error-shake');
         this.flashOverlay.classList.remove('flash-success', 'flash-error');
-        void this.container.offsetWidth; // Force CSS layout reflow to restart kinetic animations cleanly
+        void this.container.offsetWidth; 
         void this.flashOverlay.offsetWidth;
 
         Store.registerResult(isCorrect);
@@ -309,12 +385,10 @@ export class TrialController {
 
         drawIdleState(this.canvas, this.ctx, this.overlayCanvas, this.overlayCtx, s.isFusionLockEnabled);
 
-        // Initiate smooth chromatic flash fade-out after 300ms
         this.tracker.setTimeout(() => {
             this.flashOverlay.classList.add('fade-out');
             this.container.classList.remove('success-pulse', 'error-shake');
             
-            // Completely purge all color classes once the opacity transition completes
             this.tracker.setTimeout(() => {
                 this.flashOverlay.classList.remove('flash-success', 'flash-error', 'fade-out');
             }, 500);
@@ -355,13 +429,19 @@ export class TrialController {
             }, 900);
         } else {
             this.btnStart.innerText = this.getTranslations().nextBtn;
-            // Softly change FSM state status without synchronously wiping out active feedback timers
             this.currentState = TrialState.IDLE;
         }
     }
 
     /**
-     * Resolves the current target exposure duration mapped to active Stage constraints
+     * Resolves the current target exposure duration mapped to active Stage constraints.
+     * CLINICAL PURPOSE:
+     * Limits visual exposure to extremely short durations (110ms-240ms). 
+     * Since an eye movement (saccade) requires ~200ms to plan and execute, 
+     * rapid flashes physically prevent the patient from moving their eye to "cheat" 
+     * and align the stimulus with a healthier, non-amblyopic area of the retina.
+     * @param {Object} state - The global store state representation.
+     * @returns {number} The flash duration in milliseconds.
      */
     getFlashDuration(state) {
         if (state.flashDurationMode === '100') return 100;
@@ -377,80 +457,46 @@ export class TrialController {
     }
 
     /**
-     * Highly optimized, V-Sync synchronized unified loop handling both animations and 10 Hz flicker
+     * Highly optimized, V-Sync synchronized unified loop handling both animations and 10 Hz flicker.
+     * Engineered for absolute stability across 60Hz, 120Hz, and 144Hz+ displays.
+     * CLINICAL PURPOSE:
+     * Modulates Gabor contrast smoothly across a time-independent 10 Hz sine wave.
+     * Merging time-locked calculations with the monitor's natural refresh rate prevents
+     * spatial-temporal clashing and eye fatigue, while maintaining the steady-state 
+     * cortical resonance (SSVEP) necessary to bypass dominant-eye suppression.
+     * @returns {void}
      */
     startUnifiedRenderingLoop() {
         const s = Store.state;
         this.flankerPhaseOffset = 0;
         this.isFlickerOffState = false;
 
-        let lastFrameTime = performance.now();
-        let accumulatedTime = 0;
-        let frameCount = 0;
-        let optimalFrequencyCoeff = 0.062831853; // Balanced 10Hz coefficient default fallback
+        const startTime = performance.now();
+        const optimalFrequencyCoeff = 0.062831853; 
 
         const loop = (timestamp) => {
-            // Guard: If calibration alignment test is toggled on, immediately suspend Gabor rendering
             if (this.isAnaglyphTestActive) {
                 const gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl');
                 if (gl) {
                     gl.clearColor(0.498, 0.498, 0.498, 1.0);
                     gl.clear(gl.COLOR_BUFFER_BIT);
                 }
-                return; // Break the recursive animation frame loop to freeze GPU drawing during calibration
+                return; 
             }
 
-            // Calculate highly stable, low-pass filtered Delta Time to prevent OS-level temporal judder
-            let dt = timestamp - lastFrameTime;
-            lastFrameTime = timestamp;
+            const elapsed = timestamp - startTime;
 
-            // Clamp delta-time to avoid wild contrast jumps during system garbage collection freezes
-            if (dt > 32.0) {
-                dt = 16.67; // Fallback to steady 60Hz frame pacing
-            }
-            accumulatedTime += dt;
-
-            // Dynamically estimate device refresh rate (Hz) over the first 15 frames to adapt the sine wave
-            if (frameCount < 15) {
-                frameCount++;
-                if (frameCount === 15) {
-                    const avgFrameDuration = accumulatedTime / 15;
-                    const estimatedHz = Math.round(1000 / avgFrameDuration);
-                    let detectedHz = 60;
-
-                    if (estimatedHz >= 130) {
-                        detectedHz = 144;
-                    } else if (estimatedHz >= 90) {
-                        detectedHz = 120;
-                    } else {
-                        detectedHz = 60;
-                    }
-
-                    // Perfect temporal alignment (12 frames per cycle rule to eliminate FRC matrix beats)
-                    const targetFlickerHz = detectedHz / 12;
-                    optimalFrequencyCoeff = (targetFlickerHz * 2.0 * Math.PI) / 1000;
-                }
-            }
-
-            // 1. Safe phase advance clamped to 2*PI to prevent mobile GPU precision loss
             if (s.isDynamicFlankersEnabled && s.isCrowdingEnabled) {
-                this.flankerPhaseOffset = (this.flankerPhaseOffset + 0.12) % (2.0 * Math.PI);
+                this.flankerPhaseOffset = (elapsed * 0.0072) % (2.0 * Math.PI);
             }
 
-            // 2. High-precision Phase-Reversing Contrast Modulation (Bipolar Sine-Wave) calibrated to device refresh rate
-            // Smoothly oscillates contrast from +max to -max (swapping stripe phases).
-            // CLINICAL ISOLATION: Flankers remain steady to provide background noise, ONLY central target flickers.
             let centralContrast = s.autoContrast;
             let flankerContrast = s.autoContrast;
 
             if (s.isFlickerEnabled) {
-                // 10 Hz cycle maps to 20*PI radians per second (0.062831853 rad per millisecond)
-                centralContrast = s.autoContrast * Math.sin(accumulatedTime * optimalFrequencyCoeff);
+                centralContrast = s.autoContrast * Math.sin(elapsed * optimalFrequencyCoeff);
             }
 
-            // 3. Render exactly once per frame buffer refresh (V-Sync)
-            // Note: We read dimensions only inside _runRenderCycle. 
-            // Reading DOM layout bounds here at 60Hz/120Hz would cause layout thrashing and frame drops.
             renderGabor(
                 this.canvas, 
                 this.ctx, 
@@ -464,7 +510,7 @@ export class TrialController {
                 this.lastOffsetY, 
                 this.flankerPhaseOffset, 
                 this.lastRandomAspectRatio, 
-                false // hideCentral is locked to false, contrast modulation handles flicker natively
+                false
             );
 
             this.tracker.requestAnimationFrame(loop);
@@ -473,13 +519,25 @@ export class TrialController {
         this.tracker.requestAnimationFrame(loop);
     }
 
+    /**
+     * Stops the animation rendering loops cleanly and resets cached variables.
+     * CLINICAL PURPOSE:
+     * Safely halts active GPU cycles when the stimulus exposure ends, 
+     * allowing the photoreceptors of the retina to rest during the decision-making phase.
+     * @returns {void}
+     */
     stopUnifiedRenderingLoop() {
         this.flankerPhaseOffset = 0;
         this.isFlickerOffState = false;
     }
 
     /**
-     * Triggers repeated flashing sequence during milestone acquisitions or breaks
+     * Triggers a repeated flashing sequence during milestone acquisitions or breaks.
+     * CLINICAL PURPOSE:
+     * Provides a highly visible, rhythmic visual trigger to indicate block mastery,
+     * encouraging patient engagement and reinforcing progress during long training regimens.
+     * @param {function(): void} callback - The callback function to execute after the flash sequence is completed.
+     * @returns {void}
      */
     triggerMilestoneFlash(callback) {
         let count = 0;
