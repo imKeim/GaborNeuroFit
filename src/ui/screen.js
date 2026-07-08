@@ -38,16 +38,48 @@ export function drawIdleState(gaborCanvas, gaborCtx, overlayCanvas, overlayCtx, 
 export function updateScoreboard(state, translations) {
     const t = translations;
     const scoreTextEl = document.getElementById('score-text');
-    if (scoreTextEl) {
-        scoreTextEl.innerHTML = `${t.correctLabel}: <strong>${state.score}</strong> / ${t.totalLabel}: <strong>${state.total}</strong>`;
+    const indicatorsEl = document.getElementById('indicators');
+    const synopIndicatorsEl = document.getElementById('synop-indicators');
+
+    if (state.appMode === 'synoptophore') {
+        // 1. Set stable centered text label
+        if (scoreTextEl) {
+            scoreTextEl.innerHTML = t.lblPrismDeviation || 'Deviation Angle (Prism)';
+        }
+        
+        // 2. Hide Gabor stats pills, reveal Synoptophore prism diopter pills
+        if (indicatorsEl) indicatorsEl.style.display = 'none';
+        if (synopIndicatorsEl) {
+            synopIndicatorsEl.style.display = 'flex';
+            
+            // Translate pixels to precise Prism Diopters (1 Δ = 16 pixels shift at standard 50cm distance)
+            const pdX = (state.synopTargetX / 16).toFixed(2);
+            const pdY = (state.synopTargetY / 16).toFixed(2);
+            
+            const signX = state.synopTargetX > 0 ? '+' : '';
+            const signY = state.synopTargetY > 0 ? '+' : '';
+            
+            const badgeX = document.getElementById('badge-prism-x');
+            const badgeY = document.getElementById('badge-prism-y');
+            
+            if (badgeX) badgeX.innerHTML = `X: <strong>${signX}${state.synopTargetX}px</strong> (${signX}${pdX}Δ)`;
+            if (badgeY) badgeY.innerHTML = `Y: <strong>${signY}${state.synopTargetY}px</strong> (${signY}${pdY}Δ)`;
+        }
+    } else {
+        // Gabor Mode: Restore classic scoreboard behavior
+        if (scoreTextEl) {
+            scoreTextEl.innerHTML = `${t.correctLabel}: <strong>${state.score}</strong> / ${t.totalLabel}: <strong>${state.total}</strong>`;
+        }
+        if (indicatorsEl) indicatorsEl.style.display = 'flex';
+        if (synopIndicatorsEl) synopIndicatorsEl.style.display = 'none';
     }
     
-    // Select indicators elements
+    // Select indicators elements (for standard sync compatibility)
     const contrastEl = document.getElementById('current-contrast');
     const levelEl = document.getElementById('current-level');
     const streakEl = document.getElementById('current-streak');
     
-    // Feed indicators with actual store parameters
+    // Feed indicators with actual store parameters (only if they exist in DOM)
     if (contrastEl) contrastEl.innerText = Math.round(state.autoContrast * 100);
     if (levelEl) levelEl.innerText = state.currentLevel;
     if (streakEl) streakEl.innerText = state.correctStreak;
@@ -140,7 +172,9 @@ export function updateStatusBar(state, translations) {
     let speedStr = "Adaptive";
 
     // Map active protocol localized string
-    if (state.presetMode === 'occlusion') {
+    if (state.presetMode === 'synoptophore' || state.appMode === 'synoptophore') {
+        modeStr = t.optPresetSynoptophore || "🧲 Synoptophore";
+    } else if (state.presetMode === 'occlusion') {
         modeStr = t.optPresetOcclusion;
     } else if (state.presetMode === 'binocular') {
         modeStr = t.optPresetBinocular;
@@ -155,7 +189,11 @@ export function updateStatusBar(state, translations) {
     }
 
     // Map exposure speed parameters or dynamically calculated values
-    if (state.flashDurationMode === '100') {
+    if (state.appMode === 'synoptophore') {
+        // Translate motor pull delay smoothly to readable physical units
+        const seconds = (state.synopPullSpeed / 1000).toFixed(1);
+        speedStr = state.currentLang === 'ru' ? `1 пикс / ${seconds}с` : `1 px / ${seconds}s`;
+    } else if (state.flashDurationMode === '100') {
         speedStr = "100 ms";
     } else if (state.flashDurationMode === '180') {
         speedStr = "180 ms";

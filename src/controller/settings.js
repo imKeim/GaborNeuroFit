@@ -1,15 +1,10 @@
 /*
  * GaborNeuroFit - Declarative Settings Binder Controller
  * Copyright (C) 2026 Pavel Korotkov
- *
- * This module isolates form synchronization, preset templates application,
- * and custom subpixel RGB slider color calibration rules.
  */
 
 import { Store } from '../store.js';
 
-// Metadata schema for declarative mapping between DOM Inputs and Store State fields.
-// WARNING: Do not modify these IDs or keys. They bind DOM elements directly to Store.state variables.
 const CONFIG_SCHEMA = [
     { id: 'chk-stage-advance', key: 'allowStageAdvance', type: 'checkbox' },
     { id: 'select-flash-duration', key: 'flashDurationMode', type: 'value' },
@@ -32,7 +27,11 @@ const CONFIG_SCHEMA = [
     { id: 'select-session-limit', key: 'sessionLimit', type: 'int' },
     { id: 'slider-left-r', key: 'calibratorLeftR', type: 'int' },
     { id: 'slider-right-g', key: 'calibratorRightG', type: 'int' },
-    { id: 'slider-right-b', key: 'calibratorRightB', type: 'int' }
+    { id: 'slider-right-b', key: 'calibratorRightB', type: 'int' },
+    { id: 'select-pull-speed', key: 'synopPullSpeed', type: 'int' },
+    { id: 'select-target-type', key: 'synopTargetType', type: 'value' },
+    { id: 'chk-synop-lazy-grid', key: 'synopShowLazyGrid', type: 'checkbox' },
+    { id: 'chk-synop-strong-grid', key: 'synopShowStrongGrid', type: 'checkbox' }
 ];
 
 export class SettingsController {
@@ -44,8 +43,6 @@ export class SettingsController {
         this.rangeStrongAttenuation = document.getElementById('range-strong-attenuation');
     }
 
-    // SYNCHRONIZATION PASS (DOM -> Store): Reads all configured DOM elements, 
-    // tracks the last changed field to resolve logical conflicts, and triggers state updates.
     syncStateFromUI() {
         const s = Store.state;
         let lastActiveTrigger = null;
@@ -57,8 +54,6 @@ export class SettingsController {
             let val;
             if (field.type === 'checkbox') {
                 val = el.checked;
-                // Active Interaction Override: Compares new DOM state against old Store state 
-                // to detect which checkbox was clicked last, avoiding dead-locks during conflicts.
                 if (s[field.key] !== val) {
                     if (field.key === 'isPeripheralEnabled') lastActiveTrigger = 'peripheral';
                     if (field.key === 'isCrowdingEnabled') lastActiveTrigger = 'crowding';
@@ -77,32 +72,27 @@ export class SettingsController {
             Store.updateState(field.key, val);
         });
 
-        // Resolve setting constraints in central memory with active trigger detection
         Store.resolveConflicts(lastActiveTrigger);
     
-        // Automatically re-detect macro match after checkboxes are toggled
         const detectedPreset = Store.detectMatchingPreset();
         Store.updateState('presetMode', detectedPreset);
         if (this.selectPresetMode) {
             this.selectPresetMode.value = detectedPreset;
         }
 
-        // SUBPIXEL CALIBRATION OFFSET: Translates pure RGB channels (0-255) 
-        // to a visually balanced, offset scale (-127 to +128) on load.
         const valR = document.getElementById('val-calib-r');
         const valG = document.getElementById('val-calib-g');
         const valB = document.getElementById('val-calib-b');
         
-        if (valR) { valR.innerText = (s.calibratorLeftR - 127 > 0 ? '+' : '') + (s.calibratorLeftR - 127); }
-        if (valG) { valG.innerText = (s.calibratorRightG - 127 > 0 ? '+' : '') + (s.calibratorRightG - 127); }
-        if (valB) { valB.innerText = (s.calibratorRightB - 127 > 0 ? '+' : '') + (s.calibratorRightB - 127); }
+        if (valR) valR.innerText = (s.calibratorLeftR - 127 > 0 ? '+' : '') + (s.calibratorLeftR - 127);
+        if (valG) valG.innerText = (s.calibratorRightG - 127 > 0 ? '+' : '') + (s.calibratorRightG - 127);
+        if (valB) valB.innerText = (s.calibratorRightB - 127 > 0 ? '+' : '') + (s.calibratorRightB - 127);
 
         if (typeof this.onSyncCallback === 'function') {
             this.onSyncCallback();
         }
     }
 
-    // RENDER PASS (Store -> DOM): Forces all physical DOM controls to match the current, validated Store state variables.
     updatePresetUI() {
         const s = Store.state;
 
@@ -124,7 +114,6 @@ export class SettingsController {
             }
         });
 
-        // Direct numeric sliders bindings (Pure RGB calibration, zero obsolete Hex fields)
         const sLeftR = document.getElementById('slider-left-r');
         if (sLeftR) sLeftR.value = s.calibratorLeftR;
         const sRightG = document.getElementById('slider-right-g');
@@ -137,54 +126,100 @@ export class SettingsController {
         this.updateVisibilityPanels();
     }
 
-    // DYNAMIC ACCORDION VISIBILITY: Enforces responsive opacities, hides irrelevant sub-sections,
-    // and disables child elements to prevent Cumulative Layout Shifts (CLS) on mobile viewports.
+    toggleAccordionGroupState(groupNumber, isEnabled) {
+        const header = document.getElementById(`accordion-header-${groupNumber}`);
+        const content = document.getElementById(`accordion-content-${groupNumber}`);
+        if (!header || !content) return;
+
+        if (isEnabled) {
+            header.style.opacity = '1';
+            header.style.pointerEvents = 'auto';
+            content.style.opacity = '1';
+            content.querySelectorAll('input, select, button').forEach(el => {
+                el.disabled = false;
+            });
+        } else {
+            header.style.opacity = '0.35';
+            header.style.pointerEvents = 'none';
+            content.style.opacity = '0.35';
+            content.classList.remove('open');
+            const arrow = header.querySelector('.accordion-arrow');
+            if (arrow) arrow.classList.remove('active');
+            content.querySelectorAll('input, select, button').forEach(el => {
+                el.disabled = true;
+            });
+        }
+    }
+
     updateVisibilityPanels() {
         const s = Store.state;
+        const isSynop = (s.appMode === 'synoptophore');
 
-        // Group 2: Flicker row (always display flex, opacity & disabled toggle)
-        const chkFlicker = document.getElementById('chk-flicker');
-        const rowFlicker = document.getElementById('row-flicker');
-        if (chkFlicker) chkFlicker.disabled = !s.isStaticEnabled;
-        if (rowFlicker) {
-            rowFlicker.style.display = 'flex';
-            rowFlicker.style.opacity = s.isStaticEnabled ? '1' : '0.5';
+        this.toggleAccordionGroupState(2, !isSynop); 
+        this.toggleAccordionGroupState(3, !isSynop); 
+        this.toggleAccordionGroupState(5, isSynop);  
+
+        if (!isSynop) {
+            const chkFlicker = document.getElementById('chk-flicker');
+            const rowFlicker = document.getElementById('row-flicker');
+            if (chkFlicker) chkFlicker.disabled = !s.isStaticEnabled;
+            if (rowFlicker) {
+                rowFlicker.style.display = 'flex';
+                rowFlicker.style.opacity = s.isStaticEnabled ? '1' : '0.5';
+            }
+
+            const chkOrthogonal = document.getElementById('chk-orthogonal-flankers');
+            const chkDynamic = document.getElementById('chk-dynamic-flankers');
+            const rowOrthogonal = document.getElementById('row-orthogonal');
+            const rowDynamic = document.getElementById('row-dynamic');
+
+            if (chkOrthogonal) chkOrthogonal.disabled = !s.isCrowdingEnabled;
+            if (chkDynamic) chkDynamic.disabled = !s.isCrowdingEnabled;
+
+            if (rowOrthogonal) {
+                rowOrthogonal.style.display = 'flex';
+                rowOrthogonal.style.opacity = s.isCrowdingEnabled ? '1' : '0.5';
+            }
+            if (rowDynamic) {
+                rowDynamic.style.display = 'flex';
+                rowDynamic.style.opacity = s.isCrowdingEnabled ? '1' : '0.5';
+            }
         }
 
-        // Group 3: Crowding sub-rows (always display flex, opacity & disabled toggle)
-        const chkOrthogonal = document.getElementById('chk-orthogonal-flankers');
-        const chkDynamic = document.getElementById('chk-dynamic-flankers');
-        const rowOrthogonal = document.getElementById('row-orthogonal');
-        const rowDynamic = document.getElementById('row-dynamic');
-
-        if (chkOrthogonal) chkOrthogonal.disabled = !s.isCrowdingEnabled;
-        if (chkDynamic) chkDynamic.disabled = !s.isCrowdingEnabled;
-
-        if (rowOrthogonal) {
-            rowOrthogonal.style.display = 'flex';
-            rowOrthogonal.style.opacity = s.isCrowdingEnabled ? '1' : '0.5';
-        }
-        if (rowDynamic) {
-            rowDynamic.style.display = 'flex';
-            rowDynamic.style.opacity = s.isCrowdingEnabled ? '1' : '0.5';
+        const chkAnaglyph = document.getElementById('chk-anaglyph');
+        if (chkAnaglyph) {
+            chkAnaglyph.disabled = isSynop;
+            const rowAnaglyph = chkAnaglyph.closest('.settings-row');
+            if (rowAnaglyph) rowAnaglyph.style.opacity = isSynop ? '0.5' : '1';
         }
 
-        // Group 4: Anaglyph calibration panel (always display block, opacity & disabled toggle)
+        const chkFusionLock = document.getElementById('chk-fusion-lock');
+        if (chkFusionLock) {
+            chkFusionLock.disabled = isSynop;
+            const rowFusionLock = chkFusionLock.closest('.settings-row');
+            if (rowFusionLock) rowFusionLock.style.opacity = isSynop ? '0.5' : '1';
+        }
+
         if (this.anaglyphPanel) {
             this.anaglyphPanel.style.display = 'block';
-            this.anaglyphPanel.style.opacity = s.isAnaglyphEnabled ? '1' : '0.4';
+            this.anaglyphPanel.style.opacity = (s.isAnaglyphEnabled || isSynop) ? '1' : '0.4';
             this.anaglyphPanel.querySelectorAll('input, select, button').forEach(input => {
-                input.disabled = !s.isAnaglyphEnabled;
+                if (input.id === 'range-strong-attenuation' && isSynop) {
+                    input.disabled = true;
+                    const row = input.closest('.settings-row');
+                    if(row) row.style.opacity = '0.35';
+                } else if (input.id !== 'chk-fusion-lock' && input.id !== 'chk-anaglyph') {
+                    input.disabled = !s.isAnaglyphEnabled;
+                }
             });
         }
 
-        // Accordion 4 Monocular Block: Hard-locks the 3D calibration accordion if a strictly monocular preset is active
         const headerAnaglyph = document.getElementById('accordion-header-4');
         const contentAnaglyph = document.getElementById('accordion-content-4');
         if (headerAnaglyph) {
             const isMonocularPreset = (s.presetMode === 'occlusion' || s.presetMode === 'blitz');
             const shouldDisable3D = !s.isAnaglyphEnabled && isMonocularPreset;
-            if (shouldDisable3D) {
+            if (shouldDisable3D && !isSynop) {
                 headerAnaglyph.style.opacity = '0.35';
                 headerAnaglyph.style.pointerEvents = 'none';
                 if (contentAnaglyph) contentAnaglyph.classList.remove('open');
@@ -197,8 +232,6 @@ export class SettingsController {
         }
     }
 
-    // EVENT BINDINGS: Hooks up real-time slider inputs and binds change events
-    // to the CONFIG_SCHEMA to trigger the re-active sync-resolve-render loop.
     bindSettingsInteractions() {
         if (this.selectPresetMode) {
             this.selectPresetMode.value = Store.state.presetMode;
@@ -209,13 +242,13 @@ export class SettingsController {
             });
         }
 
-        for (let i = 1; i <= 4; i++) {
+        for (let i = 1; i <= 5; i++) {
             const header = document.getElementById(`accordion-header-${i}`);
             const content = document.getElementById(`accordion-content-${i}`);
             if (header && content) {
                 header.addEventListener('click', () => {
                     const isOpen = content.classList.contains('open');
-                    for (let j = 1; j <= 4; j++) {
+                    for (let j = 1; j <= 5; j++) {
                         const c = document.getElementById(`accordion-content-${j}`);
                         const h = document.getElementById(`accordion-header-${j}`);
                         if (c) c.classList.remove('open');
@@ -239,8 +272,6 @@ export class SettingsController {
             if (el) el.addEventListener('input', () => this.syncStateFromUI());
         });
 
-        // CRITICAL: rangeStrongAttenuation 'input' event does NOT trigger updatePresetUI().
-        // This prevents the slider thumb from glitching/lagging during rapid drag actions.
         if (this.rangeStrongAttenuation) {
             this.rangeStrongAttenuation.addEventListener('input', () => {
                 if (this.valStrongAttenuation) this.valStrongAttenuation.innerText = this.rangeStrongAttenuation.value + '%';

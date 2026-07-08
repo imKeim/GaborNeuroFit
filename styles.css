@@ -797,6 +797,23 @@ canvas {
     animation: errorShake 0.36s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
+/* Premium custom alerts elastic scale-in animation (Retina high-DPI composited) */
+@keyframes customAlertScaleIn {
+    0% {
+        transform: scale(0.92);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+#custom-alert-modal .modal-content {
+    animation: customAlertScaleIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    will-change: transform, opacity;
+}
+
 /* ==========================================================================
    8. MEDIA QUERIES & PORTRAIT STABILITY OVERLAYS
    ========================================================================== */

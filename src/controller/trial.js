@@ -95,8 +95,9 @@ export class TrialController {
      * @param {HTMLElement} flashOverlay - Fullscreen color overlay for tactile success/error feedback.
      * @param {HTMLButtonElement} btnStart - The primary action/reflash trigger button.
      * @param {function(): Object} translationsGetter - Callback function returning the active localization bundle.
+     * @param {function(string, string): void} showCustomModal - Non-blocking modal alert callback.
      */
-    constructor(canvas, overlayCanvas, overlayContext, cross, container, flashOverlay, btnStart, translationsGetter) {
+    constructor(canvas, overlayCanvas, overlayContext, cross, container, flashOverlay, btnStart, translationsGetter, showCustomModal) {
         this.canvas = canvas;
         this.ctx = null;
         this.overlayCanvas = overlayCanvas;
@@ -106,7 +107,8 @@ export class TrialController {
         this.flashOverlay = flashOverlay;
         this.btnStart = btnStart;
         this.getTranslations = translationsGetter;
-
+        this.showCustomModal = showCustomModal;
+        
         /** 
          * @type {TrialStateValue} 
          * @public
@@ -400,7 +402,7 @@ export class TrialController {
         if (s.currentLevel === 5 && s.autoContrast <= minContrastLimit && s.correctStreak >= 12) {
             this.tracker.setTimeout(() => {
                 this.triggerMilestoneFlash(() => {
-                    alert(this.getTranslations().sessionMastered);
+                    this.showCustomModal("🏆 GaborNeuroFit", this.getTranslations().sessionMastered);
                     this.transitionTo(TrialState.IDLE);
                 });
             }, 400);
@@ -410,7 +412,8 @@ export class TrialController {
         if (s.sessionLimit > 0 && s.total >= s.sessionLimit) {
             this.tracker.setTimeout(() => {
                 this.triggerMilestoneFlash(() => {
-                    alert(this.getTranslations().sessionCompleted.replace("{limit}", s.sessionLimit));
+                    const text = this.getTranslations().sessionCompleted.replace("{limit}", s.sessionLimit);
+                    this.showCustomModal("🥈 GaborNeuroFit", text);
                     this.transitionTo(TrialState.IDLE);
                 });
             }, 400);
