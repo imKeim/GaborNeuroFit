@@ -18,7 +18,7 @@ const EMOJIS_DIR = path.resolve('public/emojis');
 // Strict inventory of unicode emojis leveraged across clinical UI modules, translations, and guides
 const CLINICAL_EMOJIS = [
   '🎯', '📱', '⚡', '🩹', '🕶️', '🌀', '⚙️', '🥈', '🥇', '🧠', '⚠️',
-  '🔊', '🔇', 'ℹ️', '📊', '🛠️', '🇬🇧', '🇷🇺', '🧿', '◀', '▶', '🔄', '🧲'
+  '🔊', '🔇', 'ℹ️', '📊', '🛠️', '🇬🇧', '🇷🇺', '🧿', '◀', '▶', '🔄', '🧲', '🏆'
 ];
 
 /**

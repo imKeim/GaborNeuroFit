@@ -31,7 +31,9 @@ const CONFIG_SCHEMA = [
     { id: 'select-pull-speed', key: 'synopPullSpeed', type: 'int' },
     { id: 'select-target-type', key: 'synopTargetType', type: 'value' },
     { id: 'chk-synop-lazy-grid', key: 'synopShowLazyGrid', type: 'checkbox' },
-    { id: 'chk-synop-strong-grid', key: 'synopShowStrongGrid', type: 'checkbox' }
+    { id: 'chk-synop-strong-grid', key: 'synopShowStrongGrid', type: 'checkbox' },
+    { id: 'select-target-size', key: 'synopTargetSize', type: 'int' },
+    { id: 'chk-synop-flicker', key: 'synopFlickerActive', type: 'checkbox' }
 ];
 
 export class SettingsController {
@@ -198,6 +200,28 @@ export class SettingsController {
             chkFusionLock.disabled = isSynop;
             const rowFusionLock = chkFusionLock.closest('.settings-row');
             if (rowFusionLock) rowFusionLock.style.opacity = isSynop ? '0.5' : '1';
+        }
+
+        // Symmetrically lock and dim Gabor-only baseline options during Synoptophore
+        const selectStartLevel = document.getElementById('select-start-level');
+        if (selectStartLevel) {
+            selectStartLevel.disabled = isSynop;
+            const row = selectStartLevel.closest('.settings-row');
+            if (row) row.style.opacity = isSynop ? '0.5' : '1';
+        }
+
+        const selectAutoNext = document.getElementById('select-autonext');
+        if (selectAutoNext) {
+            selectAutoNext.disabled = isSynop;
+            const row = selectAutoNext.closest('.settings-row');
+            if (row) row.style.opacity = isSynop ? '0.5' : '1';
+        }
+
+        const selectSessionLimit = document.getElementById('select-session-limit');
+        if (selectSessionLimit) {
+            selectSessionLimit.disabled = isSynop;
+            const row = selectSessionLimit.closest('.settings-row');
+            if (row) row.style.opacity = isSynop ? '0.5' : '1';
         }
 
         if (this.anaglyphPanel) {

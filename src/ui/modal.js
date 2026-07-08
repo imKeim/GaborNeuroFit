@@ -6,6 +6,36 @@
  * and Configuration modals and invokes callback hooks for settings synchronization.
  */
 
+/**
+ * Renders a beautiful non-blocking custom modal window in sRGB space.
+ * Eradicates native alert() freezing issues in iOS and Android WebViews.
+ */
+export function showCustomAlert(title, text) {
+    const modal = document.getElementById('custom-alert-modal');
+    const titleEl = document.getElementById('custom-alert-title');
+    const textEl = document.getElementById('custom-alert-text');
+    
+    if (!modal || !titleEl || !textEl) return;
+    
+    titleEl.innerHTML = title;
+    textEl.innerHTML = text;
+    modal.style.display = 'flex';
+    
+    if (window.twemoji) {
+        window.twemoji.parse(modal);
+    }
+}
+
+/**
+ * Dismisses the custom alert modal non-blockingly
+ */
+export function closeCustomAlert() {
+    const modal = document.getElementById('custom-alert-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
 // Initialize click listeners for settings and manual popup modals
 export function initModals(onSettingsOpen, onSettingsSave, onStatsOpen) {
     // Select Handbook modal DOM nodes
@@ -22,6 +52,14 @@ export function initModals(onSettingsOpen, onSettingsSave, onStatsOpen) {
     const statsModal = document.getElementById('stats-modal');
     const btnStats = document.getElementById('btn-stats');
     const btnCloseStats = document.getElementById('btn-close-stats');
+
+    // Bind custom alert close button cleanly inside initModals (SoC compliant)
+    const btnCloseCustomAlert = document.getElementById('btn-close-custom-alert');
+    if (btnCloseCustomAlert) {
+        btnCloseCustomAlert.addEventListener('click', () => {
+            closeCustomAlert();
+        });
+    }
 
     // Bind manual modal triggers
     if (btnInfo && infoModal) {

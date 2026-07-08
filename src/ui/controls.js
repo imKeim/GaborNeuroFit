@@ -4,6 +4,7 @@
  */
 
 import { Store } from '../store.js';
+import { closeCustomAlert } from './modal.js';
 
 export function bindInputControls(handlers) {
     const btnLeft = document.getElementById('btn-left');
@@ -33,14 +34,20 @@ export function bindInputControls(handlers) {
             return;
         }
 
+        // Active key tracking inputs
+        const holdLeft = pressedKeys.has('arrowleft') || pressedKeys.has('a') || pressedKeys.has('ф');
+        const holdRight = pressedKeys.has('arrowright') || pressedKeys.has('d') || pressedKeys.has('в');
+        const holdUp = pressedKeys.has('arrowup') || pressedKeys.has('w') || pressedKeys.has('ц');
+        const holdDown = pressedKeys.has('arrowdown') || pressedKeys.has('s') || pressedKeys.has('ы');
+
         let dx = 0;
         let dy = 0;
 
-        // Symmetric axes evaluation eliminates OS key-holding lags and unlocks diagonals
-        if (pressedKeys.has('arrowleft') || pressedKeys.has('a') || pressedKeys.has('ф')) dx = -1;
-        if (pressedKeys.has('arrowright') || pressedKeys.has('d') || pressedKeys.has('в')) dx = 1;
-        if (pressedKeys.has('arrowup') || pressedKeys.has('w') || pressedKeys.has('ц')) dy = -1;
-        if (pressedKeys.has('arrowdown') || pressedKeys.has('s') || pressedKeys.has('ы')) dy = 1;
+        // Symmetric axes evaluation eliminates holding lags and allows true diagonal vergence movement
+        if (holdLeft && !holdRight) dx = -1;
+        if (holdRight && !holdLeft) dx = 1;
+        if (holdUp && !holdDown) dy = -1;
+        if (holdDown && !holdUp) dy = 1;
 
         if (dx !== 0 || dy !== 0) {
             Store.updateState('synopTargetX', s.synopTargetX + dx);
@@ -274,13 +281,6 @@ export function bindInputControls(handlers) {
     window.addEventListener('keydown', (event) => {
         const key = event.key.toLowerCase();
         
-        if (event.key === 'Escape' || event.key === 'Esc') {
-            if (typeof handlers.onEscape === 'function') {
-                handlers.onEscape();
-            }
-            return;
-        }
-        
         const settingsModal = document.getElementById('settings-modal');
         const infoModal = document.getElementById('info-modal');
         const statsModal = document.getElementById('stats-modal');
@@ -291,7 +291,24 @@ export function bindInputControls(handlers) {
         const isStatsOpen = statsModal && statsModal.style.display !== 'none' && statsModal.style.display !== '';
         const isAlertOpen = customAlertModal && customAlertModal.style.display !== 'none' && customAlertModal.style.display !== '';
         
-        if (isSettingsOpen || isInfoOpen || isStatsOpen || isAlertOpen) return;
+        // Premium alert modal keyboard lock focus: OK button simulation via keyboard Space, Enter or Escape
+        if (isAlertOpen) {
+            if (key === ' ' || key === 'enter' || event.key === 'Escape' || event.key === 'Esc') {
+                event.preventDefault();
+                closeCustomAlert(); // Symmetrical presentation layer close (SoC compliant)
+            }
+            return; // Completely suppress Gabor inputs while alert modal is shown
+        }
+
+        // Global Escape routes mapping for other configurations modals
+        if (event.key === 'Escape' || event.key === 'Esc') {
+            if (typeof handlers.onEscape === 'function') {
+                handlers.onEscape();
+            }
+            return;
+        }
+        
+        if (isSettingsOpen || isInfoOpen || isStatsOpen) return;
 
         const s = Store.state;
 

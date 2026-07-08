@@ -40,19 +40,21 @@ export function updateScoreboard(state, translations) {
     const scoreTextEl = document.getElementById('score-text');
     const indicatorsEl = document.getElementById('indicators');
     const synopIndicatorsEl = document.getElementById('synop-indicators');
+    const progressContainer = document.getElementById('synop-progress-container');
+    const progressBar = document.getElementById('synop-progress-bar');
 
     if (state.appMode === 'synoptophore') {
-        // 1. Set stable centered text label
+        // 1. Set stable foveal alignment title on the main HUD
         if (scoreTextEl) {
             scoreTextEl.innerHTML = t.lblPrismDeviation || 'Deviation Angle (Prism)';
         }
         
-        // 2. Hide Gabor stats pills, reveal Synoptophore prism diopter pills
+        // 2. Hide Gabor status badges, reveal Synoptophore prism diopter widgets
         if (indicatorsEl) indicatorsEl.style.display = 'none';
         if (synopIndicatorsEl) {
             synopIndicatorsEl.style.display = 'flex';
             
-            // Translate pixels to precise Prism Diopters (1 Δ = 16 pixels shift at standard 50cm distance)
+            // Calculate precise clinical Prism Diopters (1 Δ = 16 pixels shift at 50cm training distance)
             const pdX = (state.synopTargetX / 16).toFixed(2);
             const pdY = (state.synopTargetY / 16).toFixed(2);
             
@@ -61,25 +63,43 @@ export function updateScoreboard(state, translations) {
             
             const badgeX = document.getElementById('badge-prism-x');
             const badgeY = document.getElementById('badge-prism-y');
+            const badgeScore = document.getElementById('badge-synop-score');
             
             if (badgeX) badgeX.innerHTML = `X: <strong>${signX}${state.synopTargetX}px</strong> (${signX}${pdX}Δ)`;
             if (badgeY) badgeY.innerHTML = `Y: <strong>${signY}${state.synopTargetY}px</strong> (${signY}${pdY}Δ)`;
+            if (badgeScore) badgeScore.innerHTML = `🏆 <strong>${state.synopScore}</strong>`;
+        }
+
+        // 3. Maintain stable vergence progress bar layout to prevent Cumulative Layout Shifts (CLS)
+        if (progressContainer && progressBar) {
+            progressContainer.style.display = 'block'; // Always visible in Synoptophore to anchor height
+            
+            if (state.synopState === 'pulling') {
+                const curr = Math.sqrt(state.synopTargetX * state.synopTargetX + state.synopTargetY * state.synopTargetY);
+                const start = state.synopStartDistance || 1;
+                const percent = Math.max(0, Math.min(100, Math.round(100 * (1 - curr / start))));
+                
+                progressBar.style.width = percent + '%';
+            } else {
+                progressBar.style.width = '0%';
+            }
         }
     } else {
-        // Gabor Mode: Restore classic scoreboard behavior
+        // Gabor Mode: Symmetrically restore classic scoreboard panel states
         if (scoreTextEl) {
             scoreTextEl.innerHTML = `${t.correctLabel}: <strong>${state.score}</strong> / ${t.totalLabel}: <strong>${state.total}</strong>`;
         }
         if (indicatorsEl) indicatorsEl.style.display = 'flex';
         if (synopIndicatorsEl) synopIndicatorsEl.style.display = 'none';
+        if (progressContainer) progressContainer.style.display = 'none';
     }
     
-    // Select indicators elements (for standard sync compatibility)
+    // Select indicators elements (maintained in DOM to prevent Gabor logic null-reference exceptions)
     const contrastEl = document.getElementById('current-contrast');
     const levelEl = document.getElementById('current-level');
     const streakEl = document.getElementById('current-streak');
     
-    // Feed indicators with actual store parameters (only if they exist in DOM)
+    // Feed Gabor badges with actual parameters cleanly
     if (contrastEl) contrastEl.innerText = Math.round(state.autoContrast * 100);
     if (levelEl) levelEl.innerText = state.currentLevel;
     if (streakEl) streakEl.innerText = state.correctStreak;

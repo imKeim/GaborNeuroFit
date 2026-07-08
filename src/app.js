@@ -8,7 +8,7 @@ import { Store } from './store.js';
 import { drawFusionTestPattern } from './engine/gabor.js';
 import { initAudio } from './engine/audio.js';
 import { updateScoreboard, updateLeaderboard, drawIdleState, updateStatusBar } from './ui/screen.js';
-import { initModals } from './ui/modal.js';
+import { initModals, showCustomAlert, closeCustomAlert } from './ui/modal.js';
 import { bindInputControls } from './ui/controls.js';
 import { TrialController, TrialState } from './controller/trial.js';
 import { SettingsController } from './controller/settings.js';
@@ -46,23 +46,8 @@ const container = document.getElementById('container');
 const btnStart = document.getElementById('btn-start');
 const btnFusionTest = document.getElementById('btn-fusion-test');
 
-// Custom alert dialog elements to eliminate blocking alert() calls
+// Primary DOM selectors for modal check references
 const customAlertModal = document.getElementById('custom-alert-modal');
-const customAlertTitle = document.getElementById('custom-alert-title');
-const customAlertText = document.getElementById('custom-alert-text');
-const btnCloseCustomAlert = document.getElementById('btn-close-custom-alert');
-
-/**
- * Renders a beautiful non-blocking custom modal window in sRGB space.
- * Eradicates native alert() freezing issues in iOS and Android WebViews.
- */
-export function showCustomAlert(title, text) {
-    if (!customAlertModal) return;
-    customAlertTitle.innerHTML = title;
-    customAlertText.innerHTML = text;
-    customAlertModal.style.display = 'flex';
-    if (window.twemoji) window.twemoji.parse(customAlertModal);
-}
 
 /**
  * Asynchronously loads translations from external static JSON bundles and updates DOM
@@ -109,11 +94,15 @@ export async function setLanguage(lang) {
     const selectLang = document.getElementById('select-lang');
     if (selectLang) selectLang.value = lang;
 
-    // Toggle visual visibility of the physical reset button dynamically
+    // Symmetrically toggle display modes of Gabor vs Synoptophore action buttons
     const btnReset = document.getElementById('btn-reset');
-    if (btnReset) {
-        btnReset.style.display = (Store.state.appMode === 'synoptophore') ? 'flex' : 'none';
-    }
+    const btnLeft = document.getElementById('btn-left');
+    const btnRight = document.getElementById('btn-right');
+    const isSynop = (Store.state.appMode === 'synoptophore');
+
+    if (btnReset) btnReset.style.display = isSynop ? 'flex' : 'none';
+    if (btnLeft) btnLeft.style.display = isSynop ? 'none' : 'flex';
+    if (btnRight) btnRight.style.display = isSynop ? 'none' : 'flex';
 
     // Procedurally assign the dynamic state-dependent Start button text on load
     if (Store.state.appMode === 'synoptophore') {
@@ -177,13 +166,6 @@ function bindLangSelectors() {
 window.addEventListener('load', async () => {
     Store.loadSettings();
 
-    // Bind close triggers on custom alert modal
-    if (btnCloseCustomAlert) {
-        btnCloseCustomAlert.addEventListener('click', () => {
-            customAlertModal.style.display = 'none';
-        });
-    }
-
     // Instantiate core controllers with WebGL Canvas and Overlay Context
     trialController = new TrialController(
         canvas, 
@@ -244,7 +226,10 @@ window.addEventListener('load', async () => {
         onAnswer: (choice) => trialController.submitAnswer(choice),
         onStartFlash: () => runFlash(),
         onSynopDrag: () => {
-            drawSynoptophoreTargets(overlayCanvas, overlayCtx, Store.state);
+            // Prevent static draw conflict if animation loop is active
+            if (!Store.state.synopFlickerActive) {
+                drawSynoptophoreTargets(overlayCanvas, overlayCtx, Store.state);
+            }
             updateScoreboard(Store.state, activeTranslations); // Real-time Prismatic Ruler update!
         },
         onMuteToggle: () => {
@@ -263,7 +248,7 @@ window.addEventListener('load', async () => {
             }
 
             if (customAlertModal && customAlertModal.style.display !== 'none') {
-                customAlertModal.style.display = 'none';
+                closeCustomAlert();
             }
             // Universally detects active modals regardless of 'block' or 'flex' layout engines
             if (settingsModal && settingsModal.style.display !== 'none' && settingsModal.style.display !== '') {
@@ -295,15 +280,24 @@ window.addEventListener('load', async () => {
             synoptophoreController.abort();
         }
 
+        // Symmetrically toggle display modes of Gabor vs Synoptophore action buttons on menu close
         const btnReset = document.getElementById('btn-reset');
-        if (btnReset) {
-            btnReset.style.display = (Store.state.appMode === 'synoptophore') ? 'flex' : 'none';
-        }
+        const btnLeft = document.getElementById('btn-left');
+        const btnRight = document.getElementById('btn-right');
+        const isSynop = (Store.state.appMode === 'synoptophore');
+
+        if (btnReset) btnReset.style.display = isSynop ? 'flex' : 'none';
+        if (btnLeft) btnLeft.style.display = isSynop ? 'none' : 'flex';
+        if (btnRight) btnRight.style.display = isSynop ? 'none' : 'flex';
 
         if (Store.state.appMode === 'synoptophore') {
             // CLEAR WebGL context and draw 2D Synoptophore targets (prevents Gabor ghosts)
             drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
-            drawSynoptophoreTargets(overlayCanvas, overlayCtx, Store.state);
+            if (Store.state.synopFlickerActive) {
+                synoptophoreController.startFlickerLoop();
+            } else {
+                synoptophoreController.stopFlickerLoop();
+            }
             cross.style.display = 'none'; // Suppress static HTML central cross
         } else {
             if (!trialController.isAnaglyphTestActive) {
@@ -395,7 +389,11 @@ window.addEventListener('load', async () => {
     // F5 HOT-RELOAD FIX: Ensure correct visual state rendering on page refresh
     if (Store.state.appMode === 'synoptophore') {
         drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
-        drawSynoptophoreTargets(overlayCanvas, overlayCtx, Store.state);
+        if (Store.state.synopFlickerActive) {
+            synoptophoreController.startFlickerLoop();
+        } else {
+            drawSynoptophoreTargets(overlayCanvas, overlayCtx, Store.state);
+        }
         cross.style.display = 'none';
     } else {
         drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);

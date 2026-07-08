@@ -402,7 +402,20 @@ export class TrialController {
         if (s.currentLevel === 5 && s.autoContrast <= minContrastLimit && s.correctStreak >= 12) {
             this.tracker.setTimeout(() => {
                 this.triggerMilestoneFlash(() => {
-                    this.showCustomModal("🏆 GaborNeuroFit", this.getTranslations().sessionMastered);
+                    const t = this.getTranslations();
+                    this.showCustomModal(t.titleGold || "🥇 GaborNeuroFit", t.sessionMastered);
+                    this.transitionTo(TrialState.IDLE);
+                });
+            }, 400);
+            return;
+        }
+
+        if (s.sessionLimit > 0 && s.total >= s.sessionLimit) {
+            this.tracker.setTimeout(() => {
+                this.triggerMilestoneFlash(() => {
+                    const t = this.getTranslations();
+                    const text = t.sessionCompleted.replace("{limit}", s.sessionLimit);
+                    this.showCustomModal(t.titleSilver || "🥈 GaborNeuroFit", text);
                     this.transitionTo(TrialState.IDLE);
                 });
             }, 400);

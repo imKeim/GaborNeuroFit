@@ -18,8 +18,10 @@
   "resetBtn": "Reset",
   "correctLabel": "Correct",
   "totalLabel": "Total",
-  "sessionCompleted": "🥈 Session complete! You completed {limit} attempts. Take a short break to rest your eyes.",
-  "sessionMastered": "🥇 Incredible focus! Your visual cortex has reached its maximum plastic saturation for today. You have successfully mastered Stage 5 at ultra-low contrast! Stop here to lock in these results and let your eyes rest. Outstanding job!",
+  "sessionCompleted": "Session complete! You completed {limit} attempts. Take a short break to rest your eyes.",
+  "sessionMastered": "Incredible focus! Your visual cortex has reached its maximum plastic saturation for today. You have successfully mastered Stage 5 at ultra-low contrast! Stop here to lock in these results and let your eyes rest. Outstanding job!",
+  "titleSilver": "🥈 Session Complete!",
+  "titleGold": "🥇 Stage 5 Mastered!",
   "modalTitle": "GaborNeuroFit Manual",
   "secAboutTitle": "🧠 The Science: Training the Brain",
   "secAboutText": "Amblyopia (lazy eye) is not an optical defect of the eye itself—it is a <strong>neurological condition</strong> of the visual cortex. Over time, the brain's primary visual area (V1) learns to actively suppress (ignore) the signals from the weaker eye. Gabor patches act as the 'letters' of the visual cortex. By forcing your weaker eye to resolve their tilt on the absolute edge of visibility, you trigger neural plasticity, rebuilding and sharpening degraded synaptic connections.",
@@ -111,5 +113,14 @@
   "helpSynopLazyGrid": "Projects dashed guidelines from the corners converging on the center of the displaced lazy eye target.",
   "lblSettingSynopStrongGrid": "Strong Eye Grid (Dot/Cross):",
   "helpSynopStrongGrid": "Projects dashed guidelines from the corners converging on the static foveal center of the strong eye.",
-  "lblPrismDeviation": "📐 Deviation Angle (Prism)"
+  "lblPrismDeviation": "Deviation Angle (Prism)",
+  "lblSettingTargetSize": "Ophthalmic Target Size:",
+  "helpTargetSize": "Foveal (Small) size forces the brain to lock with extreme sub-pixel precision on micro-deviations.",
+  "optSizeMacular": "Macular (Large, 65px)",
+  "optSizeParamacular": "Paramacular (Medium, 45px)",
+  "optSizeFoveal": "Foveal (Small, 30px)",
+  "lblSynopScore": "Fusions",
+  "synopWarnAlign": "⚠️ Please shift the target first to match your deviation!",
+  "lblSettingSynopFlicker": "Flicker Stimulation (10 Hz):",
+  "helpSynopFlicker": "Pulsates the lazy eye target at 10 Hz (Alpha-resonance) to completely override top-down foveal suppression."
 }
