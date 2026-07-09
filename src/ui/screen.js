@@ -26,8 +26,14 @@ export function renderProgressChart(sessions, translations) {
     const chartSessions = sessions.slice(0, 10).reverse();
     const contrasts = chartSessions.map(s => s.contrast);
 
-    const maxVal = Math.max(...contrasts, 40);
-    const minVal = Math.min(...contrasts, 5);
+    const datasetMax = Math.max(...contrasts);
+    const datasetMin = Math.min(...contrasts);
+    const spread = datasetMax - datasetMin;
+
+    // Visual Padding Buffer: Add 15% margin above/below to center flat lines and prevent edge clipping
+    const padding = spread > 0 ? spread * 0.15 : 10;
+    const maxVal = Math.min(100, Math.round(datasetMax + padding));
+    const minVal = Math.max(1, Math.round(datasetMin - padding));
     const valRange = (maxVal - minVal) || 1;
 
     const width = 320;
@@ -47,8 +53,9 @@ export function renderProgressChart(sessions, translations) {
 
     chartSessions.forEach((s, idx) => {
         const x = leftMargin + idx * stepX;
-        // Coordinate inversion: lower contrast sits visually at the bottom (high SVG y in chart context)
-        const y = topMargin + ((maxVal - s.contrast) / valRange) * H;
+        // Cognitive Synthesis: map smaller contrast values (better acuity) higher up (low SVG y)
+        // This ensures the trend line slopes upward 📈 as the visual system recovers contrast sensitivity.
+        const y = topMargin + ((s.contrast - minVal) / valRange) * H;
         points.push(`${x.toFixed(1)},${y.toFixed(1)}`);
         circles.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="#22c55e" stroke="#1c2331" stroke-width="1.5" />`);
     });
@@ -57,7 +64,8 @@ export function renderProgressChart(sessions, translations) {
     container.innerHTML = `
         <svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" style="overflow: visible; display: block;">
             <defs>
-                <linearGradient id="chart-grad" x1="0" y1="0" x2="1" y2="0">
+                <!-- userSpaceOnUse ensures the gradient paints correctly even on flat zero-height horizontal lines -->
+                <linearGradient id="chart-grad" x1="${leftMargin}" y1="0" x2="${width - rightMargin}" y2="0" gradientUnits="userSpaceOnUse">
                     <stop offset="0%" stop-color="#3b90ff" />
                     <stop offset="100%" stop-color="#22c55e" />
                 </linearGradient>
@@ -67,9 +75,9 @@ export function renderProgressChart(sessions, translations) {
             <line x1="${leftMargin}" y1="${topMargin}" x2="${width - rightMargin}" y2="${topMargin}" stroke="rgba(255,255,255,0.04)" stroke-dasharray="2,2" />
             <line x1="${leftMargin}" y1="${topMargin + H}" x2="${width - rightMargin}" y2="${topMargin + H}" stroke="rgba(255,255,255,0.04)" stroke-dasharray="2,2" />
             
-            <!-- Subpixel-aligned axis text indicators -->
-            <text x="${leftMargin - 6}" y="${topMargin + 4}" fill="rgba(255,255,255,0.3)" font-size="9px" text-anchor="end" font-weight="bold">${maxVal}%</text>
-            <text x="${leftMargin - 6}" y="${topMargin + H + 3}" fill="rgba(255,255,255,0.3)" font-size="9px" text-anchor="end" font-weight="bold">${minVal}%</text>
+            <!-- Subpixel-aligned axis text indicators (minVal sits at top, maxVal sits at bottom) -->
+            <text x="${leftMargin - 6}" y="${topMargin + 4}" fill="rgba(255,255,255,0.3)" font-size="9px" text-anchor="end" font-weight="bold">${minVal}%</text>
+            <text x="${leftMargin - 6}" y="${topMargin + H + 3}" fill="rgba(255,255,255,0.3)" font-size="9px" text-anchor="end" font-weight="bold">${maxVal}%</text>
             
             <!-- Main Gabor trend line vector path -->
             <polyline points="${points.join(' ')}" fill="none" stroke="url(#chart-grad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />

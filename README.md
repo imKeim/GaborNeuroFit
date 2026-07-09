@@ -82,13 +82,14 @@ Amblyopia and Strabismus (crossed/misaligned eyes) are deeply connected. You can
 
 ## 🎮 Clinical Training Protocols
 
-GaborNeuroFit features 5 scientifically structured active templates:
+GaborNeuroFit features 6 scientifically structured active templates:
 
 *   🩹 **Classic Occlusion (Patching)**: The traditional starting point. Monochrome Gabor, adaptive speed, meant to be used with a physical eye patch over your strong eye.
 *   🕶️ **Binocular Balance (3D)**: Both eyes open with 3D glasses. Central Gabor is shown to the lazy eye, and faint distractors to the healthy eye. Directly fights cortical suppression.
 *   🎯 **Parafoveal Capture (3D)**: The target Gabor jumps to the periphery, forcing your lazy eye to coordinate spatial attention and fast localization.
 *   🌀 **Flicker Resonance (3D)**: The ultimate "heavy artillery" mode. The Gabor and distractors pulse at 10 Hz to break deep, stubborn suppression barriers.
 *   ⚡ **Cortical Speed Blitz**: A high-intensity monochrome speed run. The Gabor flashes for only 100 ms to train rapid feedforward processing.
+*   🧲 **Synoptophore (3D Vergence)**: A specialized orthoptic simulator targeting strabismus and fixation instability. You align targets to your subjective squint angle (sensory fusion), then the software slowly pulls them to true center (motor vergence) to contract extraocular muscles.
 *   ⚙️ **Custom Configuration**: Unlocks all individual toggles, enabling clinicians and advanced users to design custom training routines.
 
 ---
@@ -133,6 +134,32 @@ Yes! Perceptual learning operates at the absolute threshold of your sensory abil
 2.  **Sensory Alignment:** Look strictly at the central dot/cross. Use your finger, WASD, or Arrow keys to move the outer ring until the dot is perfectly inside it (this matches your deviation angle).
 3.  **Motor Lock:** Click "LOCK FUSION". The software will now slowly pull the ring back to the center (0,0).
 4.  **Vergence Hold:** Do not let the dot slip out of the ring! Your eye muscles will physically tense up to track it. If it slips, press "SLIPPED / RESET" and try again.
+
+---
+
+## 🧲 Inside GNF Digital Synoptophore Subsystem
+
+Traditional physical synoptophores are large, mechanical, prismatic orthoptic instruments found exclusively in specialized eye clinics to diagnose and treat **Strabismus** (crossed eyes), **Heterophoria** (latent muscle deviation), and **amblyopic suppression**.
+
+The **GaborNeuroFit Synoptophore Subsystem** digitizes this physical apparatus into a high-performance web experience, leveraging GPU-accelerated drawing pipelines to train motor and sensory fusion without mechanical mirrors.
+
+### 1. The Two-Phase Neuromuscular Action Loop
+
+*   **Phase I: Sensory Fusion Alignment (Diagnostic)**
+    When the session boots, the targets are displaced. The patient manually translates the lazy eye target (using touch dragging, WASD, or Arrow keys) until it aligns perfectly with the static anchor dot seen by the strong eye.
+    *   *Neurobiology:* By manually moving the target to their exact subjective deviation angle, the patient matches their **angle of strabismus**. This allows the brain's visual cortex to overlap the images without physical muscle strain, immediately calming down eye muscle jitter (nystagmus) and establishing a **sensory fusion lock**.
+*   **Phase II: Motor Fusion & Progressive Pulling (Therapeutic)**
+    Once aligned, the patient clicks **"LOCK FUSION"**. The FSM transitions, and a sub-pixel pulling engine begins. On every timer interval, the software pulls the targets **exactly 1 pixel closer** to the true geometric center $(0,0)$.
+    *   *Neurobiology:* As the targets slowly crawl closer to zero, the patient's extraocular muscles (the medial and lateral recti) are forced to **physically contract and adjust** to maintain alignment. This active vergence training builds binocular stamina, trains motor fusion reserves, and teaches the brain to align the visual axes naturally.
+
+### 2. Alpha-Resonance 10Hz Anti-Suppression Flicker
+
+Under normal conditions, a dominant eye will immediately suppress (ignore) the weaker eye's target during motor vergence. To destroy this suppression barrier, GNF implements a **10Hz temporal luminance modulator**:
+*   The strong eye's anchor remains 100% solid, maintaining a stable spatial coordinate frame.
+*   The lazy eye's target undergoes continuous **Alpha-resonance intensity modulation (flicker)**.
+*   *Mathematical Interpolation:* 
+    $$L_{\text{lazy}}(t) = 127 + (C_{\text{calib}} - 127) \cdot \left[0.5 - 0.5 \cos(2\pi \cdot 10 \cdot t)\right]$$
+    When the flicker phase reaches 0, the target's color channels merge perfectly with the $127$ sRGB neutral gray background, rendering it completely invisible. As it oscillates to 1.0, it reaches full calibrated saturation. This rapid 10Hz visual pulsing overloads and bypasses the slow top-down suppression gates in the visual cortex, forcing binocular integration.
 
 ---
 

@@ -153,5 +153,6 @@
   "msgConfirmClear": "⚠️ Completely purge all training history for this patient? This action is permanent!",
   "confirmYes": "Yes",
   "confirmNo": "Cancel",
-  "titleWarning": "⚠️ Warning"
+  "titleWarning": "⚠️ Warning",
+  "chartLegend": "📈 Progress Trend: Upward slope represents clinical improvement in cortical sensitivity (threshold reduction)."
 }

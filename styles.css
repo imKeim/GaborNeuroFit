@@ -418,7 +418,8 @@ canvas {
     padding: clamp(14px, 4vw, 24px); /* Responsive fluid padding for screen width optimization */
     width: 90%;
     max-width: 680px; 
-    height: min(82dvh, 760px);
+    height: auto;
+    max-height: min(88dvh, 840px); /* Content-driven dynamic height with increased ceiling eliminates micro-scrolls */
     margin: auto;
     border: 1px solid #2b354a;
     display: flex;
