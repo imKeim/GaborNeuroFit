@@ -8,6 +8,9 @@
 
 import { drawFusionLockFrame } from '../engine/gabor.js';
 
+// Physiological constant: 16 pixels shift equates to 1 Prism Diopter (Δ) at 50-70cm working distance.
+const PIXELS_PER_PRISM_DIOPTER = 16.0;
+
 // Clean both Gabor and HUD canvases back to stable, non-fatiguing foveal neutral gray states
 export function drawIdleState(gaborCanvas, gaborCtx, overlayCanvas, overlayCtx, isFusionLockEnabled) {
     // 1. Clear and fill bottom GPU canvas with sRGB neutral gray
@@ -54,9 +57,9 @@ export function updateScoreboard(state, translations) {
         if (synopIndicatorsEl) {
             synopIndicatorsEl.style.display = 'flex';
             
-            // Calculate precise clinical Prism Diopters (1 Δ = 16 pixels shift at 50cm training distance)
-            const pdX = (state.synopTargetX / 16).toFixed(2);
-            const pdY = (state.synopTargetY / 16).toFixed(2);
+            // Calculate precise clinical Prism Diopters
+            const pdX = (state.synopTargetX / PIXELS_PER_PRISM_DIOPTER).toFixed(2);
+            const pdY = (state.synopTargetY / PIXELS_PER_PRISM_DIOPTER).toFixed(2);
             
             const signX = state.synopTargetX > 0 ? '+' : '';
             const signY = state.synopTargetY > 0 ? '+' : '';

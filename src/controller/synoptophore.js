@@ -51,6 +51,14 @@ export class SynoptophoreController {
         drawSynoptophoreTargets(this.overlayCanvas, this.overlayCtx, Store.state, 1.0);
     }
 
+    syncFlickerState() {
+        if (Store.state.synopFlickerActive) {
+            this.startFlickerLoop();
+        } else {
+            this.stopFlickerLoop();
+        }
+    }
+
     abort() {
         this.stopFlickerLoop();
         this.tracker.clearAll();
@@ -90,11 +98,7 @@ export class SynoptophoreController {
         }
 
         this.tracker.clearAll();
-        
-        // CRITICAL FIX: Restart the flicker animation loop if it was killed by clearAll()
-        if (s.synopFlickerActive) {
-            this.startFlickerLoop();
-        }
+        this.syncFlickerState();
 
         Store.updateState('synopStartDistance', dist);
         Store.updateState('synopState', 'pulling');
@@ -152,11 +156,7 @@ export class SynoptophoreController {
         const t = this.getTranslations();
 
         this.tracker.clearAll();
-
-        // CRITICAL FIX: Restart the flicker animation loop if it was killed by clearAll()
-        if (s.synopFlickerActive) {
-            this.startFlickerLoop();
-        }
+        this.syncFlickerState();
 
         // Calculate remaining deviation
         const currentDist = Math.sqrt(s.synopTargetX * s.synopTargetX + s.synopTargetY * s.synopTargetY);
@@ -203,11 +203,7 @@ export class SynoptophoreController {
         const t = this.getTranslations();
 
         this.tracker.clearAll();
-
-        // CRITICAL FIX: Restart the flicker animation loop if it was killed by clearAll()
-        if (s.synopFlickerActive) {
-            this.startFlickerLoop();
-        }
+        this.syncFlickerState();
 
         // Play major chime arpeggio
         playSuccess(s.isMuted);

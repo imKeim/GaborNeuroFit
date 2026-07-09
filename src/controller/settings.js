@@ -266,29 +266,25 @@ export class SettingsController {
             });
         }
 
-        for (let i = 1; i <= 5; i++) {
-            const header = document.getElementById(`accordion-header-${i}`);
-            const content = document.getElementById(`accordion-content-${i}`);
-            if (header && content) {
-                header.addEventListener('click', () => {
-                    const isOpen = content.classList.contains('open');
-                    for (let j = 1; j <= 5; j++) {
-                        const c = document.getElementById(`accordion-content-${j}`);
-                        const h = document.getElementById(`accordion-header-${j}`);
-                        if (c) c.classList.remove('open');
-                        if (h) {
-                            const arrow = h.querySelector('.accordion-arrow');
-                            if (arrow) arrow.classList.remove('active');
-                        }
-                    }
-                    if (!isOpen) {
-                        content.classList.add('open');
-                        const arrow = header.querySelector('.accordion-arrow');
-                        if (arrow) arrow.classList.add('active');
-                    }
-                });
-            }
-        }
+        const headers = document.querySelectorAll('.accordion-header');
+        headers.forEach(header => {
+            header.addEventListener('click', () => {
+                const contentId = header.id.replace('header', 'content');
+                const content = document.getElementById(contentId);
+                if (!content) return;
+
+                const isOpen = content.classList.contains('open');
+
+                document.querySelectorAll('.accordion-content').forEach(c => c.classList.remove('open'));
+                document.querySelectorAll('.accordion-arrow').forEach(a => a.classList.remove('active'));
+
+                if (!isOpen) {
+                    content.classList.add('open');
+                    const arrow = header.querySelector('.accordion-arrow');
+                    if (arrow) arrow.classList.add('active');
+                }
+            });
+        });
 
         const activeSliders = ['slider-left-r', 'slider-right-g', 'slider-right-b'];
         activeSliders.forEach(id => {

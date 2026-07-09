@@ -165,6 +165,16 @@ class WebGLResourceManager {
         this.isReady = true;
     }
 
+    destroy() {
+        const gl = this.gl;
+        if (!gl) return;
+        if (this.program) {
+            gl.deleteProgram(this.program);
+        }
+        gl.bindBuffer(gl.ARRAY_BUFFER, null);
+        this.isReady = false;
+    }
+
     createProgram(vertexSrc, fragmentSrc) {
         const gl = this.gl;
         const vs = this.compileShader(vertexSrc, gl.VERTEX_SHADER);
@@ -324,7 +334,12 @@ export function drawFusionTestPattern(canvas, ctx, state) {
 
 // Modern unified entry point for Gabor rendering with transparent GPU execution.
 export function renderGabor(canvas, ctx, state, angleDeg, centralContrast, flankerContrast, freq, sigma, offsetX = 0, offsetY = 0, flankerPhaseOffset = 0, aspectRatio = 1.0, hideCentral = false) {
-    if (!webGLManagerInstance || webGLManagerInstance.canvas !== canvas) {
+    if (webGLManagerInstance && webGLManagerInstance.canvas !== canvas) {
+        webGLManagerInstance.destroy();
+        webGLManagerInstance = null;
+    }
+
+    if (!webGLManagerInstance) {
         webGLManagerInstance = new WebGLResourceManager(canvas);
     }
 
