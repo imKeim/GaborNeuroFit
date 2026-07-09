@@ -427,6 +427,12 @@ canvas {
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
 }
 
+/* Enforce rigid, layout-stable height constraints strictly for Configuration and Handbook modals (KISS) */
+#settings-modal .modal-content,
+#info-modal .modal-content {
+    height: min(82dvh, 760px);
+}
+
 .modal-scroll-body {
     flex: 1;
     overflow-y: auto;

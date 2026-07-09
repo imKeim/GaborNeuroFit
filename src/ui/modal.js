@@ -19,6 +19,19 @@ export function showCustomAlert(title, text) {
     
     titleEl.innerHTML = title;
     textEl.innerHTML = text;
+
+    // Cognitive Semantic Color Resolver (Automatically assign brand palette based on title status)
+    const hasTriumph = title.includes('🥇') || title.includes('🎯') || title.includes('🏆');
+    const hasWarning = title.includes('⚠️') || title.includes('❌') || title.toLowerCase().includes('warning') || title.includes('Предупреждение');
+
+    if (hasTriumph) {
+        titleEl.style.color = '#22c55e'; // Success Green for perfect foveations and achievements
+    } else if (hasWarning) {
+        titleEl.style.color = '#eab308'; // Warning Gold for blockings and attention validations
+    } else {
+        titleEl.style.color = '#3b90ff'; // Brand Blue for standard sessions metrics information
+    }
+    
     modal.style.display = 'flex';
     
     if (window.twemoji) {

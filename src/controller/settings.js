@@ -85,13 +85,7 @@ export class SettingsController {
             this.selectPresetMode.value = detectedPreset;
         }
 
-        const valR = document.getElementById('val-calib-r');
-        const valG = document.getElementById('val-calib-g');
-        const valB = document.getElementById('val-calib-b');
-        
-        if (valR) valR.innerText = (s.calibratorLeftR - 127 > 0 ? '+' : '') + (s.calibratorLeftR - 127);
-        if (valG) valG.innerText = (s.calibratorRightG - 127 > 0 ? '+' : '') + (s.calibratorRightG - 127);
-        if (valB) valB.innerText = (s.calibratorRightB - 127 > 0 ? '+' : '') + (s.calibratorRightB - 127);
+        this.updateCalibrationLabels(s);
 
         if (typeof this.onSyncCallback === 'function') {
             this.onSyncCallback();
@@ -103,6 +97,28 @@ export class SettingsController {
 
         if (s.presetMode !== 'custom') {
             Store.applyPresetTemplate(s.presetMode);
+        }
+
+        // Synchronize active highlights of settings segmented tab controller
+        const btnTabGabor = document.getElementById('settings-tab-gabor');
+        const btnTabSynop = document.getElementById('settings-tab-synop');
+        if (btnTabGabor && btnTabSynop) {
+            const isSynop = (s.appMode === 'synoptophore');
+            if (isSynop) {
+                btnTabSynop.classList.add('active');
+                btnTabGabor.classList.remove('active');
+                btnTabSynop.style.background = '#2b354a';
+                btnTabSynop.style.color = '#3b90ff';
+                btnTabGabor.style.background = 'transparent';
+                btnTabGabor.style.color = '#8e8e93';
+            } else {
+                btnTabGabor.classList.add('active');
+                btnTabSynop.classList.remove('active');
+                btnTabGabor.style.background = '#2b354a';
+                btnTabGabor.style.color = '#3b90ff';
+                btnTabSynop.style.background = 'transparent';
+                btnTabSynop.style.color = '#8e8e93';
+            }
         }
 
         CONFIG_SCHEMA.forEach(field => {
@@ -128,7 +144,19 @@ export class SettingsController {
 
         if (this.selectPresetMode) this.selectPresetMode.value = s.presetMode;
 
+        this.updateCalibrationLabels(s);
         this.updateVisibilityPanels();
+    }
+
+    // Formatter to project physical subpixel deltas (+/- from 127 neutral gray)
+    updateCalibrationLabels(s) {
+        const valR = document.getElementById('val-calib-r');
+        const valG = document.getElementById('val-calib-g');
+        const valB = document.getElementById('val-calib-b');
+        
+        if (valR) valR.innerText = (s.calibratorLeftR - 127 > 0 ? '+' : '') + (s.calibratorLeftR - 127);
+        if (valG) valG.innerText = (s.calibratorRightG - 127 > 0 ? '+' : '') + (s.calibratorRightG - 127);
+        if (valB) valB.innerText = (s.calibratorRightB - 127 > 0 ? '+' : '') + (s.calibratorRightB - 127);
     }
 
     toggleAccordionGroupState(groupNumber, isEnabled) {
@@ -144,9 +172,10 @@ export class SettingsController {
                 el.disabled = false;
             });
         } else {
-            header.style.opacity = '0.35';
+            // Dim to deep 0.15 opacity to let inactive blocks fade completely into the background
+            header.style.opacity = '0.15';
             header.style.pointerEvents = 'none';
-            content.style.opacity = '0.35';
+            content.style.opacity = '0.15';
             content.classList.remove('open');
             const arrow = header.querySelector('.accordion-arrow');
             if (arrow) arrow.classList.remove('active');
@@ -160,9 +189,38 @@ export class SettingsController {
         const s = Store.state;
         const isSynop = (s.appMode === 'synoptophore');
 
-        this.toggleAccordionGroupState(2, !isSynop); 
-        this.toggleAccordionGroupState(3, !isSynop); 
-        this.toggleAccordionGroupState(5, isSynop);  
+        // 1. Modality Segregation: Completely extract non-applicable accordion blocks to prevent visual crowding
+        const groups = [
+            { num: 1, visible: true },
+            { num: 2, visible: !isSynop },
+            { num: 3, visible: !isSynop },
+            { num: 4, visible: true },
+            { num: 5, visible: isSynop }
+        ];
+
+        groups.forEach(g => {
+            const header = document.getElementById(`accordion-header-${g.num}`);
+            const content = document.getElementById(`accordion-content-${g.num}`);
+            if (header && content) {
+                if (g.visible) {
+                    header.style.display = ''; // Restore to stylesheet CSS default (flex)
+                    // Symmetrically clear inline display properties to let native stylesheet classes (.open) govern visibility
+                    content.style.display = ''; 
+                } else {
+                    header.style.display = 'none'; // Completely pull from rendering flow
+                    content.style.display = 'none';
+                }
+            }
+        });
+
+        // 2. Purge Gabor-only parameters rows inside Accordion Group 1 during Synoptophore
+        const gaborRows = ['row-preset-mode', 'row-start-level', 'row-autonext', 'row-session-limit'];
+        gaborRows.forEach(id => {
+            const row = document.getElementById(id);
+            if (row) {
+                row.style.display = isSynop ? 'none' : '';
+            }
+        });
 
         if (!isSynop) {
             const chkFlicker = document.getElementById('chk-flicker');
@@ -260,6 +318,28 @@ export class SettingsController {
     }
 
     bindSettingsInteractions() {
+        // Segmented settings mode switcher click hooks (Iteration 4)
+        const btnTabGabor = document.getElementById('settings-tab-gabor');
+        const btnTabSynop = document.getElementById('settings-tab-synop');
+        if (btnTabGabor && btnTabSynop) {
+            btnTabGabor.addEventListener('click', () => {
+                Store.updateState('appMode', 'gabor');
+                // Safety: Automatically pull out of synoptophore mode presets
+                if (Store.state.presetMode === 'synoptophore') {
+                    Store.updateState('presetMode', 'occlusion');
+                }
+                this.updatePresetUI();
+                if (typeof this.onSyncCallback === 'function') this.onSyncCallback();
+            });
+
+            btnTabSynop.addEventListener('click', () => {
+                Store.updateState('appMode', 'synoptophore');
+                Store.updateState('presetMode', 'synoptophore');
+                this.updatePresetUI();
+                if (typeof this.onSyncCallback === 'function') this.onSyncCallback();
+            });
+        }
+
         if (this.selectPresetMode) {
             this.selectPresetMode.value = Store.state.presetMode;
             this.selectPresetMode.addEventListener('change', () => {

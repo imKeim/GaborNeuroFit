@@ -102,6 +102,12 @@
         <div class="modal-content">
             <h2 data-i18n="settingsTitle"></h2>
             
+            <!-- Symmetrical Settings Mode Switcher -->
+            <div id="settings-mode-bar" style="display: flex; background: #131a26; padding: 4px; border-radius: 10px; border: 1px solid #2b354a; margin-bottom: 14px; margin-left: auto; margin-right: auto; width: 100%;">
+                <button id="settings-tab-gabor" class="tab-btn active" data-i18n="tabGabor" style="flex: 1; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; background: #2b354a; color: #3b90ff; cursor: pointer; transition: all 0.2s;"></button>
+                <button id="settings-tab-synop" class="tab-btn" data-i18n="tabSynop" style="flex: 1; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; background: transparent; color: #8e8e93; cursor: pointer; transition: all 0.2s;"></button>
+            </div>
+            
             <div class="modal-scroll-body">
                 
                 <!-- GROUP 1: Core clinical setup (Default expanded) -->
@@ -117,7 +123,7 @@
                             <option value="ru">🇷🇺 Русский</option>
                         </select>
                     </div>
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 5px;">
+                    <div class="settings-row" id="row-preset-mode" style="flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 5px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label data-i18n="lblSettingPreset"></label>
                             <!-- CRITICAL: Always preserve complete closing select tags. Do not truncate brackets. 
@@ -128,13 +134,12 @@
                                 <option value="binocular" data-i18n="optPresetBinocular"></option>
                                 <option value="flicker" data-i18n="optPresetFlicker"></option>
                                 <option value="peripheral" data-i18n="optPresetPeripheral"></option>
-                                <option value="synoptophore" data-i18n="optPresetSynoptophore"></option>
                                 <option value="custom" data-i18n="optPresetCustom"></option>
                             </select>
                         </div>
                         <span class="settings-help" data-i18n="helpPresetMode" id="help-preset-mode"></span>
                     </div>
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                    <div class="settings-row" id="row-start-level" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label data-i18n="lblSettingStartLevel"></label>
                             <select id="select-start-level">
@@ -147,7 +152,7 @@
                         </div>
                         <span class="settings-help" data-i18n="helpStartLevel" id="help-start-level"></span>
                     </div>
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                    <div class="settings-row" id="row-autonext" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label data-i18n="lblSettingAutonext"></label>
                             <select id="select-autonext">
@@ -157,7 +162,7 @@
                         </div>
                         <span class="settings-help" data-i18n="helpAutonext"></span>
                     </div>
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                    <div class="settings-row" id="row-session-limit" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label data-i18n="lblSettingLimit"></label>
                             <select id="select-session-limit">

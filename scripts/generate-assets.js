@@ -17,7 +17,23 @@ const EMOJIS_DIR = path.resolve('public/emojis');
 
 // Strict inventory of unicode emojis leveraged across clinical UI modules, translations, and guides
 const CLINICAL_EMOJIS = [
-  '🎯', '📱', '⚡', '🩹', '🕶️', '🌀', '⚙️', '🥈', '🥇', '🧠', '⚠️', '🔊', '🔇', 'ℹ️', '📊', '🛠️', '🇬🇧', '🇷🇺', '🧿', '◀', '▶', '🔄', '🧲', '🏆', '🍅', '🧹', '👤', '❌', '📈'
+  // Brand & Neurological Core
+  '🧿', '🧠', '📱',
+  
+  // Clinical Treatment Presets
+  '🩹', '🕶️', '⚡', '🌀', '🎯', '🧲', '⚙️',
+  
+  // System HUD Controls
+  '🔊', '🔇', 'ℹ️', '📊', '🛠️', '🇬🇧', '🇷🇺', '◀', '▶', '🔄',
+  
+  // Patient Dashboard & Analytics
+  '👤', '📈', '🧹', '🍅',
+  
+  // Milestones & Trophies
+  '🏆', '🥇', '🥈',
+  
+  // System Warnings & Validations
+  '⚠️', '❌'
 ];
 
 /**
