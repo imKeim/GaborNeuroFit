@@ -7,8 +7,18 @@
  */
 
 /**
+ * Internal helper to resolve semantic brand colors based on title icons/keywords.
+ * Implements strict medical severity levels: Danger (Red), Warning (Gold), Success (Green), Info (Blue).
+ */
+function resolveHeaderColor(title) {
+    if (title.includes('❌') || title.toLowerCase().includes('danger') || title.toLowerCase().includes('опасно')) return '#ef4444';
+    if (title.includes('🥇') || title.includes('🎯') || title.includes('🏆')) return '#22c55e';
+    if (title.includes('⚠️') || title.toLowerCase().includes('warning') || title.includes('Предупреждение')) return '#eab308';
+    return '#3b90ff'; // Standard Clinical Blue fallback
+}
+
+/**
  * Renders a beautiful non-blocking custom modal window in sRGB space.
- * Eradicates native alert() freezing issues in iOS and Android WebViews.
  */
 export function showCustomAlert(title, text) {
     const modal = document.getElementById('custom-alert-modal');
@@ -19,24 +29,10 @@ export function showCustomAlert(title, text) {
     
     titleEl.innerHTML = title;
     textEl.innerHTML = text;
-
-    // Cognitive Semantic Color Resolver (Automatically assign brand palette based on title status)
-    const hasTriumph = title.includes('🥇') || title.includes('🎯') || title.includes('🏆');
-    const hasWarning = title.includes('⚠️') || title.includes('❌') || title.toLowerCase().includes('warning') || title.includes('Предупреждение');
-
-    if (hasTriumph) {
-        titleEl.style.color = '#22c55e'; // Success Green for perfect foveations and achievements
-    } else if (hasWarning) {
-        titleEl.style.color = '#eab308'; // Warning Gold for blockings and attention validations
-    } else {
-        titleEl.style.color = '#3b90ff'; // Brand Blue for standard sessions metrics information
-    }
+    titleEl.style.color = resolveHeaderColor(title);
     
     modal.style.display = 'flex';
-    
-    if (window.twemoji) {
-        window.twemoji.parse(modal);
-    }
+    if (window.twemoji) window.twemoji.parse(modal);
 }
 
 /**
@@ -44,14 +40,11 @@ export function showCustomAlert(title, text) {
  */
 export function closeCustomAlert() {
     const modal = document.getElementById('custom-alert-modal');
-    if (modal) {
-        modal.style.display = 'none';
-    }
+    if (modal) modal.style.display = 'none';
 }
 
 /**
  * Renders a beautiful non-blocking custom confirmation dialog with Yes/No actions.
- * Symmetrically isolates memory allocations by detaching events after execution.
  */
 export function showCustomConfirm(title, text, yesLabel, noLabel, callback) {
     const modal = document.getElementById('custom-confirm-modal');
@@ -64,14 +57,12 @@ export function showCustomConfirm(title, text, yesLabel, noLabel, callback) {
     
     titleEl.innerHTML = title;
     textEl.innerHTML = text;
+    titleEl.style.color = resolveHeaderColor(title);
     btnYes.textContent = yesLabel;
     btnNo.textContent = noLabel;
     
     modal.style.display = 'flex';
-    
-    if (window.twemoji) {
-        window.twemoji.parse(modal);
-    }
+    if (window.twemoji) window.twemoji.parse(modal);
     
     // Core event handlers with standard lexical scopes for absolute teardown
     const onYes = () => {
@@ -93,6 +84,9 @@ export function showCustomConfirm(title, text, yesLabel, noLabel, callback) {
     
     btnYes.addEventListener('click', onYes);
     btnNo.addEventListener('click', onNo);
+
+    // Global keyboard bridge to allow controls.js to trigger these actions
+    window._gnfConfirmActions = { yes: onYes, no: onNo };
 }
 
 // Initialize click listeners for settings and manual popup modals

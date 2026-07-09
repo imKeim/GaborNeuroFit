@@ -8,7 +8,7 @@ import { Store } from './store.js';
 import { DataRepository } from './store/repository.js';
 import { drawFusionTestPattern } from './engine/gabor.js';
 import { initAudio, playError, playSuccess } from './engine/audio.js';
-import { updateScoreboard, updateLeaderboard, drawIdleState, updateStatusBar, renderProgressChart, renderSynopProgressChart, updateSynopLeaderboard } from './ui/screen.js';
+import { updateScoreboard, updateLeaderboard, drawIdleState, updateStatusBar, renderProgressChart, renderSynopProgressChart, updateSynopLeaderboard, getCompactPresetLabel } from './ui/screen.js';
 import { initModals, showCustomAlert, closeCustomAlert, showCustomConfirm } from './ui/modal.js';
 import { bindInputControls } from './ui/controls.js';
 import { TrialController, TrialState } from './controller/trial.js';
@@ -242,10 +242,13 @@ window.addEventListener('load', async () => {
         DataRepository.saveSession(
             Store.state.sessionId, 0, 0, 0, 0, 'synoptophore', 
             Store.state.synopPullSpeed, Store.state.isAnaglyphEnabled, 
-            Store.state.strongEyeContrastFactor, 0, 0, 
-            startDist, 'success'
+            Store.state.strongEyeContrastFactor,
+            Store.state.lazyEyeSide,
+            Store.state.synopFlickerActive, // Flicker active for Synoptophore
+            false, false, false, // Gabor-only parameters are irrelevant
+            0, 0, startDist, 'success'
         );
-        Store.state.sessionId = 'session_' + Date.now(); // rotate ID for the subsequent session
+        Store.rotateSessionId(); // Symmetrically rotate ID for the subsequent attempt
     };
 
     const originalBreak = synoptophoreController.breakActiveFusion;
@@ -260,10 +263,13 @@ window.addEventListener('load', async () => {
         DataRepository.saveSession(
             Store.state.sessionId, 0, 0, 0, 0, 'synoptophore', 
             Store.state.synopPullSpeed, Store.state.isAnaglyphEnabled, 
-            Store.state.strongEyeContrastFactor, targetX, targetY, 
-            startDist, 'slip'
+            Store.state.strongEyeContrastFactor,
+            Store.state.lazyEyeSide,
+            Store.state.synopFlickerActive, // Flicker active for Synoptophore
+            false, false, false, // Gabor-only parameters are irrelevant
+            targetX, targetY, startDist, 'slip'
         );
-        Store.state.sessionId = 'session_' + Date.now(); // rotate ID
+        Store.rotateSessionId();
     };
 
     settingsController = new SettingsController(() => {
@@ -343,7 +349,6 @@ window.addEventListener('load', async () => {
             // Symmetrical Session Reset: Completely purge RAM metrics to avoid patient mixing
             Store.state.score = 0;
             Store.state.total = 0;
-            Store.state.sessionId = 'session_' + Date.now();
             Store.resetSessionProgress();
             
             updateScoreboard(Store.state, activeTranslations);
@@ -368,7 +373,6 @@ window.addEventListener('load', async () => {
                 // Symmetrical Session Reset
                 Store.state.score = 0;
                 Store.state.total = 0;
-                Store.state.sessionId = 'session_' + Date.now();
                 Store.resetSessionProgress();
                 
                 updateScoreboard(Store.state, activeTranslations);
@@ -394,18 +398,17 @@ window.addEventListener('load', async () => {
             const confirmText = rawConfirm.replace('{name}', activeProf.name);
 
             showCustomConfirm(
-                activeTranslations.titleWarning || "Warning",
+                activeTranslations.titleDanger || "Danger",
                 confirmText,
                 activeTranslations.confirmYes || "Yes",
                 activeTranslations.confirmNo || "Cancel",
                 (isConfirmed) => {
                     if (isConfirmed) {
                         DataRepository.deleteProfile(activeUid);
-
+                        
                         // Symmetrical Session Reset
                         Store.state.score = 0;
                         Store.state.total = 0;
-                        Store.state.sessionId = 'session_' + Date.now();
                         Store.resetSessionProgress();
 
                         updateScoreboard(Store.state, activeTranslations);
@@ -421,7 +424,7 @@ window.addEventListener('load', async () => {
         btnClearHistory.addEventListener('click', () => {
             const confirmText = activeTranslations.msgConfirmClear || "Are you sure you want to clear history?";
             showCustomConfirm(
-                activeTranslations.titleWarning || "Warning",
+                activeTranslations.titleDanger || "Danger",
                 confirmText,
                 activeTranslations.confirmYes || "Yes",
                 activeTranslations.confirmNo || "Cancel",
@@ -432,7 +435,6 @@ window.addEventListener('load', async () => {
                         // Symmetrical Session Reset
                         Store.state.score = 0;
                         Store.state.total = 0;
-                        Store.state.sessionId = 'session_' + Date.now();
                         Store.resetSessionProgress();
 
                         updateScoreboard(Store.state, activeTranslations);
@@ -449,7 +451,8 @@ window.addEventListener('load', async () => {
             const sessions = DataRepository.getSessionsForActiveUser();
             if (sessions.length === 0) return;
 
-            const headers = ["Date", "Mode", "Score/Total", "Accuracy %", "Gabor Stage", "Contrast Threshold %", "Contrast Balancer %", "Synop Deviation X (px)", "Synop Deviation Y (px)", "Synop Start Distance (px)", "Outcome"];
+            // Expanded clinical columns supporting complete sensory & motor configurations (Iteration 4.1)
+            const headers = ["Date", "Mode", "Lazy Eye Side", "Score/Total", "Accuracy %", "Gabor Stage", "Contrast Threshold %", "Contrast Balancer %", "10Hz Flicker", "Visual Crowding", "Peripheral Shift", "Permanent Cross", "Synop Deviation X (px)", "Synop Deviation Y (px)", "Synop Start Distance (px)", "Outcome"];
                     
             const rows = sessions.map(s => {
                 const dateStr = new Date(s.timestamp).toISOString().replace(/T/, ' ').replace(/\..+/, '');
@@ -457,19 +460,31 @@ window.addEventListener('load', async () => {
                         
                 const isSynop = s.protocol === 'synoptophore';
                 const modeLabel = isSynop ? "Synoptophore" : getCompactPresetLabel(s.protocol, Store.state.currentLang);
-                        
+                
+                // Resolve precise active stimulation flags polymorphically
+                const eyeSide = s.lazyEyeSide ? s.lazyEyeSide.toUpperCase() : 'LEFT';
+                const isFlickerOn = isSynop ? (s.synopFlickerActive ? "ON" : "OFF") : (s.isFlickerEnabled ? "ON" : "OFF");
+                const isCrowdingOn = isSynop ? "OFF" : (s.isCrowdingEnabled ? "ON" : "OFF");
+                const isPeripheralOn = isSynop ? "OFF" : (s.isPeripheralEnabled ? "ON" : "OFF");
+                const isCrossOn = isSynop ? "OFF" : (s.isPermanentCrossEnabled ? "ON" : "OFF");
+
                 return [
                     `"${dateStr}"`,
                     `"${modeLabel}"`,
+                    `"${eyeSide}"`,
                     isSynop ? `""` : `"${s.score}/${s.total}"`,
                     isSynop ? `""` : `"${accuracy}%"`,
                     isSynop ? `""` : s.level,
                     isSynop ? `""` : `"${s.contrast}%"`,
                     `"${s.balance}%"`,
-                    isSynop ? s.synopTargetX : `""`,
-                    isSynop ? s.synopTargetY : `""`,
-                    isSynop ? s.synopStartDistance.toFixed(0) : `""`,
-                    isSynop ? `"${s.synopOutcome.toUpperCase()}"` : `""`
+                    `"${isFlickerOn}"`,
+                    `"${isCrowdingOn}"`,
+                    `"${isPeripheralOn}"`,
+                    `"${isCrossOn}"`,
+                    isSynop ? (s.synopTargetX || 0) : `""`,
+                    isSynop ? (s.synopTargetY || 0) : `""`,
+                    isSynop ? (s.synopStartDistance || 0).toFixed(0) : `""`,
+                    isSynop ? `"${(s.synopOutcome || 'slip').toUpperCase()}"` : `""`
                 ].join(',');
             });
 
@@ -511,17 +526,19 @@ window.addEventListener('load', async () => {
             updateMuteBtnUI();
         },
         onEscape: () => {
+            const confirmModal = document.getElementById('custom-confirm-modal');
             const settingsModal = document.getElementById('settings-modal');
             const infoModal = document.getElementById('info-modal');
             const statsModal = document.getElementById('stats-modal');
 
-            // Block Escape key closing strictly when 3D calibration mode is active to prevent accidental window loss
-            if (trialController && trialController.isAnaglyphTestActive) {
-                return;
-            }
+            // Block Escape key closing strictly when 3D calibration mode is active
+            if (trialController && trialController.isAnaglyphTestActive) return;
 
-            if (customAlertModal && customAlertModal.style.display !== 'none') {
+            // Prioritize closing the topmost ephemeral dialogs first
+            if (confirmModal && confirmModal.style.display !== 'none' && confirmModal.style.display !== '') return;
+            if (customAlertModal && customAlertModal.style.display !== 'none' && customAlertModal.style.display !== '') {
                 closeCustomAlert();
+                return;
             }
             // Universally detects active modals regardless of 'block' or 'flex' layout engines
             if (settingsModal && settingsModal.style.display !== 'none' && settingsModal.style.display !== '') {

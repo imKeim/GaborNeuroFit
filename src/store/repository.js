@@ -160,7 +160,7 @@ export class DataRepository {
      * Appends a newly acquired training session to the active patient context.
      * Implements a robust UPSERT engine based on the active session ID to prevent duplicate entry spam.
      */
-    static saveSession(sessionId, score, total, level, contrast, protocol, speed, isAnaglyph, balance, targetX = null, targetY = null, startDistance = null, outcome = null) {
+    static saveSession(sessionId, score, total, level, contrast, protocol, speed, isAnaglyph, balance, lazyEyeSide = 'left', isFlicker = false, isCrowding = false, isPeripheral = false, isPermanentCross = false, targetX = null, targetY = null, startDistance = null, outcome = null) {
         try {
             const activeUid = this.getActiveProfileId();
             if (!activeUid) return;
@@ -178,7 +178,14 @@ export class DataRepository {
                 speed: speed,
                 isAnaglyph: !!isAnaglyph,
                 balance: Math.round(balance * 100),
-                    
+                
+                // Added Sensory Laterality & Active Clinical Stimulation Flags
+                lazyEyeSide: lazyEyeSide,
+                isFlickerEnabled: !!isFlicker,
+                isCrowdingEnabled: !!isCrowding,
+                isPeripheralEnabled: !!isPeripheral,
+                isPermanentCrossEnabled: !!isPermanentCross,
+                
                 // Polymorphic Synoptophore Kinematics (strictly nullified for Gabor sensory sessions)
                 synopTargetX: targetX !== null ? parseInt(targetX) : null,
                 synopTargetY: targetY !== null ? parseInt(targetY) : null,

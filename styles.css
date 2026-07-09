@@ -183,8 +183,8 @@ img.emoji {
 #container {
     position: relative;
     aspect-ratio: 1 / 1;
-    width: min(70vw, 38vh, clamp(240px, 35vw, 320px));
-    height: min(70vw, 38vh, clamp(240px, 35vw, 320px));
+    width: min(82vw, 42dvh, 360px);
+    height: min(82vw, 42dvh, 360px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -603,6 +603,10 @@ canvas {
     margin-bottom: 0;
 }
 
+#settings-modal.calibration-mode #settings-mode-bar {
+    display: none !important; /* Hide mode switcher completely during lens calibration */
+}
+
 #settings-modal.calibration-mode .modal-scroll-body > .accordion-header,
 #settings-modal.calibration-mode .modal-scroll-body > .accordion-content:not(#accordion-content-4) {
     display: none !important;
@@ -826,7 +830,9 @@ canvas {
     }
 }
 
-#custom-alert-modal .modal-content {
+/* Uniform hardware-accelerated elastic scale-in for all ephemeral clinical dialogs */
+#custom-alert-modal .modal-content,
+#custom-confirm-modal .modal-content {
     animation: customAlertScaleIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     will-change: transform, opacity;
 }

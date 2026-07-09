@@ -18,6 +18,7 @@ export const Store = {
         currentLevel: 1,
         currentLang: 'en',
         presetMode: 'occlusion',
+        lastGaborPreset: 'occlusion',   // Memory buffer to restore Gabor settings after Synoptophore mode
         sessionLimit: 0,
         timerLimitMinutes: 0,           // Pomodoro visual fatigue limiter (0 = Off)
         timerRemainingSeconds: 0,       // Active countdown state
@@ -62,7 +63,18 @@ export const Store = {
         synopLockVertical: false        // Y-Axis physical restriction lock
     },
 
+    rotateSessionId() {
+        this.state.sessionId = 'session_' + Date.now();
+    },
+
     updateState(key, value) {
+        // Clinical Context Switch: Rotate session ID when changing core modes or presets
+        if (key === 'appMode' || key === 'presetMode') {
+            if (this.state[key] !== value) {
+                this.rotateSessionId();
+            }
+        }
+
         if (key === 'synopLockVertical') {
             this.state.synopLockVertical = !!value;
             if (this.state.synopLockVertical) {
@@ -98,6 +110,11 @@ export const Store = {
             this.state.synopScore = Math.max(0, parseInt(value) || 0);
             return;
         }
+        if (key === 'calibratorLeftR' || key === 'calibratorRightG' || key === 'calibratorRightB') {
+            // Symmetrically allow full [0, 255] byte range to support high-contrast dark targets
+            this.state[key] = Math.max(0, Math.min(255, parseInt(value) || 255));
+            return;
+        }
         
         this.state[key] = value;
 
@@ -115,6 +132,7 @@ export const Store = {
         this.state.trialHistory = [];
         this.state.timerRemainingSeconds = this.state.timerLimitMinutes * 60;
         this.state.timerIsRunning = false;
+        this.rotateSessionId(); // Symmetrically start a fresh session entry
     },
 
     startTimerIfNeeded() {
@@ -154,6 +172,7 @@ export const Store = {
     loadSettings() {
         try {
             this.state.presetMode = localStorage.getItem('gabor_preset_mode') || 'occlusion';
+            this.state.lastGaborPreset = localStorage.getItem('gabor_last_gabor_preset') || 'occlusion';
             this.state.currentLevel = parseInt(localStorage.getItem('gabor_start_level') || '1');
             this.state.autoAdvance = localStorage.getItem('gabor_autonext') !== 'false';
             this.state.sessionLimit = parseInt(localStorage.getItem('gabor_limit') || '0');
@@ -176,9 +195,9 @@ export const Store = {
             this.state.isFusionLockEnabled = localStorage.getItem('gabor_fusion_lock') !== 'false';
             this.state.isMuted = localStorage.getItem('gabor_muted') === 'true';
             this.state.currentLang = localStorage.getItem('gabor_lang') || 'en';
-            this.state.calibratorLeftR = parseInt(localStorage.getItem('gabor_calib_left_r') || '255');
-            this.state.calibratorRightG = parseInt(localStorage.getItem('gabor_calib_right_g') || '255');
-            this.state.calibratorRightB = parseInt(localStorage.getItem('gabor_calib_right_b') || '255');
+            this.state.calibratorLeftR = Math.max(0, Math.min(255, parseInt(localStorage.getItem('gabor_calib_left_r') || '255')));
+            this.state.calibratorRightG = Math.max(0, Math.min(255, parseInt(localStorage.getItem('gabor_calib_right_g') || '255')));
+            this.state.calibratorRightB = Math.max(0, Math.min(255, parseInt(localStorage.getItem('gabor_calib_right_b') || '255')));
             this.state.isPermanentCrossEnabled = localStorage.getItem('gabor_permanent_cross') === 'true';
             
             // Persistent Synoptophore properties loads
@@ -203,6 +222,7 @@ export const Store = {
     saveSettings() {
         try {
             localStorage.setItem('gabor_preset_mode', this.state.presetMode);
+            localStorage.setItem('gabor_last_gabor_preset', this.state.lastGaborPreset);
             localStorage.setItem('gabor_start_level', this.state.currentLevel);
             localStorage.setItem('gabor_autonext', this.state.autoAdvance ? "true" : "false");
             localStorage.setItem('gabor_limit', this.state.sessionLimit);
@@ -346,7 +366,14 @@ export const Store = {
             this.state.presetMode,
             this.state.flashDurationMode,
             this.state.isAnaglyphEnabled,
-            this.state.strongEyeContrastFactor
+            this.state.strongEyeContrastFactor,
+            
+            // Added Sensory Laterality & Active Clinical Stimulation Flags
+            this.state.lazyEyeSide,
+            this.state.isFlickerEnabled,
+            this.state.isCrowdingEnabled,
+            this.state.isPeripheralEnabled,
+            this.state.isPermanentCrossEnabled
         );
     },
 

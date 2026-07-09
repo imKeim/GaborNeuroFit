@@ -279,21 +279,23 @@ export function updateScoreboard(state, translations) {
 }
 
 // Helper to resolve compact mode tags for the leaderboard view
-function getCompactPresetLabel(mode, lang) {
+export function getCompactPresetLabel(mode, lang) {
     if (lang === 'ru') {
-        if (mode === 'occlusion') return 'Повязка';
-        if (mode === 'binocular') return '3D Баланс';
-        if (mode === 'peripheral') return '3D Перифер.';
-        if (mode === 'blitz') return 'Блиц';
-        if (mode === 'flicker') return '3D Фликкер';
-        return 'Ручной';
+        if (mode === 'occlusion') return '🩹 Повязка';
+        if (mode === 'binocular') return '🕶️ 3D Баланс';
+        if (mode === 'peripheral') return '🎯 3D Перифер.';
+        if (mode === 'blitz') return '⚡ Блиц';
+        if (mode === 'flicker') return '🌀 3D Фликкер';
+        if (mode === 'synoptophore') return '🧲 Вергенция';
+        return '⚙️ Ручной';
     } else {
-        if (mode === 'occlusion') return 'Patching';
-        if (mode === 'binocular') return '3D Balance';
-        if (mode === 'peripheral') return '3D Capture';
-        if (mode === 'blitz') return 'Speed Blitz';
-        if (mode === 'flicker') return '3D Flicker';
-        return 'Custom';
+        if (mode === 'occlusion') return '🩹 Patching';
+        if (mode === 'binocular') return '🕶️ 3D Balance';
+        if (mode === 'peripheral') return '🎯 3D Capture';
+        if (mode === 'blitz') return '⚡ Speed Blitz';
+        if (mode === 'flicker') return '🌀 3D Flicker';
+        if (mode === 'synoptophore') return '🧲 Vergence';
+        return '⚙️ Custom';
     }
 }
 
@@ -336,10 +338,13 @@ export function updateLeaderboard(historyList, translations, currentLang) {
               })
             : '00:00';
 
+        // Map lateral trained eye indicator cleanly (Iteration 4.1)
+        const eyeLabel = item.lazyEyeSide === 'right' ? (currentLang === 'ru' ? 'П' : 'R') : (currentLang === 'ru' ? 'Л' : 'L');
+
         // Row 2: Core Game Results (Score, Level, Contrast)
         const line2Text = currentLang === 'ru' 
-            ? `Счет: <strong>${item.score}/${item.total}</strong> | Этап: ${item.level} | Контраст: ${item.contrast}%`
-            : `Score: <strong>${item.score}/${item.total}</strong> | Stage: ${item.level} | Contrast: ${item.contrast}%`;
+            ? `Счет: <strong>${item.score}/${item.total}</strong> | Этап: ${item.level} | Контраст: ${item.contrast}% | Глаз: ${eyeLabel}`
+            : `Score: <strong>${item.score}/${item.total}</strong> | Stage: ${item.level} | Contrast: ${item.contrast}% | Eye: ${eyeLabel}`;
         
         // Row 3: Technical clinical settings (Speed, Attenuation balancer)
         const line3Text = currentLang === 'ru'
@@ -411,11 +416,13 @@ export function updateSynopLeaderboard(historyList, translations, currentLang) {
             ? `Угол: X: ${signX}${Math.abs(targetX)}px (${signX}${pdX}Δ) | Y: ${signY}${Math.abs(targetY)}px (${signY}${pdY}Δ)`
             : `Angle: X: ${signX}${Math.abs(targetX)}px (${signX}${pdX}Δ) | Y: ${signY}${Math.abs(targetY)}px (${signY}${pdY}Δ)`;
 
+        const modeLabel = getCompactPresetLabel('synoptophore', currentLang);
+
         return `
             <li class="leaderboard-item" style="flex-direction: column; align-items: flex-start; gap: 4px; padding-bottom: 8px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05);">
                 <div style="width: 100%; display: flex; justify-content: space-between; font-weight: bold; color: rgba(255,255,255,0.4); font-size: 11px;">
                     <span>#${idx + 1} (${dateStr})</span>
-                    <span>${currentLang === 'ru' ? '🧲 Вергенция' : '🧲 Vergence'}</span>
+                    <span>${modeLabel}</span>
                 </div>
                 <div style="font-size: 13px; color: #f1f3f9; font-weight: 500; line-height: 1.35; word-wrap: break-word;">
                     ${line2Text}

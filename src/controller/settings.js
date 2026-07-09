@@ -213,8 +213,11 @@ export class SettingsController {
             }
         });
 
-        // 2. Purge Gabor-only parameters rows inside Accordion Group 1 during Synoptophore
-        const gaborRows = ['row-preset-mode', 'row-start-level', 'row-autonext', 'row-session-limit'];
+        // 2. Purge Gabor-only parameters rows inside Group 1 & 4 during Synoptophore
+        const gaborRows = [
+            'row-preset-mode', 'row-start-level', 'row-autonext', 'row-session-limit',
+            'row-anaglyph-toggle', 'row-strong-attenuation', 'row-fusion-lock'
+        ];
         gaborRows.forEach(id => {
             const row = document.getElementById(id);
             if (row) {
@@ -249,52 +252,18 @@ export class SettingsController {
             }
         }
 
-        const chkAnaglyph = document.getElementById('chk-anaglyph');
-        if (chkAnaglyph) {
-            chkAnaglyph.disabled = isSynop;
-            const rowAnaglyph = chkAnaglyph.closest('.settings-row');
-            if (rowAnaglyph) rowAnaglyph.style.opacity = isSynop ? '0.5' : '1';
-        }
-
-        const chkFusionLock = document.getElementById('chk-fusion-lock');
-        if (chkFusionLock) {
-            chkFusionLock.disabled = isSynop;
-            const rowFusionLock = chkFusionLock.closest('.settings-row');
-            if (rowFusionLock) rowFusionLock.style.opacity = isSynop ? '0.5' : '1';
-        }
-
-        // Symmetrically lock and dim Gabor-only baseline options during Synoptophore
-        const selectStartLevel = document.getElementById('select-start-level');
-        if (selectStartLevel) {
-            selectStartLevel.disabled = isSynop;
-            const row = selectStartLevel.closest('.settings-row');
-            if (row) row.style.opacity = isSynop ? '0.5' : '1';
-        }
-
-        const selectAutoNext = document.getElementById('select-autonext');
-        if (selectAutoNext) {
-            selectAutoNext.disabled = isSynop;
-            const row = selectAutoNext.closest('.settings-row');
-            if (row) row.style.opacity = isSynop ? '0.5' : '1';
-        }
-
-        const selectSessionLimit = document.getElementById('select-session-limit');
-        if (selectSessionLimit) {
-            selectSessionLimit.disabled = isSynop;
-            const row = selectSessionLimit.closest('.settings-row');
-            if (row) row.style.opacity = isSynop ? '0.5' : '1';
-        }
-
+        // 3. Coordinate sub-panel interactive states without visual feedback loops
         if (this.anaglyphPanel) {
             this.anaglyphPanel.style.display = 'block';
             this.anaglyphPanel.style.opacity = (s.isAnaglyphEnabled || isSynop) ? '1' : '0.4';
             this.anaglyphPanel.querySelectorAll('input, select, button').forEach(input => {
-                if (input.id === 'range-strong-attenuation' && isSynop) {
-                    input.disabled = true;
-                    const row = input.closest('.settings-row');
-                    if(row) row.style.opacity = '0.35';
-                } else if (input.id !== 'chk-fusion-lock' && input.id !== 'chk-anaglyph') {
-                    input.disabled = !s.isAnaglyphEnabled;
+                // Symmetrically resolve disabled states: calibration sliders stay open, while Gabor tools follow anaglyph toggle
+                if (input.id !== 'chk-fusion-lock' && input.id !== 'chk-anaglyph') {
+                    if (input.id === 'slider-left-r' || input.id === 'slider-right-g' || input.id === 'slider-right-b') {
+                        input.disabled = false; // Calibration is hardware-level, always accessible
+                    } else {
+                        input.disabled = (isSynop) ? false : !s.isAnaglyphEnabled;
+                    }
                 }
             });
         }
@@ -324,15 +293,19 @@ export class SettingsController {
         if (btnTabGabor && btnTabSynop) {
             btnTabGabor.addEventListener('click', () => {
                 Store.updateState('appMode', 'gabor');
-                // Safety: Automatically pull out of synoptophore mode presets
-                if (Store.state.presetMode === 'synoptophore') {
-                    Store.updateState('presetMode', 'occlusion');
-                }
+                // Symmetrical Restore: Return to the specific Gabor protocol used before switching to Synoptophore
+                Store.updateState('presetMode', Store.state.lastGaborPreset);
+                
                 this.updatePresetUI();
                 if (typeof this.onSyncCallback === 'function') this.onSyncCallback();
             });
 
             btnTabSynop.addEventListener('click', () => {
+                // Symmetrical Backup: Remember which Gabor protocol was active before changing the app mode
+                if (Store.state.presetMode !== 'synoptophore') {
+                    Store.updateState('lastGaborPreset', Store.state.presetMode);
+                }
+                
                 Store.updateState('appMode', 'synoptophore');
                 Store.updateState('presetMode', 'synoptophore');
                 this.updatePresetUI();

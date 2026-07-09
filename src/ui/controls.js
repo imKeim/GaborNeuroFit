@@ -297,30 +297,45 @@ export function bindInputControls(handlers) {
     }
 
     window.addEventListener('keydown', (event) => {
-        if (event.repeat) return; // Prevent typematic OS keyboard repeat spam for sounds & state transitions
+        if (event.repeat) return;
         const key = event.key.toLowerCase();
         
+        // Modal State Detectors
+        const confirmModal = document.getElementById('custom-confirm-modal');
+        const alertModal = document.getElementById('custom-alert-modal');
         const settingsModal = document.getElementById('settings-modal');
         const infoModal = document.getElementById('info-modal');
         const statsModal = document.getElementById('stats-modal');
-        const customAlertModal = document.getElementById('custom-alert-modal');
         
+        const isConfirmOpen = confirmModal && confirmModal.style.display !== 'none' && confirmModal.style.display !== '';
+        const isAlertOpen = alertModal && alertModal.style.display !== 'none' && alertModal.style.display !== '';
         const isSettingsOpen = settingsModal && settingsModal.style.display !== 'none' && settingsModal.style.display !== '';
         const isInfoOpen = infoModal && infoModal.style.display !== 'none' && infoModal.style.display !== '';
         const isStatsOpen = statsModal && statsModal.style.display !== 'none' && statsModal.style.display !== '';
-        const isAlertOpen = customAlertModal && customAlertModal.style.display !== 'none' && customAlertModal.style.display !== '';
         
-        // Premium alert modal keyboard lock focus: OK button simulation via keyboard Space, Enter or Escape
-        if (isAlertOpen) {
-            if (key === ' ' || key === 'enter' || event.key === 'Escape' || event.key === 'Esc') {
+        // PRIORITY 1: Custom Confirmation Dialog (Yes/No)
+        if (isConfirmOpen) {
+            if (key === 'enter' || key === ' ') {
                 event.preventDefault();
-                closeCustomAlert(); // Symmetrical presentation layer close (SoC compliant)
+                if (window._gnfConfirmActions) window._gnfConfirmActions.yes();
+            } else if (key === 'escape' || key === 'esc') {
+                event.preventDefault();
+                if (window._gnfConfirmActions) window._gnfConfirmActions.no();
             }
-            return; // Completely suppress Gabor inputs while alert modal is shown
+            return; // Lock input
         }
 
-        // Global Escape routes mapping for other configurations modals
-        if (event.key === 'Escape' || event.key === 'Esc') {
+        // PRIORITY 2: Custom Alert Dialog (OK Only)
+        if (isAlertOpen) {
+            if (key === ' ' || key === 'enter' || key === 'escape' || key === 'esc') {
+                event.preventDefault();
+                closeCustomAlert();
+            }
+            return; // Lock input
+        }
+
+        // PRIORITY 3: Global Escape for underlying modals (Settings, Stats, Info)
+        if (key === 'escape' || key === 'esc') {
             if (typeof handlers.onEscape === 'function') {
                 handlers.onEscape();
             }

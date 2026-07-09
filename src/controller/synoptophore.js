@@ -34,8 +34,9 @@ export class SynoptophoreController {
             
             if (Store.state.synopFlickerActive) {
                 const elapsed = timestamp - this.flickerStartTime;
-                // 10 Hz Alpha-Resonance mathematical oscillation (0.0 to 1.0)
-                const factor = 0.5 - 0.5 * Math.cos(elapsed * 0.062831853);
+                // 10 Hz Alpha-Resonance Counter-Phase oscillation (-1.0 to 1.0)
+                // Keeps average luminance constant (127 sRGB) to prevent ocular fatigue.
+                const factor = Math.sin(elapsed * 0.062831853);
                 drawSynoptophoreTargets(this.overlayCanvas, this.overlayCtx, Store.state, factor);
                 this.flickerFrameId = this.tracker.requestAnimationFrame(loop);
             } else {

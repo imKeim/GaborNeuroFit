@@ -305,7 +305,7 @@
                     <span class="accordion-arrow" id="accordion-arrow-4">›</span>
                 </div>
                 <div class="accordion-content" id="accordion-content-4">
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                    <div class="settings-row" id="row-anaglyph-toggle" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                             <label data-i18n="lblSettingAnaglyph"></label>
                             <input type="checkbox" id="chk-anaglyph">
@@ -329,14 +329,14 @@
                                 <option value="right" data-i18n="optSideRight"></option>
                             </select>
                         </div>
-                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                        <div class="settings-row" id="row-strong-attenuation" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%;">
                                 <label data-i18n="lblSettingStrongAttenuation"></label>
                                 <span id="val-strong-attenuation" style="color: #3b90ff; font-weight: bold;">30%</span>
                             </div>
                             <input type="range" id="range-strong-attenuation" min="10" max="100" step="5" value="30" style="width: 100%; accent-color: #007aff; cursor: pointer; margin-top: 6px;">
                         </div>
-                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                        <div class="settings-row" id="row-fusion-lock" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                                 <label data-i18n="lblSettingFusionLock"></label>
                                 <input type="checkbox" id="chk-fusion-lock">
@@ -543,10 +543,10 @@
                         <!-- SVG Gabor chart dynamically injected by screen.js -->
                     </div>
 
-                    <!-- Progress Chart Descriptive Legend Info (Iteration 4) -->
-                    <div style="margin-top: 0; margin-bottom: 14px; text-align: center; line-height: 1.35; padding: 0 10px;">
-                        <span data-i18n="chartLegend" style="font-size: 10px; color: #8e8e93; font-weight: 400; letter-spacing: 0.2px;"></span>
-                    </div>
+	                <!-- Progress Chart Descriptive Legend Info -->
+	                <div style="margin-top: 0; margin-bottom: 14px; text-align: center; line-height: 1.15; padding: 0 10px;">
+	                    <span data-i18n="chartLegend" style="font-size: 11px; color: #8e8e93; font-weight: 300; letter-spacing: 0.2px;"></span>
+	                </div>
 
                     <!-- Chronological Sessions List -->
                     <div id="leaderboard" style="width: 100%; margin-top: 0; margin-bottom: 14px;">
@@ -562,8 +562,8 @@
                     </div>
 
                     <!-- Progress Chart Descriptive Legend Info for Synoptophore -->
-                    <div style="margin-top: 0; margin-bottom: 14px; text-align: center; line-height: 1.35; padding: 0 10px;">
-                        <span data-i18n="synopChartLegend" style="font-size: 10px; color: #8e8e93; font-weight: 400; letter-spacing: 0.2px;"></span>
+                    <div style="margin-top: 0; margin-bottom: 14px; text-align: center; line-height: 1.15; padding: 0 10px;">
+                        <span data-i18n="synopChartLegend" style="font-size: 11px; color: #8e8e93; font-weight: 300; letter-spacing: 0.2px;"></span>
                     </div>
 
                     <!-- Chronological Synoptophore Sessions List -->

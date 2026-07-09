@@ -31,12 +31,12 @@ export function drawSynoptophoreTargets(canvas, ctx, state, factor = 1.0) {
 
     const isLazyRed = (state.lazyEyeSide === state.redEyeSide);
 
-    // CLINICAL LUMINANCE MATCHING INTERPOLATION (RESONANCE FLICKER)
-    // Dynamically scales the intensity of the lazy channel to perfectly blend into the sRGB(127) gray background.
-    // Strong eye remains 100% solid to hold the foveal lock.
-    const r_lazy = Math.round(127 + (r - 127) * factor);
-    const g_lazy = Math.round(127 + (g - 127) * factor);
-    const b_lazy = Math.round(127 + (b - 127) * factor);
+    // CLINICAL COUNTER-PHASE INTERPOLATION (RESONANCE FLICKER)
+    // Oscillates the target from "Bright Calibrated" to "Dark Inverse" through the neutral gray background.
+    // This maintains a zero-net-luminance flux, reducing pupillary fatigue and maximizing V1 stimulation.
+    const r_lazy = Math.max(0, Math.min(255, Math.round(127 + (r - 127) * factor)));
+    const g_lazy = Math.max(0, Math.min(255, Math.round(127 + (g - 127) * factor)));
+    const b_lazy = Math.max(0, Math.min(255, Math.round(127 + (b - 127) * factor)));
 
     const pureRedFlicker = `rgb(${r_lazy}, 127, 127)`;
     const pureCyanFlicker = `rgb(127, ${g_lazy}, ${b_lazy})`;
