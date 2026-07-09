@@ -271,11 +271,13 @@ window.addEventListener('load', async () => {
         settingsController.syncStateFromUI();
         Store.saveSettings();
         
-        // Reset session progress variables
-        Store.state.autoContrast = 0.40;
-        Store.state.correctStreak = 0;
-        Store.state.staircaseStreak = 0;
-        Store.updateState('isWaitingForAnswer', false);
+        // Reset session progress variables via centralized Store method (SSoT compliant)
+        Store.resetSessionProgress();
+    
+        // Deactivate active calibration patterns on settings menu save
+        trialController.isAnaglyphTestActive = false;
+        const settingsModal = document.getElementById('settings-modal');
+        if (settingsModal) settingsModal.classList.remove('calibration-mode');
 
         // Gracefully abort the trial execution state machine without direct FSM mutations
         trialController.abort();
@@ -354,6 +356,11 @@ window.addEventListener('load', async () => {
                 overlayCanvas.width = physicalSize;
                 overlayCanvas.height = physicalSize;
                 
+                // Stop Synoptophore animation rendering during calibration test to avoid screen buffer overwrites
+                if (synoptophoreController) {
+                    synoptophoreController.stopFlickerLoop();
+                }
+
                 // Clear the lower WebGL canvas to stable neutral gray first, then draw vector letters on top
                 drawIdleState(canvas, null, overlayCanvas, overlayCtx, false);
                 drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
@@ -367,6 +374,11 @@ window.addEventListener('load', async () => {
                 // Remove calibration bottom sheet layout class
                 if (settingsModal) settingsModal.classList.remove('calibration-mode');
                 
+                // Resume Synoptophore render loop once calibration test is deactivated
+                if (Store.state.appMode === 'synoptophore') {
+                    if (synoptophoreController) synoptophoreController.syncFlickerState();
+                }
+
                 drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
                 cross.style.display = 'block';
             }

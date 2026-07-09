@@ -184,8 +184,8 @@ export class SynoptophoreController {
         playSlip(s.isMuted);
 
         // UX Master Polish: Automatically restore Gabor circle offsets to starting calibration coordinates
-        s.synopTargetX = this.startX;
-        s.synopTargetY = this.startY;
+        Store.updateState('synopTargetX', this.startX);
+        Store.updateState('synopTargetY', this.startY);
 
         Store.updateState('synopState', 'align');
         this.btnStart.innerText = t.btnSynopLock;
@@ -217,9 +217,9 @@ export class SynoptophoreController {
         Store.updateState('synopScore', s.synopScore + 1);
         Store.saveSettings();
 
-        // Reset coords completely
-        s.synopTargetX = 0;
-        s.synopTargetY = 0;
+        // Reset coords completely via standard setter to invoke state bounds validations
+        Store.updateState('synopTargetX', 0);
+        Store.updateState('synopTargetY', 0);
 
         Store.updateState('synopState', 'align');
         this.btnStart.innerText = t.btnSynopLock;

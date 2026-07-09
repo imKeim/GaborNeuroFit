@@ -315,7 +315,14 @@ export class TrialController {
         let flashDuration = this.getFlashDuration(s);
         updateStatusBar(s, t);
 
-        this.cross.style.display = 'none';
+        // Apply smooth fading classes to the central cross instead of hard display blocks
+        this.cross.classList.remove('cross-dimmed', 'cross-hidden');
+        if (s.isPermanentCrossEnabled) {
+            this.cross.classList.add('cross-dimmed');
+        } else {
+            this.cross.classList.add('cross-hidden');
+        }
+
         this.canvas.style.display = 'block';
         Store.updateState('isWaitingForAnswer', true);
 
@@ -329,7 +336,7 @@ export class TrialController {
             this.tracker.setTimeout(() => {
                 this.stopUnifiedRenderingLoop();
                 drawIdleState(this.canvas, this.ctx, this.overlayCanvas, this.overlayCtx, s.isFusionLockEnabled);
-                this.cross.style.display = 'block';
+                this.cross.classList.remove('cross-dimmed', 'cross-hidden');
                 this.btnStart.innerText = t.reflashBtn;
                 this.transitionTo(TrialState.AWAITING_INPUT);
             }, flashDuration);
@@ -358,7 +365,7 @@ export class TrialController {
         Store.updateState('isWaitingForAnswer', false);
 
         this.transitionTo(TrialState.FEEDBACK);
-        this.cross.style.display = 'block';
+        this.cross.classList.remove('cross-dimmed', 'cross-hidden');
 
         const correctAnswer = this.currentAngleDeg < 0 ? 'left' : 'right';
         const isCorrect = (userChoice === correctAnswer);
@@ -485,6 +492,11 @@ export class TrialController {
         const optimalFrequencyCoeff = 0.062831853; 
 
         const loop = (timestamp) => {
+            // Guard: Gracefully self-terminate the GPU rendering cycle as soon as the stimulus phase ends
+            if (this.currentState !== TrialState.STIMULUS_ACTIVE) {
+                return;
+            }
+
             if (this.isAnaglyphTestActive) {
                 const gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl');
                 if (gl) {

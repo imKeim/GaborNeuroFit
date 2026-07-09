@@ -39,6 +39,7 @@ export const Store = {
         calibratorRightG: 255, 
         calibratorRightB: 255, 
         trialHistory: [],
+        isPermanentCrossEnabled: false, // Smoothly faded persistent central anchor
         
         // Synoptophore (Prism & Vergence Training) State Space
         appMode: 'gabor',               
@@ -101,6 +102,14 @@ export const Store = {
         }
     },
 
+    resetSessionProgress() {
+        this.state.autoContrast = 0.50; // Centralized default baseline (50% contrast)
+        this.state.correctStreak = 0;
+        this.state.staircaseStreak = 0;
+        this.state.isWaitingForAnswer = false;
+        this.state.trialHistory = [];
+    },
+
     resolveConflicts(lastActiveTrigger = null) {
         const s = this.state;
         if (lastActiveTrigger === 'peripheral') {
@@ -150,6 +159,7 @@ export const Store = {
             this.state.calibratorLeftR = parseInt(localStorage.getItem('gabor_calib_left_r') || '255');
             this.state.calibratorRightG = parseInt(localStorage.getItem('gabor_calib_right_g') || '255');
             this.state.calibratorRightB = parseInt(localStorage.getItem('gabor_calib_right_b') || '255');
+            this.state.isPermanentCrossEnabled = localStorage.getItem('gabor_permanent_cross') === 'true';
             
             // Persistent Synoptophore properties loads
             this.state.synopPullSpeed = parseInt(localStorage.getItem('gabor_synop_pull_speed') || '2500');
@@ -197,6 +207,7 @@ export const Store = {
             localStorage.setItem('gabor_calib_left_r', this.state.calibratorLeftR.toString());
             localStorage.setItem('gabor_calib_right_g', this.state.calibratorRightG.toString());
             localStorage.setItem('gabor_calib_right_b', this.state.calibratorRightB.toString());
+            localStorage.setItem('gabor_permanent_cross', this.state.isPermanentCrossEnabled ? "true" : "false");
             
             // Persistent Synoptophore properties saves
             localStorage.setItem('gabor_synop_pull_speed', this.state.synopPullSpeed.toString());

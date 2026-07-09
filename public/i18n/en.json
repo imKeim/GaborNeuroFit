@@ -60,6 +60,8 @@
   "lblSettingShapeVariance": "Vary Shape (Aspect Ratio):",
   "lblSettingStatic": "Static Stimulus (No Hide):",
   "lblSettingAnaglyph": "3D Anaglyph Mode (Red-Cyan):",
+  "lblSettingPermanentCross": "Permanent Fixation Cross:",
+  "helpPermanentCross": "Retains a faded central cross during the flash to stabilize gaze and counter eccentric fixation drift.",
   "lblSettingRedSide": "Red Filter Lens Position:",
   "lblSettingLazySide": "Lazy (Amblyopic) Eye:",
   "lblSettingStrongAttenuation": "Strong Eye Contrast Balancer:",

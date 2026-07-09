@@ -59,6 +59,8 @@
   "lblSettingShapeVariance": "Изменение формы (эллипс):",
   "lblSettingStatic": "Статичный стимул (без скрытия):",
   "lblSettingAnaglyph": "3D-анаглифный режим (Red-Cyan):",
+  "lblSettingPermanentCross": "Постоянный крест фиксации:",
+  "helpPermanentCross": "Удерживает блеклый крест в центре во время вспышки, помогая стабилизировать взгляд и бороться с дрейфом фиксации.",
   "lblSettingRedSide": "Красный светофильтр на глазу:",
   "lblSettingLazySide": "Ленивый (слабый) глаз:",
   "lblSettingStrongAttenuation": "Контраст здорового глаза:",

@@ -225,8 +225,18 @@ canvas {
     position: absolute;
     display: block;
     font-weight: 300;
-    transition: font-size 0.2s ease;
+    opacity: 1;
+    /* Faster 150ms transition perfectly matches rapid millisecond-accurate flashes */
+    transition: font-size 0.2s ease, opacity 0.15s cubic-bezier(0.25, 1, 0.5, 1);
     z-index: 15; /* Render above all canvas elements */
+}
+
+#cross.cross-dimmed {
+    opacity: 0.22; /* Faded state for continuous motor fixation locks */
+}
+
+#cross.cross-hidden {
+    opacity: 0; /* Fully faded state for sensory contrast tests */
 }
 
 /* ==========================================================================

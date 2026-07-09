@@ -58,8 +58,8 @@ export function drawSynoptophoreTargets(canvas, ctx, state, factor = 1.0) {
     // LAYER 1: Draw Target Alignment Grid (Visir) FIRST - so it renders BEHIND targets and frame
     if (state.synopShowLazyGrid || state.synopShowStrongGrid) {
         ctx.save();
-        ctx.setLineDash([1, 4]); // High-fidelity micro-dotted pattern for subpixel alignments
-        ctx.lineWidth = 1.5;
+        ctx.setLineDash([2, 5]); // Clinically optimized, thick micro-dotted pattern for low-acuity amblyopic eyes
+        ctx.lineWidth = 2.5;
 
         // Lazy eye diagonal guidelines converging precisely into the center (lx, ly)
         if (state.synopShowLazyGrid) {
@@ -92,7 +92,7 @@ export function drawSynoptophoreTargets(canvas, ctx, state, factor = 1.0) {
     
     // CONCENTRIC PARITY LOCK: Enforce even-integer boundaries on all central elements.
     const dotRadius = 2 * Math.round((size * 0.12) / 2);
-    const crossHalf = 2 * Math.round((size * 0.3) / 2);
+    const crossHalf = 2 * Math.round((size * 0.15) / 2); // Reduced from 0.3 to 0.15 to ensure visual parity with the dot and prevent suppression
 
     if (state.synopTargetType === 'cross-square') {
         // GEOMETRY B: Hollow Square (Lazy) + Thick Cross (Strong)
