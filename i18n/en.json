@@ -97,7 +97,7 @@
   "helpDynamic": "Runs a continuous motion wave inside the flankers to saturate dominant eye motion channels.",
   "btnSynopLock": "LOCK FUSION",
   "btnSynopBreak": "SLIPPED / RESET",
-  "lblSynopStatusAlign": "Look STRICTLY at the center dot! Use peripheral vision and drag the screen (or WASD keys) to align the targets. Double-tap to reset.",
+  "lblSynopStatusAlign": "Look STRICTLY at the center dot! Use peripheral vision and drag the screen (or WASD keys/tap canvas edges) to align the targets.",
   "lblSynopStatusTraining": "Fusion locked! Muscles are slowly pulling the eye back to center... Maintain alignment!",
   "speedSynop": "1 px / 2.5s",
   "synopBreakTitle": "🧲 Training Result",
@@ -122,5 +122,7 @@
   "lblSynopScore": "Fusions",
   "synopWarnAlign": "⚠️ Please shift the target first to match your deviation!",
   "lblSettingSynopFlicker": "Flicker Stimulation (10 Hz):",
-  "helpSynopFlicker": "Pulsates the lazy eye target at 10 Hz (Alpha-resonance) to completely override top-down foveal suppression."
+  "helpSynopFlicker": "Pulsates the lazy eye target at 10 Hz (Alpha-resonance) to completely override top-down foveal suppression.",
+  "lblSettingSynopLockY": "Strict Horizontal Mode (Lock Y):",
+  "helpSynopLockY": "Locks the vertical axis to zero. Ideal for treating standard horizontal strabismus without fat-finger errors."
 }
