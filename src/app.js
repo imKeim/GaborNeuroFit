@@ -6,7 +6,7 @@
 // Import core dependencies
 import { Store } from './store.js';
 import { drawFusionTestPattern } from './engine/gabor.js';
-import { initAudio, playError } from './engine/audio.js';
+import { initAudio, playError, playSuccess } from './engine/audio.js';
 import { updateScoreboard, updateLeaderboard, drawIdleState, updateStatusBar } from './ui/screen.js';
 import { initModals, showCustomAlert, closeCustomAlert } from './ui/modal.js';
 import { bindInputControls } from './ui/controls.js';
@@ -132,6 +132,9 @@ export async function setLanguage(lang) {
 function runFlash() {
     const s = Store.state;
     
+    // Start global Pomodoro tracking on first primary action
+    Store.startTimerIfNeeded();
+
     // Route inputs to Synoptophore controller when in synoptophore mode
     if (s.appMode === 'synoptophore') {
         if (synoptophoreController) {
@@ -229,6 +232,9 @@ window.addEventListener('load', async () => {
             playError(Store.state.isMuted);
         },
         onSynopDrag: () => {
+            // Track physical manipulation as active ocular therapy time
+            Store.startTimerIfNeeded();
+
             // Prevent static draw conflict if animation loop is active
             if (!Store.state.synopFlickerActive) {
                 drawSynoptophoreTargets(overlayCanvas, overlayCtx, Store.state);
@@ -414,6 +420,59 @@ window.addEventListener('load', async () => {
         drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
         cross.style.display = 'block';
     }
+
+    // Global Pomodoro Timer Heartbeat Loop (SoC: Runs completely isolated on the presentation layer)
+    setInterval(() => {
+        const s = Store.state;
+        if (!s.timerIsRunning || s.timerLimitMinutes === 0) return;
+
+        // Smart Pause: Halts physiological countdown if any overlay modal is blocking the screen
+        const settingsModal = document.getElementById('settings-modal');
+        const infoModal = document.getElementById('info-modal');
+        const statsModal = document.getElementById('stats-modal');
+        const customAlertModal = document.getElementById('custom-alert-modal');
+
+        const isSettingsOpen = settingsModal && settingsModal.style.display !== 'none' && settingsModal.style.display !== '';
+        const isInfoOpen = infoModal && infoModal.style.display !== 'none' && infoModal.style.display !== '';
+        const isStatsOpen = statsModal && statsModal.style.display !== 'none' && statsModal.style.display !== '';
+        const isAlertOpen = customAlertModal && customAlertModal.style.display !== 'none' && customAlertModal.style.display !== '';
+
+        if (isSettingsOpen || isInfoOpen || isStatsOpen || isAlertOpen) {
+            return; // Maintain state securely while patient reads configurations
+        }
+
+        // Deduct interval synchronously utilizing Store validators
+        Store.updateState('timerRemainingSeconds', Math.max(0, s.timerRemainingSeconds - 1));
+        updateScoreboard(s, activeTranslations);
+
+        // Terminate active operations and enforce a strict clinical break interval on zero
+        if (s.timerRemainingSeconds <= 0) {
+            Store.updateState('timerIsRunning', false);
+            
+            // Abort ongoing hardware rendering loops securely
+            if (trialController) trialController.abort();
+            if (synoptophoreController) synoptophoreController.abort();
+            
+            drawIdleState(canvas, null, overlayCanvas, overlayCtx, s.isFusionLockEnabled);
+            
+            const t = activeTranslations;
+            if (s.appMode === 'synoptophore') {
+                if (s.synopFlickerActive) {
+                    synoptophoreController.stopFlickerLoop();
+                } else {
+                    drawSynoptophoreTargets(overlayCanvas, overlayCtx, s);
+                }
+                cross.style.display = 'none';
+                btnStart.innerText = t.btnSynopLock;
+            } else {
+                cross.style.display = 'block';
+                btnStart.innerText = t.startBtn;
+            }
+
+            playSuccess(s.isMuted); // Positive acoustical reinforcement upon completion
+            showCustomAlert(t.titlePomodoro || '🍅 Pomodoro', t.sessionTimerCompleted);
+        }
+    }, 1000);
 
     // Register Service Worker for offline-capable clinical execution
     if ('serviceWorker' in navigator && !import.meta.env.DEV) {

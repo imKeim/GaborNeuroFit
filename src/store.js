@@ -17,6 +17,9 @@ export const Store = {
         currentLang: 'en',
         presetMode: 'occlusion',
         sessionLimit: 0,
+        timerLimitMinutes: 0,           // Pomodoro visual fatigue limiter (0 = Off)
+        timerRemainingSeconds: 0,       // Active countdown state
+        timerIsRunning: false,          // Orchestrator loop toggle
         autoAdvance: true,
         allowStageAdvance: true,
         flashDurationMode: 'adaptive',
@@ -108,6 +111,20 @@ export const Store = {
         this.state.staircaseStreak = 0;
         this.state.isWaitingForAnswer = false;
         this.state.trialHistory = [];
+        this.state.timerRemainingSeconds = this.state.timerLimitMinutes * 60;
+        this.state.timerIsRunning = false;
+    },
+
+    startTimerIfNeeded() {
+        if (this.state.timerLimitMinutes > 0) {
+            if (this.state.timerRemainingSeconds <= 0) {
+                // Auto-refill reservoir if a previous session was fully depleted
+                this.state.timerRemainingSeconds = this.state.timerLimitMinutes * 60;
+            }
+            if (!this.state.timerIsRunning) {
+                this.updateState('timerIsRunning', true);
+            }
+        }
     },
 
     resolveConflicts(lastActiveTrigger = null) {
@@ -138,6 +155,7 @@ export const Store = {
             this.state.currentLevel = parseInt(localStorage.getItem('gabor_start_level') || '1');
             this.state.autoAdvance = localStorage.getItem('gabor_autonext') !== 'false';
             this.state.sessionLimit = parseInt(localStorage.getItem('gabor_limit') || '0');
+            this.state.timerLimitMinutes = parseInt(localStorage.getItem('gabor_timer_limit') || '0');
             this.state.allowStageAdvance = localStorage.getItem('gabor_stage_advance') !== 'false';
             this.state.flashDurationMode = localStorage.getItem('gabor_flash_mode') || 'adaptive';
             this.state.isPeripheralEnabled = localStorage.getItem('gabor_peripheral') === 'true';
@@ -186,6 +204,7 @@ export const Store = {
             localStorage.setItem('gabor_start_level', this.state.currentLevel);
             localStorage.setItem('gabor_autonext', this.state.autoAdvance ? "true" : "false");
             localStorage.setItem('gabor_limit', this.state.sessionLimit);
+            localStorage.setItem('gabor_timer_limit', this.state.timerLimitMinutes.toString());
             localStorage.setItem('gabor_stage_advance', this.state.allowStageAdvance ? "true" : "false");
             localStorage.setItem('gabor_flash_mode', this.state.flashDurationMode);
             localStorage.setItem('gabor_peripheral', this.state.isPeripheralEnabled ? "true" : "false");

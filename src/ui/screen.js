@@ -37,6 +37,13 @@ export function drawIdleState(gaborCanvas, gaborCtx, overlayCanvas, overlayCtx, 
     }
 }
 
+// Helper to mathematically format seconds into clinical digital clock string
+function formatTimerDisplay(seconds) {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+}
+
 // Update the primary scoring board and quantitative training stats badges
 export function updateScoreboard(state, translations) {
     const t = translations;
@@ -106,6 +113,23 @@ export function updateScoreboard(state, translations) {
     if (contrastEl) contrastEl.innerText = Math.round(state.autoContrast * 100);
     if (levelEl) levelEl.innerText = state.currentLevel;
     if (streakEl) streakEl.innerText = state.correctStreak;
+
+    // Resolve Pomodoro active timer state display mapping
+    const timerGabor = document.getElementById('badge-timer-gabor');
+    const timerSynop = document.getElementById('badge-timer-synop');
+    
+    if (state.timerLimitMinutes > 0) {
+        const timeStr = formatTimerDisplay(state.timerRemainingSeconds);
+        if (timerGabor) { timerGabor.style.display = 'inline-block'; timerGabor.innerHTML = `🍅 ${timeStr}`; }
+        if (timerSynop) { timerSynop.style.display = 'inline-block'; timerSynop.innerHTML = `🍅 ${timeStr}`; }
+        if (window.twemoji) {
+            if (timerGabor) twemoji.parse(timerGabor);
+            if (timerSynop) twemoji.parse(timerSynop);
+        }
+    } else {
+        if (timerGabor) timerGabor.style.display = 'none';
+        if (timerSynop) timerSynop.style.display = 'none';
+    }
 }
 
 // Helper to resolve compact mode tags for the leaderboard view

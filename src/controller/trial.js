@@ -492,8 +492,12 @@ export class TrialController {
         const optimalFrequencyCoeff = 0.062831853; 
 
         const loop = (timestamp) => {
-            // Guard: Gracefully self-terminate the GPU rendering cycle as soon as the stimulus phase ends
-            if (this.currentState !== TrialState.STIMULUS_ACTIVE) {
+            // Guard: Symmetrically run animation loop during stimulus flash or while awaiting input in static mode
+            const isAllowedToAnimate = 
+                this.currentState === TrialState.STIMULUS_ACTIVE || 
+                (this.currentState === TrialState.AWAITING_INPUT && s.isStaticEnabled);
+
+            if (!isAllowedToAnimate) {
                 return;
             }
 

@@ -5,7 +5,7 @@
 <h1 align="center">GaborNeuroFit</h1>
 
 <p align="center">
-  <strong>High-Performance Dichoptic & Perceptual Learning Vision Therapy Suite</strong>
+  <strong>High-Performance Dichoptic, Strabismus & Perceptual Learning Vision Therapy Suite</strong>
 </p>
 
 <p align="center">
@@ -74,6 +74,10 @@ In daily life, a lazy eye struggles to read because surrounding letters blur tog
 
 Flickering the stimulus at 10 Hz (the brain's natural alpha frequency) forces your visual cortex into resonance (SSVEP). This rapid pulsing literally overloads and bypasses the brain's slow top-down suppression mechanisms. Additionally, because the patch constantly blinks, it completely prevents **Troxler's fading** (the natural disappearing of static low-contrast objects from your visual field).
 
+### Why a Digital Synoptophore? (🧲)
+
+Amblyopia and Strabismus (crossed/misaligned eyes) are deeply connected. You can stimulate the visual cortex with Gabor patches to restore acuity, but if your extraocular muscles cannot physically align your eyes (motor vergence failure), the brain will continue to suppress the lazy eye to avoid double vision. The digital Synoptophore bridges this gap. You manually align the targets to your exact deviation angle (calming the nervous system via sensory fusion), and the software slowly pulls them back to true center (0,0), forcing your eye muscles to actively contract and build real binocular stamina.
+
 ---
 
 ## 🎮 Clinical Training Protocols
@@ -122,6 +126,13 @@ Do not panic. If you have had amblyopia since childhood, your eyes' alignment pa
 Yes! Perceptual learning operates at the absolute threshold of your sensory abilities. 
 *   **The Science:** If you are playing on Stage 4 or 5 and 5% contrast, the lines will be virtually invisible. You will feel like you are just blindly guessing. 
 *   **The Proof:** Trust the adaptive staircase. If your final scoreboard shows an accuracy above 70–75%, **you were not guessing**. Your visual cortex was resolving the pattern subliminally! This "struggle on the edge of visibility" is exactly where the brain remodels its synapses.
+
+### 🧲 "How do I use the Synoptophore Mode?"
+
+1.  **Preparation:** Put on your 3D glasses and select the "Synoptophore" preset.
+2.  **Sensory Alignment:** Look strictly at the central dot/cross. Use your finger, WASD, or Arrow keys to move the outer ring until the dot is perfectly inside it (this matches your deviation angle).
+3.  **Motor Lock:** Click "LOCK FUSION". The software will now slowly pull the ring back to the center (0,0).
+4.  **Vergence Hold:** Do not let the dot slip out of the ring! Your eye muscles will physically tense up to track it. If it slips, press "SLIPPED / RESET" and try again.
 
 ---
 

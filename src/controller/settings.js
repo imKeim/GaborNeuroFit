@@ -25,6 +25,7 @@ const CONFIG_SCHEMA = [
     { id: 'select-start-level', key: 'currentLevel', type: 'int' },
     { id: 'select-autonext', key: 'autoAdvance', type: 'boolean' },
     { id: 'select-session-limit', key: 'sessionLimit', type: 'int' },
+    { id: 'select-timer-limit', key: 'timerLimitMinutes', type: 'int' },
     { id: 'slider-left-r', key: 'calibratorLeftR', type: 'int' },
     { id: 'slider-right-g', key: 'calibratorRightG', type: 'int' },
     { id: 'slider-right-b', key: 'calibratorRightB', type: 'int' },
