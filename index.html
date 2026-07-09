@@ -14,7 +14,7 @@
     <meta name="apple-mobile-web-app-title" content="GaborNeuroFit">
     <link rel="apple-touch-icon" href="icon-192.png">
     <meta name="theme-color" content="#131a26">
-  <script type="module" crossorigin src="./assets/index-P4lU3r2X.js"></script>
+  <script type="module" crossorigin src="./assets/index-Dw-ZzoXz.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-Dd_48Ozk.css">
 <link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:inline-sw">if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('./sw.js', { scope: './' })})}</script></head>
 <body>
@@ -460,13 +460,27 @@
     </div>
 
     <!-- CUSTOM NON-BLOCKING ALERT DIALOG -->
-    <div id="custom-alert-modal" class="modal" style="display: none; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+    <div id="custom-alert-modal" class="modal" style="display: none; z-index: 3000; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
         <div class="modal-content" style="height: auto; max-height: 320px; width: 88%; max-width: 420px; text-align: center; border-radius: var(--border-radius-elements); padding: 20px;">
             <h2 id="custom-alert-title" style="margin-top: 0; margin-bottom: 12px; font-size: 16px; color: #3b90ff; font-weight: 700;">GaborNeuroFit</h2>
             <div class="modal-scroll-body" style="font-size: 12px; color: #cbd5e1; line-height: 1.45; text-align: center; margin-bottom: 12px; padding: 0 4px;">
                 <p id="custom-alert-text" style="margin: 0;"></p>
             </div>
             <button id="btn-close-custom-alert" class="close-btn" style="margin-top: 0; padding: 8px;">OK</button>
+        </div>
+    </div>
+
+    <!-- CUSTOM NON-BLOCKING CONFIRMATION DIALOG -->
+    <div id="custom-confirm-modal" class="modal" style="display: none; z-index: 3010; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+        <div class="modal-content" style="height: auto; max-height: 320px; width: 88%; max-width: 420px; text-align: center; border-radius: var(--border-radius-elements); padding: 20px;">
+            <h2 id="custom-confirm-title" style="margin-top: 0; margin-bottom: 12px; font-size: 16px; color: #ef4444; font-weight: 700;">GaborNeuroFit</h2>
+            <div class="modal-scroll-body" style="font-size: 12px; color: #cbd5e1; line-height: 1.45; text-align: center; margin-bottom: 12px; padding: 0 4px;">
+                <p id="custom-confirm-text" style="margin: 0;"></p>
+            </div>
+            <div style="display: flex; gap: 10px; width: 100%;">
+                <button id="btn-confirm-yes" class="close-btn" style="flex: 1; margin-top: 0; padding: 8px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; font-weight: bold;">Yes</button>
+                <button id="btn-confirm-no" class="close-btn" style="flex: 1; margin-top: 0; padding: 8px; background: #2b354a; font-weight: bold;">Cancel</button>
+            </div>
         </div>
     </div>
 

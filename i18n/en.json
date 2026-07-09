@@ -150,5 +150,8 @@
   "msgEmptyName": "❌ Patient name cannot be empty!",
   "msgConfirmDelete": "⚠️ Delete profile \"{name}\"? This will cascaded-delete all their historical training sessions!",
   "msgCannotDeleteLast": "❌ Cannot delete the only remaining patient profile in the database!",
-  "msgConfirmClear": "⚠️ Completely purge all training history for this patient? This action is permanent!"
+  "msgConfirmClear": "⚠️ Completely purge all training history for this patient? This action is permanent!",
+  "confirmYes": "Yes",
+  "confirmNo": "Cancel",
+  "titleWarning": "⚠️ Warning"
 }
