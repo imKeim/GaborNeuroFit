@@ -44,39 +44,30 @@ My name is Pavel. I have had anisometropic amblyopia (lazy eye caused by unequal
 
 I searched the entire Internet for recovery software, but found **absolutely nothing** of clinical value. The existing training methods were incredibly tedious and frustrating. Staring at flat text or trying to read with a lazy eye is an exhausting chore. All you can think is: *"I just want to read this line like a normal person!"* It feels like a punishment, not a path to healing.
 
-During my research, I discovered the Steam game *BiColor - Lazy Eye Game Trainer*. I want to give special thanks to its creator because the idea of coloring shapes in 3D glasses was a beautiful spark of inspiration. However, because I completely lack motor fusion (binocular alignment), I experienced a constant, frustrating 1 cm physical gap between the two eyes' images, which only grew wider as my eyes fatigued. Without proper binocular fusion locks, my lazy eye drifted uncontrollably. Instead of coloring carefully, I ended up just smearing pixels across the screen in deep frustration. (I was so desperate to align the images that I even used *ReShade* to manually scale down and shift the dominant eye's image!)
+During my research, I discovered the Steam game *BiColor - Lazy Eye Game Trainer*. I want to give special thanks to its creator because the idea of coloring shapes in 3D glasses was a beautiful spark of inspiration. However, because I completely lack motor fusion (binocular alignment), I experienced a constant physical gap between the two eyes' images. Without proper binocular fusion locks, my lazy eye drifted uncontrollably.
 
-When I consulted local eye clinics and orthoptists, they simply shook their heads: *"We don't treat adult amblyopia. Your brain's critical period is over. Give up."*
+When I consulted local eye clinics, they simply shook their heads: *"We don't treat adult amblyopia. Give up."*
 
-I refused to accept that sentence. 
-
-I dove headfirst into visual neuroscience, studying how the brain processes spatial frequencies, lateral inhibition, and binocular gating. I partnered with the **Gemini 3.5 Flash** neural network, and together we built this software. Under the hood, a senior software architect might find the code a bit messy. But it is **100% functional, mathematically rigorous, and it works**. I wrote this because nobody else would build it for us. I hope it brings you and your children the progress you've been fighting for.
+I refused to accept that. I dove into visual neuroscience, studying spatial frequencies, lateral inhibition, and binocular gating. I partnered with the **Gemini 1.5 Flash** neural network, and together we built this software. Under the hood, the code is optimized for performance and clinical precision. I wrote this because nobody else would build it for us. I hope it brings you and your children the progress you've been fighting for.
 
 ---
 
 ## 🔬 The Scientific "Whys"
 
-Every setting in GaborNeuroFit is strictly mapped to visual neuroscience:
-
 ### Why Gabor Patches? (🧿)
-
 Gabor patches are the "letters" of the primary visual cortex ($V1$). The simple cells in your brain's occipital lobe are strictly tuned to detect lines at specific angles. By forcing your weaker eye to resolve these faint, blurry lines right at your sensory threshold, you directly drive synaptic remodeling (Hebbian plasticity) in $V1$.
 
 ### Why Red-Cyan 3D Glasses? (🕶️)
-
-Patching (occlusion) is a monocular treatment, but it doesn't cure **binocular suppression** (the brain actively blocking the lazy eye when both are open). 3D glasses split the color channels. The lazy eye sees the target (Gabor) in the Red channel, while the healthy eye sees the surrounding noise. To solve the task, the brain has no choice but to combine the signals, breaking the suppression loop.
+Patching (occlusion) is a monocular treatment, but it doesn't cure **binocular suppression** (the brain actively blocking the lazy eye). 3D glasses split the color channels. The lazy eye sees the target (Gabor), while the healthy eye sees the noise. To solve the task, the brain has no choice but to combine the signals, breaking the suppression loop.
 
 ### Why Flanker Distractors? (🩹)
-
-In daily life, a lazy eye struggles to read because surrounding letters blur together (the "visual crowding effect"). By presenting the Gabor target to your lazy eye and the flanking distractors to your healthy eye, we train the brain to separate target details under active binocular noise. The **Contrast Balancer** slider lets you dim the healthy eye's distractors (e.g., to 30%) to prevent it from overpowering your weak eye.
+A lazy eye struggles to read because surrounding letters blur together (the "visual crowding effect"). By presenting the Gabor target to your lazy eye and the flanking distractors to your healthy eye, we train the brain to separate target details under active binocular noise.
 
 ### Why Flicker (10 Hz)? (🌀)
-
-Flickering the stimulus at 10 Hz (the brain's natural alpha frequency) forces your visual cortex into resonance (SSVEP). This rapid pulsing literally overloads and bypasses the brain's slow top-down suppression mechanisms. Additionally, because the patch constantly blinks, it completely prevents **Troxler's fading** (the natural disappearing of static low-contrast objects from your visual field).
+Flickering the stimulus at 10 Hz (Alpha frequency) forces your visual cortex into resonance (SSVEP). This rapid pulsing overloads and bypasses the brain's slow top-down suppression mechanisms and prevents **Troxler's fading** (the disappearing of static low-contrast objects).
 
 ### Why a Digital Synoptophore? (🧲)
-
-Amblyopia and Strabismus (crossed/misaligned eyes) are deeply connected. You can stimulate the visual cortex with Gabor patches to restore acuity, but if your extraocular muscles cannot physically align your eyes (motor vergence failure), the brain will continue to suppress the lazy eye to avoid double vision. The digital Synoptophore bridges this gap. You manually align the targets to your exact deviation angle (calming the nervous system via sensory fusion), and the software slowly pulls them back to true center (0,0), forcing your eye muscles to actively contract and build real binocular stamina.
+Amblyopia and Strabismus (misaligned eyes) are deeply connected. If your muscles cannot physically align your eyes, the brain will suppress the lazy eye to avoid double vision. The digital Synoptophore bridges this gap: you align the targets to your exact squint angle (sensory fusion), and the software slowly pulls them back to true center (0,0), forcing your eye muscles to contract and build binocular stamina.
 
 ---
 
@@ -84,88 +75,48 @@ Amblyopia and Strabismus (crossed/misaligned eyes) are deeply connected. You can
 
 GaborNeuroFit features 6 scientifically structured active templates:
 
-*   🩹 **Classic Occlusion (Patching)**: The traditional starting point. Monochrome Gabor, adaptive speed, meant to be used with a physical eye patch over your strong eye.
-*   🕶️ **Binocular Balance (3D)**: Both eyes open with 3D glasses. Central Gabor is shown to the lazy eye, and faint distractors to the healthy eye. Directly fights cortical suppression.
+*   🩹 **Classic Occlusion (Patching)**: The traditional starting point. Monochrome Gabor, meant to be used with a physical eye patch over your strong eye.
+*   ⚡ **Cortical Speed Blitz**: A high-intensity monochrome speed run. 100 ms flashes to train rapid feedforward processing.
+*   🕶️ **Binocular Balance (3D)**: Both eyes open with 3D glasses. Central Gabor is shown to the lazy eye, and faint distractors to the healthy eye.
+*   🌀 **Flicker Resonance (3D)**: The "heavy artillery" mode. The Gabor and distractors pulse at 10 Hz to break deep, stubborn suppression barriers.
 *   🎯 **Parafoveal Capture (3D)**: The target Gabor jumps to the periphery, forcing your lazy eye to coordinate spatial attention and fast localization.
-*   🌀 **Flicker Resonance (3D)**: The ultimate "heavy artillery" mode. The Gabor and distractors pulse at 10 Hz to break deep, stubborn suppression barriers.
-*   ⚡ **Cortical Speed Blitz**: A high-intensity monochrome speed run. The Gabor flashes for only 100 ms to train rapid feedforward processing.
-*   🧲 **Synoptophore (3D Vergence)**: A specialized orthoptic simulator targeting strabismus and fixation instability. You align targets to your subjective squint angle (sensory fusion), then the software slowly pulls them to true center (motor vergence) to contract extraocular muscles.
-*   ⚙️ **Custom Configuration**: Unlocks all individual toggles, enabling clinicians and advanced users to design custom training routines.
+*   ⚙️ **Custom Configuration**: Unlocks all individual toggles for clinicians to design custom training routines.
+*   🧲 **Synoptophore (3D Vergence)**: A specialized orthoptic simulator targeting strabismus. You manually align targets, then the software slowly pulls them to center to train ocular muscles.
+
 
 ---
 
 ## 🏃‍♂️ How to Train Correctly
 
-1.  **Wear your correction:** If you wear glasses or contact lenses for anisometropia/astigmatism, put them on.
-2.  **Positioning:** Hold your device at a comfortable arm's length (50–70 cm).
-3.  **🎯 LOOK ONLY AT THE CENTRAL CROSS (+):** This is your **Binocular Fusion Lock (Anchor)**. Do not chase the flashing Gabor patch with your eyes. Keep your gaze dead-center on the cross, and use your peripheral attention to resolve the tilt. This is critical to correct ocular alignment and prevent muscle strain!
-4.  **Frequency:** Train for 15 minutes a day (roughly 100–150 attempts). Rest is critical for consolidating visual memory; overtraining only causes muscle fatigue.
-5.  **Listen to your body:** If your eyes water or feel painful, stop immediately. Always prioritize comfort.
+1.  **Wear your correction:** If you wear glasses or contact lenses, put them on.
+2.  **Positioning:** Hold your device at a comfortable arm's length (**60–70 cm**).
+3.  **🎯 LOOK ONLY AT THE CENTER:** Fix your gaze strictly on the central cross (+). Do not chase the flashing Gabor patch. Use your peripheral attention to resolve the tilt.
+4.  **Frequency:** Train for 15 minutes a day (roughly 100–150 attempts). Rest is critical for consolidating visual memory.
+5.  **Listen to your body:** If your eyes water or feel painful, stop immediately.
 
 ---
 
-## 🧭 Quick Start Guide (Or: "How the Hell Do I Use This?")
-
-Training a lazy eye is highly counter-intuitive. Here is how to handle the most common points of frustration so you don't rage-quit on day one:
+## 🧭 Quick Start Guide
 
 ### ⚡ "I clicked START and it flashed for a split second! Is it broken?"
+No. The flash is supposed to be fast (100–220 ms). This prevents your strong eye's muscles from adjusting and "cheating". **Do not analyze the lines.** Trust your pure instinct and click Left or Right immediately.
 
-No, it is working exactly as intended. The flash is supposed to be incredibly fast (100–220 ms). 
-*   **The Science:** This prevents your strong eye's muscles from physically tensing up, adjusting, and "cheating" to help. 
-*   **How to play:** **Do not try to read or analyze the lines.** Just look at the central cross, press START, and trust your immediate gut feeling. Your brain is a supercomputer; it processes the average tilt of the pattern faster than you can think. Just click Left or Right based on your pure instinct.
-
-### 👓 "I'm wearing the 3D glasses, but the images don't align! I see a double image"
-
-Do not panic. If you have had amblyopia since childhood, your eyes' alignment pathways in the brain are dormant. When you open both eyes in 3D glasses, they will naturally want to float and drift apart, showing you a double image.
-*   **How to fix it:** 
-    1.  Keep your eyes locked strictly on the central cross `+`. The cross is dark gray and is visible to **both** eyes. It acts as an anchor to pull your eyes back into alignment.
-    2.  Open the settings and drag the **Strong Eye Contrast Balancer** slider down to **15% or 20%**. This makes the healthy eye's distractors very faint, allowing your brain to easily ignore the double-image drift while your weak eye's pathway adapts.
-    3.  If your visual alignment is still too weak, switch the protocol to 🩹 **Classic Occlusion**, put on a physical eye patch, and train your lazy eye monocularly first to build up its baseline strength.
+### 👓 "The images don't align! I see a double image"
+Open the settings and drag the **Strong Eye Contrast Balancer** slider down to **15% or 20%**. This makes the healthy eye's image faint, allowing your brain to easily ignore the drift while your weak eye's pathway adapts.
 
 ### 🌀 "I feel like I'm completely guessing. Is this even doing anything?"
-
-Yes! Perceptual learning operates at the absolute threshold of your sensory abilities. 
-*   **The Science:** If you are playing on Stage 4 or 5 and 5% contrast, the lines will be virtually invisible. You will feel like you are just blindly guessing. 
-*   **The Proof:** Trust the adaptive staircase. If your final scoreboard shows an accuracy above 70–75%, **you were not guessing**. Your visual cortex was resolving the pattern subliminally! This "struggle on the edge of visibility" is exactly where the brain remodels its synapses.
+Yes! Perceptual learning operates at the absolute threshold. Trust the adaptive staircase. If your accuracy is above 70%, your visual cortex is resolving the pattern subliminally. This "struggle" is where the brain remodels its synapses.
 
 ### 🧲 "How do I use the Synoptophore Mode?"
-
-1.  **Preparation:** Put on your 3D glasses and select the "Synoptophore" preset.
-2.  **Sensory Alignment:** Look strictly at the central dot/cross. Use your finger, WASD, or Arrow keys to move the outer ring until the dot is perfectly inside it (this matches your deviation angle).
-3.  **Motor Lock:** Click "LOCK FUSION". The software will now slowly pull the ring back to the center (0,0).
-4.  **Vergence Hold:** Do not let the dot slip out of the ring! Your eye muscles will physically tense up to track it. If it slips, press "SLIPPED / RESET" and try again.
-
----
-
-## 🧲 Inside GNF Digital Synoptophore Subsystem
-
-Traditional physical synoptophores are large, mechanical, prismatic orthoptic instruments found exclusively in specialized eye clinics to diagnose and treat **Strabismus** (crossed eyes), **Heterophoria** (latent muscle deviation), and **amblyopic suppression**.
-
-The **GaborNeuroFit Synoptophore Subsystem** digitizes this physical apparatus into a high-performance web experience, leveraging GPU-accelerated drawing pipelines to train motor and sensory fusion without mechanical mirrors.
-
-### 1. The Two-Phase Neuromuscular Action Loop
-
-*   **Phase I: Sensory Fusion Alignment (Diagnostic)**
-    When the session boots, the targets are displaced. The patient manually translates the lazy eye target (using touch dragging, WASD, or Arrow keys) until it aligns perfectly with the static anchor dot seen by the strong eye.
-    *   *Neurobiology:* By manually moving the target to their exact subjective deviation angle, the patient matches their **angle of strabismus**. This allows the brain's visual cortex to overlap the images without physical muscle strain, immediately calming down eye muscle jitter (nystagmus) and establishing a **sensory fusion lock**.
-*   **Phase II: Motor Fusion & Progressive Pulling (Therapeutic)**
-    Once aligned, the patient clicks **"LOCK FUSION"**. The FSM transitions, and a sub-pixel pulling engine begins. On every timer interval, the software pulls the targets **exactly 1 pixel closer** to the true geometric center $(0,0)$.
-    *   *Neurobiology:* As the targets slowly crawl closer to zero, the patient's extraocular muscles (the medial and lateral recti) are forced to **physically contract and adjust** to maintain alignment. This active vergence training builds binocular stamina, trains motor fusion reserves, and teaches the brain to align the visual axes naturally.
-
-### 2. Alpha-Resonance 10Hz Anti-Suppression Flicker
-
-Under normal conditions, a dominant eye will immediately suppress (ignore) the weaker eye's target during motor vergence. To destroy this suppression barrier, GNF implements a **10Hz temporal luminance modulator**:
-*   The strong eye's anchor remains 100% solid, maintaining a stable spatial coordinate frame.
-*   The lazy eye's target undergoes continuous **Alpha-resonance intensity modulation (flicker)**.
-*   *Mathematical Interpolation:* 
-    $$L_{\text{lazy}}(t) = 127 + (C_{\text{calib}} - 127) \cdot \left[0.5 - 0.5 \cos(2\pi \cdot 10 \cdot t)\right]$$
-    When the flicker phase reaches 0, the target's color channels merge perfectly with the $127$ sRGB neutral gray background, rendering it completely invisible. As it oscillates to 1.0, it reaches full calibrated saturation. This rapid 10Hz visual pulsing overloads and bypasses the slow top-down suppression gates in the visual cortex, forcing binocular integration.
+1. Use WASD, Arrow keys, or touch to move the outer ring until the center dot is perfectly inside it (matching your squint angle).
+2. Click **"LOCK FUSION"**. The software will now slowly pull the ring back to the center (0,0).
+3. Do not let the dot slip out! If it does, press **"SLIPPED / RESET"** and try again.
 
 ---
 
 ## 📚 Key Scientific Literature
 
-If you want to read the science that inspired this project:
-*   **Hess, R. F., et al. (2010).** *Binocular dichoptic training facilitates binocular vision in adults with amblyopia.* (Proves dichoptic training is superior to patching).
-*   **Polat, U., et al. (2004).** *Collinear stimuli facilitate visual acuity in adults with amblyopia.* (The foundation of Gabor-based perceptual learning).
-*   **Levi, D. M., & Li, R. W. (2009).** *Perceptual learning as a potential treatment for amblyopia: a mini-review.* (Explains synaptic plasticity in adult V1).
+*   **Hess, R. F., et al. (2010).** *Binocular dichoptic training facilitates binocular vision in adults with amblyopia.* (Dichoptic training vs. patching).
+*   **Polat, U., et al. (2004).** *Collinear stimuli facilitate visual acuity in adults with amblyopia.* (Gabor-based perceptual learning).
+*   **Levi, D. M., & Li, R. W. (2009).** *Perceptual learning as a potential treatment for amblyopia: a mini-review.* (Synaptic plasticity in adult V1).
+*   **Scheiman, M., et al. (2005).** *A randomized clinical trial of vision therapy/orthoptics versus pencil pushups for the treatment of convergence insufficiency in children.* (Proves the clinical superiority of structured orthoptic/vergence exercises).
