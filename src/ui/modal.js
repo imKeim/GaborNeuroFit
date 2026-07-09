@@ -36,6 +36,52 @@ export function closeCustomAlert() {
     }
 }
 
+/**
+ * Renders a beautiful non-blocking custom confirmation dialog with Yes/No actions.
+ * Symmetrically isolates memory allocations by detaching events after execution.
+ */
+export function showCustomConfirm(title, text, yesLabel, noLabel, callback) {
+    const modal = document.getElementById('custom-confirm-modal');
+    const titleEl = document.getElementById('custom-confirm-title');
+    const textEl = document.getElementById('custom-confirm-text');
+    const btnYes = document.getElementById('btn-confirm-yes');
+    const btnNo = document.getElementById('btn-confirm-no');
+    
+    if (!modal || !titleEl || !textEl || !btnYes || !btnNo) return;
+    
+    titleEl.innerHTML = title;
+    textEl.innerHTML = text;
+    btnYes.textContent = yesLabel;
+    btnNo.textContent = noLabel;
+    
+    modal.style.display = 'flex';
+    
+    if (window.twemoji) {
+        window.twemoji.parse(modal);
+    }
+    
+    // Core event handlers with standard lexical scopes for absolute teardown
+    const onYes = () => {
+        modal.style.display = 'none';
+        cleanup();
+        callback(true);
+    };
+    
+    const onNo = () => {
+        modal.style.display = 'none';
+        cleanup();
+        callback(false);
+    };
+    
+    const cleanup = () => {
+        btnYes.removeEventListener('click', onYes);
+        btnNo.removeEventListener('click', onNo);
+    };
+    
+    btnYes.addEventListener('click', onYes);
+    btnNo.addEventListener('click', onNo);
+}
+
 // Initialize click listeners for settings and manual popup modals
 export function initModals(onSettingsOpen, onSettingsSave, onStatsOpen) {
     // Select Handbook modal DOM nodes

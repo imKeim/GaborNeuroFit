@@ -9,7 +9,7 @@ import { DataRepository } from './store/repository.js';
 import { drawFusionTestPattern } from './engine/gabor.js';
 import { initAudio, playError, playSuccess } from './engine/audio.js';
 import { updateScoreboard, updateLeaderboard, drawIdleState, updateStatusBar, renderProgressChart } from './ui/screen.js';
-import { initModals, showCustomAlert, closeCustomAlert } from './ui/modal.js';
+import { initModals, showCustomAlert, closeCustomAlert, showCustomConfirm } from './ui/modal.js';
 import { bindInputControls } from './ui/controls.js';
 import { TrialController, TrialState } from './controller/trial.js';
 import { SettingsController } from './controller/settings.js';
@@ -283,7 +283,7 @@ window.addEventListener('load', async () => {
         btnAddProfile.addEventListener('click', () => {
             const name = inputNewProfile.value.trim();
             if (!name) {
-                showCustomAlert(activeTranslations.titleSilver || "GaborNeuroFit", activeTranslations.msgEmptyName);
+                showCustomAlert(activeTranslations.titleWarning || "Warning", activeTranslations.msgEmptyName);
                 return;
             }
             const newProf = DataRepository.createProfile(name);
@@ -312,25 +312,33 @@ window.addEventListener('load', async () => {
             if (!activeProf) return;
 
             if (profiles.length <= 1) {
-                showCustomAlert(activeTranslations.titleSilver || "GaborNeuroFit", activeTranslations.msgCannotDeleteLast);
+                showCustomAlert(activeTranslations.titleWarning || "Warning", activeTranslations.msgCannotDeleteLast);
                 return;
             }
 
             const rawConfirm = activeTranslations.msgConfirmDelete || "Delete profile \"{name}\"?";
             const confirmText = rawConfirm.replace('{name}', activeProf.name);
 
-            if (confirm(confirmText)) {
-                DataRepository.deleteProfile(activeUid);
-                
-                // Symmetrical Session Reset
-                Store.state.score = 0;
-                Store.state.total = 0;
-                Store.state.sessionId = 'session_' + Date.now();
-                Store.resetSessionProgress();
+            showCustomConfirm(
+                activeTranslations.titleWarning || "Warning",
+                confirmText,
+                activeTranslations.confirmYes || "Yes",
+                activeTranslations.confirmNo || "Cancel",
+                (isConfirmed) => {
+                    if (isConfirmed) {
+                        DataRepository.deleteProfile(activeUid);
 
-                updateScoreboard(Store.state, activeTranslations);
-                refreshStatsUI();
-            }
+                        // Symmetrical Session Reset
+                        Store.state.score = 0;
+                        Store.state.total = 0;
+                        Store.state.sessionId = 'session_' + Date.now();
+                        Store.resetSessionProgress();
+
+                        updateScoreboard(Store.state, activeTranslations);
+                        refreshStatsUI();
+                    }
+                }
+            );
         });
     }
 
@@ -338,18 +346,26 @@ window.addEventListener('load', async () => {
     if (btnClearHistory) {
         btnClearHistory.addEventListener('click', () => {
             const confirmText = activeTranslations.msgConfirmClear || "Are you sure you want to clear history?";
-            if (confirm(confirmText)) {
-                DataRepository.clearActiveUserHistory();
-                
-                // Symmetrical Session Reset
-                Store.state.score = 0;
-                Store.state.total = 0;
-                Store.state.sessionId = 'session_' + Date.now();
-                Store.resetSessionProgress();
+            showCustomConfirm(
+                activeTranslations.titleWarning || "Warning",
+                confirmText,
+                activeTranslations.confirmYes || "Yes",
+                activeTranslations.confirmNo || "Cancel",
+                (isConfirmed) => {
+                    if (isConfirmed) {
+                        DataRepository.clearActiveUserHistory();
+                        
+                        // Symmetrical Session Reset
+                        Store.state.score = 0;
+                        Store.state.total = 0;
+                        Store.state.sessionId = 'session_' + Date.now();
+                        Store.resetSessionProgress();
 
-                updateScoreboard(Store.state, activeTranslations);
-                refreshStatsUI();
-            }
+                        updateScoreboard(Store.state, activeTranslations);
+                        refreshStatsUI();
+                    }
+                }
+            );
         });
     }
 

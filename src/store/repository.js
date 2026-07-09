@@ -24,9 +24,13 @@ export class DataRepository {
 
             // Bootstrap phase: Ensure at least one profile exists
             if (profiles.length === 0) {
+                const isRu = (localStorage.getItem('gabor_lang') === 'ru') || 
+                             (navigator.language && navigator.language.startsWith('ru'));
+                const defaultName = isRu ? 'Пациент по умолчанию' : 'Default Patient';
+
                 const defaultProfile = {
                     id: 'usr_' + Date.now(),
-                    name: 'Default Patient',
+                    name: defaultName,
                     createdAt: Date.now()
                 };
                 profiles.push(defaultProfile);
