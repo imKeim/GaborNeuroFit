@@ -14,7 +14,7 @@
     <meta name="apple-mobile-web-app-title" content="GaborNeuroFit">
     <link rel="apple-touch-icon" href="icon-192.png">
     <meta name="theme-color" content="#131a26">
-  <script type="module" crossorigin src="./assets/index-8u0zZRG_.js"></script>
+  <script type="module" crossorigin src="./assets/index-CgoGopot.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-DBBHqJTZ.css">
 <link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:inline-sw">if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('./sw.js', { scope: './' })})}</script></head>
 <body>
@@ -526,19 +526,46 @@
                     <button id="btn-delete-profile" class="close-btn" data-i18n="btnDeleteProfile" style="flex: 1; margin-top: 0; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; padding: 10px; font-size: 12px; font-weight: bold;"></button>
                 </div>
 
-                <!-- Procedural SVG Progress Chart -->
-                <div id="progress-chart-container" style="width: 100%; height: 130px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.04); display: flex; align-items: center; justify-content: center; padding: 10px; margin-bottom: 6px; box-sizing: border-box;">
-                    <!-- SVG graphic or placeholder dynamically injected by screen.js -->
+                <!-- Symmetrical Tab Segmented Pill Control -->
+                <div id="stats-tab-bar" style="display: flex; background: #131a26; padding: 4px; border-radius: 10px; border: 1px solid #2b354a; margin-bottom: 14px;">
+                    <button id="tab-gabor" class="tab-btn active" data-i18n="tabGabor" style="flex: 1; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; background: #2b354a; color: #3b90ff; cursor: pointer; transition: all 0.2s;"></button>
+                    <button id="tab-synop" class="tab-btn" data-i18n="tabSynop" style="flex: 1; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; background: transparent; color: #8e8e93; cursor: pointer; transition: all 0.2s;"></button>
                 </div>
 
-                <!-- Progress Chart Descriptive Legend Info (Iteration 4) -->
-                <div style="margin-top: 0; margin-bottom: 14px; text-align: center; line-height: 1.35; padding: 0 10px;">
-                    <span data-i18n="chartLegend" style="font-size: 10px; color: #8e8e93; font-weight: 400; letter-spacing: 0.2px;"></span>
+                <!-- GABOR SENSORY TRAINING VIEWPORT -->
+                <div id="tab-gabor-content" style="display: block;">
+                    <!-- Procedural SVG Progress Chart -->
+                    <div id="progress-chart-container" style="width: 100%; height: 130px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.04); display: flex; align-items: center; justify-content: center; padding: 10px; margin-bottom: 6px; box-sizing: border-box;">
+                        <!-- SVG Gabor chart dynamically injected by screen.js -->
+                    </div>
+
+                    <!-- Progress Chart Descriptive Legend Info (Iteration 4) -->
+                    <div style="margin-top: 0; margin-bottom: 14px; text-align: center; line-height: 1.35; padding: 0 10px;">
+                        <span data-i18n="chartLegend" style="font-size: 10px; color: #8e8e93; font-weight: 400; letter-spacing: 0.2px;"></span>
+                    </div>
+
+                    <!-- Chronological Sessions List -->
+                    <div id="leaderboard" style="width: 100%; margin-top: 0; margin-bottom: 14px;">
+                        <ul id="leaderboard-list"></ul>
+                    </div>
                 </div>
 
-                <!-- Chronological Sessions List -->
-                <div id="leaderboard" style="width: 100%; margin-top: 0; margin-bottom: 14px;">
-                    <ul id="leaderboard-list"></ul>
+                <!-- SYNOPTOPHORE MOTOR VERGENCE VIEWPORT -->
+                <div id="tab-tab-synop-content" style="display: none;">
+                    <!-- Procedural SVG Synop Deviation Chart -->
+                    <div id="synop-chart-container" style="width: 100%; height: 130px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.04); display: flex; align-items: center; justify-content: center; padding: 10px; margin-bottom: 6px; box-sizing: border-box;">
+                        <!-- SVG Synop chart dynamically injected by screen.js -->
+                    </div>
+
+                    <!-- Progress Chart Descriptive Legend Info for Synoptophore -->
+                    <div style="margin-top: 0; margin-bottom: 14px; text-align: center; line-height: 1.35; padding: 0 10px;">
+                        <span data-i18n="synopChartLegend" style="font-size: 10px; color: #8e8e93; font-weight: 400; letter-spacing: 0.2px;"></span>
+                    </div>
+
+                    <!-- Chronological Synoptophore Sessions List -->
+                    <div id="synop-leaderboard" style="width: 100%; margin-top: 0; margin-bottom: 14px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; padding: 10px 14px; font-size: 13px; color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.04);">
+                        <ul id="leaderboard-list-synop" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; height: 100%; overflow-y: auto; scrollbar-width: none;"></ul>
+                    </div>
                 </div>
 
                 <!-- Bottom Management Grid -->
