@@ -14,7 +14,7 @@
     <meta name="apple-mobile-web-app-title" content="GaborNeuroFit">
     <link rel="apple-touch-icon" href="icon-192.png">
     <meta name="theme-color" content="#131a26">
-  <script type="module" crossorigin src="./assets/index-B1oO51oE.js"></script>
+  <script type="module" crossorigin src="./assets/index-P4lU3r2X.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-Dd_48Ozk.css">
 <link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:inline-sw">if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('./sw.js', { scope: './' })})}</script></head>
 <body>
@@ -490,13 +490,42 @@
         </div>
     </div>
 
-    <!-- HISTORICAL LEADERBOARD MODAL (Classic flat version, limits up to 7 records) -->
+    <!-- HISTORICAL LEADERBOARD MODAL (Relational Multi-User Clinical Dashboard v2.5.0) -->
     <div id="stats-modal" class="modal">
         <div class="modal-content">
             <h2 data-i18n="statsTitle"></h2>
             <div class="modal-scroll-body">
-                <div id="leaderboard" style="width: 100%; margin-top: 15px;">
+                <!-- Profile Selector Row -->
+                <div class="settings-row" style="margin-top: 5px;">
+                    <label data-i18n="lblActiveProfile" for="select-active-profile"></label>
+                    <select id="select-active-profile" style="max-width: 60%; min-width: 140px;"></select>
+                </div>
+
+                <!-- New Profile Input Row -->
+                <div class="settings-row" style="border-bottom: none; margin-bottom: 4px; padding-bottom: 0;">
+                    <input type="text" id="input-new-profile" data-i18n-placeholder="placeholderNewProfile" style="width: 100%; background: #131a26; color: #fff; border: 1px solid #2b354a; border-radius: 8px; padding: 10px; font-size: 13px; outline: none;" placeholder="Enter Name...">
+                </div>
+
+                <!-- Profile Management Buttons Grid -->
+                <div style="display: flex; gap: 10px; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 14px;">
+                    <button id="btn-add-profile" class="close-btn" data-i18n="btnAddProfile" style="flex: 1; margin-top: 0; background: rgba(0, 122, 255, 0.12); border: 1px solid rgba(0, 122, 255, 0.25); color: #3b90ff; padding: 10px; font-size: 12px; font-weight: bold;"></button>
+                    <button id="btn-delete-profile" class="close-btn" data-i18n="btnDeleteProfile" style="flex: 1; margin-top: 0; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; padding: 10px; font-size: 12px; font-weight: bold;"></button>
+                </div>
+
+                <!-- Procedural SVG Progress Chart -->
+                <div id="progress-chart-container" style="width: 100%; height: 130px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.04); display: flex; align-items: center; justify-content: center; padding: 10px; margin-bottom: 14px; box-sizing: border-box;">
+                    <!-- SVG graphic or placeholder dynamically injected by screen.js -->
+                </div>
+
+                <!-- Chronological Sessions List -->
+                <div id="leaderboard" style="width: 100%; margin-top: 0; margin-bottom: 14px;">
                     <ul id="leaderboard-list"></ul>
+                </div>
+
+                <!-- Bottom Management Grid -->
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button id="btn-export-csv" class="close-btn" data-i18n="btnExportCSV" style="flex: 1; margin-top: 0; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.25); color: #22c55e; padding: 10px; font-size: 12px; font-weight: bold;"></button>
+                    <button id="btn-clear-history" class="close-btn" data-i18n="btnClearHistory" style="flex: 1; margin-top: 0; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; padding: 10px; font-size: 12px; font-weight: bold;"></button>
                 </div>
             </div>
             <button id="btn-close-stats" class="close-btn">OK</button>
