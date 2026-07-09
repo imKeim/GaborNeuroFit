@@ -11,6 +11,75 @@ import { drawFusionLockFrame } from '../engine/gabor.js';
 // Physiological constant: 16 pixels shift equates to 1 Prism Diopter (Δ) at 50-70cm working distance.
 const PIXELS_PER_PRISM_DIOPTER = 16.0;
 
+// Procedurally render lightweight, hardware-optimal SVG progress chart without any external dependencies
+export function renderProgressChart(sessions, translations) {
+    const container = document.getElementById('progress-chart-container');
+    if (!container) return;
+
+    // Guard: Verify sample volume before executing rendering algorithms to prevent division-by-zero crashes
+    if (!sessions || sessions.length < 2) {
+        container.innerHTML = `<span style="font-size: 11px; color: #8e8e93; text-align: center; padding: 0 10px; font-weight: 300; line-height: 1.45;">${translations.chartPlaceholder}</span>`;
+        return;
+    }
+
+    // Take last 10 trials chronologically (reverse to arrange past -> present / left -> right)
+    const chartSessions = sessions.slice(0, 10).reverse();
+    const contrasts = chartSessions.map(s => s.contrast);
+
+    const maxVal = Math.max(...contrasts, 40);
+    const minVal = Math.min(...contrasts, 5);
+    const valRange = (maxVal - minVal) || 1;
+
+    const width = 320;
+    const height = 120;
+    const leftMargin = 32;
+    const rightMargin = 15;
+    const topMargin = 15;
+    const bottomMargin = 15;
+
+    const W = width - leftMargin - rightMargin;
+    const H = height - topMargin - bottomMargin;
+    const stepX = W / (chartSessions.length - 1);
+
+    // Build polyline points string and node coordinate sets
+    const points = [];
+    const circles = [];
+
+    chartSessions.forEach((s, idx) => {
+        const x = leftMargin + idx * stepX;
+        // Coordinate inversion: lower contrast sits visually at the bottom (high SVG y in chart context)
+        const y = topMargin + ((maxVal - s.contrast) / valRange) * H;
+        points.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+        circles.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="#22c55e" stroke="#1c2331" stroke-width="1.5" />`);
+    });
+
+    // Procedural vector layout generation
+    container.innerHTML = `
+        <svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" style="overflow: visible; display: block;">
+            <defs>
+                <linearGradient id="chart-grad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#3b90ff" />
+                    <stop offset="100%" stop-color="#22c55e" />
+                </linearGradient>
+            </defs>
+            
+            <!-- Clinical Oscilloscope Grid Guides -->
+            <line x1="${leftMargin}" y1="${topMargin}" x2="${width - rightMargin}" y2="${topMargin}" stroke="rgba(255,255,255,0.04)" stroke-dasharray="2,2" />
+            <line x1="${leftMargin}" y1="${topMargin + H}" x2="${width - rightMargin}" y2="${topMargin + H}" stroke="rgba(255,255,255,0.04)" stroke-dasharray="2,2" />
+            
+            <!-- Subpixel-aligned axis text indicators -->
+            <text x="${leftMargin - 6}" y="${topMargin + 4}" fill="rgba(255,255,255,0.3)" font-size="9px" text-anchor="end" font-weight="bold">${maxVal}%</text>
+            <text x="${leftMargin - 6}" y="${topMargin + H + 3}" fill="rgba(255,255,255,0.3)" font-size="9px" text-anchor="end" font-weight="bold">${minVal}%</text>
+            
+            <!-- Main Gabor trend line vector path -->
+            <polyline points="${points.join(' ')}" fill="none" stroke="url(#chart-grad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+            
+            <!-- Visual milestone nodes -->
+            ${circles.join('')}
+        </svg>
+    `;
+}
+
 // Clean both Gabor and HUD canvases back to stable, non-fatiguing foveal neutral gray states
 export function drawIdleState(gaborCanvas, gaborCtx, overlayCanvas, overlayCtx, isFusionLockEnabled) {
     // 1. Clear and fill bottom GPU canvas with sRGB neutral gray
@@ -168,7 +237,7 @@ export function updateLeaderboard(historyList, translations, currentLang) {
     
     // Display helpful fallback text if leaderboard storage is empty
     if (historyList.length === 0) {
-        leaderboardList.innerHTML = `<li class="leaderboard-item" style="justify-content: center; color: #cbd5e1;">${t.noHistory}</li>`;
+        leaderboardList.innerHTML = `<li class="leaderboard-item" style="justify-content: center; color: #cbd5e1; text-align: center; padding: 14px 0;">${t.noHistory}</li>`;
         return;
     }
     
@@ -179,6 +248,16 @@ export function updateLeaderboard(historyList, translations, currentLang) {
         const speed = item.speed || 'adaptive';
         const isAnaglyph = item.isAnaglyph !== undefined ? item.isAnaglyph : true;
         const balance = item.balance !== undefined ? item.balance : 30;
+
+        // Map timestamp symmetrically to localized clinical calendar string
+        const dateStr = item.timestamp 
+            ? new Date(item.timestamp).toLocaleDateString(currentLang === 'ru' ? 'ru-RU' : 'en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })
+            : '00:00';
 
         // Row 2: Core Game Results (Score, Level, Contrast)
         const line2Text = currentLang === 'ru' 
@@ -196,7 +275,7 @@ export function updateLeaderboard(historyList, translations, currentLang) {
             <li class="leaderboard-item" style="flex-direction: column; align-items: flex-start; gap: 4px; padding-bottom: 8px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05);">
                 <!-- Row 1: Session Meta Header -->
                 <div style="width: 100%; display: flex; justify-content: space-between; font-weight: bold; color: rgba(255,255,255,0.4); font-size: 11px;">
-                    <span>#${idx + 1} (${item.time || '00:00'})</span>
+                    <span>#${idx + 1} (${dateStr})</span>
                     <span>${localizedMode}</span>
                 </div>
                 <!-- Row 2: Core Game Results -->

@@ -139,5 +139,16 @@
   "lblSettingSynopFlicker": "Flicker Stimulation (10 Hz):",
   "helpSynopFlicker": "Pulsates the lazy eye target at 10 Hz (Alpha-resonance) to completely override top-down foveal suppression.",
   "lblSettingSynopLockY": "Strict Horizontal Mode (Lock Y):",
-  "helpSynopLockY": "Locks the vertical axis to zero. Ideal for treating standard horizontal strabismus without fat-finger errors."
+  "helpSynopLockY": "Locks the vertical axis to zero. Ideal for treating standard horizontal strabismus without fat-finger errors.",
+  "lblActiveProfile": "Active Patient:",
+  "placeholderNewProfile": "Enter Patient Name...",
+  "btnAddProfile": "Add",
+  "btnDeleteProfile": "Delete Profile",
+  "btnExportCSV": "📊 Export CSV Report",
+  "btnClearHistory": "🧹 Clear History",
+  "chartPlaceholder": "Complete at least 2 sessions to plot your contrast sensitivity trend line.",
+  "msgEmptyName": "❌ Patient name cannot be empty!",
+  "msgConfirmDelete": "⚠️ Delete profile \"{name}\"? This will cascaded-delete all their historical training sessions!",
+  "msgCannotDeleteLast": "❌ Cannot delete the only remaining patient profile in the database!",
+  "msgConfirmClear": "⚠️ Completely purge all training history for this patient? This action is permanent!"
 }

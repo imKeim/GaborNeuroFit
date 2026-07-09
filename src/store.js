@@ -3,6 +3,8 @@
  * Copyright (C) 2026 Pavel Korotkov
  */
 
+import { DataRepository } from './store/repository.js';
+
 export const Store = {
     state: {
         sessionId: 'session_' + Date.now(),
@@ -335,36 +337,20 @@ export const Store = {
 
     saveSession() {
         if (this.state.total === 0) return;
-        try {
-            const history = JSON.parse(localStorage.getItem('gabor_history_v2') || '[]');
-            const currentSession = {
-                id: this.state.sessionId,
-                score: this.state.score,
-                total: this.state.total,
-                level: this.state.currentLevel,
-                contrast: Math.round(this.state.autoContrast * 100),
-                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                protocol: this.state.presetMode,
-                speed: this.state.flashDurationMode,
-                isAnaglyph: this.state.isAnaglyphEnabled,
-                balance: Math.round(this.state.strongEyeContrastFactor * 100)
-            };
-            
-            const existingIdx = history.findIndex(h => h.id === this.state.sessionId);
-            if (existingIdx > -1) {
-                history[existingIdx] = currentSession;
-            } else {
-                history.push(currentSession);
-            }
-            
-            history.sort((a, b) => b.score - a.score);
-            localStorage.setItem('gabor_history_v2', JSON.stringify(history.slice(0, 7)));
-        } catch (e) {}
+        DataRepository.saveSession(
+            this.state.sessionId,
+            this.state.score,
+            this.state.total,
+            this.state.currentLevel,
+            this.state.autoContrast,
+            this.state.presetMode,
+            this.state.flashDurationMode,
+            this.state.isAnaglyphEnabled,
+            this.state.strongEyeContrastFactor
+        );
     },
 
     getHistory() {
-        try {
-            return JSON.parse(localStorage.getItem('gabor_history_v2') || '[]');
-        } catch (e) { return []; }
+        return DataRepository.getSessionsForActiveUser();
     }
 };

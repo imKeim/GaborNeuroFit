@@ -5,9 +5,10 @@
 
 // Import core dependencies
 import { Store } from './store.js';
+import { DataRepository } from './store/repository.js';
 import { drawFusionTestPattern } from './engine/gabor.js';
 import { initAudio, playError, playSuccess } from './engine/audio.js';
-import { updateScoreboard, updateLeaderboard, drawIdleState, updateStatusBar } from './ui/screen.js';
+import { updateScoreboard, updateLeaderboard, drawIdleState, updateStatusBar, renderProgressChart } from './ui/screen.js';
 import { initModals, showCustomAlert, closeCustomAlert } from './ui/modal.js';
 import { bindInputControls } from './ui/controls.js';
 import { TrialController, TrialState } from './controller/trial.js';
@@ -79,6 +80,14 @@ export async function setLanguage(lang) {
         const key = el.getAttribute('data-i18n-html');
         if (t[key] !== undefined) {
             el.innerHTML = t[key];
+        }
+    });
+
+    // Declaratively resolve input placeholders safely (Итерация 4)
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (t[key] !== undefined) {
+            el.placeholder = t[key];
         }
     });
 
@@ -163,11 +172,37 @@ function bindLangSelectors() {
     }
 }
 
+// Refresh and render entire multi-user statistics dashboard synchronously (SSoT compliant)
+function refreshStatsUI() {
+    const activeUid = DataRepository.getActiveProfileId();
+    const profiles = DataRepository.getProfiles();
+    const sessions = DataRepository.getSessionsForActiveUser();
+
+    const dropdown = document.getElementById('select-active-profile');
+    if (dropdown) {
+        dropdown.innerHTML = profiles.map(p => 
+            `<option value="${p.id}" ${p.id === activeUid ? 'selected' : ''}>👤 ${p.name}</option>`
+        ).join('');
+    }
+
+    renderProgressChart(sessions, activeTranslations);
+    updateLeaderboard(sessions, activeTranslations, Store.state.currentLang);
+
+    const statsModal = document.getElementById('stats-modal');
+    if (window.twemoji && statsModal) {
+        window.twemoji.parse(statsModal);
+    }
+}
+
 /**
  * Orchestrator bootstrap initialization block
  */
 window.addEventListener('load', async () => {
     Store.loadSettings();
+
+    // Initialize Relational Multi-Patient Local Database (Итерация 4)
+    DataRepository.init();
+    DataRepository.migrateLegacyDatabase();
 
     // Instantiate core controllers with WebGL Canvas and Overlay Context
     trialController = new TrialController(
@@ -221,9 +256,143 @@ window.addEventListener('load', async () => {
             saveSettingsFromUI();
         },
         () => {
-            updateLeaderboard(Store.getHistory(), activeTranslations, Store.state.currentLang);
+            refreshStatsUI();
         }
     );
+
+    // Bind Relational Multi-Patient Interactive Events (Итерация 4)
+    const selectActiveProfile = document.getElementById('select-active-profile');
+    if (selectActiveProfile) {
+        selectActiveProfile.addEventListener('change', () => {
+            DataRepository.setActiveProfileId(selectActiveProfile.value);
+            
+            // Symmetrical Session Reset: Completely purge RAM metrics to avoid patient mixing
+            Store.state.score = 0;
+            Store.state.total = 0;
+            Store.state.sessionId = 'session_' + Date.now();
+            Store.resetSessionProgress();
+            
+            updateScoreboard(Store.state, activeTranslations);
+            refreshStatsUI();
+        });
+    }
+
+    const btnAddProfile = document.getElementById('btn-add-profile');
+    const inputNewProfile = document.getElementById('input-new-profile');
+    if (btnAddProfile && inputNewProfile) {
+        btnAddProfile.addEventListener('click', () => {
+            const name = inputNewProfile.value.trim();
+            if (!name) {
+                showCustomAlert(activeTranslations.titleSilver || "GaborNeuroFit", activeTranslations.msgEmptyName);
+                return;
+            }
+            const newProf = DataRepository.createProfile(name);
+            if (newProf) {
+                DataRepository.setActiveProfileId(newProf.id);
+                inputNewProfile.value = '';
+                
+                // Symmetrical Session Reset
+                Store.state.score = 0;
+                Store.state.total = 0;
+                Store.state.sessionId = 'session_' + Date.now();
+                Store.resetSessionProgress();
+                
+                updateScoreboard(Store.state, activeTranslations);
+                refreshStatsUI();
+            }
+        });
+    }
+
+    const btnDeleteProfile = document.getElementById('btn-delete-profile');
+    if (btnDeleteProfile) {
+        btnDeleteProfile.addEventListener('click', () => {
+            const activeUid = DataRepository.getActiveProfileId();
+            const profiles = DataRepository.getProfiles();
+            const activeProf = profiles.find(p => p.id === activeUid);
+            if (!activeProf) return;
+
+            if (profiles.length <= 1) {
+                showCustomAlert(activeTranslations.titleSilver || "GaborNeuroFit", activeTranslations.msgCannotDeleteLast);
+                return;
+            }
+
+            const rawConfirm = activeTranslations.msgConfirmDelete || "Delete profile \"{name}\"?";
+            const confirmText = rawConfirm.replace('{name}', activeProf.name);
+
+            if (confirm(confirmText)) {
+                DataRepository.deleteProfile(activeUid);
+                
+                // Symmetrical Session Reset
+                Store.state.score = 0;
+                Store.state.total = 0;
+                Store.state.sessionId = 'session_' + Date.now();
+                Store.resetSessionProgress();
+
+                updateScoreboard(Store.state, activeTranslations);
+                refreshStatsUI();
+            }
+        });
+    }
+
+    const btnClearHistory = document.getElementById('btn-clear-history');
+    if (btnClearHistory) {
+        btnClearHistory.addEventListener('click', () => {
+            const confirmText = activeTranslations.msgConfirmClear || "Are you sure you want to clear history?";
+            if (confirm(confirmText)) {
+                DataRepository.clearActiveUserHistory();
+                
+                // Symmetrical Session Reset
+                Store.state.score = 0;
+                Store.state.total = 0;
+                Store.state.sessionId = 'session_' + Date.now();
+                Store.resetSessionProgress();
+
+                updateScoreboard(Store.state, activeTranslations);
+                refreshStatsUI();
+            }
+        });
+    }
+
+    const btnExportCsv = document.getElementById('btn-export-csv');
+    if (btnExportCsv) {
+        btnExportCsv.addEventListener('click', () => {
+            const sessions = DataRepository.getSessionsForActiveUser();
+            if (sessions.length === 0) return;
+
+            const headers = ["Date", "Score", "Total", "Accuracy %", "Stage", "Contrast %", "Protocol", "Speed Mode", "3D Anaglyph", "Contrast Balancer %"];
+            
+            const rows = sessions.map(s => {
+                const dateStr = new Date(s.timestamp).toISOString().replace(/T/, ' ').replace(/\..+/, '');
+                const accuracy = s.total > 0 ? ((s.score / s.total) * 100).toFixed(1) : '0';
+                return [
+                    `"${dateStr}"`,
+                    s.score,
+                    s.total,
+                    `"${accuracy}%"`,
+                    s.level,
+                    `"${s.contrast}%"`,
+                    `"${s.protocol}"`,
+                    `"${s.speed}"`,
+                    s.isAnaglyph ? "TRUE" : "FALSE",
+                    `"${s.balance}%"`
+                ].join(',');
+            });
+
+            const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(','), ...rows].join('\n');
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            
+            const activeUid = DataRepository.getActiveProfileId();
+            const activeProf = DataRepository.getProfiles().find(p => p.id === activeUid);
+            const nameSafe = activeProf ? activeProf.name.replace(/[^a-z0-9]/gi, '_') : 'Patient';
+            
+            link.setAttribute("download", `gabor_progress_${nameSafe}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    }
 
     bindInputControls({
         onAnswer: (choice) => trialController.submitAnswer(choice),
