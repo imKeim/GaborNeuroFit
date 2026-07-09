@@ -6,7 +6,7 @@
 import { Store } from '../store.js';
 import { AsyncResourceTracker } from '../utils/tracker.js';
 import { drawSynoptophoreTargets } from '../engine/synop_render.js';
-import { playCue, playSuccess, playError } from '../engine/audio.js';
+import { playCue, playSuccess, playError, playSlip } from '../engine/audio.js';
 import { updateScoreboard } from '../ui/screen.js';
 
 export class SynoptophoreController {
@@ -37,17 +37,22 @@ export class SynoptophoreController {
                 // 10 Hz Alpha-Resonance mathematical oscillation (0.0 to 1.0)
                 const factor = 0.5 - 0.5 * Math.cos(elapsed * 0.062831853);
                 drawSynoptophoreTargets(this.overlayCanvas, this.overlayCtx, Store.state, factor);
-                this.tracker.requestAnimationFrame(loop);
+                this.flickerFrameId = this.tracker.requestAnimationFrame(loop);
             } else {
                 this.isFlickering = false;
                 drawSynoptophoreTargets(this.overlayCanvas, this.overlayCtx, Store.state, 1.0);
             }
         };
-        this.tracker.requestAnimationFrame(loop);
+        this.flickerFrameId = this.tracker.requestAnimationFrame(loop);
     }
 
     stopFlickerLoop() {
         this.isFlickering = false;
+        if (this.flickerFrameId) {
+            cancelAnimationFrame(this.flickerFrameId);
+            this.tracker.animationFrames.delete(this.flickerFrameId);
+            this.flickerFrameId = null;
+        }
         drawSynoptophoreTargets(this.overlayCanvas, this.overlayCtx, Store.state, 1.0);
     }
 
@@ -175,8 +180,8 @@ export class SynoptophoreController {
             .replace('{start}', Math.round(startDist).toString())
             .replace('{percent}', percent.toString());
 
-        // Play negative acoustic feedback
-        playError(s.isMuted);
+        // Play descending vergence slip acoustic feedback
+        playSlip(s.isMuted);
 
         // UX Master Polish: Automatically restore Gabor circle offsets to starting calibration coordinates
         s.synopTargetX = this.startX;

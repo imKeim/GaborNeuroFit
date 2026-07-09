@@ -33,7 +33,8 @@ const CONFIG_SCHEMA = [
     { id: 'chk-synop-lazy-grid', key: 'synopShowLazyGrid', type: 'checkbox' },
     { id: 'chk-synop-strong-grid', key: 'synopShowStrongGrid', type: 'checkbox' },
     { id: 'select-target-size', key: 'synopTargetSize', type: 'int' },
-    { id: 'chk-synop-flicker', key: 'synopFlickerActive', type: 'checkbox' }
+    { id: 'chk-synop-flicker', key: 'synopFlickerActive', type: 'checkbox' },
+    { id: 'chk-synop-lock-y', key: 'synopLockVertical', type: 'checkbox' }
 ];
 
 export class SettingsController {

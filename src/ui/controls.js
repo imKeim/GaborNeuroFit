@@ -20,7 +20,6 @@ export function bindInputControls(handlers) {
 
     let synopStartX = 0;
     let synopStartY = 0;
-    let lastTapTime = 0; 
     let isMouseDragging = false; // Flag to map PC mouse dragging gestures
 
     // High-performance active key tracking (Game Loop Pattern)
@@ -48,6 +47,8 @@ export function bindInputControls(handlers) {
         if (holdRight && !holdLeft) dx = 1;
         if (holdUp && !holdDown) dy = -1;
         if (holdDown && !holdUp) dy = 1;
+        
+        if (s.synopLockVertical) dy = 0; // Enforce Y-Axis Lock
 
         if (dx !== 0 || dy !== 0) {
             Store.updateState('synopTargetX', s.synopTargetX + dx);
@@ -90,6 +91,9 @@ export function bindInputControls(handlers) {
             if (s.appMode === 'synoptophore' && s.synopState === 'align') {
                 Store.updateState('synopTargetX', 0);
                 Store.updateState('synopTargetY', 0);
+                if (typeof handlers.onSynopReset === 'function') {
+                    handlers.onSynopReset();
+                }
                 if (typeof handlers.onSynopDrag === 'function') {
                     handlers.onSynopDrag();
                 }
@@ -117,10 +121,10 @@ export function bindInputControls(handlers) {
                 const diffY = event.clientY - swipeStartY;
                 const ratio = 256.0 / container.clientWidth;
                 const logicalDeltaX = Math.round(diffX * ratio);
-                const logicalDeltaY = Math.round(diffY * ratio);
+                const logicalDeltaY = s.synopLockVertical ? 0 : Math.round(diffY * ratio);
 
                 Store.updateState('synopTargetX', synopStartX + logicalDeltaX);
-                Store.updateState('synopTargetY', synopStartY + logicalDeltaY);
+                Store.updateState('synopTargetY', s.synopLockVertical ? 0 : (synopStartY + logicalDeltaY));
 
                 if (typeof handlers.onSynopDrag === 'function') {
                     handlers.onSynopDrag();
@@ -170,10 +174,10 @@ export function bindInputControls(handlers) {
                     const diffY = touch.clientY - swipeStartY;
                     const ratio = 256.0 / container.clientWidth;
                     const logicalDeltaX = Math.round(diffX * ratio);
-                    const logicalDeltaY = Math.round(diffY * ratio);
+                    const logicalDeltaY = s.synopLockVertical ? 0 : Math.round(diffY * ratio);
 
                     Store.updateState('synopTargetX', synopStartX + logicalDeltaX);
-                    Store.updateState('synopTargetY', synopStartY + logicalDeltaY);
+                    Store.updateState('synopTargetY', s.synopLockVertical ? 0 : (synopStartY + logicalDeltaY));
 
                     if (typeof handlers.onSynopDrag === 'function') {
                         handlers.onSynopDrag();
@@ -192,32 +196,46 @@ export function bindInputControls(handlers) {
 
         workspace.addEventListener('touchend', (event) => {
             const s = Store.state;
+            const touch = event.changedTouches[0];
+            const deltaXTotal = touch.clientX - swipeStartX;
+            const deltaYTotal = touch.clientY - swipeStartY;
+            const deltaTime = Date.now() - swipeStartTime;
+
             if (s.appMode === 'synoptophore') {
                 if (s.synopState === 'align') {
-                    const now = Date.now();
-                    if (now - lastTapTime < 300) {
-                        Store.updateState('synopTargetX', 0);
-                        Store.updateState('synopTargetY', 0);
-                        if (typeof handlers.onSynopDrag === 'function') {
+                    const isTapGesture = deltaTime < 250 && Math.abs(deltaXTotal) < 8 && Math.abs(deltaYTotal) < 8;
+
+                    if (isTapGesture) {
+                        const rect = container.getBoundingClientRect();
+                        const nx = (touch.clientX - rect.left) / rect.width;
+                        const ny = (touch.clientY - rect.top) / rect.height;
+                        const edgeZone = 0.25; // Define 25% outer margins as active touch zones
+
+                        let didNudge = false;
+                        
+                        // Execute orthogonal single-pixel shifts
+                        if (nx < edgeZone) { Store.updateState('synopTargetX', s.synopTargetX - 1); didNudge = true; }
+                        else if (nx > 1 - edgeZone) { Store.updateState('synopTargetX', s.synopTargetX + 1); didNudge = true; }
+                        
+                        if (!s.synopLockVertical) {
+                            if (ny < edgeZone) { Store.updateState('synopTargetY', s.synopTargetY - 1); didNudge = true; }
+                            else if (ny > 1 - edgeZone) { Store.updateState('synopTargetY', s.synopTargetY + 1); didNudge = true; }
+                        }
+
+                        if (didNudge && typeof handlers.onSynopDrag === 'function') {
                             handlers.onSynopDrag();
                         }
                     }
-                    lastTapTime = now;
                 }
                 return; 
             }
-
-            const touch = event.changedTouches[0];
-            const deltaX = touch.clientX - swipeStartX;
-            const deltaY = touch.clientY - swipeStartY;
-            const deltaTime = Date.now() - swipeStartTime;
 
             const minSwipeDistance = 45; 
             const maxVerticalDeviation = 45; 
             const maxSwipeTime = 300; 
 
-            if (deltaTime <= maxSwipeTime && Math.abs(deltaX) >= minSwipeDistance && Math.abs(deltaY) <= maxVerticalDeviation) {
-                const direction = deltaX < 0 ? 'left' : 'right';
+            if (deltaTime <= maxSwipeTime && Math.abs(deltaXTotal) >= minSwipeDistance && Math.abs(deltaYTotal) <= maxVerticalDeviation) {
+                const direction = deltaXTotal < 0 ? 'left' : 'right';
                 if (typeof handlers.onAnswer === 'function') {
                     handlers.onAnswer(direction);
                 }
@@ -279,6 +297,7 @@ export function bindInputControls(handlers) {
     }
 
     window.addEventListener('keydown', (event) => {
+        if (event.repeat) return; // Prevent typematic OS keyboard repeat spam for sounds & state transitions
         const key = event.key.toLowerCase();
         
         const settingsModal = document.getElementById('settings-modal');
@@ -338,6 +357,9 @@ export function bindInputControls(handlers) {
                     event.preventDefault();
                     Store.updateState('synopTargetX', 0);
                     Store.updateState('synopTargetY', 0);
+                    if (typeof handlers.onSynopReset === 'function') {
+                        handlers.onSynopReset();
+                    }
                     if (typeof handlers.onSynopDrag === 'function') {
                         handlers.onSynopDrag();
                     }

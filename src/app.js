@@ -6,7 +6,7 @@
 // Import core dependencies
 import { Store } from './store.js';
 import { drawFusionTestPattern } from './engine/gabor.js';
-import { initAudio } from './engine/audio.js';
+import { initAudio, playError } from './engine/audio.js';
 import { updateScoreboard, updateLeaderboard, drawIdleState, updateStatusBar } from './ui/screen.js';
 import { initModals, showCustomAlert, closeCustomAlert } from './ui/modal.js';
 import { bindInputControls } from './ui/controls.js';
@@ -225,6 +225,9 @@ window.addEventListener('load', async () => {
     bindInputControls({
         onAnswer: (choice) => trialController.submitAnswer(choice),
         onStartFlash: () => runFlash(),
+        onSynopReset: () => {
+            playError(Store.state.isMuted);
+        },
         onSynopDrag: () => {
             // Prevent static draw conflict if animation loop is active
             if (!Store.state.synopFlickerActive) {

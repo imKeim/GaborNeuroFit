@@ -52,10 +52,18 @@ export const Store = {
         synopShowStrongGrid: false,
         synopTargetSize: 65,            
         synopScore: 0,
-        synopFlickerEnabled: false      // 10Hz resonance toggle for Synoptophore
+        synopFlickerEnabled: false,     // 10Hz resonance toggle for Synoptophore
+        synopLockVertical: false        // Y-Axis physical restriction lock
     },
 
     updateState(key, value) {
+        if (key === 'synopLockVertical') {
+            this.state.synopLockVertical = !!value;
+            if (this.state.synopLockVertical) {
+                this.state.synopTargetY = 0; // Instantly neutralize any existing vertical deviation
+            }
+            return;
+        }
         if (key === 'currentLevel') {
             this.state.currentLevel = Math.max(1, Math.min(5, parseInt(value) || 1));
             return;
@@ -151,6 +159,7 @@ export const Store = {
             this.state.synopTargetSize = parseInt(localStorage.getItem('gabor_synop_target_size') || '65');
             this.state.synopScore = parseInt(localStorage.getItem('gabor_synop_score') || '0');
             this.state.synopFlickerActive = localStorage.getItem('gabor_synop_flicker_active') === 'true';
+            this.state.synopLockVertical = localStorage.getItem('gabor_synop_lock_y') === 'true';
         } catch (e) {}
         
         if (this.state.presetMode !== 'custom') {
@@ -197,6 +206,7 @@ export const Store = {
             localStorage.setItem('gabor_synop_target_size', this.state.synopTargetSize.toString());
             localStorage.setItem('gabor_synop_score', this.state.synopScore.toString());
             localStorage.setItem('gabor_synop_flicker_active', this.state.synopFlickerActive ? "true" : "false");
+            localStorage.setItem('gabor_synop_lock_y', this.state.synopLockVertical ? "true" : "false");
         } catch (e) {}
     },
 

@@ -104,6 +104,37 @@ export function playError(isMuted) {
     }
 }
 
+// Play smooth descending sweep for vergence slip/reset (360 Hz exponentially sliding to 110 Hz)
+export function playSlip(isMuted) {
+    if (isMuted) return;
+    try {
+        initAudio();
+        const now = audioCtx.currentTime + 0.015;
+        const duration = 0.48;
+        
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(360, now);
+        // Exponential ramp provides a natural acoustic sliding feel
+        osc.frequency.exponentialRampToValueAtTime(110, now + duration); 
+        
+        // Volume envelope with quick attack and smooth decay
+        gainNode.gain.setValueAtTime(0, now);
+        gainNode.gain.linearRampToValueAtTime(0.24, now + 0.02);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        osc.start(now);
+        osc.stop(now + duration);
+    } catch (e) {
+        console.warn("Acoustic slip feedback generation bypassed:", e);
+    }
+}
+
 // Play positive dopamine-releasing Crystal Chime major chord (La-Do#-Mi / A-C#-E)
 export function playSuccess(isMuted) {
     if (isMuted) return;
