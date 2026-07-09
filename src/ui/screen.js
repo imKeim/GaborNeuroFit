@@ -88,6 +88,75 @@ export function renderProgressChart(sessions, translations) {
     `;
 }
 
+// Procedurally render lightweight SVG vergence deviation chart
+export function renderSynopProgressChart(sessions, translations) {
+    const container = document.getElementById('synop-chart-container');
+    if (!container) return;
+
+    if (!sessions || sessions.length < 2) {
+        container.innerHTML = `<span style="font-size: 11px; color: #8e8e93; text-align: center; padding: 0 10px; font-weight: 300; line-height: 1.45;">${translations.chartPlaceholder}</span>`;
+        return;
+    }
+
+    const chartSessions = sessions.slice(0, 10).reverse();
+    const deviations = chartSessions.map(s => {
+        const tx = s.synopTargetX !== undefined ? s.synopTargetX : 0;
+        const ty = s.synopTargetY !== undefined ? s.synopTargetY : 0;
+        return Math.sqrt(tx * tx + ty * ty) / PIXELS_PER_PRISM_DIOPTER;
+    });
+
+    const datasetMax = Math.max(...deviations);
+    const maxVal = Math.max(datasetMax, 5.0); // minimum 5Δ vertical bounds corridor
+    const minVal = 0.0;
+    const valRange = maxVal;
+
+    const width = 320;
+    const height = 120;
+    const leftMargin = 32;
+    const rightMargin = 15;
+    const topMargin = 15;
+    const bottomMargin = 15;
+
+    const W = width - leftMargin - rightMargin;
+    const H = height - topMargin - bottomMargin;
+    const stepX = W / (chartSessions.length - 1);
+
+    const points = [];
+    const circles = [];
+
+    chartSessions.forEach((s, idx) => {
+        const tx = s.synopTargetX !== undefined ? s.synopTargetX : 0;
+        const ty = s.synopTargetY !== undefined ? s.synopTargetY : 0;
+        const d = Math.sqrt(tx * tx + ty * ty) / PIXELS_PER_PRISM_DIOPTER;
+        
+        const x = leftMargin + idx * stepX;
+        // Alignment trajectory: 0.0Δ (perfect) is at top margin, worst sits at bottom
+        const y = topMargin + (d / valRange) * H;
+        points.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+        circles.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="#eab308" stroke="#1c2331" stroke-width="1.5" />`);
+    });
+
+    container.innerHTML = `
+        <svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" style="overflow: visible; display: block;">
+            <defs>
+                <linearGradient id="synop-grad" x1="${leftMargin}" y1="0" x2="${width - rightMargin}" y2="0" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="#3b90ff" />
+                    <stop offset="100%" stop-color="#eab308" />
+                </linearGradient>
+            </defs>
+            
+            <line x1="${leftMargin}" y1="${topMargin}" x2="${width - rightMargin}" y2="${topMargin}" stroke="rgba(255,255,255,0.04)" stroke-dasharray="2,2" />
+            <line x1="${leftMargin}" y1="${topMargin + H}" x2="${width - rightMargin}" y2="${topMargin + H}" stroke="rgba(255,255,255,0.04)" stroke-dasharray="2,2" />
+            
+            <text x="${leftMargin - 6}" y="${topMargin + 4}" fill="rgba(255,255,255,0.3)" font-size="9px" text-anchor="end" font-weight="bold">0.0Δ</text>
+            <text x="${leftMargin - 6}" y="${topMargin + H + 3}" fill="rgba(255,255,255,0.3)" font-size="9px" text-anchor="end" font-weight="bold">${maxVal.toFixed(1)}Δ</text>
+            
+            <polyline points="${points.join(' ')}" fill="none" stroke="url(#synop-grad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+            ${circles.join('')}
+        </svg>
+    `;
+}
+
 // Clean both Gabor and HUD canvases back to stable, non-fatiguing foveal neutral gray states
 export function drawIdleState(gaborCanvas, gaborCtx, overlayCanvas, overlayCtx, isFusionLockEnabled) {
     // 1. Clear and fill bottom GPU canvas with sRGB neutral gray
@@ -293,6 +362,66 @@ export function updateLeaderboard(historyList, translations, currentLang) {
                 <!-- Row 3: Technical Clinical Settings -->
                 <div style="font-size: 11px; color: #a1a1aa; line-height: 1.35; word-wrap: break-word; width: 100%;">
                     ${line3Text}
+                </div>
+            </li>
+        `;
+    }).join('');
+}
+
+// Populate local highscores table for motor vergence history (Итерация 4)
+export function updateSynopLeaderboard(historyList, translations, currentLang) {
+    const leaderboardList = document.getElementById('leaderboard-list-synop');
+    if (!leaderboardList) return;
+    const t = translations;
+
+    if (historyList.length === 0) {
+        leaderboardList.innerHTML = `<li class="leaderboard-item" style="justify-content: center; color: #cbd5e1; text-align: center; padding: 14px 0;">${t.noHistory}</li>`;
+        return;
+    }
+
+    leaderboardList.innerHTML = historyList.map((item, idx) => {
+        const targetX = item.synopTargetX !== undefined ? item.synopTargetX : 0;
+        const targetY = item.synopTargetY !== undefined ? item.synopTargetY : 0;
+        const startDist = item.synopStartDistance || 1;
+        const outcome = item.synopOutcome || 'slip';
+
+        const pdX = (Math.abs(targetX) / PIXELS_PER_PRISM_DIOPTER).toFixed(2);
+        const pdY = (Math.abs(targetY) / PIXELS_PER_PRISM_DIOPTER).toFixed(2);
+
+        const signX = targetX > 0 ? '+' : (targetX < 0 ? '-' : '');
+        const signY = targetY > 0 ? '+' : (targetY < 0 ? '-' : '');
+
+        const dateStr = item.timestamp 
+            ? new Date(item.timestamp).toLocaleDateString(currentLang === 'ru' ? 'ru-RU' : 'en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })
+            : '00:00';
+
+        const currentDist = Math.sqrt(targetX * targetX + targetY * targetY);
+        const percent = Math.max(0, Math.min(100, Math.round(100 * (1 - currentDist / startDist))));
+
+        const outcomeText = outcome === 'success'
+            ? (currentLang === 'ru' ? `<span style="color: #22c55e; font-weight: bold;">Идеальное слияние 100%! 🏆</span>` : `<span style="color: #22c55e; font-weight: bold;">Perfect Fusion 100%! 🏆</span>`)
+            : (currentLang === 'ru' ? `Срыв на ${Math.round(currentDist)}px (${percent}% удержания)` : `Slipped at ${Math.round(currentDist)}px (${percent}% hold, started at ${Math.round(startDist)}px)`);
+
+        const line2Text = currentLang === 'ru'
+            ? `Угол: X: ${signX}${Math.abs(targetX)}px (${signX}${pdX}Δ) | Y: ${signY}${Math.abs(targetY)}px (${signY}${pdY}Δ)`
+            : `Angle: X: ${signX}${Math.abs(targetX)}px (${signX}${pdX}Δ) | Y: ${signY}${Math.abs(targetY)}px (${signY}${pdY}Δ)`;
+
+        return `
+            <li class="leaderboard-item" style="flex-direction: column; align-items: flex-start; gap: 4px; padding-bottom: 8px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <div style="width: 100%; display: flex; justify-content: space-between; font-weight: bold; color: rgba(255,255,255,0.4); font-size: 11px;">
+                    <span>#${idx + 1} (${dateStr})</span>
+                    <span>${currentLang === 'ru' ? '🧲 Вергенция' : '🧲 Vergence'}</span>
+                </div>
+                <div style="font-size: 13px; color: #f1f3f9; font-weight: 500; line-height: 1.35; word-wrap: break-word;">
+                    ${line2Text}
+                </div>
+                <div style="font-size: 11px; color: #a1a1aa; line-height: 1.35; word-wrap: break-word; width: 100%;">
+                    ${outcomeText}
                 </div>
             </li>
         `;

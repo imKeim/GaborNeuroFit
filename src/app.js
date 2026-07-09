@@ -8,7 +8,7 @@ import { Store } from './store.js';
 import { DataRepository } from './store/repository.js';
 import { drawFusionTestPattern } from './engine/gabor.js';
 import { initAudio, playError, playSuccess } from './engine/audio.js';
-import { updateScoreboard, updateLeaderboard, drawIdleState, updateStatusBar, renderProgressChart } from './ui/screen.js';
+import { updateScoreboard, updateLeaderboard, drawIdleState, updateStatusBar, renderProgressChart, renderSynopProgressChart, updateSynopLeaderboard } from './ui/screen.js';
 import { initModals, showCustomAlert, closeCustomAlert, showCustomConfirm } from './ui/modal.js';
 import { bindInputControls } from './ui/controls.js';
 import { TrialController, TrialState } from './controller/trial.js';
@@ -176,7 +176,6 @@ function bindLangSelectors() {
 function refreshStatsUI() {
     const activeUid = DataRepository.getActiveProfileId();
     const profiles = DataRepository.getProfiles();
-    const sessions = DataRepository.getSessionsForActiveUser();
 
     const dropdown = document.getElementById('select-active-profile');
     if (dropdown) {
@@ -185,8 +184,15 @@ function refreshStatsUI() {
         ).join('');
     }
 
-    renderProgressChart(sessions, activeTranslations);
-    updateLeaderboard(sessions, activeTranslations, Store.state.currentLang);
+    // 2. Refresh Gabor Tab (Sensory database queries)
+    const gaborSessions = DataRepository.getGaborSessionsForActiveUser();
+    renderProgressChart(gaborSessions, activeTranslations);
+    updateLeaderboard(gaborSessions, activeTranslations, Store.state.currentLang);
+
+    // 3. Refresh Synoptophore Tab (Motor database queries)
+    const synopSessions = DataRepository.getSynopSessionsForActiveUser();
+    renderSynopProgressChart(synopSessions, activeTranslations);
+    updateSynopLeaderboard(synopSessions, activeTranslations, Store.state.currentLang);
 
     const statsModal = document.getElementById('stats-modal');
     if (window.twemoji && statsModal) {
@@ -226,6 +232,40 @@ window.addEventListener('load', async () => {
         showCustomAlert
     );
 
+    // Symmetrical Monkey-Patching (Decorator Pattern) to capture motor kinematics without bloating physical loops
+    const originalSuccess = synoptophoreController.completeSuccess;
+    synoptophoreController.completeSuccess = function() {
+        const startDist = Store.state.synopStartDistance;
+        originalSuccess.call(synoptophoreController);
+        
+        // Save successful vergence sweep
+        DataRepository.saveSession(
+            Store.state.sessionId, 0, 0, 0, 0, 'synoptophore', 
+            Store.state.synopPullSpeed, Store.state.isAnaglyphEnabled, 
+            Store.state.strongEyeContrastFactor, 0, 0, 
+            startDist, 'success'
+        );
+        Store.state.sessionId = 'session_' + Date.now(); // rotate ID for the subsequent session
+    };
+
+    const originalBreak = synoptophoreController.breakActiveFusion;
+    synoptophoreController.breakActiveFusion = function() {
+        const targetX = Store.state.synopTargetX;
+        const targetY = Store.state.synopTargetY;
+        const startDist = Store.state.synopStartDistance;
+        
+        originalBreak.call(synoptophoreController);
+        
+        // Save slipped vergence sweep
+        DataRepository.saveSession(
+            Store.state.sessionId, 0, 0, 0, 0, 'synoptophore', 
+            Store.state.synopPullSpeed, Store.state.isAnaglyphEnabled, 
+            Store.state.strongEyeContrastFactor, targetX, targetY, 
+            startDist, 'slip'
+        );
+        Store.state.sessionId = 'session_' + Date.now(); // rotate ID
+    };
+
     settingsController = new SettingsController(() => {
         // Callback triggered whenever settings forms are synchronized
         updateStatusBar(Store.state, activeTranslations);
@@ -239,7 +279,7 @@ window.addEventListener('load', async () => {
     initModals(
         () => {
             Store.loadSettings();
-            
+                    
             if (btnFusionTest) {
                 if (trialController.isAnaglyphTestActive) {
                     btnFusionTest.style.background = '#3b90ff';
@@ -260,7 +300,41 @@ window.addEventListener('load', async () => {
         }
     );
 
-    // Bind Relational Multi-Patient Interactive Events (Итерация 4)
+    // Segmented Tabs Click Listeners
+    const tabGabor = document.getElementById('tab-gabor');
+    const tabSynop = document.getElementById('tab-synop');
+    const contentGabor = document.getElementById('tab-gabor-content');
+    const contentSynop = document.getElementById('tab-tab-synop-content');
+
+    if (tabGabor && tabSynop && contentGabor && contentSynop) {
+        tabGabor.addEventListener('click', () => {
+            tabGabor.classList.add('active');
+            tabSynop.classList.remove('active');
+                    
+            tabGabor.style.background = '#2b354a';
+            tabGabor.style.color = '#3b90ff';
+            tabSynop.style.background = 'transparent';
+            tabSynop.style.color = '#8e8e93';
+                    
+            contentGabor.style.display = 'block';
+            contentSynop.style.display = 'none';
+        });
+
+        tabSynop.addEventListener('click', () => {
+            tabSynop.classList.add('active');
+            tabGabor.classList.remove('active');
+                    
+            tabSynop.style.background = '#2b354a';
+            tabSynop.style.color = '#3b90ff';
+            tabGabor.style.background = 'transparent';
+            tabGabor.style.color = '#8e8e93';
+                    
+            contentSynop.style.display = 'block';
+            contentGabor.style.display = 'none';
+        });
+    }
+
+    // Bind Relational Multi-Patient Interactive Events
     const selectActiveProfile = document.getElementById('select-active-profile');
     if (selectActiveProfile) {
         selectActiveProfile.addEventListener('change', () => {
@@ -375,22 +449,27 @@ window.addEventListener('load', async () => {
             const sessions = DataRepository.getSessionsForActiveUser();
             if (sessions.length === 0) return;
 
-            const headers = ["Date", "Score", "Total", "Accuracy %", "Stage", "Contrast %", "Protocol", "Speed Mode", "3D Anaglyph", "Contrast Balancer %"];
-            
+            const headers = ["Date", "Mode", "Score/Total", "Accuracy %", "Gabor Stage", "Contrast Threshold %", "Contrast Balancer %", "Synop Deviation X (px)", "Synop Deviation Y (px)", "Synop Start Distance (px)", "Outcome"];
+                    
             const rows = sessions.map(s => {
                 const dateStr = new Date(s.timestamp).toISOString().replace(/T/, ' ').replace(/\..+/, '');
                 const accuracy = s.total > 0 ? ((s.score / s.total) * 100).toFixed(1) : '0';
+                        
+                const isSynop = s.protocol === 'synoptophore';
+                const modeLabel = isSynop ? "Synoptophore" : getCompactPresetLabel(s.protocol, Store.state.currentLang);
+                        
                 return [
                     `"${dateStr}"`,
-                    s.score,
-                    s.total,
-                    `"${accuracy}%"`,
-                    s.level,
-                    `"${s.contrast}%"`,
-                    `"${s.protocol}"`,
-                    `"${s.speed}"`,
-                    s.isAnaglyph ? "TRUE" : "FALSE",
-                    `"${s.balance}%"`
+                    `"${modeLabel}"`,
+                    isSynop ? `""` : `"${s.score}/${s.total}"`,
+                    isSynop ? `""` : `"${accuracy}%"`,
+                    isSynop ? `""` : s.level,
+                    isSynop ? `""` : `"${s.contrast}%"`,
+                    `"${s.balance}%"`,
+                    isSynop ? s.synopTargetX : `""`,
+                    isSynop ? s.synopTargetY : `""`,
+                    isSynop ? s.synopStartDistance.toFixed(0) : `""`,
+                    isSynop ? `"${s.synopOutcome.toUpperCase()}"` : `""`
                 ].join(',');
             });
 

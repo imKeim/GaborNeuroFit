@@ -154,5 +154,8 @@
   "confirmYes": "Yes",
   "confirmNo": "Cancel",
   "titleWarning": "⚠️ Warning",
-  "chartLegend": "📈 Progress Trend: Upward slope represents clinical improvement in cortical sensitivity (threshold reduction)."
+  "chartLegend": "📈 Progress Trend: Upward slope represents clinical improvement in cortical sensitivity (threshold reduction).",
+  "tabGabor": "🧿 Gabor",
+  "tabSynop": "🧲 Synoptophore",
+  "synopChartLegend": "📈 Vergence Progress: Upward slope represents clinical alignment toward 0.0Δ. Last 10 sessions."
 }

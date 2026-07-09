@@ -160,7 +160,7 @@ export class DataRepository {
      * Appends a newly acquired training session to the active patient context.
      * Implements a robust UPSERT engine based on the active session ID to prevent duplicate entry spam.
      */
-    static saveSession(sessionId, score, total, level, contrast, protocol, speed, isAnaglyph, balance) {
+    static saveSession(sessionId, score, total, level, contrast, protocol, speed, isAnaglyph, balance, targetX = null, targetY = null, startDistance = null, outcome = null) {
         try {
             const activeUid = this.getActiveProfileId();
             if (!activeUid) return;
@@ -177,7 +177,13 @@ export class DataRepository {
                 protocol: protocol,
                 speed: speed,
                 isAnaglyph: !!isAnaglyph,
-                balance: Math.round(balance * 100)
+                balance: Math.round(balance * 100),
+                    
+                // Polymorphic Synoptophore Kinematics (strictly nullified for Gabor sensory sessions)
+                synopTargetX: targetX !== null ? parseInt(targetX) : null,
+                synopTargetY: targetY !== null ? parseInt(targetY) : null,
+                synopStartDistance: startDistance !== null ? parseFloat(startDistance) : null,
+                synopOutcome: outcome || null
             };
 
             const existingIdx = sessions.findIndex(s => s.id === sessionId);
@@ -224,6 +230,20 @@ export class DataRepository {
         return sessions
             .filter(s => s.userId === activeUid)
             .sort((a, b) => b.timestamp - a.timestamp); // Chronological descending order
+    }
+
+    /**
+     * Retrieves exclusively sensory Gabor training sessions for the active user (SSoT compliant)
+     */
+    static getGaborSessionsForActiveUser() {
+        return this.getSessionsForActiveUser().filter(s => s.protocol !== 'synoptophore');
+    }
+
+    /**
+     * Retrieves exclusively motor Synoptophore training sessions for the active user (SSoT compliant)
+     */
+    static getSynopSessionsForActiveUser() {
+        return this.getSessionsForActiveUser().filter(s => s.protocol === 'synoptophore');
     }
 
     /**
