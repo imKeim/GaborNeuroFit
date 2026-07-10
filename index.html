@@ -603,9 +603,11 @@
                 </div>
 
                 <!-- Bottom Management Grid -->
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button id="btn-export-csv" class="close-btn" data-i18n="btnExportCSV" style="flex: 1; margin-top: 0; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.25); color: #22c55e; padding: 10px; font-size: 12px; font-weight: bold;"></button>
-                    <button id="btn-clear-history" class="close-btn" data-i18n="btnClearHistory" style="flex: 1; margin-top: 0; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; padding: 10px; font-size: 12px; font-weight: bold;"></button>
+                <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                    <button id="btn-export-csv" class="close-btn" data-i18n="btnExportCSV" style="flex: 1; min-width: 110px; margin-top: 0; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.25); color: #22c55e; padding: 10px; font-size: 12px; font-weight: bold;"></button>
+                    <button id="btn-import-csv" class="close-btn" data-i18n="btnImportCSV" style="flex: 1; min-width: 110px; margin-top: 0; background: rgba(59, 144, 255, 0.12); border: 1px solid rgba(59, 144, 255, 0.25); color: #3b90ff; padding: 10px; font-size: 12px; font-weight: bold;"></button>
+                    <input type="file" id="input-import-csv" accept=".csv" style="display: none;">
+                    <button id="btn-clear-history" class="close-btn" data-i18n="btnClearHistory" style="flex: 1; min-width: 110px; margin-top: 0; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; padding: 10px; font-size: 12px; font-weight: bold;"></button>
                 </div>
             </div>
             <button id="btn-close-stats" class="close-btn">OK</button>

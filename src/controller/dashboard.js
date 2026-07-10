@@ -228,5 +228,172 @@ export class DashboardController {
                 document.body.removeChild(link);
             });
         }
+
+        // Bind hidden file input trigger for zero-library CSV import
+        const btnImportCsv = document.getElementById('btn-import-csv');
+        const inputImportCsv = document.getElementById('input-import-csv');
+        if (btnImportCsv && inputImportCsv) {
+            btnImportCsv.addEventListener('click', () => {
+                inputImportCsv.click();
+            });
+
+            inputImportCsv.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.parseAndImportCSV(e.target.result);
+                    inputImportCsv.value = ''; // Reset file input to allow re-uploading same file
+                };
+                reader.readAsText(file, 'UTF-8');
+            });
+        }
+    }
+
+    // Zero-library high-performance CSV Relational Parser
+    parseAndImportCSV(text) {
+        const t = this.getTranslations();
+        try {
+            const lines = text.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
+            if (lines.length < 2) {
+                showCustomAlert(t.titleWarning || "Warning", t.msgImportError);
+                return;
+            }
+
+            // Zero-library po-symbol-by-symbol CSV line parser (handles quotes and emojis)
+            const parseLine = (line) => {
+                const result = [];
+                let current = '';
+                let inQuotes = false;
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        result.push(current.trim());
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                result.push(current.trim());
+                return result;
+            };
+
+            const headers = parseLine(lines[0]).map(h => h.replace(/^"|"$/g, '').trim());
+            const headerMap = {};
+            headers.forEach((h, idx) => {
+                headerMap[h] = idx;
+            });
+
+            const getCol = (row, colName, defaultVal = '') => {
+                const idx = headerMap[colName];
+                if (idx === undefined || idx >= row.length) return defaultVal;
+                return row[idx].replace(/^"|"$/g, '').trim();
+            };
+
+            const parsedSessions = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const row = parseLine(lines[i]);
+                if (row.length < 3) continue;
+
+                const dateStr = getCol(row, "Date");
+                if (!dateStr) continue;
+
+                let timestamp = Date.parse(dateStr);
+                if (isNaN(timestamp)) {
+                    timestamp = Date.now() - (lines.length - i) * 60000;
+                }
+
+                const scoreTotalStr = getCol(row, "Score/Total");
+                let score = 0;
+                let total = 0;
+                if (scoreTotalStr && scoreTotalStr.includes('/')) {
+                    const parts = scoreTotalStr.split('/');
+                    score = parseInt(parts[0]) || 0;
+                    total = parseInt(parts[1]) || 0;
+                }
+
+                const isAnaglyph = getCol(row, "Contrast Balancer %") !== "Off" && getCol(row, "Contrast Balancer %") !== "";
+                const balanceStr = getCol(row, "Contrast Balancer %").replace('%', '');
+                const balance = isAnaglyph ? (parseInt(balanceStr) || 30) / 100 : 0.3;
+
+                const outcome = getCol(row, "Outcome").toLowerCase();
+
+                let protocol = getCol(row, "Mode");
+                if (protocol.includes('🩹')) protocol = 'occlusion';
+                else if (protocol.includes('🕶️')) protocol = 'binocular';
+                else if (protocol.includes('🎯')) protocol = 'peripheral';
+                else if (protocol.includes('⚡')) protocol = 'blitz';
+                else if (protocol.includes('🌀')) protocol = 'flicker';
+                else if (protocol.includes('🧲') || protocol.toLowerCase().includes('vergence')) protocol = 'synoptophore';
+                else protocol = 'custom';
+
+                parsedSessions.push({
+                    id: 'imported_session_' + timestamp + '_' + Math.random().toString(36).substr(2, 5),
+                    timestamp: timestamp,
+                    score: score,
+                    total: total,
+                    level: parseInt(getCol(row, "Gabor Stage")) || 1,
+                    contrast: (parseInt(getCol(row, "Contrast Threshold %").replace('%', '')) || 50) / 100,
+                    protocol: protocol,
+                    speed: getCol(row, "Speed"),
+                    isAnaglyph: isAnaglyph,
+                    balance: balance,
+                    lazyEyeSide: getCol(row, "Lazy Eye Side").toLowerCase() || 'left',
+                    isFlicker: getCol(row, "10Hz Flicker") === "ON",
+                    isCrowding: getCol(row, "Visual Crowding") === "ON",
+                    isPeripheral: getCol(row, "Peripheral Shift") === "ON",
+                    isPermanentCross: getCol(row, "Permanent Cross") === "ON",
+                    targetX: parseInt(getCol(row, "Synop Deviation X (px)")) || null,
+                    targetY: parseInt(getCol(row, "Synop Deviation Y (px)")) || null,
+                    startDistance: parseFloat(getCol(row, "Synop Start Distance (px)")) || null,
+                    outcome: outcome || null
+                });
+            }
+
+            if (parsedSessions.length === 0) {
+                showCustomAlert(t.titleWarning || "Warning", t.msgImportError);
+                return;
+            }
+
+            const activeUid = DataRepository.getActiveProfileId();
+            const activeProf = DataRepository.getProfiles().find(p => p.id === activeUid);
+            const name = activeProf ? activeProf.name : "Patient";
+
+            const confirmText = (t.msgImportConfirm || "Import {count} sessions?")
+                .replace('{count}', parsedSessions.length)
+                .replace('{name}', name);
+
+            showCustomConfirm(
+                t.titleImportConfirm || "Import",
+                confirmText,
+                t.confirmYes || "Yes",
+                t.confirmNo || "Cancel",
+                (isConfirmed) => {
+                    if (isConfirmed) {
+                        parsedSessions.forEach(s => {
+                            DataRepository.saveSession(
+                                s.id, s.score, s.total, s.level, s.contrast, s.protocol, s.speed,
+                                s.isAnaglyph, s.balance, s.lazyEyeSide, s.isFlicker, s.isCrowding,
+                                s.isPeripheral, s.isPermanentCross, s.targetX, s.targetY, s.startDistance, s.outcome
+                            );
+                        });
+
+                        updateScoreboard(Store.state, t);
+                        this.refreshStatsUI();
+
+                        const successText = (t.msgImportSuccess || "Imported {count} sessions!")
+                            .replace('{count}', parsedSessions.length);
+                        showCustomAlert(t.titleImportConfirm || "Import", successText);
+                    }
+                }
+            );
+        } catch (e) {
+            console.error("CSV Import Parser Error:", e);
+            showCustomAlert(t.titleWarning || "Warning", t.msgImportError);
+        }
     }
 }
