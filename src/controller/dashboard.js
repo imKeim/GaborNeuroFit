@@ -27,13 +27,6 @@ export class DashboardController {
             ).join('');
         }
 
-        // Parse the profile emoji span into a Twemoji SVG
-        const profileEmojiEl = document.getElementById('active-profile-emoji');
-        if (window.twemoji && profileEmojiEl) {
-            profileEmojiEl.innerText = '👤';
-            window.twemoji.parse(profileEmojiEl);
-        }
-
         // Refresh Gabor Tab (Sensory database queries)
         const gaborSessions = DataRepository.getGaborSessionsForActiveUser();
         renderProgressChart(gaborSessions, t);
