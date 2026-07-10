@@ -111,9 +111,7 @@ export function drawSynoptophoreTargets(canvas, ctx, state, factor = 1.0) {
         ctx.stroke();
     }
 
-    if (state.isFusionLockEnabled) {
-        drawFusionLockFrame(canvas, ctx, scale);
-    }
+    drawFusionLockFrame(canvas, ctx, scale);
 
     ctx.restore();
 }

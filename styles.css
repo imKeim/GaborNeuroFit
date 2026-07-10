@@ -69,7 +69,8 @@ body {
     /* Combine safe area insets and base padding to prevent zero-height compression on standard screens */
     padding-top: calc(var(--padding-dynamic-v) + env(safe-area-inset-top, 0px));
     padding-bottom: calc(var(--padding-dynamic-v) + env(safe-area-inset-bottom, 0px));
-    transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    /* Added dimensional transitions to morph smoothly when dragged between Full HD and QHD+ monitors */
+    transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, max-width 0.3s ease, max-height 0.3s ease, padding 0.3s ease, font-size 0.3s ease;
 }
 
 /* Desktop Therapeutic Diffuse Glassmorphism adaptation rule */
@@ -194,7 +195,7 @@ img.emoji {
     overflow: hidden;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
     cursor: pointer;
-    transition: transform 0.2s ease-out;
+    transition: transform 0.2s ease-out, width 0.3s ease, height 0.3s ease; /* Transition container scaling */
     touch-action: manipulation;
 }
 
@@ -1053,5 +1054,94 @@ input[type="range"]::-moz-range-thumb {
     }
     .close-btn:hover {
         background: #384560;
+    }
+}
+
+/* ==========================================================================
+   9. HIGH-RESOLUTION RETINA & QHD+/4K DISPLAY OPTIMIZATIONS (Above 1080p)
+   ========================================================================== */
+@media (min-width: 1921px) or (min-height: 1081px) {
+    #app-wrapper {
+        max-width: 680px; /* Scale up container width from 540px to 680px */
+        max-height: clamp(880px, 85dvh, 1100px); /* Scale up container height */
+    }
+
+    #container {
+        width: min(82vw, 42dvh, 460px); /* Scale up foveation square from 360px to 460px */
+        height: min(82vw, 42dvh, 460px);
+    }
+
+    /* Scale up Typography proportionally to maintain absolute optical balance */
+    #app-title {
+        font-size: 18px;
+    }
+
+    .control-btn {
+        width: 38px;
+        height: 38px;
+        font-size: 16px;
+    }
+
+    #score-text {
+        font-size: 17px;
+    }
+
+    .badge {
+        font-size: 13px;
+        padding: 4px 10px;
+    }
+
+    #mode-status-bar {
+        font-size: 14px;
+    }
+
+    #btn-start {
+        padding: 16px;
+        font-size: 19px;
+    }
+
+    .action-btn {
+        height: 72px;
+        font-size: 19px;
+    }
+
+    .action-btn span {
+        font-size: 26px;
+    }
+
+    .settings-row label,
+    .settings-row select,
+    .modal-content select,
+    #leaderboard {
+        font-size: 16px;
+    }
+
+    .settings-row input[type="text"] {
+        font-size: 16px !important;
+    }
+
+    .settings-help {
+        font-size: 13px;
+    }
+
+    .modal-content h2 {
+        font-size: 22px;
+    }
+
+    .modal-content h4 {
+        font-size: 18px;
+        margin: 18px 0 10px 0;
+    }
+
+    .modal-content p, 
+    .modal-content li {
+        font-size: 14px;
+        line-height: 1.55;
+    }
+
+    .nudge-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 20px;
     }
 }

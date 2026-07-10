@@ -50,7 +50,6 @@ const container = document.getElementById('container');
 const btnStart = document.getElementById('btn-start');
 const btnFusionTest = document.getElementById('btn-fusion-test');
 
-// Primary DOM selectors for modal check references
 const customAlertModal = document.getElementById('custom-alert-modal');
 
 /**
@@ -368,7 +367,7 @@ window.addEventListener('load', async () => {
 
         if (Store.state.appMode === 'synoptophore') {
             // CLEAR WebGL context and draw 2D Synoptophore targets (prevents Gabor ghosts)
-            drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
+            drawIdleState(canvas, null, overlayCanvas, overlayCtx, true); // Always draw fusion lock in Synoptophore
             if (Store.state.synopFlickerActive) {
                 synoptophoreController.startFlickerLoop();
             } else {
@@ -403,12 +402,12 @@ window.addEventListener('load', async () => {
             const scrollBody = settingsModal ? settingsModal.querySelector('.modal-scroll-body') : null;
             const calibrationCurtain = document.getElementById('calibration-curtain');
 
-            // Step 1: Smoothly blackout the backdrop and fade-out the menu content (Duration: 150ms)
-            if (settingsModal) {
-                settingsModal.classList.add('modal-blackout');
-            }
+            // Step 1: Smoothly fade-out settings menu content AND fade-out backdrop AND pull up local curtain (0ms)
             if (modalContent) {
                 modalContent.classList.add('modal-transitioning');
+            }
+            if (calibrationCurtain) {
+                calibrationCurtain.classList.add('active');
             }
             
             // If entering calibration, trigger smooth fade-out of the dark glassmorphism backdrop immediately (0ms)
@@ -416,7 +415,7 @@ window.addEventListener('load', async () => {
                 settingsModal.classList.add('modal-clear-backdrop');
             }
 
-            // Step 2: Swap layout and trigger drawings precisely after backdrop becomes fully solid (150ms)
+            // Step 2: Swap layout and trigger drawings during the stable 50ms opaque plateau (Timer set to 250ms)
             setTimeout(() => {
                 trialController.isAnaglyphTestActive = !trialController.isAnaglyphTestActive;
                 
@@ -460,6 +459,14 @@ window.addEventListener('load', async () => {
                     canvas.style.display = 'block';
                     overlayCanvas.style.display = 'block';
                     cross.style.display = 'none';
+
+                    // Step 3 (IN): Smoothly fade content and backdrop back, and melt the local curtain immediately
+                    if (modalContent) {
+                        modalContent.classList.remove('modal-transitioning');
+                    }
+                    if (calibrationCurtain) {
+                        calibrationCurtain.classList.remove('active');
+                    }
                 } else {
                     btnFusionTest.style.background = '#1a233a';
                     btnFusionTest.style.color = '#3b90ff';
@@ -481,18 +488,22 @@ window.addEventListener('load', async () => {
                         if (synoptophoreController) synoptophoreController.syncFlickerState();
                     }
 
-                    drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
+                    drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.appMode === 'synoptophore' || Store.state.isFusionLockEnabled);
                     cross.style.display = 'block';
-                }
 
-                // Step 3: Smoothly fade content and backdrop back to their respective modes, and melt the local curtain
-                if (modalContent) {
-                    modalContent.classList.remove('modal-transitioning');
+                    // Step 3 (OUT): Smoothly fade-in the settings menu content (Duration: 300ms)
+                    if (modalContent) {
+                        modalContent.classList.remove('modal-transitioning');
+                    }
+
+                    // Step 4 (OUT): Delay the curtain melt by 150ms to let the large menu fully cover the canvas
+                    setTimeout(() => {
+                        if (calibrationCurtain) {
+                            calibrationCurtain.classList.remove('active');
+                        }
+                    }, 150);
                 }
-                if (calibrationCurtain) {
-                    calibrationCurtain.classList.remove('active');
-                }
-            }, 250);
+            }, 250); // Matches our optimized 250ms/200ms timing with the 50ms plateau!
         });
     }
 
@@ -514,7 +525,7 @@ window.addEventListener('load', async () => {
     
     // F5 HOT-RELOAD FIX: Ensure correct visual state rendering on page refresh
     if (Store.state.appMode === 'synoptophore') {
-        drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
+        drawIdleState(canvas, null, overlayCanvas, overlayCtx, true); // Always draw fusion lock in Synoptophore
         if (Store.state.synopFlickerActive) {
             synoptophoreController.startFlickerLoop();
         } else {
@@ -535,7 +546,7 @@ window.addEventListener('load', async () => {
             if (trialController) trialController.abort();
             if (synoptophoreController) synoptophoreController.abort();
             
-            drawIdleState(canvas, null, overlayCanvas, overlayCtx, state.isFusionLockEnabled);
+            drawIdleState(canvas, null, overlayCanvas, overlayCtx, state.appMode === 'synoptophore' || state.isFusionLockEnabled);
             
             const t = activeTranslations;
             if (state.appMode === 'synoptophore') {

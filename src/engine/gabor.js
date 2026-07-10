@@ -355,7 +355,8 @@ export function drawFusionTestPattern(canvas, ctx, state) {
     ctx.stroke();
 
     // Overlay zero-disparity stabilizers to ensure motor fusion is lockable during calibration
-    if (state.isFusionLockEnabled) {
+    // Symmetrically force the lock frame on during Synoptophore calibration tests
+    if (isSynop || state.isFusionLockEnabled) {
         drawFusionLockFrame(canvas, ctx, scale);
     }
 
