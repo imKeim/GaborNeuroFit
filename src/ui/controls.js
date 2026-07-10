@@ -49,6 +49,7 @@ export function bindInputControls(handlers) {
         if (holdDown && !holdUp) dy = 1;
         
         if (s.synopLockVertical) dy = 0; // Enforce Y-Axis Lock
+        if (s.synopLockHorizontal) dx = 0; // Enforce X-Axis Lock
 
         if (dx !== 0 || dy !== 0) {
             Store.updateState('synopTargetX', s.synopTargetX + dx);
@@ -120,10 +121,10 @@ export function bindInputControls(handlers) {
                 const diffX = event.clientX - swipeStartX;
                 const diffY = event.clientY - swipeStartY;
                 const ratio = 256.0 / container.clientWidth;
-                const logicalDeltaX = Math.round(diffX * ratio);
+                const logicalDeltaX = s.synopLockHorizontal ? 0 : Math.round(diffX * ratio);
                 const logicalDeltaY = s.synopLockVertical ? 0 : Math.round(diffY * ratio);
 
-                Store.updateState('synopTargetX', synopStartX + logicalDeltaX);
+                Store.updateState('synopTargetX', s.synopLockHorizontal ? 0 : (synopStartX + logicalDeltaX));
                 Store.updateState('synopTargetY', s.synopLockVertical ? 0 : (synopStartY + logicalDeltaY));
 
                 if (typeof handlers.onSynopDrag === 'function') {
@@ -173,10 +174,10 @@ export function bindInputControls(handlers) {
                     const diffX = touch.clientX - swipeStartX;
                     const diffY = touch.clientY - swipeStartY;
                     const ratio = 256.0 / container.clientWidth;
-                    const logicalDeltaX = Math.round(diffX * ratio);
+                    const logicalDeltaX = s.synopLockHorizontal ? 0 : Math.round(diffX * ratio);
                     const logicalDeltaY = s.synopLockVertical ? 0 : Math.round(diffY * ratio);
 
-                    Store.updateState('synopTargetX', synopStartX + logicalDeltaX);
+                    Store.updateState('synopTargetX', s.synopLockHorizontal ? 0 : (synopStartX + logicalDeltaX));
                     Store.updateState('synopTargetY', s.synopLockVertical ? 0 : (synopStartY + logicalDeltaY));
 
                     if (typeof handlers.onSynopDrag === 'function') {
@@ -214,8 +215,10 @@ export function bindInputControls(handlers) {
                         let didNudge = false;
                         
                         // Execute orthogonal single-pixel shifts
-                        if (nx < edgeZone) { Store.updateState('synopTargetX', s.synopTargetX - 1); didNudge = true; }
-                        else if (nx > 1 - edgeZone) { Store.updateState('synopTargetX', s.synopTargetX + 1); didNudge = true; }
+                        if (!s.synopLockHorizontal) {
+                            if (nx < edgeZone) { Store.updateState('synopTargetX', s.synopTargetX - 1); didNudge = true; }
+                            else if (nx > 1 - edgeZone) { Store.updateState('synopTargetX', s.synopTargetX + 1); didNudge = true; }
+                        }
                         
                         if (!s.synopLockVertical) {
                             if (ny < edgeZone) { Store.updateState('synopTargetY', s.synopTargetY - 1); didNudge = true; }
@@ -307,11 +310,11 @@ export function bindInputControls(handlers) {
         const infoModal = document.getElementById('info-modal');
         const statsModal = document.getElementById('stats-modal');
         
-        const isConfirmOpen = confirmModal && confirmModal.style.display !== 'none' && confirmModal.style.display !== '';
-        const isAlertOpen = alertModal && alertModal.style.display !== 'none' && alertModal.style.display !== '';
-        const isSettingsOpen = settingsModal && settingsModal.style.display !== 'none' && settingsModal.style.display !== '';
-        const isInfoOpen = infoModal && infoModal.style.display !== 'none' && infoModal.style.display !== '';
-        const isStatsOpen = statsModal && statsModal.style.display !== 'none' && statsModal.style.display !== '';
+        const isConfirmOpen = confirmModal && confirmModal.classList.contains('modal-open');
+        const isAlertOpen = alertModal && alertModal.classList.contains('modal-open');
+        const isSettingsOpen = settingsModal && settingsModal.classList.contains('modal-open');
+        const isInfoOpen = infoModal && infoModal.classList.contains('modal-open');
+        const isStatsOpen = statsModal && statsModal.classList.contains('modal-open');
         
         // PRIORITY 1: Custom Confirmation Dialog (Yes/No)
         if (isConfirmOpen) {

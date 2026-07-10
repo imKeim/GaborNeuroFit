@@ -10,6 +10,7 @@ const CONFIG_SCHEMA = [
     { id: 'select-flash-duration', key: 'flashDurationMode', type: 'value' },
     { id: 'chk-peripheral', key: 'isPeripheralEnabled', type: 'checkbox' },
     { id: 'chk-crowding', key: 'isCrowdingEnabled', type: 'checkbox' },
+    { id: 'select-crowding-mode', key: 'crowdingMode', type: 'value' },
     { id: 'chk-orthogonal-flankers', key: 'isOrthogonalFlankersEnabled', type: 'checkbox' },
     { id: 'chk-dynamic-flankers', key: 'isDynamicFlankersEnabled', type: 'checkbox' },
     { id: 'chk-low-contrast', key: 'allowLowContrast', type: 'checkbox' },
@@ -33,9 +34,10 @@ const CONFIG_SCHEMA = [
     { id: 'select-target-type', key: 'synopTargetType', type: 'value' },
     { id: 'chk-synop-lazy-grid', key: 'synopShowLazyGrid', type: 'checkbox' },
     { id: 'chk-synop-strong-grid', key: 'synopShowStrongGrid', type: 'checkbox' },
-    { id: 'select-target-size', key: 'synopTargetSize', type: 'int' },
+    { selectId: 'select-target-size', key: 'synopTargetSize', type: 'int' },
     { id: 'chk-synop-flicker', key: 'synopFlickerActive', type: 'checkbox' },
     { id: 'chk-synop-lock-y', key: 'synopLockVertical', type: 'checkbox' },
+    { id: 'chk-synop-lock-x', key: 'synopLockHorizontal', type: 'checkbox' },
     { id: 'chk-permanent-cross', key: 'isPermanentCrossEnabled', type: 'checkbox' }
 ];
 
@@ -46,6 +48,15 @@ export class SettingsController {
         this.valStrongAttenuation = document.getElementById('val-strong-attenuation');
         this.selectPresetMode = document.getElementById('select-preset-mode');
         this.rangeStrongAttenuation = document.getElementById('range-strong-attenuation');
+    }
+
+    updateSliderTrackGradient(slider) {
+        if (!slider || slider.type !== 'range') return;
+        const min = parseFloat(slider.min) || 0;
+        const max = parseFloat(slider.max) || 100;
+        const val = parseFloat(slider.value) || 0;
+        const percent = ((val - min) / (max - min)) * 100;
+        slider.style.setProperty('--percent', percent + '%');
     }
 
     syncStateFromUI() {
@@ -74,15 +85,34 @@ export class SettingsController {
             } else if (field.type === 'percent') {
                 val = parseFloat(el.value) / 100;
             }
-            Store.updateState(field.key, val);
+            
+            if (field.id === 'range-strong-attenuation') {
+                Store.updateState(s.appMode === 'synoptophore' ? 'synopStrongEyeContrastFactor' : 'strongEyeContrastFactor', val);
+                if (this.valStrongAttenuation) {
+                    this.valStrongAttenuation.innerText = el.value + '%';
+                }
+            } else if (field.id === 'slider-left-r') {
+                Store.updateState(s.appMode === 'synoptophore' ? 'synopCalibratorLeftR' : 'calibratorLeftR', val);
+            } else if (field.id === 'slider-right-g') {
+                Store.updateState(s.appMode === 'synoptophore' ? 'synopCalibratorRightG' : 'calibratorRightG', val);
+            } else if (field.id === 'slider-right-b') {
+                Store.updateState(s.appMode === 'synoptophore' ? 'synopCalibratorRightB' : 'calibratorRightB', val);
+            } else {
+                Store.updateState(field.key, val);
+            }
+
+            // Real-time track gradient coloring
+            this.updateSliderTrackGradient(el);
         });
 
         Store.resolveConflicts(lastActiveTrigger);
     
-        const detectedPreset = Store.detectMatchingPreset();
-        Store.updateState('presetMode', detectedPreset);
-        if (this.selectPresetMode) {
-            this.selectPresetMode.value = detectedPreset;
+        if (s.appMode === 'gabor') {
+            const detectedPreset = Store.detectMatchingPreset();
+            Store.updateState('presetMode', detectedPreset);
+            if (this.selectPresetMode) {
+                this.selectPresetMode.value = detectedPreset;
+            }
         }
 
         this.updateCalibrationLabels(s);
@@ -95,7 +125,8 @@ export class SettingsController {
     updatePresetUI() {
         const s = Store.state;
 
-        if (s.presetMode !== 'custom') {
+        // Enforce presets ONLY in Gabor mode
+        if (s.appMode === 'gabor' && s.presetMode !== 'custom') {
             Store.applyPresetTemplate(s.presetMode);
         }
 
@@ -125,22 +156,40 @@ export class SettingsController {
             const el = document.getElementById(field.id);
             if (!el) return;
 
+            if (field.id === 'range-strong-attenuation') {
+                const targetFactor = s.appMode === 'synoptophore' ? s.synopStrongEyeContrastFactor : s.strongEyeContrastFactor;
+                el.value = Math.round(targetFactor * 100).toString();
+                if (this.valStrongAttenuation) this.valStrongAttenuation.innerText = el.value + '%';
+                this.updateSliderTrackGradient(el);
+                return;
+            }
+
             if (field.type === 'checkbox') el.checked = s[field.key];
             else if (field.type === 'value') el.value = s[field.key];
             else if (field.type === 'int') el.value = s[field.key].toString();
             else if (field.type === 'boolean') el.value = s[field.key] ? 'true' : 'false';
-            else if (field.type === 'percent') {
-                el.value = Math.round(s[field.key] * 100).toString();
-                if (this.valStrongAttenuation) this.valStrongAttenuation.innerText = el.value + '%';
+
+            if (field.id === 'slider-left-r') {
+                el.value = (s.appMode === 'synoptophore' ? s.synopCalibratorLeftR : s.calibratorLeftR).toString();
+            } else if (field.id === 'slider-right-g') {
+                el.value = (s.appMode === 'synoptophore' ? s.synopCalibratorRightG : s.calibratorRightG).toString();
+            } else if (field.id === 'slider-right-b') {
+                el.value = (s.appMode === 'synoptophore' ? s.synopCalibratorRightB : s.calibratorRightB).toString();
             }
+
+            this.updateSliderTrackGradient(el);
         });
 
         const sLeftR = document.getElementById('slider-left-r');
-        if (sLeftR) sLeftR.value = s.calibratorLeftR;
+        if (sLeftR) sLeftR.value = s.appMode === 'synoptophore' ? s.synopCalibratorLeftR : s.calibratorLeftR;
         const sRightG = document.getElementById('slider-right-g');
         const sRightB = document.getElementById('slider-right-b');
-        if (sRightG) sRightG.value = s.calibratorRightG;
-        if (sRightB) sRightB.value = s.calibratorRightB;
+        if (sRightG) sRightG.value = s.appMode === 'synoptophore' ? s.synopCalibratorRightG : s.calibratorRightG;
+        if (sRightB) sRightB.value = s.appMode === 'synoptophore' ? s.synopCalibratorRightB : s.calibratorRightB;
+
+        if (sLeftR) this.updateSliderTrackGradient(sLeftR);
+        if (sRightG) this.updateSliderTrackGradient(sRightG);
+        if (sRightB) this.updateSliderTrackGradient(sRightB);
 
         if (this.selectPresetMode) this.selectPresetMode.value = s.presetMode;
 
@@ -154,9 +203,13 @@ export class SettingsController {
         const valG = document.getElementById('val-calib-g');
         const valB = document.getElementById('val-calib-b');
         
-        if (valR) valR.innerText = (s.calibratorLeftR - 127 > 0 ? '+' : '') + (s.calibratorLeftR - 127);
-        if (valG) valG.innerText = (s.calibratorRightG - 127 > 0 ? '+' : '') + (s.calibratorRightG - 127);
-        if (valB) valB.innerText = (s.calibratorRightB - 127 > 0 ? '+' : '') + (s.calibratorRightB - 127);
+        const r = s.appMode === 'synoptophore' ? s.synopCalibratorLeftR : s.calibratorLeftR;
+        const g = s.appMode === 'synoptophore' ? s.synopCalibratorRightG : s.calibratorRightG;
+        const b = s.appMode === 'synoptophore' ? s.synopCalibratorRightB : s.calibratorRightB;
+
+        if (valR) valR.innerText = (r - 127 > 0 ? '+' : '') + (r - 127);
+        if (valG) valG.innerText = (g - 127 > 0 ? '+' : '') + (g - 127);
+        if (valB) valB.innerText = (b - 127 > 0 ? '+' : '') + (b - 127);
     }
 
     toggleAccordionGroupState(groupNumber, isEnabled) {
@@ -172,7 +225,6 @@ export class SettingsController {
                 el.disabled = false;
             });
         } else {
-            // Dim to deep 0.15 opacity to let inactive blocks fade completely into the background
             header.style.opacity = '0.15';
             header.style.pointerEvents = 'none';
             content.style.opacity = '0.15';
@@ -189,7 +241,6 @@ export class SettingsController {
         const s = Store.state;
         const isSynop = (s.appMode === 'synoptophore');
 
-        // 1. Modality Segregation: Completely extract non-applicable accordion blocks to prevent visual crowding
         const groups = [
             { num: 1, visible: true },
             { num: 2, visible: !isSynop },
@@ -203,20 +254,18 @@ export class SettingsController {
             const content = document.getElementById(`accordion-content-${g.num}`);
             if (header && content) {
                 if (g.visible) {
-                    header.style.display = ''; // Restore to stylesheet CSS default (flex)
-                    // Symmetrically clear inline display properties to let native stylesheet classes (.open) govern visibility
+                    header.style.display = ''; 
                     content.style.display = ''; 
                 } else {
-                    header.style.display = 'none'; // Completely pull from rendering flow
+                    header.style.display = 'none';
                     content.style.display = 'none';
                 }
             }
         });
 
-        // 2. Purge Gabor-only parameters rows inside Group 1 & 4 during Synoptophore
         const gaborRows = [
             'row-preset-mode', 'row-start-level', 'row-autonext', 'row-session-limit',
-            'row-anaglyph-toggle', 'row-strong-attenuation', 'row-fusion-lock'
+            'row-anaglyph-toggle', 'row-fusion-lock'
         ];
         gaborRows.forEach(id => {
             const row = document.getElementById(id);
@@ -238,29 +287,35 @@ export class SettingsController {
             const chkDynamic = document.getElementById('chk-dynamic-flankers');
             const rowOrthogonal = document.getElementById('row-orthogonal');
             const rowDynamic = document.getElementById('row-dynamic');
+            const rowCrowdingMode = document.getElementById('row-crowding-mode');
 
             if (chkOrthogonal) chkOrthogonal.disabled = !s.isCrowdingEnabled;
             if (chkDynamic) chkDynamic.disabled = !s.isCrowdingEnabled;
+            const crowdingOpacity = s.isCrowdingEnabled ? '1' : '0.5';
 
+            if (rowCrowdingMode) {
+                rowCrowdingMode.style.display = 'flex';
+                rowCrowdingMode.style.opacity = crowdingOpacity;
+                const selectElement = rowCrowdingMode.querySelector('select');
+                if (selectElement) selectElement.disabled = !s.isCrowdingEnabled;
+            }
             if (rowOrthogonal) {
                 rowOrthogonal.style.display = 'flex';
-                rowOrthogonal.style.opacity = s.isCrowdingEnabled ? '1' : '0.5';
+                rowOrthogonal.style.opacity = crowdingOpacity;
             }
             if (rowDynamic) {
                 rowDynamic.style.display = 'flex';
-                rowDynamic.style.opacity = s.isCrowdingEnabled ? '1' : '0.5';
+                rowDynamic.style.opacity = crowdingOpacity;
             }
         }
 
-        // 3. Coordinate sub-panel interactive states without visual feedback loops
         if (this.anaglyphPanel) {
             this.anaglyphPanel.style.display = 'block';
             this.anaglyphPanel.style.opacity = (s.isAnaglyphEnabled || isSynop) ? '1' : '0.4';
             this.anaglyphPanel.querySelectorAll('input, select, button').forEach(input => {
-                // Symmetrically resolve disabled states: calibration sliders stay open, while Gabor tools follow anaglyph toggle
                 if (input.id !== 'chk-fusion-lock' && input.id !== 'chk-anaglyph') {
-                    if (input.id === 'slider-left-r' || input.id === 'slider-right-g' || input.id === 'slider-right-b') {
-                        input.disabled = false; // Calibration is hardware-level, always accessible
+                    if (input.id === 'slider-left-r' || input.id === 'slider-right-g' || input.id === 'slider-right-b' || input.id === 'range-strong-attenuation') {
+                        input.disabled = false;
                     } else {
                         input.disabled = (isSynop) ? false : !s.isAnaglyphEnabled;
                     }
@@ -287,34 +342,40 @@ export class SettingsController {
     }
 
     bindSettingsInteractions() {
+        // Enforce horizontal and vertical locks mutual exclusivity FIRST (registers first in browser event queue)
+        const chkY = document.getElementById('chk-synop-lock-y');
+        const chkX = document.getElementById('chk-synop-lock-x');
+        if (chkY && chkX) {
+            chkY.addEventListener('change', () => {
+                if (chkY.checked) {
+                    chkX.checked = false; // Instantly uncheck opposing DOM node before schema loop runs
+                }
+            });
+            chkX.addEventListener('change', () => {
+                if (chkX.checked) {
+                    chkY.checked = false; // Instantly uncheck opposing DOM node before schema loop runs
+                }
+            });
+        }
+
         // Segmented settings mode switcher click hooks (Iteration 4)
         const btnTabGabor = document.getElementById('settings-tab-gabor');
         const btnTabSynop = document.getElementById('settings-tab-synop');
         if (btnTabGabor && btnTabSynop) {
             btnTabGabor.addEventListener('click', () => {
                 Store.updateState('appMode', 'gabor');
-                // Symmetrical Restore: Return to the specific Gabor protocol used before switching to Synoptophore
-                Store.updateState('presetMode', Store.state.lastGaborPreset);
-                
                 this.updatePresetUI();
                 if (typeof this.onSyncCallback === 'function') this.onSyncCallback();
             });
 
             btnTabSynop.addEventListener('click', () => {
-                // Symmetrical Backup: Remember which Gabor protocol was active before changing the app mode
-                if (Store.state.presetMode !== 'synoptophore') {
-                    Store.updateState('lastGaborPreset', Store.state.presetMode);
-                }
-                
                 Store.updateState('appMode', 'synoptophore');
-                Store.updateState('presetMode', 'synoptophore');
                 this.updatePresetUI();
                 if (typeof this.onSyncCallback === 'function') this.onSyncCallback();
             });
         }
 
         if (this.selectPresetMode) {
-            this.selectPresetMode.value = Store.state.presetMode;
             this.selectPresetMode.addEventListener('change', () => {
                 Store.updateState('presetMode', this.selectPresetMode.value);
                 this.updatePresetUI();
@@ -350,7 +411,6 @@ export class SettingsController {
 
         if (this.rangeStrongAttenuation) {
             this.rangeStrongAttenuation.addEventListener('input', () => {
-                if (this.valStrongAttenuation) this.valStrongAttenuation.innerText = this.rangeStrongAttenuation.value + '%';
                 this.syncStateFromUI();
             });
         }
@@ -366,6 +426,46 @@ export class SettingsController {
                 this.updatePresetUI();
                 if (typeof this.onSyncCallback === 'function') this.onSyncCallback();
             });
+        });
+
+        // Bind nudge (−/+) micro-buttons for precision calibration on touchscreens
+        document.querySelectorAll('.nudge-btn').forEach(btn => {
+            let nudgeIntervalId = null;
+            let nudgeTimeoutId = null;
+
+            const performNudge = () => {
+                const targetId = btn.dataset.nudgeTarget;
+                const step = parseInt(btn.dataset.nudgeStep) || 1;
+                const dir = parseInt(btn.dataset.nudgeDir) || 1;
+                const slider = document.getElementById(targetId);
+                if (!slider) return;
+                const min = parseInt(slider.min) || 0;
+                const max = parseInt(slider.max) || 255;
+                const current = parseInt(slider.value) || 0;
+                slider.value = Math.max(min, Math.min(max, current + dir * step));
+                slider.dispatchEvent(new Event('input', { bubbles: true }));
+            };
+
+            const clearNudgeTimers = () => {
+                if (nudgeTimeoutId) clearTimeout(nudgeTimeoutId);
+                if (nudgeIntervalId) clearInterval(nudgeIntervalId);
+                nudgeTimeoutId = null;
+                nudgeIntervalId = null;
+            };
+
+            btn.addEventListener('pointerdown', (e) => {
+                e.preventDefault(); // Prevent text selection
+                clearNudgeTimers();
+                performNudge(); // Instant single tap response
+                
+                nudgeTimeoutId = setTimeout(() => {
+                    nudgeIntervalId = setInterval(performNudge, 45); // Smooth continuous scrolling rate
+                }, 350); // Delay to distinguish tap from hold
+            });
+
+            btn.addEventListener('pointerup', clearNudgeTimers);
+            btn.addEventListener('pointerleave', clearNudgeTimers);
+            btn.addEventListener('pointercancel', clearNudgeTimers);
         });
     }
 }

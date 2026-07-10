@@ -8,12 +8,14 @@ import { Store } from './store.js';
 import { DataRepository } from './store/repository.js';
 import { drawFusionTestPattern } from './engine/gabor.js';
 import { initAudio, playError, playSuccess } from './engine/audio.js';
-import { updateScoreboard, updateLeaderboard, drawIdleState, updateStatusBar, renderProgressChart, renderSynopProgressChart, updateSynopLeaderboard, getCompactPresetLabel } from './ui/screen.js';
+import { updateScoreboard, drawIdleState, updateStatusBar } from './ui/screen.js';
 import { initModals, showCustomAlert, closeCustomAlert, showCustomConfirm } from './ui/modal.js';
 import { bindInputControls } from './ui/controls.js';
 import { TrialController, TrialState } from './controller/trial.js';
 import { SettingsController } from './controller/settings.js';
 import { SynoptophoreController } from './controller/synoptophore.js';
+import { DashboardController } from './controller/dashboard.js';
+import { PomodoroTimer } from './utils/timer.js';
 import { drawSynoptophoreTargets } from './engine/synop_render.js';
 
 // Global cache for the active localization dictionary
@@ -36,6 +38,7 @@ if (window.twemoji) {
 let trialController = null;
 let settingsController = null;
 let synoptophoreController = null;
+let dashboardController = null;
 
 // Primary DOM References for view rendering
 const canvas = document.getElementById('gaborCanvas');
@@ -83,7 +86,7 @@ export async function setLanguage(lang) {
         }
     });
 
-    // Declaratively resolve input placeholders safely (Итерация 4)
+    // Declaratively resolve input placeholders safely
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
         const key = el.getAttribute('data-i18n-placeholder');
         if (t[key] !== undefined) {
@@ -172,41 +175,13 @@ function bindLangSelectors() {
     }
 }
 
-// Refresh and render entire multi-user statistics dashboard synchronously (SSoT compliant)
-function refreshStatsUI() {
-    const activeUid = DataRepository.getActiveProfileId();
-    const profiles = DataRepository.getProfiles();
-
-    const dropdown = document.getElementById('select-active-profile');
-    if (dropdown) {
-        dropdown.innerHTML = profiles.map(p => 
-            `<option value="${p.id}" ${p.id === activeUid ? 'selected' : ''}>👤 ${p.name}</option>`
-        ).join('');
-    }
-
-    // 2. Refresh Gabor Tab (Sensory database queries)
-    const gaborSessions = DataRepository.getGaborSessionsForActiveUser();
-    renderProgressChart(gaborSessions, activeTranslations);
-    updateLeaderboard(gaborSessions, activeTranslations, Store.state.currentLang);
-
-    // 3. Refresh Synoptophore Tab (Motor database queries)
-    const synopSessions = DataRepository.getSynopSessionsForActiveUser();
-    renderSynopProgressChart(synopSessions, activeTranslations);
-    updateSynopLeaderboard(synopSessions, activeTranslations, Store.state.currentLang);
-
-    const statsModal = document.getElementById('stats-modal');
-    if (window.twemoji && statsModal) {
-        window.twemoji.parse(statsModal);
-    }
-}
-
 /**
  * Orchestrator bootstrap initialization block
  */
 window.addEventListener('load', async () => {
     Store.loadSettings();
 
-    // Initialize Relational Multi-Patient Local Database (Итерация 4)
+    // Initialize Relational Multi-Patient Local Database
     DataRepository.init();
     DataRepository.migrateLegacyDatabase();
 
@@ -231,6 +206,9 @@ window.addEventListener('load', async () => {
         () => activeTranslations,
         showCustomAlert
     );
+
+    // Instantiate newly decoupled single-responsibility modules
+    dashboardController = new DashboardController(() => activeTranslations);
 
     // Symmetrical Monkey-Patching (Decorator Pattern) to capture motor kinematics without bloating physical loops
     const originalSuccess = synoptophoreController.completeSuccess;
@@ -302,207 +280,9 @@ window.addEventListener('load', async () => {
             saveSettingsFromUI();
         },
         () => {
-            refreshStatsUI();
+            dashboardController.refreshStatsUI();
         }
     );
-
-    // Segmented Tabs Click Listeners
-    const tabGabor = document.getElementById('tab-gabor');
-    const tabSynop = document.getElementById('tab-synop');
-    const contentGabor = document.getElementById('tab-gabor-content');
-    const contentSynop = document.getElementById('tab-tab-synop-content');
-
-    if (tabGabor && tabSynop && contentGabor && contentSynop) {
-        tabGabor.addEventListener('click', () => {
-            tabGabor.classList.add('active');
-            tabSynop.classList.remove('active');
-                    
-            tabGabor.style.background = '#2b354a';
-            tabGabor.style.color = '#3b90ff';
-            tabSynop.style.background = 'transparent';
-            tabSynop.style.color = '#8e8e93';
-                    
-            contentGabor.style.display = 'block';
-            contentSynop.style.display = 'none';
-        });
-
-        tabSynop.addEventListener('click', () => {
-            tabSynop.classList.add('active');
-            tabGabor.classList.remove('active');
-                    
-            tabSynop.style.background = '#2b354a';
-            tabSynop.style.color = '#3b90ff';
-            tabGabor.style.background = 'transparent';
-            tabGabor.style.color = '#8e8e93';
-                    
-            contentSynop.style.display = 'block';
-            contentGabor.style.display = 'none';
-        });
-    }
-
-    // Bind Relational Multi-Patient Interactive Events
-    const selectActiveProfile = document.getElementById('select-active-profile');
-    if (selectActiveProfile) {
-        selectActiveProfile.addEventListener('change', () => {
-            DataRepository.setActiveProfileId(selectActiveProfile.value);
-            
-            // Symmetrical Session Reset: Completely purge RAM metrics to avoid patient mixing
-            Store.state.score = 0;
-            Store.state.total = 0;
-            Store.resetSessionProgress();
-            
-            updateScoreboard(Store.state, activeTranslations);
-            refreshStatsUI();
-        });
-    }
-
-    const btnAddProfile = document.getElementById('btn-add-profile');
-    const inputNewProfile = document.getElementById('input-new-profile');
-    if (btnAddProfile && inputNewProfile) {
-        btnAddProfile.addEventListener('click', () => {
-            const name = inputNewProfile.value.trim();
-            if (!name) {
-                showCustomAlert(activeTranslations.titleWarning || "Warning", activeTranslations.msgEmptyName);
-                return;
-            }
-            const newProf = DataRepository.createProfile(name);
-            if (newProf) {
-                DataRepository.setActiveProfileId(newProf.id);
-                inputNewProfile.value = '';
-                
-                // Symmetrical Session Reset
-                Store.state.score = 0;
-                Store.state.total = 0;
-                Store.resetSessionProgress();
-                
-                updateScoreboard(Store.state, activeTranslations);
-                refreshStatsUI();
-            }
-        });
-    }
-
-    const btnDeleteProfile = document.getElementById('btn-delete-profile');
-    if (btnDeleteProfile) {
-        btnDeleteProfile.addEventListener('click', () => {
-            const activeUid = DataRepository.getActiveProfileId();
-            const profiles = DataRepository.getProfiles();
-            const activeProf = profiles.find(p => p.id === activeUid);
-            if (!activeProf) return;
-
-            if (profiles.length <= 1) {
-                showCustomAlert(activeTranslations.titleWarning || "Warning", activeTranslations.msgCannotDeleteLast);
-                return;
-            }
-
-            const rawConfirm = activeTranslations.msgConfirmDelete || "Delete profile \"{name}\"?";
-            const confirmText = rawConfirm.replace('{name}', activeProf.name);
-
-            showCustomConfirm(
-                activeTranslations.titleDanger || "Danger",
-                confirmText,
-                activeTranslations.confirmYes || "Yes",
-                activeTranslations.confirmNo || "Cancel",
-                (isConfirmed) => {
-                    if (isConfirmed) {
-                        DataRepository.deleteProfile(activeUid);
-                        
-                        // Symmetrical Session Reset
-                        Store.state.score = 0;
-                        Store.state.total = 0;
-                        Store.resetSessionProgress();
-
-                        updateScoreboard(Store.state, activeTranslations);
-                        refreshStatsUI();
-                    }
-                }
-            );
-        });
-    }
-
-    const btnClearHistory = document.getElementById('btn-clear-history');
-    if (btnClearHistory) {
-        btnClearHistory.addEventListener('click', () => {
-            const confirmText = activeTranslations.msgConfirmClear || "Are you sure you want to clear history?";
-            showCustomConfirm(
-                activeTranslations.titleDanger || "Danger",
-                confirmText,
-                activeTranslations.confirmYes || "Yes",
-                activeTranslations.confirmNo || "Cancel",
-                (isConfirmed) => {
-                    if (isConfirmed) {
-                        DataRepository.clearActiveUserHistory();
-                        
-                        // Symmetrical Session Reset
-                        Store.state.score = 0;
-                        Store.state.total = 0;
-                        Store.resetSessionProgress();
-
-                        updateScoreboard(Store.state, activeTranslations);
-                        refreshStatsUI();
-                    }
-                }
-            );
-        });
-    }
-
-    const btnExportCsv = document.getElementById('btn-export-csv');
-    if (btnExportCsv) {
-        btnExportCsv.addEventListener('click', () => {
-            const sessions = DataRepository.getSessionsForActiveUser();
-            if (sessions.length === 0) return;
-
-            // Expanded clinical columns supporting complete sensory & motor configurations (Iteration 4.1)
-            const headers = ["Date", "Mode", "Lazy Eye Side", "Score/Total", "Accuracy %", "Gabor Stage", "Contrast Threshold %", "Contrast Balancer %", "10Hz Flicker", "Visual Crowding", "Peripheral Shift", "Permanent Cross", "Synop Deviation X (px)", "Synop Deviation Y (px)", "Synop Start Distance (px)", "Outcome"];
-                    
-            const rows = sessions.map(s => {
-                const dateStr = new Date(s.timestamp).toISOString().replace(/T/, ' ').replace(/\..+/, '');
-                const accuracy = s.total > 0 ? ((s.score / s.total) * 100).toFixed(1) : '0';
-                        
-                const isSynop = s.protocol === 'synoptophore';
-                const modeLabel = isSynop ? "Synoptophore" : getCompactPresetLabel(s.protocol, Store.state.currentLang);
-                
-                // Resolve precise active stimulation flags polymorphically
-                const eyeSide = s.lazyEyeSide ? s.lazyEyeSide.toUpperCase() : 'LEFT';
-                const isFlickerOn = isSynop ? (s.synopFlickerActive ? "ON" : "OFF") : (s.isFlickerEnabled ? "ON" : "OFF");
-                const isCrowdingOn = isSynop ? "OFF" : (s.isCrowdingEnabled ? "ON" : "OFF");
-                const isPeripheralOn = isSynop ? "OFF" : (s.isPeripheralEnabled ? "ON" : "OFF");
-                const isCrossOn = isSynop ? "OFF" : (s.isPermanentCrossEnabled ? "ON" : "OFF");
-
-                return [
-                    `"${dateStr}"`,
-                    `"${modeLabel}"`,
-                    `"${eyeSide}"`,
-                    isSynop ? `""` : `"${s.score}/${s.total}"`,
-                    isSynop ? `""` : `"${accuracy}%"`,
-                    isSynop ? `""` : s.level,
-                    isSynop ? `""` : `"${s.contrast}%"`,
-                    `"${s.balance}%"`,
-                    `"${isFlickerOn}"`,
-                    `"${isCrowdingOn}"`,
-                    `"${isPeripheralOn}"`,
-                    `"${isCrossOn}"`,
-                    isSynop ? (s.synopTargetX || 0) : `""`,
-                    isSynop ? (s.synopTargetY || 0) : `""`,
-                    isSynop ? (s.synopStartDistance || 0).toFixed(0) : `""`,
-                    isSynop ? `"${(s.synopOutcome || 'slip').toUpperCase()}"` : `""`
-                ].join(',');
-            });
-
-            const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(','), ...rows].join('\n');
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            
-            const activeUid = DataRepository.getActiveProfileId();
-            const activeProf = DataRepository.getProfiles().find(p => p.id === activeUid);
-            const nameSafe = activeProf ? activeProf.name.replace(/[^a-z0-9]/gi, '_') : 'Patient';
-            
-            link.setAttribute("download", `gabor_progress_${nameSafe}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        });
-    }
 
     bindInputControls({
         onAnswer: (choice) => trialController.submitAnswer(choice),
@@ -531,25 +311,29 @@ window.addEventListener('load', async () => {
             const infoModal = document.getElementById('info-modal');
             const statsModal = document.getElementById('stats-modal');
 
-            // Block Escape key closing strictly when 3D calibration mode is active
-            if (trialController && trialController.isAnaglyphTestActive) return;
+            // If 3D calibration mode is active, Esc key gracefully acts as a toggle exit trigger
+            if (trialController && trialController.isAnaglyphTestActive) {
+                const btnFusionTest = document.getElementById('btn-fusion-test');
+                if (btnFusionTest) btnFusionTest.click();
+                return;
+            }
 
             // Prioritize closing the topmost ephemeral dialogs first
-            if (confirmModal && confirmModal.style.display !== 'none' && confirmModal.style.display !== '') return;
-            if (customAlertModal && customAlertModal.style.display !== 'none' && customAlertModal.style.display !== '') {
+            if (confirmModal && confirmModal.classList.contains('modal-open')) return;
+            if (customAlertModal && customAlertModal.classList.contains('modal-open')) {
                 closeCustomAlert();
                 return;
             }
-            // Universally detects active modals regardless of 'block' or 'flex' layout engines
-            if (settingsModal && settingsModal.style.display !== 'none' && settingsModal.style.display !== '') {
+            // Universally detects active modals relying on CSS class state
+            if (settingsModal && settingsModal.classList.contains('modal-open')) {
                 saveSettingsFromUI();
-                settingsModal.style.display = 'none';
+                settingsModal.classList.remove('modal-open');
             }
-            if (infoModal && infoModal.style.display !== 'none' && infoModal.style.display !== '') {
-                infoModal.style.display = 'none';
+            if (infoModal && infoModal.classList.contains('modal-open')) {
+                infoModal.classList.remove('modal-open');
             }
-            if (statsModal && statsModal.style.display !== 'none' && statsModal.style.display !== '') {
-                statsModal.style.display = 'none';
+            if (statsModal && statsModal.classList.contains('modal-open')) {
+                statsModal.classList.remove('modal-open');
             }
         }
     });
@@ -558,7 +342,7 @@ window.addEventListener('load', async () => {
         settingsController.syncStateFromUI();
         Store.saveSettings();
         
-        // Reset session progress variables via centralized Store method (SSoT compliant)
+        // Reset session progress variables via centralized Store method
         Store.resetSessionProgress();
     
         // Deactivate active calibration patterns on settings menu save
@@ -615,60 +399,100 @@ window.addEventListener('load', async () => {
     if (btnFusionTest) {
         btnFusionTest.addEventListener('click', () => {
             const settingsModal = document.getElementById('settings-modal');
-            trialController.isAnaglyphTestActive = !trialController.isAnaglyphTestActive;
-            
-            if (trialController.isAnaglyphTestActive) {
-                btnFusionTest.style.background = '#3b90ff';
-                btnFusionTest.style.color = '#131a26';
-                
-                // Toggle calibration bottom sheet layout class
-                if (settingsModal) {
-                    settingsModal.classList.add('calibration-mode');
-                    // Reset scroll body position to the top to align calibration sliders perfectly
-                    const scrollBody = settingsModal.querySelector('.modal-scroll-body');
-                    if (scrollBody) scrollBody.scrollTop = 0;
-                }
-                
-                const selectRedSide = document.getElementById('select-red-side');
-                const selectLazySide = document.getElementById('select-lazy-side');
-                if (selectRedSide) Store.state.redEyeSide = selectRedSide.value;
-                if (selectLazySide) Store.state.lazyEyeSide = selectLazySide.value;
+            const modalContent = settingsModal ? settingsModal.querySelector('.modal-content') : null;
+            const scrollBody = settingsModal ? settingsModal.querySelector('.modal-scroll-body') : null;
+            const calibrationCurtain = document.getElementById('calibration-curtain');
 
-                // Dynamically scale canvas backing store to prevent calibration test blur
-                const rect = canvas.getBoundingClientRect();
-                const dpr = window.devicePixelRatio || 1;
-                const physicalSize = Math.min(1024, Math.round(rect.width * dpr));
-                canvas.width = physicalSize;
-                canvas.height = physicalSize;
-                overlayCanvas.width = physicalSize;
-                overlayCanvas.height = physicalSize;
-                
-                // Stop Synoptophore animation rendering during calibration test to avoid screen buffer overwrites
-                if (synoptophoreController) {
-                    synoptophoreController.stopFlickerLoop();
-                }
-
-                // Clear the lower WebGL canvas to stable neutral gray first, then draw vector letters on top
-                drawIdleState(canvas, null, overlayCanvas, overlayCtx, false);
-                drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
-                canvas.style.display = 'block';
-                overlayCanvas.style.display = 'block';
-                cross.style.display = 'none';
-            } else {
-                btnFusionTest.style.background = '#1a233a';
-                btnFusionTest.style.color = '#3b90ff';
-                
-                // Remove calibration bottom sheet layout class
-                if (settingsModal) settingsModal.classList.remove('calibration-mode');
-                
-                // Resume Synoptophore render loop once calibration test is deactivated
-                if (Store.state.appMode === 'synoptophore') {
-                    if (synoptophoreController) synoptophoreController.syncFlickerState();
-                }
-
-                drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
-                cross.style.display = 'block';
+            // Step 1: Smoothly blackout the backdrop and fade-out the menu content (Duration: 150ms)
+            if (settingsModal) {
+                settingsModal.classList.add('modal-blackout');
             }
+            if (modalContent) {
+                modalContent.classList.add('modal-transitioning');
+            }
+            
+            // If entering calibration, trigger smooth fade-out of the dark glassmorphism backdrop immediately (0ms)
+            if (!trialController.isAnaglyphTestActive && settingsModal) {
+                settingsModal.classList.add('modal-clear-backdrop');
+            }
+
+            // Step 2: Swap layout and trigger drawings precisely after backdrop becomes fully solid (150ms)
+            setTimeout(() => {
+                trialController.isAnaglyphTestActive = !trialController.isAnaglyphTestActive;
+                
+                if (trialController.isAnaglyphTestActive) {
+                    btnFusionTest.style.background = '#3b90ff';
+                    btnFusionTest.style.color = '#131a26';
+                    
+                    // Snapshot & Save current scroll position before entering compact calibration sheet
+                    if (scrollBody && settingsModal) {
+                        settingsModal._savedScrollTop = scrollBody.scrollTop;
+                    }
+                    
+                    // Toggle calibration bottom sheet layout class
+                    if (settingsModal) {
+                        settingsModal.classList.add('calibration-mode');
+                        if (scrollBody) scrollBody.scrollTop = 0; // Set to top for compact sliders view
+                    }
+                    
+                    const selectRedSide = document.getElementById('select-red-side');
+                    const selectLazySide = document.getElementById('select-lazy-side');
+                    if (selectRedSide) Store.state.redEyeSide = selectRedSide.value;
+                    if (selectLazySide) Store.state.lazyEyeSide = selectLazySide.value;
+
+                    // Dynamically scale canvas backing store to prevent calibration test blur
+                    const rect = canvas.getBoundingClientRect();
+                    const dpr = window.devicePixelRatio || 1;
+                    const physicalSize = Math.min(1024, Math.round(rect.width * dpr));
+                    canvas.width = physicalSize;
+                    canvas.height = physicalSize;
+                    overlayCanvas.width = physicalSize;
+                    overlayCanvas.height = physicalSize;
+                    
+                    // Stop Synoptophore animation rendering during calibration test to avoid screen buffer overwrites
+                    if (synoptophoreController) {
+                        synoptophoreController.stopFlickerLoop();
+                    }
+
+                    // Clear the lower WebGL canvas to stable neutral gray first, then draw vector letters on top
+                    drawIdleState(canvas, null, overlayCanvas, overlayCtx, false);
+                    drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
+                    canvas.style.display = 'block';
+                    overlayCanvas.style.display = 'block';
+                    cross.style.display = 'none';
+                } else {
+                    btnFusionTest.style.background = '#1a233a';
+                    btnFusionTest.style.color = '#3b90ff';
+                    
+                    // Remove calibration bottom sheet layout class and restore normal settings view
+                    if (settingsModal) {
+                        settingsModal.classList.remove('calibration-mode');
+                        // Smoothly fade-in the dark glassmorphism backdrop (150ms to 300ms)
+                        settingsModal.classList.remove('modal-clear-backdrop');
+                    }
+                    
+                    // Symmetrically restore saved scroll position
+                    if (scrollBody && settingsModal && settingsModal._savedScrollTop !== undefined) {
+                        scrollBody.scrollTop = settingsModal._savedScrollTop;
+                    }
+                    
+                    // Resume Synoptophore render loop once calibration test is deactivated
+                    if (Store.state.appMode === 'synoptophore') {
+                        if (synoptophoreController) synoptophoreController.syncFlickerState();
+                    }
+
+                    drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
+                    cross.style.display = 'block';
+                }
+
+                // Step 3: Smoothly fade content and backdrop back to their respective modes, and melt the local curtain
+                if (modalContent) {
+                    modalContent.classList.remove('modal-transitioning');
+                }
+                if (calibrationCurtain) {
+                    calibrationCurtain.classList.remove('active');
+                }
+            }, 250);
         });
     }
 
@@ -702,46 +526,23 @@ window.addEventListener('load', async () => {
         cross.style.display = 'block';
     }
 
-    // Global Pomodoro Timer Heartbeat Loop (SoC: Runs completely isolated on the presentation layer)
-    setInterval(() => {
-        const s = Store.state;
-        if (!s.timerIsRunning || s.timerLimitMinutes === 0) return;
-
-        // Smart Pause: Halts physiological countdown if any overlay modal is blocking the screen
-        const settingsModal = document.getElementById('settings-modal');
-        const infoModal = document.getElementById('info-modal');
-        const statsModal = document.getElementById('stats-modal');
-        const customAlertModal = document.getElementById('custom-alert-modal');
-
-        const isSettingsOpen = settingsModal && settingsModal.style.display !== 'none' && settingsModal.style.display !== '';
-        const isInfoOpen = infoModal && infoModal.style.display !== 'none' && infoModal.style.display !== '';
-        const isStatsOpen = statsModal && statsModal.style.display !== 'none' && statsModal.style.display !== '';
-        const isAlertOpen = customAlertModal && customAlertModal.style.display !== 'none' && customAlertModal.style.display !== '';
-
-        if (isSettingsOpen || isInfoOpen || isStatsOpen || isAlertOpen) {
-            return; // Maintain state securely while patient reads configurations
-        }
-
-        // Deduct interval synchronously utilizing Store validators
-        Store.updateState('timerRemainingSeconds', Math.max(0, s.timerRemainingSeconds - 1));
-        updateScoreboard(s, activeTranslations);
-
-        // Terminate active operations and enforce a strict clinical break interval on zero
-        if (s.timerRemainingSeconds <= 0) {
-            Store.updateState('timerIsRunning', false);
-            
-            // Abort ongoing hardware rendering loops securely
+    // Global Pomodoro Timer Heartbeat Loop (SoC: Runs completely isolated via Timer utility)
+    const pomodoro = new PomodoroTimer(
+        (state) => {
+            updateScoreboard(state, activeTranslations);
+        },
+        (state) => {
             if (trialController) trialController.abort();
             if (synoptophoreController) synoptophoreController.abort();
             
-            drawIdleState(canvas, null, overlayCanvas, overlayCtx, s.isFusionLockEnabled);
+            drawIdleState(canvas, null, overlayCanvas, overlayCtx, state.isFusionLockEnabled);
             
             const t = activeTranslations;
-            if (s.appMode === 'synoptophore') {
-                if (s.synopFlickerActive) {
+            if (state.appMode === 'synoptophore') {
+                if (state.synopFlickerActive) {
                     synoptophoreController.stopFlickerLoop();
                 } else {
-                    drawSynoptophoreTargets(overlayCanvas, overlayCtx, s);
+                    drawSynoptophoreTargets(overlayCanvas, overlayCtx, state);
                 }
                 cross.style.display = 'none';
                 btnStart.innerText = t.btnSynopLock;
@@ -750,14 +551,9 @@ window.addEventListener('load', async () => {
                 btnStart.innerText = t.startBtn;
             }
 
-            playSuccess(s.isMuted); // Positive acoustical reinforcement upon completion
+            playSuccess(state.isMuted);
             showCustomAlert(t.titlePomodoro || '🍅 Pomodoro', t.sessionTimerCompleted);
         }
-    }, 1000);
-
-    // Register Service Worker for offline-capable clinical execution
-    if ('serviceWorker' in navigator && !import.meta.env.DEV) {
-        navigator.serviceWorker.register('./sw.js')
-            .catch(err => console.warn('PWA service worker registration bypassed:', err));
-    }
+    );
+    pomodoro.init();
 });

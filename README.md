@@ -36,8 +36,6 @@
   <a href="https://imkeim.github.io/GaborNeuroFit/">▶️ PLAY GABORNEUROFIT LIVE NOW</a>
 </p>
 
----
-
 ## ✍️ A Note from the Author: From Frustration to Healing
 
 My name is Pavel. I have had anisometropic amblyopia (lazy eye caused by unequal refractive power between the eyes) since childhood. At age 26, after undergoing laser eye correction, I set a goal: to do whatever it took to wake up my lazy eye and teach my brain to see binocularly.
@@ -50,26 +48,27 @@ When I consulted local eye clinics, they simply shook their heads: *"We don't tr
 
 I refused to accept that. I dove into visual neuroscience, studying spatial frequencies, lateral inhibition, and binocular gating. I partnered with the **Gemini 1.5 Flash** neural network, and together we built this software. Under the hood, the code is optimized for performance and clinical precision. I wrote this because nobody else would build it for us. I hope it brings you and your children the progress you've been fighting for.
 
----
-
 ## 🔬 The Scientific "Whys"
 
 ### Why Gabor Patches? (🧿)
+
 Gabor patches are the "letters" of the primary visual cortex ($V1$). The simple cells in your brain's occipital lobe are strictly tuned to detect lines at specific angles. By forcing your weaker eye to resolve these faint, blurry lines right at your sensory threshold, you directly drive synaptic remodeling (Hebbian plasticity) in $V1$.
 
 ### Why Red-Cyan 3D Glasses? (🕶️)
+
 Patching (occlusion) is a monocular treatment, but it doesn't cure **binocular suppression** (the brain actively blocking the lazy eye). 3D glasses split the color channels. The lazy eye sees the target (Gabor), while the healthy eye sees the noise. To solve the task, the brain has no choice but to combine the signals, breaking the suppression loop.
 
 ### Why Flanker Distractors? (🩹)
+
 A lazy eye struggles to read because surrounding letters blur together (the "visual crowding effect"). By presenting the Gabor target to your lazy eye and the flanking distractors to your healthy eye, we train the brain to separate target details under active binocular noise.
 
 ### Why Flicker (10 Hz)? (🌀)
+
 Flickering the stimulus at 10 Hz (Alpha frequency) forces your visual cortex into resonance (SSVEP). This rapid pulsing overloads and bypasses the brain's slow top-down suppression mechanisms and prevents **Troxler's fading** (the disappearing of static low-contrast objects).
 
 ### Why a Digital Synoptophore? (🧲)
-Amblyopia and Strabismus (misaligned eyes) are deeply connected. If your muscles cannot physically align your eyes, the brain will suppress the lazy eye to avoid double vision. The digital Synoptophore bridges this gap: you align the targets to your exact squint angle (sensory fusion), and the software slowly pulls them back to true center (0,0), forcing your eye muscles to contract and build binocular stamina.
 
----
+Amblyopia and Strabismus (misaligned eyes) are deeply connected. If your muscles cannot physically align your eyes, the brain will suppress the lazy eye to avoid double vision. The digital Synoptophore bridges this gap: you align the targets to your exact squint angle (sensory fusion), and the software slowly pulls them back to true center (0,0), forcing your eye muscles to contract and build binocular stamina.
 
 ## 🎮 Clinical Training Protocols
 
@@ -83,9 +82,6 @@ GaborNeuroFit features 6 scientifically structured active templates:
 *   ⚙️ **Custom Configuration**: Unlocks all individual toggles for clinicians to design custom training routines.
 *   🧲 **Synoptophore (3D Vergence)**: A specialized orthoptic simulator targeting strabismus. You manually align targets, then the software slowly pulls them to center to train ocular muscles.
 
-
----
-
 ## 🏃‍♂️ How to Train Correctly
 
 1.  **Wear your correction:** If you wear glasses or contact lenses, put them on.
@@ -94,25 +90,25 @@ GaborNeuroFit features 6 scientifically structured active templates:
 4.  **Frequency:** Train for 15 minutes a day (roughly 100–150 attempts). Rest is critical for consolidating visual memory.
 5.  **Listen to your body:** If your eyes water or feel painful, stop immediately.
 
----
-
 ## 🧭 Quick Start Guide
 
 ### ⚡ "I clicked START and it flashed for a split second! Is it broken?"
+
 No. The flash is supposed to be fast (100–220 ms). This prevents your strong eye's muscles from adjusting and "cheating". **Do not analyze the lines.** Trust your pure instinct and click Left or Right immediately.
 
 ### 👓 "The images don't align! I see a double image"
+
 Open the settings and drag the **Strong Eye Contrast Balancer** slider down to **15% or 20%**. This makes the healthy eye's image faint, allowing your brain to easily ignore the drift while your weak eye's pathway adapts.
 
 ### 🌀 "I feel like I'm completely guessing. Is this even doing anything?"
+
 Yes! Perceptual learning operates at the absolute threshold. Trust the adaptive staircase. If your accuracy is above 70%, your visual cortex is resolving the pattern subliminally. This "struggle" is where the brain remodels its synapses.
 
 ### 🧲 "How do I use the Synoptophore Mode?"
+
 1. Use WASD, Arrow keys, or touch to move the outer ring until the center dot is perfectly inside it (matching your squint angle).
 2. Click **"LOCK FUSION"**. The software will now slowly pull the ring back to the center (0,0).
 3. Do not let the dot slip out! If it does, press **"SLIPPED / RESET"** and try again.
-
----
 
 ## 📚 Key Scientific Literature
 

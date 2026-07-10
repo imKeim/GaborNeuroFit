@@ -25,6 +25,7 @@ const FRAGMENT_SHADER_SOURCE = `
     uniform vec4 u_flanker_main; // [flankerAngleRad, flankerContrast, flankerOffset, phaseOffset]
     uniform vec3 u_calib_scale; // [leftScale, rightGScale, rightBScale]
     uniform vec4 u_flags; // [isAnaglyph, isCrowding, isLazyEyeRed, hideCentral]
+    uniform float u_crowding_mode; // 0=vertical, 1=horizontal, 2=all-sides
 
     void main() {
         vec2 st = gl_FragCoord.xy;
@@ -72,19 +73,43 @@ const FRAGMENT_SHADER_SOURCE = `
         // Flankers calculations
         float flankerGaborValue = 0.0;
         if (isCrowding) {
-            // Top flanker normalized to logical coordinates
+            int crowdMode = int(u_crowding_mode + 0.5); // 0=vertical, 1=horizontal, 2=all
+
+            // Helper macro: compute a single flanker Gabor value at given screen-space offset
+            // Top flanker (used in vertical and all-sides)
             vec2 d1 = (st - (center + vec2(offsetX, offsetY - flankerOffset) * u_scale)) / u_scale;
             float x_t1 = d1.x * cos(flankerAngleRad) + d1.y * sin(flankerAngleRad);
             float y_t1 = -d1.x * sin(flankerAngleRad) + d1.y * cos(flankerAngleRad);
-            float g1 = exp(-(x_t1 * x_t1 + aspectRatio * aspectRatio * y_t1 * y_t1) / (2.0 * sigma * sigma)) * cos(2.0 * 3.14159265 * x_t1 * freq + flankerPhaseOffset);
+            float g_top = exp(-(x_t1*x_t1 + aspectRatio*aspectRatio*y_t1*y_t1) / (2.0*sigma*sigma)) * cos(2.0*3.14159265*x_t1*freq + flankerPhaseOffset);
 
-            // Bottom flanker normalized to logical coordinates
+            // Bottom flanker
             vec2 d2 = (st - (center + vec2(offsetX, offsetY + flankerOffset) * u_scale)) / u_scale;
             float x_t2 = d2.x * cos(flankerAngleRad) + d2.y * sin(flankerAngleRad);
             float y_t2 = -d2.x * sin(flankerAngleRad) + d2.y * cos(flankerAngleRad);
-            float g2 = exp(-(x_t2 * x_t2 + aspectRatio * aspectRatio * y_t2 * y_t2) / (2.0 * sigma * sigma)) * cos(2.0 * 3.14159265 * x_t2 * freq + flankerPhaseOffset);
+            float g_bot = exp(-(x_t2*x_t2 + aspectRatio*aspectRatio*y_t2*y_t2) / (2.0*sigma*sigma)) * cos(2.0*3.14159265*x_t2*freq + flankerPhaseOffset);
 
-            flankerGaborValue = (g1 + g2) * 0.55 * fade;
+            // Left flanker
+            vec2 d3 = (st - (center + vec2(offsetX - flankerOffset, offsetY) * u_scale)) / u_scale;
+            float x_t3 = d3.x * cos(flankerAngleRad) + d3.y * sin(flankerAngleRad);
+            float y_t3 = -d3.x * sin(flankerAngleRad) + d3.y * cos(flankerAngleRad);
+            float g_lft = exp(-(x_t3*x_t3 + aspectRatio*aspectRatio*y_t3*y_t3) / (2.0*sigma*sigma)) * cos(2.0*3.14159265*x_t3*freq + flankerPhaseOffset);
+
+            // Right flanker
+            vec2 d4 = (st - (center + vec2(offsetX + flankerOffset, offsetY) * u_scale)) / u_scale;
+            float x_t4 = d4.x * cos(flankerAngleRad) + d4.y * sin(flankerAngleRad);
+            float y_t4 = -d4.x * sin(flankerAngleRad) + d4.y * cos(flankerAngleRad);
+            float g_rgt = exp(-(x_t4*x_t4 + aspectRatio*aspectRatio*y_t4*y_t4) / (2.0*sigma*sigma)) * cos(2.0*3.14159265*x_t4*freq + flankerPhaseOffset);
+
+            if (crowdMode == 1) {
+                // Horizontal only: left + right
+                flankerGaborValue = (g_lft + g_rgt) * 0.55 * fade;
+            } else if (crowdMode == 2) {
+                // All four sides — scale down to maintain equal perceptual weight per flanker
+                flankerGaborValue = (g_top + g_bot + g_lft + g_rgt) * 0.275 * fade;
+            } else {
+                // Default: vertical only — top + bottom
+                flankerGaborValue = (g_top + g_bot) * 0.55 * fade;
+            }
         }
 
         float L_bg = 0.21763;
@@ -161,6 +186,7 @@ class WebGLResourceManager {
         this.u_flanker_main = gl.getUniformLocation(program, 'u_flanker_main');
         this.u_calib_scale = gl.getUniformLocation(program, 'u_calib_scale');
         this.u_flags = gl.getUniformLocation(program, 'u_flags');
+        this.u_crowding_mode = gl.getUniformLocation(program, 'u_crowding_mode');
 
         this.isReady = true;
     }
@@ -219,6 +245,8 @@ class WebGLResourceManager {
         const angleRad = (angleDeg * Math.PI) / 180;
         const flankerAngleRad = state.isOrthogonalFlankersEnabled ? (angleRad + Math.PI / 2) : 0;
         const flankerOffset = sigma * 2.0;
+        const crowdingModeMap = { vertical: 0, horizontal: 1, all: 2 };
+        const crowdingModeVal = crowdingModeMap[state.crowdingMode] ?? 0;
 
         gl.uniform2f(this.u_resolution, this.canvas.width, this.canvas.height);
         gl.uniform1f(this.u_scale, scale);
@@ -227,6 +255,7 @@ class WebGLResourceManager {
         gl.uniform4f(this.u_flanker_main, -flankerAngleRad, flankerContrast * state.strongEyeContrastFactor, flankerOffset, flankerPhaseOffset);
         gl.uniform3f(this.u_calib_scale, state.calibratorLeftR / 255, state.calibratorRightG / 255, state.calibratorRightB / 255);
         gl.uniform4f(this.u_flags, state.isAnaglyphEnabled ? 1.0 : 0.0, state.isCrowdingEnabled ? 1.0 : 0.0, (state.lazyEyeSide === state.redEyeSide) ? 1.0 : 0.0, hideCentral ? 1.0 : 0.0);
+        gl.uniform1f(this.u_crowding_mode, crowdingModeVal);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
@@ -299,9 +328,10 @@ export function drawFusionTestPattern(canvas, ctx, state) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    const leftR = state.calibratorLeftR;
-    const rightG = state.calibratorRightG;
-    const rightB = state.calibratorRightB;
+    const isSynop = state.appMode === 'synoptophore';
+    const leftR = isSynop ? state.synopCalibratorLeftR : state.calibratorLeftR;
+    const rightG = isSynop ? state.synopCalibratorRightG : state.calibratorRightG;
+    const rightB = isSynop ? state.synopCalibratorRightB : state.calibratorRightB;
 
     const cx = 128;
     const cy = 128;

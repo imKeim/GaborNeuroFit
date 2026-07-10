@@ -17,6 +17,14 @@ function resolveHeaderColor(title) {
     return '#3b90ff'; // Standard Clinical Blue fallback
 }
 
+export function openModal(modal) {
+    if (modal) modal.classList.add('modal-open');
+}
+
+export function closeModal(modal) {
+    if (modal) modal.classList.remove('modal-open');
+}
+
 /**
  * Renders a beautiful non-blocking custom modal window in sRGB space.
  */
@@ -31,7 +39,7 @@ export function showCustomAlert(title, text) {
     textEl.innerHTML = text;
     titleEl.style.color = resolveHeaderColor(title);
     
-    modal.style.display = 'flex';
+    openModal(modal);
     if (window.twemoji) window.twemoji.parse(modal);
 }
 
@@ -40,7 +48,7 @@ export function showCustomAlert(title, text) {
  */
 export function closeCustomAlert() {
     const modal = document.getElementById('custom-alert-modal');
-    if (modal) modal.style.display = 'none';
+    closeModal(modal);
 }
 
 /**
@@ -61,18 +69,18 @@ export function showCustomConfirm(title, text, yesLabel, noLabel, callback) {
     btnYes.textContent = yesLabel;
     btnNo.textContent = noLabel;
     
-    modal.style.display = 'flex';
+    openModal(modal);
     if (window.twemoji) window.twemoji.parse(modal);
     
     // Core event handlers with standard lexical scopes for absolute teardown
     const onYes = () => {
-        modal.style.display = 'none';
+        closeModal(modal);
         cleanup();
         callback(true);
     };
     
     const onNo = () => {
-        modal.style.display = 'none';
+        closeModal(modal);
         cleanup();
         callback(false);
     };
@@ -117,13 +125,13 @@ export function initModals(onSettingsOpen, onSettingsSave, onStatsOpen) {
     // Bind manual modal triggers
     if (btnInfo && infoModal) {
         btnInfo.addEventListener('click', () => {
-            infoModal.style.display = 'flex'; // Uses flex overlay for perfect vertical centering
+            openModal(infoModal);
             if (window.twemoji) window.twemoji.parse(infoModal); // Lazy-parse handbook on demand
         });
     }
     if (btnCloseModal && infoModal) {
         btnCloseModal.addEventListener('click', () => {
-            infoModal.style.display = 'none';
+            closeModal(infoModal);
         });
     }
 
@@ -134,7 +142,7 @@ export function initModals(onSettingsOpen, onSettingsSave, onStatsOpen) {
             if (typeof onSettingsOpen === 'function') {
                 onSettingsOpen();
             }
-            settingsModal.style.display = 'flex'; // Uses flex overlay for perfect vertical centering
+            openModal(settingsModal);
             if (window.twemoji) window.twemoji.parse(settingsModal); // Lazy-parse settings on demand
         });
     }
@@ -145,7 +153,7 @@ export function initModals(onSettingsOpen, onSettingsSave, onStatsOpen) {
             if (typeof onSettingsSave === 'function') {
                 onSettingsSave();
             }
-            settingsModal.style.display = 'none';
+            closeModal(settingsModal);
         });
     }
 
@@ -155,14 +163,14 @@ export function initModals(onSettingsOpen, onSettingsSave, onStatsOpen) {
             if (typeof onStatsOpen === 'function') {
                 onStatsOpen();
             }
-            statsModal.style.display = 'flex'; // Uses flex overlay for perfect vertical centering
+            openModal(statsModal);
             if (window.twemoji) window.twemoji.parse(statsModal); // Lazy-parse statistics on demand
         });
     }
 
     if (btnCloseStats && statsModal) {
         btnCloseStats.addEventListener('click', () => {
-            statsModal.style.display = 'none';
+            closeModal(statsModal);
         });
     }
 }

@@ -5,15 +5,6 @@
 
 import { drawFusionLockFrame } from './gabor.js';
 
-/**
- * Renders dichoptic alignment targets on the transparent 2D overlay canvas.
- * Keeps foveation coordinates calibrated on a logical 256x256 workspace.
- * 
- * @param {HTMLCanvasElement} canvas - The target canvas.
- * @param {CanvasRenderingContext2D} ctx - The 2D rendering context.
- * @param {Object} state - The global store state representation.
- * @param {number} factor - Dynamic luminance interpolation multiplier for 10Hz resonance flicker (0.0 to 1.0).
- */
 export function drawSynoptophoreTargets(canvas, ctx, state, factor = 1.0) {
     if (!canvas || !ctx) return;
 
@@ -25,43 +16,42 @@ export function drawSynoptophoreTargets(canvas, ctx, state, factor = 1.0) {
     const cx = 128;
     const cy = 128;
 
-    const r = state.calibratorLeftR;
-    const g = state.calibratorRightG;
-    const b = state.calibratorRightB;
+    const r = state.synopCalibratorLeftR;
+    const g = state.synopCalibratorRightG;
+    const b = state.synopCalibratorRightB;
 
     const isLazyRed = (state.lazyEyeSide === state.redEyeSide);
 
-    // CLINICAL COUNTER-PHASE INTERPOLATION (RESONANCE FLICKER)
+    // Fade strong eye colors towards neutral gray (127) using the independent Synoptophore contrast factor balancer
+    const strongFactor = state.synopStrongEyeContrastFactor;
+    
+    // Resolve pure channel attenuations for non-lazy channels
+    const r_attenuated = isLazyRed ? r : Math.round(127 + (r - 127) * strongFactor);
+    const g_attenuated = isLazyRed ? Math.round(127 + (g - 127) * strongFactor) : g;
+    const b_attenuated = isLazyRed ? Math.round(127 + (b - 127) * strongFactor) : b;
+
+    // CLINICAL COUNTER-PHASE INTERPOLATION (RESONANCE FLICKER) FOR LAZY EYE
     // Oscillates the target from "Bright Calibrated" to "Dark Inverse" through the neutral gray background.
-    // This maintains a zero-net-luminance flux, reducing pupillary fatigue and maximizing V1 stimulation.
-    const r_lazy = Math.max(0, Math.min(255, Math.round(127 + (r - 127) * factor)));
-    const g_lazy = Math.max(0, Math.min(255, Math.round(127 + (g - 127) * factor)));
-    const b_lazy = Math.max(0, Math.min(255, Math.round(127 + (b - 127) * factor)));
+    const flickerFactor = factor;
+    
+    const r_lazy = isLazyRed ? Math.max(0, Math.min(255, Math.round(127 + (r - 127) * flickerFactor))) : r_attenuated;
+    const g_lazy = isLazyRed ? g_attenuated : Math.max(0, Math.min(255, Math.round(127 + (g - 127) * flickerFactor)));
+    const b_lazy = isLazyRed ? b_attenuated : Math.max(0, Math.min(255, Math.round(127 + (b - 127) * flickerFactor)));
 
-    const pureRedFlicker = `rgb(${r_lazy}, 127, 127)`;
-    const pureCyanFlicker = `rgb(127, ${g_lazy}, ${b_lazy})`;
-
-    const pureRedSolid = `rgb(${r}, 127, 127)`;
-    const pureCyanSolid = `rgb(127, ${g}, ${b})`;
-
-    // Apply interpolated colors strictly to the lazy eye geometry to smash suppression.
-    const lazyColor = isLazyRed ? pureRedFlicker : pureCyanFlicker;
-    const strongColor = isLazyRed ? pureCyanSolid : pureRedSolid;
+    const lazyColor = isLazyRed ? `rgb(${r_lazy}, 127, 127)` : `rgb(127, ${g_lazy}, ${b_lazy})`;
+    const strongColor = isLazyRed ? `rgb(127, ${g_attenuated}, ${b_attenuated})` : `rgb(${r_attenuated}, 127, 127)`;
 
     const tx = state.synopTargetX;
     const ty = state.synopTargetY;
 
-    // Center coordinates for lazy and strong channels
     const lx = cx + tx;
     const ly = cy + ty;
 
-    // LAYER 1: Draw Target Alignment Grid (Visir) FIRST - so it renders BEHIND targets and frame
     if (state.synopShowLazyGrid || state.synopShowStrongGrid) {
         ctx.save();
-        ctx.setLineDash([2, 5]); // Clinically optimized, thick micro-dotted pattern for low-acuity amblyopic eyes
+        ctx.setLineDash([2, 5]);
         ctx.lineWidth = 2.5;
 
-        // Lazy eye diagonal guidelines converging precisely into the center (lx, ly)
         if (state.synopShowLazyGrid) {
             ctx.strokeStyle = lazyColor;
             ctx.beginPath();
@@ -72,7 +62,6 @@ export function drawSynoptophoreTargets(canvas, ctx, state, factor = 1.0) {
             ctx.stroke();
         }
 
-        // Strong eye diagonal guidelines converging precisely into the static foveal center (cx, cy)
         if (state.synopShowStrongGrid) {
             ctx.strokeStyle = strongColor;
             ctx.beginPath();
@@ -86,18 +75,13 @@ export function drawSynoptophoreTargets(canvas, ctx, state, factor = 1.0) {
         ctx.restore();
     }
 
-    // LAYER 2: Draw Active Targets (Middle layer with Ophthalmic proportional scaling & Concentric Parity Lock)
     const size = state.synopTargetSize || 65;
     const lineWidth = Math.max(3, Math.round(size * 0.09));
     
-    // CONCENTRIC PARITY LOCK: Enforce even-integer boundaries on all central elements.
-    const dotRadius = 2 * Math.round((size * 0.12) / 2);
-    const crossHalf = 2 * Math.round((size * 0.15) / 2); // Reduced from 0.3 to 0.15 to ensure visual parity with the dot and prevent suppression
+    const dotRadius = size * 0.12;
+    const crossHalf = size * 0.15; 
 
     if (state.synopTargetType === 'cross-square') {
-        // GEOMETRY B: Hollow Square (Lazy) + Thick Cross (Strong)
-        
-        // 1. Draw Strong Eye Target FIRST
         ctx.strokeStyle = strongColor;
         ctx.lineWidth = lineWidth;
         ctx.lineCap = 'round';
@@ -108,7 +92,6 @@ export function drawSynoptophoreTargets(canvas, ctx, state, factor = 1.0) {
         ctx.lineTo(cx, cy + crossHalf);
         ctx.stroke();
 
-        // 2. Draw Lazy Eye Target SECOND - wraps around the cross with a clean gap!
         ctx.strokeStyle = lazyColor;
         ctx.lineWidth = lineWidth;
         ctx.beginPath();
@@ -116,15 +99,11 @@ export function drawSynoptophoreTargets(canvas, ctx, state, factor = 1.0) {
         ctx.stroke();
 
     } else {
-        // GEOMETRY A (Default): Massive Hollow Ring (Lazy) + Solid Dot (Strong)
-        
-        // 1. Draw Strong Eye Target FIRST
         ctx.fillStyle = strongColor;
         ctx.beginPath();
         ctx.arc(cx, cy, dotRadius, 0, 2 * Math.PI);
         ctx.fill();
 
-        // 2. Draw Lazy Eye Target SECOND - wraps around the dot with a clean gap!
         ctx.strokeStyle = lazyColor;
         ctx.lineWidth = lineWidth;
         ctx.beginPath();
@@ -132,7 +111,6 @@ export function drawSynoptophoreTargets(canvas, ctx, state, factor = 1.0) {
         ctx.stroke();
     }
 
-    // LAYER 3: Draw Peripheral Fusion Lock LAST - acts as a stencil mask covering circle/lines edges
     if (state.isFusionLockEnabled) {
         drawFusionLockFrame(canvas, ctx, scale);
     }
