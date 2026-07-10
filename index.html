@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>🧿 GaborNeuroFit</title>
-    <link rel="icon" type="image/svg+xml" href="./assets/favicon-BTXb1dGy.svg">
+    <link rel="icon" type="image/svg+xml" href="./assets/favicon-DSgW1i4M.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -14,8 +14,8 @@
     <meta name="apple-mobile-web-app-title" content="GaborNeuroFit">
     <link rel="apple-touch-icon" href="icon-192.png">
     <meta name="theme-color" content="#131a26">
-  <script type="module" crossorigin src="./assets/index-CvKBHO83.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-D7aIjDr0.css">
+  <script type="module" crossorigin src="./assets/index-BFVolZib.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-Daw31yhU.css">
 <link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:inline-sw">if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('./sw.js', { scope: './' })})}</script></head>
 <body>
     <!-- CRITICAL: Fullscreen hardware-accelerated overlay for success/error flash feedback -->
@@ -46,6 +46,7 @@
                 <div id="cross">+</div>
                 <canvas id="gaborCanvas" width="256" height="256"></canvas>
                 <canvas id="overlayCanvas" width="256" height="256"></canvas>
+                <div id="calibration-curtain"></div> <!-- Local curtain to mask canvas snaps dynamically -->
             </div>
         </div>
 
@@ -283,6 +284,16 @@
                         </div>
                         <span class="settings-help" data-i18n="helpCrowding" id="help-crowding"></span>
                     </div>
+                    <div class="settings-row" id="row-crowding-mode" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                            <label data-i18n="lblSettingCrowdingMode"></label>
+                            <select id="select-crowding-mode">
+                                <option value="vertical" data-i18n="optCrowdingVertical"></option>
+                                <option value="horizontal" data-i18n="optCrowdingHorizontal"></option>
+                                <option value="all" data-i18n="optCrowdingAll"></option>
+                            </select>
+                        </div>
+                    </div>
                     <!-- CRITICAL: row-orthogonal and row-dynamic visibility/opacities are tied re-actively to chk-crowding in settings.js -->
                     <div class="settings-row" id="row-orthogonal" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
@@ -335,7 +346,11 @@
                                 <label data-i18n="lblSettingStrongAttenuation"></label>
                                 <span id="val-strong-attenuation" style="color: #3b90ff; font-weight: bold;">30%</span>
                             </div>
-                            <input type="range" id="range-strong-attenuation" min="10" max="100" step="5" value="30" style="width: 100%; accent-color: #007aff; cursor: pointer; margin-top: 6px;">
+                            <div class="slider-row" style="display: flex; align-items: center; width: 100%; gap: 8px;">
+                                <button class="nudge-btn" data-nudge-target="range-strong-attenuation" data-nudge-step="5" data-nudge-dir="-1">−</button>
+                                <input type="range" id="range-strong-attenuation" min="10" max="100" step="5" value="30" style="flex: 1; accent-color: #007aff; cursor: pointer; margin-top: 6px;">
+                                <button class="nudge-btn" data-nudge-target="range-strong-attenuation" data-nudge-step="5" data-nudge-dir="1">+</button>
+                            </div>
                         </div>
                         <div class="settings-row" id="row-fusion-lock" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
@@ -351,11 +366,11 @@
                                 <span data-i18n-html="lblSettingLeftColor" style="font-size: 13px; font-weight: 500;"></span>
                                 <span id="val-calib-r" style="color: #ef4444; font-weight: bold; font-size: 13px;">255</span>
                             </div>
-                            <div style="width: 100%; display: flex; flex-direction: column; gap: 6px; padding-left: 4px;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
+                            <div class="slider-row">
                                     <span style="width: 12px; font-size: 11px; font-weight: bold; color: #ef4444;">R</span>
-                                    <input type="range" id="slider-left-r" min="0" max="255" value="255" style="flex: 1; accent-color: #ef4444; height: 4px; cursor: pointer;">
-                                </div>
+                                    <button class="nudge-btn" data-nudge-target="slider-left-r" data-nudge-step="1" data-nudge-dir="-1">−</button>
+                                    <input type="range" id="slider-left-r" min="0" max="255" value="255" style="--slider-thumb-color: #ef4444; flex: 1; height: 4px; cursor: pointer;">
+                                    <button class="nudge-btn" data-nudge-target="slider-left-r" data-nudge-step="1" data-nudge-dir="1">+</button>
                             </div>
                         </div>
                         <!-- Right Lens Calibration (Subpixel Green/Blue balance) -->
@@ -367,14 +382,18 @@
                                     <span style="color: #3b82f6;">B: <span id="val-calib-b">255</span></span>
                                 </div>
                             </div>
-                            <div style="width: 100%; flex-direction: column; gap: 6px; padding-left: 4px;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 100%; display: flex; flex-direction: column; gap: 6px; padding-left: 4px;">
+                                <div class="slider-row">
                                     <span style="width: 12px; font-size: 11px; font-weight: bold; color: #22c55e;">G</span>
-                                    <input type="range" id="slider-right-g" min="0" max="255" value="255" style="flex: 1; accent-color: #22c55e; height: 4px; cursor: pointer;">
+                                    <button class="nudge-btn" data-nudge-target="slider-right-g" data-nudge-step="1" data-nudge-dir="-1">−</button>
+                                    <input type="range" id="slider-right-g" min="0" max="255" value="255" style="--slider-thumb-color: #22c55e; flex: 1; height: 4px; cursor: pointer;">
+                                    <button class="nudge-btn" data-nudge-target="slider-right-g" data-nudge-step="1" data-nudge-dir="1">+</button>
                                 </div>
-                                <div style="display: flex; align-items: center; gap: 8px;">
+                                <div class="slider-row">
                                     <span style="width: 12px; font-size: 11px; font-weight: bold; color: #3b82f6;">B</span>
-                                    <input type="range" id="slider-right-b" min="0" max="255" value="255" style="flex: 1; accent-color: #3b82f6; height: 4px; cursor: pointer;">
+                                    <button class="nudge-btn" data-nudge-target="slider-right-b" data-nudge-step="1" data-nudge-dir="-1">−</button>
+                                    <input type="range" id="slider-right-b" min="0" max="255" value="255" style="--slider-thumb-color: #3b82f6; flex: 1; height: 4px; cursor: pointer;">
+                                    <button class="nudge-btn" data-nudge-target="slider-right-b" data-nudge-step="1" data-nudge-dir="1">+</button>
                                 </div>
                             </div>
                         </div>
@@ -439,6 +458,14 @@
                         </div>
                         <span class="settings-help" data-i18n="helpSynopLockY"></span>
                     </div>
+                    <!-- Vertical Strict Lock Row -->
+                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                            <label data-i18n="lblSettingSynopLockX" for="chk-synop-lock-x"></label>
+                            <input type="checkbox" id="chk-synop-lock-x">
+                        </div>
+                        <span class="settings-help" data-i18n="helpSynopLockX"></span>
+                    </div>
                     <!-- Lazy Eye Target Alignment Grid (Dashed Visir) Row -->
                     <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
@@ -465,7 +492,7 @@
     </div>
 
     <!-- CUSTOM NON-BLOCKING ALERT DIALOG -->
-    <div id="custom-alert-modal" class="modal" style="display: none; z-index: 3000; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+    <div id="custom-alert-modal" class="modal" style="z-index: 3000;">
         <div class="modal-content" style="height: auto; max-height: 320px; width: 88%; max-width: 420px; text-align: center; border-radius: var(--border-radius-elements); padding: 20px;">
             <h2 id="custom-alert-title" style="margin-top: 0; margin-bottom: 12px; font-size: 16px; color: #eab308; font-weight: 700;">GaborNeuroFit</h2>
             <div class="modal-scroll-body" style="font-size: 12px; color: #cbd5e1; line-height: 1.45; text-align: center; margin-bottom: 12px; padding: 0 4px;">
@@ -476,7 +503,7 @@
     </div>
 
     <!-- CUSTOM NON-BLOCKING CONFIRMATION DIALOG -->
-    <div id="custom-confirm-modal" class="modal" style="display: none; z-index: 3010; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+    <div id="custom-confirm-modal" class="modal" style="z-index: 3010;">
         <div class="modal-content" style="height: auto; max-height: 320px; width: 88%; max-width: 420px; text-align: center; border-radius: var(--border-radius-elements); padding: 20px;">
             <h2 id="custom-confirm-title" style="margin-top: 0; margin-bottom: 12px; font-size: 16px; color: #ef4444; font-weight: 700;">GaborNeuroFit</h2>
             <div class="modal-scroll-body" style="font-size: 12px; color: #cbd5e1; line-height: 1.45; text-align: center; margin-bottom: 12px; padding: 0 4px;">
@@ -517,7 +544,10 @@
                 <!-- Profile Selector Row -->
                 <div class="settings-row" style="margin-top: 5px;">
                     <label data-i18n="lblActiveProfile" for="select-active-profile"></label>
-                    <select id="select-active-profile" style="max-width: 60%; min-width: 140px;"></select>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span id="active-profile-emoji" style="font-size: 18px; line-height: 1;">👤</span>
+                        <select id="select-active-profile" style="max-width: 60%; min-width: 140px;"></select>
+                    </div>
                 </div>
 
                 <!-- New Profile Input Row -->
