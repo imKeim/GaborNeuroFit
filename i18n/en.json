@@ -146,7 +146,7 @@
   "helpSynopLockY": "Locks the vertical axis to zero. Ideal for treating standard horizontal strabismus without fat-finger errors.",
   "lblSettingSynopLockX": "Strict Vertical Mode (Lock X):",
   "helpSynopLockX": "Locks the horizontal axis to zero. Ideal for treating vertical strabismus without fat-finger errors.",
-  "lblActiveProfile": "Active Patient:",
+  "lblActiveProfile": "👤 Active Patient:",
   "placeholderNewProfile": "Enter Patient Name...",
   "btnAddProfile": "Add",
   "btnDeleteProfile": "Delete Profile",
