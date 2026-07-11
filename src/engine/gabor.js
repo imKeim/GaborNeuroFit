@@ -261,7 +261,17 @@ class WebGLResourceManager {
         gl.uniform4f(this.u_gabor_main, -angleRad, centralContrast, freq, sigma);
         gl.uniform3f(this.u_gabor_geom, offsetX, -offsetY, aspectRatio);
         gl.uniform4f(this.u_flanker_main, -flankerAngleRad, flankerContrast * state.strongEyeContrastFactor, flankerOffset, flankerPhaseOffset);
-        gl.uniform3f(this.u_calib_scale, state.calibratorLeftR / 255, state.calibratorRightG / 255, state.calibratorRightB / 255);
+        
+        // Map raw slider value [0..255] to a normalized offset multiplier [-1.0 .. 1.0] relative to 127 neutral center.
+        // This mathematically aligns the WebGL shader rendering with the 2D canvas calibrations.
+        const mapScale = (val) => (val - 127.0) / 128.0;
+        gl.uniform3f(
+            this.u_calib_scale, 
+            mapScale(state.calibratorLeftR), 
+            mapScale(state.calibratorRightG), 
+            mapScale(state.calibratorRightB)
+        );
+        
         gl.uniform4f(this.u_flags, state.isAnaglyphEnabled ? 1.0 : 0.0, state.isCrowdingEnabled ? 1.0 : 0.0, (state.lazyEyeSide === state.redEyeSide) ? 1.0 : 0.0, hideCentral ? 1.0 : 0.0);
         gl.uniform1f(this.u_crowding_mode, crowdingModeVal);
 

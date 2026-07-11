@@ -127,6 +127,23 @@ export class SettingsController {
 
     updatePresetUI() {
         const s = Store.state;
+        const isSynop = s.appMode === 'synoptophore';
+
+        if (!isSynop) {
+            // Safeguard: Automatically clamp Gabor subpixel calibrations to prevent negative phase underflow.
+            // Clinically, negative phases are useless for Gabor crosstalk cancellation.
+            if (s.calibratorLeftR < 127) s.calibratorLeftR = 127;
+            if (s.calibratorRightG < 127) s.calibratorRightG = 127;
+            if (s.calibratorRightB < 127) s.calibratorRightB = 127;
+        }
+
+        // Set the dynamic slider ranges immediately so they are respected during schema iteration
+        const sliderR = document.getElementById('slider-left-r');
+        const sliderG = document.getElementById('slider-right-g');
+        const sliderB = document.getElementById('slider-right-b');
+        if (sliderR) sliderR.min = isSynop ? "0" : "127";
+        if (sliderG) sliderG.min = isSynop ? "0" : "127";
+        if (sliderB) sliderB.min = isSynop ? "0" : "127";
 
         // Enforce presets ONLY in Gabor mode
         if (s.appMode === 'gabor' && s.presetMode !== 'custom') {
