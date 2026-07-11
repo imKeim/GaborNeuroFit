@@ -40,6 +40,10 @@ let settingsController = null;
 let synoptophoreController = null;
 let dashboardController = null;
 
+// Abstracted dragging coordinates context holds
+let dragStartX = 0;
+let dragStartY = 0;
+
 // Primary DOM References for view rendering
 const canvas = document.getElementById('gaborCanvas');
 const overlayCanvas = document.getElementById('overlayCanvas');
@@ -51,6 +55,20 @@ const btnStart = document.getElementById('btn-start');
 const btnFusionTest = document.getElementById('btn-fusion-test');
 
 const customAlertModal = document.getElementById('custom-alert-modal');
+
+/**
+ * @description Centralized helper to trigger side-effects during target alignment.
+ * Activates Pomodoro timers, forces canvas redraw, and updates the prismatic metrics scoreboard.
+ * Ensures strict synchronization of state with the rendering context.
+ * @returns {void}
+ */
+function triggerSynopDragEffects() {
+    Store.startTimerIfNeeded();
+    if (!Store.state.synopFlickerActive) {
+        drawSynoptophoreTargets(overlayCanvas, overlayCtx, Store.state);
+    }
+    updateScoreboard(Store.state, activeTranslations);
+}
 
 /**
  * Asynchronously loads translations from external static JSON bundles and updates DOM
@@ -283,26 +301,160 @@ window.addEventListener('load', async () => {
         }
     );
 
+    // Initializing the architectural Input Dispatcher Switchboard
     bindInputControls({
-        onAnswer: (choice) => trialController.submitAnswer(choice),
-        onStartFlash: () => runFlash(),
-        onSynopReset: () => {
-            playError(Store.state.isMuted);
-        },
-        onSynopDrag: () => {
-            // Track physical manipulation as active ocular therapy time
-            Store.startTimerIfNeeded();
-
-            // Prevent static draw conflict if animation loop is active
-            if (!Store.state.synopFlickerActive) {
-                drawSynoptophoreTargets(overlayCanvas, overlayCtx, Store.state);
+        onActionLeft: () => {
+            const s = Store.state;
+            if (trialController && trialController.isAnaglyphTestActive) return; // Prevent gameplay inputs during calibration
+            if (s.appMode === 'synoptophore') {
+                if (s.synopState === 'align') {
+                    Store.updateState('synopTargetX', s.synopTargetX - 1);
+                    triggerSynopDragEffects();
+                }
+            } else {
+                trialController.submitAnswer('left');
             }
-            updateScoreboard(Store.state, activeTranslations); // Real-time Prismatic Ruler update!
         },
-        onMuteToggle: () => {
-            Store.state.isMuted = !Store.state.isMuted;
+        onActionRight: () => {
+            const s = Store.state;
+            if (trialController && trialController.isAnaglyphTestActive) return; // Prevent gameplay inputs during calibration
+            if (s.appMode === 'synoptophore') {
+                if (s.synopState === 'align') {
+                    Store.updateState('synopTargetX', s.synopTargetX + 1);
+                    triggerSynopDragEffects();
+                }
+            } else {
+                trialController.submitAnswer('right');
+            }
+        },
+        onActionReset: () => {
+            const s = Store.state;
+            if (s.appMode === 'synoptophore' && s.synopState === 'align') {
+                Store.updateState('synopTargetX', 0);
+                Store.updateState('synopTargetY', 0);
+                playError(s.isMuted); // Sound effect on reset
+                triggerSynopDragEffects();
+            }
+        },
+        onActionPrimary: () => {
+            runFlash();
+        },
+        onActionMuteToggle: () => {
+            Store.updateState('isMuted', !Store.state.isMuted);
             Store.saveSettings();
             updateMuteBtnUI();
+        },
+        onActionCanvasClick: () => {
+            // Symmetrically limit canvas click exposure to Gabor trials to prevent disruption of Synoptophore target states
+            if (Store.state.appMode === 'gabor') {
+                runFlash();
+            }
+        },
+        onDragStart: () => {
+            dragStartX = Store.state.synopTargetX;
+            dragStartY = Store.state.synopTargetY;
+        },
+        onDragUpdate: (deltaX, deltaY) => {
+            const s = Store.state;
+            if (trialController && trialController.isAnaglyphTestActive) {
+                // Calibration touchscreen vertical swipe nudge: adjust contrast factor and redraw test card
+                const isSynop = s.appMode === 'synoptophore';
+                const key = isSynop ? 'synopStrongEyeContrastFactor' : 'strongEyeContrastFactor';
+                const delta = -deltaY * 0.004; // Swipe Up (negative deltaY) increases contrast
+                const newFactor = Math.max(0.1, Math.min(1.0, dragStartStrongFactor + delta));
+                Store.updateState(key, newFactor);
+                
+                const slider = document.getElementById('range-strong-attenuation');
+                const label = document.getElementById('val-strong-attenuation');
+                if (slider) {
+                    slider.value = Math.round(newFactor * 100);
+                    if (label) label.innerText = slider.value + '%';
+                    settingsController.updateSliderTrackGradient(slider);
+                }
+                drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
+                return; // Block touchscreen drag from shifting Synoptophore targets underneath during active tests
+            }
+            if (s.appMode === 'synoptophore' && s.synopState === 'align') {
+                Store.updateState('synopTargetX', dragStartX + deltaX);
+                Store.updateState('synopTargetY', dragStartY + deltaY);
+                triggerSynopDragEffects();
+            }
+        },
+        onDragEnd: (deltaTime, deltaXTotal, deltaYTotal, clientX, clientY) => {
+            const s = Store.state;
+            if (s.appMode === 'synoptophore') {
+                if (s.synopState === 'align') {
+                    const isTapGesture = deltaTime < 250 && Math.abs(deltaXTotal) < 8 && Math.abs(deltaYTotal) < 8;
+                    if (isTapGesture) {
+                        const rect = container.getBoundingClientRect();
+                        const nx = (clientX - rect.left) / rect.width;
+                        const ny = (clientY - rect.top) / rect.height;
+                        const edgeZone = 0.25;
+
+                        let didNudge = false;
+                        if (nx < edgeZone) { Store.updateState('synopTargetX', s.synopTargetX - 1); didNudge = true; }
+                        else if (nx > 1 - edgeZone) { Store.updateState('synopTargetX', s.synopTargetX + 1); didNudge = true; }
+
+                        if (ny < edgeZone) { Store.updateState('synopTargetY', s.synopTargetY - 1); didNudge = true; }
+                        else if (ny > 1 - edgeZone) { Store.updateState('synopTargetY', s.synopTargetY + 1); didNudge = true; }
+
+                        if (didNudge) {
+                            triggerSynopDragEffects();
+                        }
+                    }
+                }
+                return;
+            }
+
+            // Gabor mode swiping gesture calculations
+            const minSwipeDistance = 45;
+            const maxVerticalDeviation = 45;
+            const maxSwipeTime = 300;
+
+            if (deltaTime <= maxSwipeTime && Math.abs(deltaXTotal) >= minSwipeDistance && Math.abs(deltaYTotal) <= maxVerticalDeviation) {
+                const direction = deltaXTotal < 0 ? 'left' : 'right';
+                trialController.submitAnswer(direction);
+            }
+        },
+        onDragMovePreventDefault: () => {
+            // Prevent scrolling on mobile strictly during Synoptophore target tracking
+            return (Store.state.appMode === 'synoptophore');
+        },
+        isDirectionalHoldActive: () => {
+            // Symmetrically allow continuous holding loops when calibration is active (enabling hold-to-tune)
+            const s = Store.state;
+            if (trialController && trialController.isAnaglyphTestActive) {
+                return true;
+            }
+            return (s.appMode === 'synoptophore' && s.synopState === 'align');
+        },
+        onDirectionalShift: (dx, dy) => {
+            const s = Store.state;
+            if (trialController && trialController.isAnaglyphTestActive) {
+                // Calibration directional key nudge: adjust contrast factor with a strict 5% (0.05) step
+                if (dy !== 0) {
+                    const isSynop = s.appMode === 'synoptophore';
+                    const key = isSynop ? 'synopStrongEyeContrastFactor' : 'strongEyeContrastFactor';
+                    const delta = -dy * 0.05; // Up key (negative dy) increases contrast by exactly 5%
+                    const newFactor = Math.max(0.1, Math.min(1.0, s[key] + delta));
+                    Store.updateState(key, newFactor);
+                    
+                    const slider = document.getElementById('range-strong-attenuation');
+                    const label = document.getElementById('val-strong-attenuation');
+                    if (slider) {
+                        slider.value = Math.round(newFactor * 100);
+                        if (label) label.innerText = slider.value + '%';
+                        settingsController.updateSliderTrackGradient(slider);
+                    }
+                    drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
+                }
+                return; // Block movement keys from drifting Synoptophore targets underneath during active tests
+            }
+            if (s.appMode === 'synoptophore' && s.synopState === 'align') {
+                Store.updateState('synopTargetX', s.synopTargetX + dx);
+                Store.updateState('synopTargetY', s.synopTargetY + dy);
+                triggerSynopDragEffects();
+            }
         },
         onEscape: () => {
             const confirmModal = document.getElementById('custom-confirm-modal');
@@ -310,20 +462,18 @@ window.addEventListener('load', async () => {
             const infoModal = document.getElementById('info-modal');
             const statsModal = document.getElementById('stats-modal');
 
-            // If 3D calibration mode is active, Esc key gracefully acts as a toggle exit trigger
+            // Escape key toggle trigger during active 3D test alignment calibration
             if (trialController && trialController.isAnaglyphTestActive) {
                 const btnFusionTest = document.getElementById('btn-fusion-test');
                 if (btnFusionTest) btnFusionTest.click();
                 return;
             }
 
-            // Prioritize closing the topmost ephemeral dialogs first
             if (confirmModal && confirmModal.classList.contains('modal-open')) return;
             if (customAlertModal && customAlertModal.classList.contains('modal-open')) {
                 closeCustomAlert();
                 return;
             }
-            // Universally detects active modals relying on CSS class state
             if (settingsModal && settingsModal.classList.contains('modal-open')) {
                 saveSettingsFromUI();
                 settingsModal.classList.remove('modal-open');
@@ -483,12 +633,13 @@ window.addEventListener('load', async () => {
                         scrollBody.scrollTop = settingsModal._savedScrollTop;
                     }
                     
-                    // Resume Synoptophore render loop once calibration test is deactivated
+                    // Draw idle background (and optional fusion lock) first to ensure clean baseline
+                    drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.appMode === 'synoptophore' || Store.state.isFusionLockEnabled);
+                    
+                    // Resume Synoptophore render loop or redraw static targets on top of the clean canvas
                     if (Store.state.appMode === 'synoptophore') {
                         if (synoptophoreController) synoptophoreController.syncFlickerState();
                     }
-
-                    drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.appMode === 'synoptophore' || Store.state.isFusionLockEnabled);
                     cross.style.display = 'block';
 
                     // Step 3 (OUT): Smoothly fade-in the settings menu content (Duration: 300ms)

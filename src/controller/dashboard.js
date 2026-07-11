@@ -187,7 +187,10 @@ export class DashboardController {
                     
                     const eyeSide = s.lazyEyeSide ? s.lazyEyeSide.toUpperCase() : 'LEFT';
                     const isFlickerOn = isSynop ? (s.synopFlickerActive ? "ON" : "OFF") : (s.isFlickerEnabled ? "ON" : "OFF");
-                    const isCrowdingOn = isSynop ? "OFF" : (s.isCrowdingEnabled ? "ON" : "OFF");
+                    
+                    // Symmetrically export spatial spacing metrics as detailed text values
+                    const isCrowdingOn = isSynop ? "OFF" : (s.isCrowdingEnabled ? (s.flankerDistanceCoeff === 4.0 ? "ON (Far 4x)" : "ON (Close 2x)") : "OFF");
+                    
                     const isPeripheralOn = isSynop ? "OFF" : (s.isPeripheralEnabled ? "ON" : "OFF");
                     const isCrossOn = isSynop ? "OFF" : (s.isPermanentCrossEnabled ? "ON" : "OFF");
 
@@ -324,6 +327,11 @@ export class DashboardController {
                 else if (protocol.includes('🧲') || protocol.toLowerCase().includes('vergence')) protocol = 'synoptophore';
                 else protocol = 'custom';
 
+                // Safely parse advanced spatial spacing coefficient from the imported crowding column
+                const crowdingRaw = getCol(row, "Visual Crowding");
+                const isCrowdingEnabled = crowdingRaw.includes("ON");
+                const flankerDistanceCoeff = crowdingRaw.includes("Far") ? 4.0 : 2.0;
+
                 parsedSessions.push({
                     id: 'imported_session_' + timestamp + '_' + Math.random().toString(36).substr(2, 5),
                     timestamp: timestamp,
@@ -337,7 +345,8 @@ export class DashboardController {
                     balance: balance,
                     lazyEyeSide: getCol(row, "Lazy Eye Side").toLowerCase() || 'left',
                     isFlicker: getCol(row, "10Hz Flicker") === "ON",
-                    isCrowding: getCol(row, "Visual Crowding") === "ON",
+                    isCrowding: isCrowdingEnabled,
+                    flankerDistanceCoeff: flankerDistanceCoeff,
                     isPeripheral: getCol(row, "Peripheral Shift") === "ON",
                     isPermanentCross: getCol(row, "Permanent Cross") === "ON",
                     targetX: parseInt(getCol(row, "Synop Deviation X (px)")) || null,
@@ -371,7 +380,8 @@ export class DashboardController {
                             DataRepository.saveSession(
                                 s.id, s.score, s.total, s.level, s.contrast, s.protocol, s.speed,
                                 s.isAnaglyph, s.balance, s.lazyEyeSide, s.isFlicker, s.isCrowding,
-                                s.isPeripheral, s.isPermanentCross, s.targetX, s.targetY, s.startDistance, s.outcome
+                                s.isPeripheral, s.isPermanentCross, s.targetX, s.targetY, s.startDistance, s.outcome,
+                                s.flankerDistanceCoeff // Pipe the extracted flanker distance coeff directly to persistence
                             );
                         });
 

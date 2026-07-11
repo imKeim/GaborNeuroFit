@@ -66,16 +66,33 @@ export const Store = {
         synopScore: 0,
         synopFlickerActive: false,      // 10Hz resonance toggle for Synoptophore
         synopLockVertical: false,       // Y-Axis physical restriction lock
-        synopLockHorizontal: false      // X-Axis physical restriction lock
+        synopLockHorizontal: false,     // X-Axis physical restriction lock
+        flankerDistanceCoeff: 2.0       // 2.0 = Crowding (default), 4.0 = Lateral Facilitation
     },
 
+    /**
+     * @description Rotates the current session ID. This is done when switching between Gabor and Synoptophore modes,
+     * or when a Synoptophore session completes/slips, to ensure each distinct training block is recorded uniquely.
+     * Clinically, this prevents cross-contamination of metrics between different therapeutic approaches.
+     * @returns {void}
+     */
     rotateSessionId() {
         this.state.sessionId = 'session_' + Date.now();
     },
 
+    /**
+     * @description Centralized, validated state updater. All modifications to the Store.state
+     * must pass through this method to enforce data integrity, bounds checking, and reactive side-effects.
+     * This embodies the Single Source of Truth (SSoT) principle.
+     * @param {string} key - The state property to update.
+     * @param {*} value - The new value for the state property.
+     * @returns {void}
+     */
     updateState(key, value) {
         let isPresetChanged = false;
 
+        // Ensure session ID rotates when primary application mode or Gabor preset changes.
+        // Clinically, each distinct therapeutic mode is a new "session" for data tracking.
         if (key === 'appMode' || key === 'presetMode') {
             if (this.state[key] !== value) {
                 this.rotateSessionId();
@@ -83,70 +100,90 @@ export const Store = {
             }
         }
 
+        // Enforce mutual exclusivity for Synoptophore axis locks
         if (key === 'synopLockVertical') {
             this.state.synopLockVertical = !!value;
             if (this.state.synopLockVertical) {
-                this.state.synopTargetY = 0; // Instantly neutralize any existing vertical deviation
-                this.state.synopLockHorizontal = false; // Mutually exclude horizontal lock
+                this.state.synopTargetY = 0; // Instantly neutralize any existing vertical deviation to prevent confusion.
+                this.state.synopLockHorizontal = false; // Physically prevents simultaneous X/Y locks.
             }
             return;
         }
         if (key === 'synopLockHorizontal') {
             this.state.synopLockHorizontal = !!value;
             if (this.state.synopLockHorizontal) {
-                this.state.synopTargetX = 0; // Instantly neutralize any existing horizontal deviation
-                this.state.synopLockVertical = false; // Mutually exclude vertical lock
+                this.state.synopTargetX = 0; // Instantly neutralize any existing horizontal deviation.
+                this.state.synopLockVertical = false; // Physically prevents simultaneous X/Y locks.
             }
             return;
         }
+
+        // Validate Gabor level bounds
         if (key === 'currentLevel') {
             this.state.currentLevel = Math.max(1, Math.min(5, parseInt(value) || 1));
             return;
         }
+
+        // Validate contrast factor for strong eye (Gabor and Synoptophore)
+        // Clinically, contrast reduction must be within a safe, perceptible range.
         if (key === 'strongEyeContrastFactor' || key === 'synopStrongEyeContrastFactor') {
             this.state[key] = Math.max(0.1, Math.min(1.0, parseFloat(value) || 0.3));
             return;
         }
+
+        // Validate Synoptophore target X coordinate with bounds and axis lock enforcement.
+        // Critical for precise orthoptic training and preventing target drift.
         if (key === 'synopTargetX') {
-            // Enforce horizontal lock at the lowest store level — no bypass possible
             if (this.state.synopLockHorizontal) {
-                this.state.synopTargetX = 0;
+                this.state.synopTargetX = 0; // If horizontal lock is active, force X to 0.
             } else {
-                this.state.synopTargetX = Math.max(-50, Math.min(50, parseInt(value) || 0));
+                this.state.synopTargetX = Math.max(-50, Math.min(50, Math.round(parseFloat(value) || 0)));
             }
             return;
         }
+        // Validate Synoptophore target Y coordinate with bounds and axis lock enforcement.
+        // Ensures stability during vergence exercises.
         if (key === 'synopTargetY') {
-            // Enforce vertical lock at the lowest store level — no bypass possible
             if (this.state.synopLockVertical) {
-                this.state.synopTargetY = 0;
+                this.state.synopTargetY = 0; // If vertical lock is active, force Y to 0.
             } else {
-                this.state.synopTargetY = Math.max(-50, Math.min(50, parseInt(value) || 0));
+                this.state.synopTargetY = Math.max(-50, Math.min(50, Math.round(parseFloat(value) || 0)));
             }
             return;
         }
+
+        // Validate Synoptophore pulling speed, clamped to a clinically appropriate range.
+        // Prevents too rapid pulling (fusion break) or too slow (fatigue).
         if (key === 'synopPullSpeed') {
             this.state.synopPullSpeed = Math.max(1000, Math.min(5000, parseInt(value) || 2500));
             return;
         }
+
+        // Validate Synoptophore target size, ensuring it remains within foveal/macular ranges.
+        // Crucial for targeting specific retinal areas.
         if (key === 'synopTargetSize') {
             this.state.synopTargetSize = Math.max(30, Math.min(65, parseInt(value) || 65));
             return;
         }
+
+        // Validate Synoptophore score, always non-negative.
         if (key === 'synopScore') {
             this.state.synopScore = Math.max(0, parseInt(value) || 0);
             return;
         }
+
+        // Validate RGB calibration values, ensuring they are integers within range.
+        // Essential for accurate dichoptic color channel separation.
         if (
             key === 'calibratorLeftR' || key === 'calibratorRightG' || key === 'calibratorRightB' ||
             key === 'synopCalibratorLeftR' || key === 'synopCalibratorRightG' || key === 'synopCalibratorRightB'
         ) {
-            // Symmetrically allow full [0, 255] byte range to support high-contrast dark targets
-            const parsed = parseInt(value);
+            const parsed = Math.round(parseFloat(value)); // Ensure integer and round for precision
             this.state[key] = Math.max(0, Math.min(255, isNaN(parsed) ? 255 : parsed));
             return;
         }
         
+        // Default assignment for other keys
         this.state[key] = value;
 
         // Trigger application routing ONLY when preset actually changes
@@ -286,6 +323,73 @@ export const Store = {
             localStorage.setItem('gabor_muted', this.state.isMuted ? "true" : "false");
             localStorage.setItem('gabor_lang', this.state.currentLang);
             localStorage.setItem('gabor_permanent_cross', this.state.isPermanentCrossEnabled ? "true" : "false");
+            localStorage.setItem('gabor_flanker_distance_coeff', this.state.flankerDistanceCoeff.toString()); // New: Flanker distance
+            
+            // Hardware & 3D Settings (Global)
+            this.state.isAnaglyphEnabled = localStorage.getItem('gabor_anaglyph') !== 'false';
+            this.state.redEyeSide = localStorage.getItem('gabor_red_side') || 'left';
+            this.state.lazyEyeSide = localStorage.getItem('gabor_lazy_side') || 'left';
+            this.state.strongEyeContrastFactor = parseFloat(localStorage.getItem('gabor_strong_factor') || '0.3');
+            this.state.synopStrongEyeContrastFactor = parseFloat(localStorage.getItem('gabor_synop_strong_factor') || '0.3');
+            this.state.isFusionLockEnabled = localStorage.getItem('gabor_fusion_lock') !== 'false';
+            
+            this.state.calibratorLeftR = Math.max(0, Math.min(255, parseInt(localStorage.getItem('gabor_calib_left_r') || '255')));
+            this.state.calibratorRightG = Math.max(0, Math.min(255, parseInt(localStorage.getItem('gabor_calib_right_g') || '255')));
+            this.state.calibratorRightB = Math.max(0, Math.min(255, parseInt(localStorage.getItem('gabor_calib_right_b') || '255')));
+
+            this.state.synopCalibratorLeftR = Math.max(0, Math.min(255, parseInt(localStorage.getItem('gabor_synop_calib_left_r') || '255')));
+            this.state.synopCalibratorRightG = Math.max(0, Math.min(255, parseInt(localStorage.getItem('gabor_synop_calib_right_g') || '255')));
+            this.state.synopCalibratorRightB = Math.max(0, Math.min(255, parseInt(localStorage.getItem('gabor_synop_calib_right_b') || '255')));
+
+            // Persistent Synoptophore properties loads
+            this.state.synopPullSpeed = parseInt(localStorage.getItem('gabor_synop_pull_speed') || '2500');
+            this.state.synopTargetType = localStorage.getItem('gabor_synop_target_type') || 'ring-dot';
+            this.state.synopShowLazyGrid = localStorage.getItem('gabor_synop_lazy_grid') === 'true';
+            this.state.synopShowStrongGrid = localStorage.getItem('gabor_synop_strong_grid') === 'true';
+            this.state.synopTargetSize = parseInt(localStorage.getItem('gabor_synop_target_size') || '65');
+            this.state.synopScore = parseInt(localStorage.getItem('gabor_synop_score') || '0');
+            this.state.synopFlickerActive = localStorage.getItem('gabor_synop_flicker_active') === 'true';
+            this.state.synopLockVertical = localStorage.getItem('gabor_synop_lock_y') === 'true';
+            this.state.synopLockHorizontal = localStorage.getItem('gabor_synop_lock_x') === 'true';
+        } catch (e) {}
+        
+        const storedAppMode = localStorage.getItem('gabor_app_mode');
+        if (storedAppMode === 'synoptophore') {
+            this.state.appMode = 'synoptophore';
+        } else {
+            this.state.appMode = 'gabor';
+            this.applyPresetTemplate(this.state.presetMode);
+        }
+        this.state.flankerDistanceCoeff = parseFloat(localStorage.getItem('gabor_flanker_distance_coeff') || '2.0'); // New: Flanker distance
+
+        this.resolveConflicts(null);
+    },
+
+    saveSettings() {
+        try {
+            localStorage.setItem('gabor_app_mode', this.state.appMode);
+            localStorage.setItem('gabor_preset_mode', this.state.presetMode);
+            localStorage.setItem('gabor_last_gabor_preset', this.state.lastGaborPreset);
+            localStorage.setItem('gabor_start_level', this.state.currentLevel);
+            localStorage.setItem('gabor_autonext', this.state.autoAdvance ? "true" : "false");
+            localStorage.setItem('gabor_limit', this.state.sessionLimit);
+            localStorage.setItem('gabor_timer_limit', this.state.timerLimitMinutes.toString());
+            localStorage.setItem('gabor_stage_advance', this.state.allowStageAdvance ? "true" : "false");
+            localStorage.setItem('gabor_flash_mode', this.state.flashDurationMode);
+            localStorage.setItem('gabor_peripheral', this.state.isPeripheralEnabled ? "true" : "false");
+            localStorage.setItem('gabor_crowding', this.state.isCrowdingEnabled ? "true" : "false");
+            localStorage.setItem('gabor_crowding_mode', this.state.crowdingMode);
+            localStorage.setItem('gabor_orthogonal', this.state.isOrthogonalFlankersEnabled ? "true" : "false");
+            localStorage.setItem('gabor_dynamic_flankers', this.state.isDynamicFlankersEnabled ? "true" : "false");
+            localStorage.setItem('gabor_low_contrast', this.state.allowLowContrast ? "true" : "false");
+            localStorage.setItem('gabor_wide_variance', this.state.allowWideVariance ? "true" : "false");
+            localStorage.setItem('gabor_shape_variance', this.state.allowShapeVariance ? "true" : "false");
+            localStorage.setItem('gabor_static', this.state.isStaticEnabled ? "true" : "false");
+            localStorage.setItem('gabor_flicker', this.state.isFlickerEnabled ? "true" : "false");
+            localStorage.setItem('gabor_muted', this.state.isMuted ? "true" : "false");
+            localStorage.setItem('gabor_lang', this.state.currentLang);
+            localStorage.setItem('gabor_permanent_cross', this.state.isPermanentCrossEnabled ? "true" : "false");
+            localStorage.setItem('gabor_flanker_distance_coeff', this.state.flankerDistanceCoeff.toString()); // New: Flanker distance
             
             // Hardware & 3D Parameters (Global)
             localStorage.setItem('gabor_anaglyph', this.state.isAnaglyphEnabled ? "true" : "false");
@@ -318,16 +422,17 @@ export const Store = {
     detectMatchingPreset() {
         const s = this.state;
         if (s.allowStageAdvance === true && s.flashDurationMode === 'adaptive' && s.isPeripheralEnabled === false && s.isCrowdingEnabled === false && s.isOrthogonalFlankersEnabled === false && s.isDynamicFlankersEnabled === false && s.isStaticEnabled === false && s.isAnaglyphEnabled === false && s.allowWideVariance === false && s.allowShapeVariance === false && s.isFlickerEnabled === false && s.isFusionLockEnabled === false) return 'occlusion';
-        if (s.allowStageAdvance === true && s.flashDurationMode === 'adaptive' && s.isPeripheralEnabled === false && s.isCrowdingEnabled === true && s.isOrthogonalFlankersEnabled === false && s.isDynamicFlankersEnabled === false && s.isStaticEnabled === false && s.isAnaglyphEnabled === true && s.allowWideVariance === false && s.allowShapeVariance === false && s.isFlickerEnabled === false && s.isFusionLockEnabled === true) return 'binocular';
-        if (s.allowStageAdvance === true && s.flashDurationMode === '180' && s.isPeripheralEnabled === true && s.isCrowdingEnabled === false && s.isOrthogonalFlankersEnabled === false && s.isDynamicFlankersEnabled === false && s.isStaticEnabled === false && s.isAnaglyphEnabled === true && s.allowWideVariance === false && s.allowShapeVariance === false && s.isFlickerEnabled === false && s.isFusionLockEnabled === true) return 'peripheral';
+        if (s.flankerDistanceCoeff === 2.0 && s.allowStageAdvance === true && s.flashDurationMode === 'adaptive' && s.isPeripheralEnabled === false && s.isCrowdingEnabled === true && s.isOrthogonalFlankersEnabled === false && s.isDynamicFlankersEnabled === false && s.isStaticEnabled === false && s.isAnaglyphEnabled === true && s.allowWideVariance === false && s.allowShapeVariance === false && s.isFlickerEnabled === false && s.isFusionLockEnabled === true) return 'binocular';
+        if (s.flankerDistanceCoeff === 2.0 && s.allowStageAdvance === true && s.flashDurationMode === '180' && s.isPeripheralEnabled === true && s.isCrowdingEnabled === false && s.isOrthogonalFlankersEnabled === false && s.isDynamicFlankersEnabled === false && s.isStaticEnabled === false && s.isAnaglyphEnabled === true && s.allowWideVariance === false && s.allowShapeVariance === false && s.isFlickerEnabled === false && s.isFusionLockEnabled === true) return 'peripheral';
         if (s.allowStageAdvance === true && s.flashDurationMode === '100' && s.isPeripheralEnabled === false && s.isCrowdingEnabled === false && s.isOrthogonalFlankersEnabled === false && s.isDynamicFlankersEnabled === false && s.isStaticEnabled === false && s.isAnaglyphEnabled === false && s.allowWideVariance === true && s.allowShapeVariance === true && s.isFlickerEnabled === false && s.isFusionLockEnabled === false) return 'blitz';
-        if (s.allowStageAdvance === true && s.flashDurationMode === 'adaptive' && s.isPeripheralEnabled === false && s.isCrowdingEnabled === true && s.isOrthogonalFlankersEnabled === false && s.isDynamicFlankersEnabled === false && s.isStaticEnabled === true && s.isAnaglyphEnabled === true && s.allowWideVariance === false && s.allowShapeVariance === false && s.isFlickerEnabled === true && s.isFusionLockEnabled === true) return 'flicker';
+        if (s.flankerDistanceCoeff === 2.0 && s.allowStageAdvance === true && s.flashDurationMode === 'adaptive' && s.isPeripheralEnabled === false && s.isCrowdingEnabled === true && s.isOrthogonalFlankersEnabled === false && s.isDynamicFlankersEnabled === false && s.isStaticEnabled === true && s.isAnaglyphEnabled === true && s.allowWideVariance === false && s.allowShapeVariance === false && s.isFlickerEnabled === true && s.isFusionLockEnabled === true) return 'flicker';
         return 'custom';
     },
 
     applyPresetTemplate(mode) {
         this.state.presetMode = mode;
         this.state.appMode = 'gabor'; // Presets only apply to Gabor mode!
+        this.state.flankerDistanceCoeff = 2.0; // Symmetrically reset flanker spacing to standard crowding bounds during preset activation
         
         if (mode === 'occlusion') {
             this.state.allowStageAdvance = true; this.state.flashDurationMode = 'adaptive'; this.state.isPeripheralEnabled = false; this.state.isCrowdingEnabled = false; this.state.isOrthogonalFlankersEnabled = false; this.state.isDynamicFlankersEnabled = false; this.state.isStaticEnabled = false; this.state.isAnaglyphEnabled = false; this.state.allowWideVariance = false; this.state.allowShapeVariance = false; this.state.isFlickerEnabled = false; this.state.isFusionLockEnabled = false;
@@ -408,10 +513,11 @@ export const Store = {
             this.state.isFlickerEnabled,
             this.state.isCrowdingEnabled,
             this.state.isPeripheralEnabled,
-            this.state.isPermanentCrossEnabled
+            this.state.isPermanentCrossEnabled,
+            null, null, null, null,
+            this.state.flankerDistanceCoeff // Append current flanker spacing to the persistence pipeline
         );
     },
-
     getHistory() {
         return DataRepository.getSessionsForActiveUser();
     }

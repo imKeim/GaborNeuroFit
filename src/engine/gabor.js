@@ -244,7 +244,15 @@ class WebGLResourceManager {
 
         const angleRad = (angleDeg * Math.PI) / 180;
         const flankerAngleRad = state.isOrthogonalFlankersEnabled ? (angleRad + Math.PI / 2) : 0;
-        const flankerOffset = sigma * 2.0;
+        
+        // Calculate the spatial wavelength (lambda = 1.0 / frequency).
+        // Clinically, lateral facilitation is optimal at 4 lambda.
+        const wavelength = 1.0 / freq;
+        
+        // Ensure that the flanker spacing is never less than 1.8 * sigma (to prevent overlapping on high frequencies)
+        // while maintaining the exact 4 lambda clinical distance on lower stages.
+        const flankerOffset = Math.max(sigma * 1.8, wavelength * state.flankerDistanceCoeff);
+        
         const crowdingModeMap = { vertical: 0, horizontal: 1, all: 2 };
         const crowdingModeVal = crowdingModeMap[state.crowdingMode] ?? 0;
 
@@ -336,12 +344,22 @@ export function drawFusionTestPattern(canvas, ctx, state) {
     const cx = 128;
     const cy = 128;
 
+    const isLeftStrong = state.lazyEyeSide === 'right';
+    const isRightStrong = state.lazyEyeSide === 'left';
+    const strongFactor = isSynop ? state.synopStrongEyeContrastFactor : state.strongEyeContrastFactor;
+
+    // Symmetrically attenuate the strong eye's letter color delta from the neutral 127 gray background in real-time.
+    // This allows patients to visually find their exact binocular suppression threshold.
+    const leftR_calibrated = Math.round(127 + (leftR - 127) * (isLeftStrong ? strongFactor : 1.0));
+    const rightG_calibrated = Math.round(127 + (rightG - 127) * (isRightStrong ? strongFactor : 1.0));
+    const rightB_calibrated = Math.round(127 + (rightB - 127) * (isRightStrong ? strongFactor : 1.0));
+
     // Render Left (Red channel) target text
-    ctx.fillStyle = `rgb(${leftR}, 127, 127)`; 
+    ctx.fillStyle = `rgb(${leftR_calibrated}, 127, 127)`; 
     ctx.fillText('L', cx - 55, cy + 4);
     
     // Render Right (Cyan channel) target text
-    ctx.fillStyle = `rgb(127, ${rightG}, ${rightB})`; 
+    ctx.fillStyle = `rgb(127, ${rightG_calibrated}, ${rightB_calibrated})`; 
     ctx.fillText('R', cx + 55, cy + 4);
 
     // Draw mathematically perfect, pixel-aligned central fixation cross

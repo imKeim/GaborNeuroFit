@@ -759,7 +759,6 @@ input[type="range"]::-moz-range-thumb {
 
 #settings-modal.calibration-mode .modal-content {
     height: auto;
-    max-height: min(380px, 85vh); /* Optimized height ceiling to avoid overlapping central targets */
     padding: 12px 14px;
     box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
     margin-top: auto; /* Push the sheet strictly to the bottom on mobile portrait viewports */
@@ -767,16 +766,37 @@ input[type="range"]::-moz-range-thumb {
     overflow: hidden !important; /* Prevent parent-level overflows */
 }
 
-#settings-modal.calibration-mode .modal-scroll-body {
-    overflow: hidden !important; /* Physically disable scrollbars on mobile viewports */
-    margin-bottom: 0;
-    padding-right: 4px; /* Tighten horizontal spacing */
+/* PC-Screen Viewport Spacing (No Scroll) */
+@media (min-width: 530px) {
+    #settings-modal.calibration-mode .modal-content {
+        max-height: 345px !important;
+    }
+    #settings-modal.calibration-mode .modal-scroll-body {
+        overflow: hidden !important;
+        margin-bottom: 0;
+        padding-right: 4px;
+    }
+}
+
+/* Mobile-Screen Viewport Spacing (Scrollable, protects central workspace from overlap) */
+@media (max-width: 529px) {
+    #settings-modal.calibration-mode .modal-content {
+        max-height: 50dvh !important; /* Cap height to 44% of viewport to prevent canvas overlapping */
+    }
+    #settings-modal.calibration-mode .modal-scroll-body {
+        overflow-y: auto !important; /* Allow fluid scrolling on short mobile displays */
+        margin-bottom: 0;
+        padding-right: 4px; /* Tighten horizontal spacing */
+    }
+    #settings-modal.calibration-mode #desc-mode-explanation {
+        display: none !important; /* Remove bottom description text on mobile to save vertical space */
+    }
 }
 
 #settings-modal.calibration-mode .settings-row {
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     padding-bottom: 4px;
-    gap: 4px;
+    gap: 2px;
 }
 
 #settings-modal.calibration-mode #settings-mode-bar {
@@ -788,9 +808,60 @@ input[type="range"]::-moz-range-thumb {
     display: none !important;
 }
 
-/* Target the children of the nested anaglyph panel instead of the accordion parent to fix the selector visibility bug */
-#settings-modal.calibration-mode #anaglyph-settings-panel > .settings-row:not(:nth-last-child(-n+3)),
-#settings-modal.calibration-mode #accordion-content-4 > .settings-row,
+#settings-modal.calibration-mode #accordion-content-4 {
+    display: block !important;
+    border: none;
+    padding: 0;
+    background: transparent;
+}
+
+/* Hide the 3D Mode checkbox row strictly during active calibration tests */
+#settings-modal.calibration-mode #row-anaglyph-toggle {
+    display: none !important;
+}
+
+/* Transform the calibration subpanel into a flex container to support semantic order re-mapping */
+#settings-modal.calibration-mode #anaglyph-settings-panel {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* Explicitly hide only eye side selectors during active calibration to keep menu compact, */
+/* while keeping both the Strong Eye Contrast Balancer and subpixel calibration sliders fully visible */
+#settings-modal.calibration-mode #anaglyph-settings-panel > .settings-row:nth-child(1),
+#settings-modal.calibration-mode #anaglyph-settings-panel > .settings-row:nth-child(2),
+#settings-modal.calibration-mode #anaglyph-settings-panel > .settings-row:nth-child(4), /* hide fusion lock row */
+#settings-modal.calibration-mode #accordion-content-4 > p {
+    display: none !important;
+}
+
+/* Exclusively move the blue exit button to the very top of the group during active calibration tests */
+#settings-modal.calibration-mode #btn-fusion-test {
+    order: -1 !important;
+    margin-top: 0 !important;
+    margin-bottom: 8px !important;
+    padding: 8px !important;
+}
+
+#settings-modal.calibration-mode h2,
+#settings-modal.calibration-mode #btn-close-settings {
+    display: none !important;
+}
+
+#settings-modal.calibration-mode #settings-mode-bar {
+    display: none !important; /* Hide mode switcher completely during lens calibration */
+}
+
+#settings-modal.calibration-mode .modal-scroll-body > .accordion-header,
+#settings-modal.calibration-mode .modal-scroll-body > .accordion-content:not(#accordion-content-4) {
+    display: none !important;
+}
+
+/* Explicitly hide only eye side selectors during active calibration to keep menu compact, */
+/* while keeping both the Strong Eye Contrast Balancer and subpixel calibration sliders fully visible */
+#settings-modal.calibration-mode #anaglyph-settings-panel > .settings-row:nth-child(1),
+#settings-modal.calibration-mode #anaglyph-settings-panel > .settings-row:nth-child(2),
+#settings-modal.calibration-mode #anaglyph-settings-panel > .settings-row:nth-child(4), /* hide fusion lock row */
 #settings-modal.calibration-mode #accordion-content-4 > p {
     display: none !important;
 }

@@ -3,9 +3,15 @@
  * Copyright (C) 2026 Pavel Korotkov
  */
 
-import { Store } from '../store.js';
 import { closeCustomAlert } from './modal.js';
 
+/**
+ * @description Binds hardware and gestural input controls to the visual workspace.
+ * Transcribed strictly into an abstract, mockable "Switchboard" controller.
+ * It contains zero dependencies on global state stores or specific clinical modes.
+ * @param {Object} handlers - Standardized key-value dictionary of physical action callbacks.
+ * @returns {void}
+ */
 export function bindInputControls(handlers) {
     const btnLeft = document.getElementById('btn-left');
     const btnRight = document.getElementById('btn-right');
@@ -18,22 +24,25 @@ export function bindInputControls(handlers) {
     let swipeStartY = 0;
     let swipeStartTime = 0;
 
-    let synopStartX = 0;
-    let synopStartY = 0;
-    let isMouseDragging = false; // Flag to map PC mouse dragging gestures
+    let isMouseDragging = false; // PC Mouse Drag gesture lock state
 
-    // High-performance active key tracking (Game Loop Pattern)
+    // High-performance key hold tracking (Virtual Game Loop Pattern)
     const pressedKeys = new Set();
     let keyIntervalId = null;
 
+    /**
+     * @description High-frequency key tracking heartbeat callback.
+     * Invoked when directional movement keys are held down.
+     * Allows smooth, zero-lag diagonal motor alignments.
+     */
     function handleHeldKeys() {
-        const s = Store.state;
-        if (s.appMode !== 'synoptophore' || s.synopState !== 'align') {
+        // Switchboard Guard: If no directional dispatcher is bound, immediately halt key loop.
+        if (typeof handlers.onDirectionalShift !== 'function') {
             stopKeyLoop();
             return;
         }
 
-        // Active key tracking inputs
+        // Resolve active physical keys
         const holdLeft = pressedKeys.has('arrowleft') || pressedKeys.has('a') || pressedKeys.has('ф');
         const holdRight = pressedKeys.has('arrowright') || pressedKeys.has('d') || pressedKeys.has('в');
         const holdUp = pressedKeys.has('arrowup') || pressedKeys.has('w') || pressedKeys.has('ц');
@@ -42,35 +51,29 @@ export function bindInputControls(handlers) {
         let dx = 0;
         let dy = 0;
 
-        // Symmetric axes evaluation eliminates holding lags and allows true diagonal vergence movement
+        // Symmetric diagonal execution
         if (holdLeft && !holdRight) dx = -1;
         if (holdRight && !holdLeft) dx = 1;
         if (holdUp && !holdDown) dy = -1;
         if (holdDown && !holdUp) dy = 1;
-        
-        if (s.synopLockVertical) dy = 0; // Enforce Y-Axis Lock
-        if (s.synopLockHorizontal) dx = 0; // Enforce X-Axis Lock
 
         if (dx !== 0 || dy !== 0) {
-            Store.updateState('synopTargetX', s.synopTargetX + dx);
-            Store.updateState('synopTargetY', s.synopTargetY + dy);
-            if (typeof handlers.onSynopDrag === 'function') {
-                handlers.onSynopDrag();
-            }
+            // Dispatch abstract raw deltas directly. Validations happen strictly in the Store on target write.
+            handlers.onDirectionalShift(dx, dy);
         }
     }
 
-    let keyDelayId = null; // Cache to handle typematic OS hold delay
+    let keyDelayId = null; // Typematic repeating threshold buffer
 
     function startKeyLoop() {
-        // 1. Instantly execute exactly one 1-pixel step for the initial quick tap
+        // 1. Instantly execute exactly one 1-pixel step for the initial quick tap.
         handleHeldKeys();
 
-        // 2. Schedule continuous sliding only if the user holds the key down (> 250ms)
+        // 2. Schedule continuous sliding only if the user holds the key down (> 250ms).
         if (!keyIntervalId && !keyDelayId) {
             keyDelayId = setTimeout(() => {
-                keyIntervalId = setInterval(handleHeldKeys, 40); // Standard smooth vergence slide rate
-            }, 250); // 250ms initial delay ensures micro-tapping on 1px is responsive and easy
+                keyIntervalId = setInterval(handleHeldKeys, 40); // 25Hz continuous stepping frequency
+            }, 250); // 250ms threshold discriminates single micro-taps from scrolling holds
         }
     }
 
@@ -85,50 +88,36 @@ export function bindInputControls(handlers) {
         }
     }
 
-    // Bind physical screen reset button click handler
+    // Direct binding of action buttons to abstract Switchboard calls
     if (btnReset) {
         btnReset.addEventListener('click', () => {
-            const s = Store.state;
-            if (s.appMode === 'synoptophore' && s.synopState === 'align') {
-                Store.updateState('synopTargetX', 0);
-                Store.updateState('synopTargetY', 0);
-                if (typeof handlers.onSynopReset === 'function') {
-                    handlers.onSynopReset();
-                }
-                if (typeof handlers.onSynopDrag === 'function') {
-                    handlers.onSynopDrag();
-                }
+            if (typeof handlers.onActionReset === 'function') {
+                handlers.onActionReset();
             }
         });
     }
 
     if (workspace) {
-        // Feature: Mouse Dragging support for PC web browsers
+        // Feature: Mouse Dragging support for PC web browsers (Abstracted)
         workspace.addEventListener('mousedown', (event) => {
-            const s = Store.state;
-            if (s.appMode === 'synoptophore' && s.synopState === 'align') {
-                isMouseDragging = true;
-                swipeStartX = event.clientX;
-                swipeStartY = event.clientY;
-                synopStartX = s.synopTargetX;
-                synopStartY = s.synopTargetY;
+            if (typeof handlers.onDragStart === 'function') {
+                handlers.onDragStart();
             }
+            isMouseDragging = true;
+            swipeStartX = event.clientX;
+            swipeStartY = event.clientY;
         });
 
         window.addEventListener('mousemove', (event) => {
-            const s = Store.state;
-            if (isMouseDragging && s.appMode === 'synoptophore' && s.synopState === 'align') {
+            if (isMouseDragging) {
                 const diffX = event.clientX - swipeStartX;
                 const diffY = event.clientY - swipeStartY;
                 const ratio = 256.0 / container.clientWidth;
-                const logicalDeltaX = s.synopLockHorizontal ? 0 : Math.round(diffX * ratio);
-                const logicalDeltaY = s.synopLockVertical ? 0 : Math.round(diffY * ratio);
+                const logicalDeltaX = Math.round(diffX * ratio);
+                const logicalDeltaY = Math.round(diffY * ratio);
 
-                Store.updateState('synopTargetX', s.synopLockHorizontal ? 0 : (synopStartX + logicalDeltaX));
-                Store.updateState('synopTargetY', s.synopLockVertical ? 0 : (synopStartY + logicalDeltaY));
-
-                if (typeof handlers.onSynopDrag === 'function') {
-                    handlers.onSynopDrag();
+                if (typeof handlers.onDragUpdate === 'function') {
+                    handlers.onDragUpdate(logicalDeltaX, logicalDeltaY);
                 }
             }
         });
@@ -152,131 +141,80 @@ export function bindInputControls(handlers) {
             stopKeyLoop();
         });
 
+        // Touch gestures registration (Abstracted)
         workspace.addEventListener('touchstart', (event) => {
             const touch = event.changedTouches[0];
             swipeStartX = touch.clientX;
             swipeStartY = touch.clientY;
             swipeStartTime = Date.now();
 
-            const s = Store.state;
-            if (s.appMode === 'synoptophore' && s.synopState === 'align') {
-                synopStartX = s.synopTargetX;
-                synopStartY = s.synopTargetY;
+            if (typeof handlers.onDragStart === 'function') {
+                handlers.onDragStart();
             }
         }, { passive: true });
 
         workspace.addEventListener('touchmove', (event) => {
-            const s = Store.state;
-            if (s.appMode === 'synoptophore') {
-                event.preventDefault(); 
-                if (s.synopState === 'align') {
-                    const touch = event.changedTouches[0];
-                    const diffX = touch.clientX - swipeStartX;
-                    const diffY = touch.clientY - swipeStartY;
-                    const ratio = 256.0 / container.clientWidth;
-                    const logicalDeltaX = s.synopLockHorizontal ? 0 : Math.round(diffX * ratio);
-                    const logicalDeltaY = s.synopLockVertical ? 0 : Math.round(diffY * ratio);
+            const touch = event.changedTouches[0];
+            const diffX = touch.clientX - swipeStartX;
+            const diffY = touch.clientY - swipeStartY;
+            const ratio = 256.0 / container.clientWidth;
+            const logicalDeltaX = Math.round(diffX * ratio);
+            const logicalDeltaY = Math.round(diffY * ratio);
 
-                    Store.updateState('synopTargetX', s.synopLockHorizontal ? 0 : (synopStartX + logicalDeltaX));
-                    Store.updateState('synopTargetY', s.synopLockVertical ? 0 : (synopStartY + logicalDeltaY));
-
-                    if (typeof handlers.onSynopDrag === 'function') {
-                        handlers.onSynopDrag();
-                    }
-                }
-                return;
+            if (typeof handlers.onDragUpdate === 'function') {
+                handlers.onDragUpdate(logicalDeltaX, logicalDeltaY);
             }
 
-            const touch = event.changedTouches[0];
-            const deltaX = Math.abs(touch.clientX - swipeStartX);
-            const deltaY = Math.abs(touch.clientY - swipeStartY);
-            if (deltaX > deltaY) {
+            // Centralized preventDefault router to stop mobile scrolling during target tracking
+            if (typeof handlers.onDragMovePreventDefault === 'function' && handlers.onDragMovePreventDefault()) {
                 event.preventDefault();
+            } else {
+                // Default Gabor logic: prevent scrolling strictly on horizontal swipes (answers)
+                const deltaX = Math.abs(touch.clientX - swipeStartX);
+                const deltaY = Math.abs(touch.clientY - swipeStartY);
+                if (deltaX > deltaY) {
+                    event.preventDefault();
+                }
             }
         }, { passive: false });
 
         workspace.addEventListener('touchend', (event) => {
-            const s = Store.state;
             const touch = event.changedTouches[0];
             const deltaXTotal = touch.clientX - swipeStartX;
             const deltaYTotal = touch.clientY - swipeStartY;
             const deltaTime = Date.now() - swipeStartTime;
 
-            if (s.appMode === 'synoptophore') {
-                if (s.synopState === 'align') {
-                    const isTapGesture = deltaTime < 250 && Math.abs(deltaXTotal) < 8 && Math.abs(deltaYTotal) < 8;
-
-                    if (isTapGesture) {
-                        const rect = container.getBoundingClientRect();
-                        const nx = (touch.clientX - rect.left) / rect.width;
-                        const ny = (touch.clientY - rect.top) / rect.height;
-                        const edgeZone = 0.25; // Define 25% outer margins as active touch zones
-
-                        let didNudge = false;
-                        
-                        // Execute orthogonal single-pixel shifts
-                        if (!s.synopLockHorizontal) {
-                            if (nx < edgeZone) { Store.updateState('synopTargetX', s.synopTargetX - 1); didNudge = true; }
-                            else if (nx > 1 - edgeZone) { Store.updateState('synopTargetX', s.synopTargetX + 1); didNudge = true; }
-                        }
-                        
-                        if (!s.synopLockVertical) {
-                            if (ny < edgeZone) { Store.updateState('synopTargetY', s.synopTargetY - 1); didNudge = true; }
-                            else if (ny > 1 - edgeZone) { Store.updateState('synopTargetY', s.synopTargetY + 1); didNudge = true; }
-                        }
-
-                        if (didNudge && typeof handlers.onSynopDrag === 'function') {
-                            handlers.onSynopDrag();
-                        }
-                    }
-                }
-                return; 
-            }
-
-            const minSwipeDistance = 45; 
-            const maxVerticalDeviation = 45; 
-            const maxSwipeTime = 300; 
-
-            if (deltaTime <= maxSwipeTime && Math.abs(deltaXTotal) >= minSwipeDistance && Math.abs(deltaYTotal) <= maxVerticalDeviation) {
-                const direction = deltaXTotal < 0 ? 'left' : 'right';
-                if (typeof handlers.onAnswer === 'function') {
-                    handlers.onAnswer(direction);
-                }
+            // Delegate gesture processing (is it a tap nudge or a swipe answer) to app.js Switchboard
+            if (typeof handlers.onDragEnd === 'function') {
+                handlers.onDragEnd(deltaTime, deltaXTotal, deltaYTotal, touch.clientX, touch.clientY);
             }
         }, { passive: true });
     }
 
     if (btnLeft) {
         btnLeft.addEventListener('click', () => {
-            const s = Store.state;
-            if (s.appMode === 'synoptophore') {
-                if (s.synopState === 'align') {
-                    Store.updateState('synopTargetX', s.synopTargetX - 1);
-                    if (typeof handlers.onSynopDrag === 'function') handlers.onSynopDrag();
-                }
-            } else {
-                if (typeof handlers.onAnswer === 'function') handlers.onAnswer('left');
+            // Symmetrically delegate clicks to the abstract Switchboard dispatcher
+            if (typeof handlers.onActionLeft === 'function') {
+                handlers.onActionLeft();
             }
         });
     }
 
     if (btnRight) {
         btnRight.addEventListener('click', () => {
-            const s = Store.state;
-            if (s.appMode === 'synoptophore') {
-                if (s.synopState === 'align') {
-                    Store.updateState('synopTargetX', s.synopTargetX + 1);
-                    if (typeof handlers.onSynopDrag === 'function') handlers.onSynopDrag();
-                }
-            } else {
-                if (typeof handlers.onAnswer === 'function') handlers.onAnswer('right');
+            // Symmetrically delegate clicks to the abstract Switchboard dispatcher
+            if (typeof handlers.onActionRight === 'function') {
+                handlers.onActionRight();
             }
         });
     }
 
     if (btnMute) {
         btnMute.addEventListener('click', () => {
-            if (typeof handlers.onMuteToggle === 'function') handlers.onMuteToggle();
+            // Symmetrically maps the physical click to the Switchboard abstract action
+            if (typeof handlers.onActionMuteToggle === 'function') {
+                handlers.onActionMuteToggle();
+            }
         });
     }
 
@@ -288,22 +226,22 @@ export function bindInputControls(handlers) {
                 return;
             }
             
-            // Strictly disable container tapping/clicks in Synoptophore to prevent accidental locks/slips on release!
-            if (Store.state.appMode === 'synoptophore') {
-                return;
-            }
-            
-            if (typeof handlers.onStartFlash === 'function') {
-                handlers.onStartFlash();
+            // Abstract click delegation through Switchboard to keep controls decoupled from active state checks
+            if (typeof handlers.onActionCanvasClick === 'function') {
+                handlers.onActionCanvasClick();
             }
         });
     }
 
     window.addEventListener('keydown', (event) => {
-        if (event.repeat) return;
         const key = event.key.toLowerCase();
+        const isTuningKey = ['arrowup', 'arrowdown', 'w', 's', 'ц', 'ы'].includes(key);
+
+        // Allow native key repeating for contrast adjustment to support smooth hold-to-tune functionality,
+        // while guarding other discrete actions against typematic duplicates.
+        if (event.repeat && !isTuningKey) return;
         
-        // Modal State Detectors
+        // Modal State Detectors to verify spatial focus boundaries
         const confirmModal = document.getElementById('custom-confirm-modal');
         const alertModal = document.getElementById('custom-alert-modal');
         const settingsModal = document.getElementById('settings-modal');
@@ -325,7 +263,7 @@ export function bindInputControls(handlers) {
                 event.preventDefault();
                 if (window._gnfConfirmActions) window._gnfConfirmActions.no();
             }
-            return; // Lock input
+            return; 
         }
 
         // PRIORITY 2: Custom Alert Dialog (OK Only)
@@ -334,10 +272,10 @@ export function bindInputControls(handlers) {
                 event.preventDefault();
                 closeCustomAlert();
             }
-            return; // Lock input
+            return; 
         }
 
-        // PRIORITY 3: Global Escape for underlying modals (Settings, Stats, Info)
+        // PRIORITY 3: Global Escape for underlying modals (allows Esc to close calibration)
         if (key === 'escape' || key === 'esc') {
             if (typeof handlers.onEscape === 'function') {
                 handlers.onEscape();
@@ -345,68 +283,58 @@ export function bindInputControls(handlers) {
             return;
         }
         
-        if (isSettingsOpen || isInfoOpen || isStatsOpen) return;
-
-        const s = Store.state;
-
-        // Route Keyboard Inputs for Synoptophore (4-directional 2D adjustments)
-        if (s.appMode === 'synoptophore') {
-            if (s.synopState === 'align') {
-                const movementKeys = [
-                    'arrowleft', 'arrowright', 'arrowup', 'arrowdown',
-                    'a', 'd', 'w', 's',
-                    'ф', 'в', 'ц', 'ы'
-                ];
-
-                // Symmetrically add held keys into tracking set and fire the vergence alignment loop
-                if (movementKeys.includes(key)) {
-                    event.preventDefault(); // Block system screen scrolling
-                    
-                    // Safeguard: Only trigger loop on the very first physical press, ignoring browser auto-repeats
-                    if (!pressedKeys.has(key)) {
-                        pressedKeys.add(key);
-                        startKeyLoop();
-                    }
-                    return;
-                }
-
-                // Feature: Instant manual alignment reset key
-                if (key === 'r' || key === 'к') {
-                    event.preventDefault();
-                    Store.updateState('synopTargetX', 0);
-                    Store.updateState('synopTargetY', 0);
-                    if (typeof handlers.onSynopReset === 'function') {
-                        handlers.onSynopReset();
-                    }
-                    if (typeof handlers.onSynopDrag === 'function') {
-                        handlers.onSynopDrag();
-                    }
-                    return;
-                }
-            }
-            
-            // Space or Enter acts as the calibration lock trigger
-            if (key === ' ' || key === 'enter') {
-                event.preventDefault();
-                if (typeof handlers.onStartFlash === 'function') {
-                    handlers.onStartFlash();
-                }
-            }
+        // If the settings modal is open, check if we are in calibration sub-sheet mode.
+        // If so, bypass keydown block to allow real-time W/S/Arrows threshold tuning.
+        const isCalibrationMode = settingsModal && settingsModal.classList.contains('calibration-mode');
+        
+        if (isInfoOpen || isStatsOpen || (isSettingsOpen && !isCalibrationMode)) {
             return;
         }
 
+        // Abstracted Keyboard Routing layer (Dynamic activation based on Switchboard state)
+        if (typeof handlers.onDirectionalShift === 'function' && 
+            typeof handlers.isDirectionalHoldActive === 'function' && 
+            handlers.isDirectionalHoldActive()) {
+            
+            const movementKeys = [
+                'arrowleft', 'arrowright', 'arrowup', 'arrowdown',
+                'a', 'd', 'w', 's',
+                'ф', 'в', 'ц', 'ы'
+            ];
+
+            // If continuous directional holding is registered, block layout scrolls and spin key loop
+            if (movementKeys.includes(key)) {
+                event.preventDefault();
+                if (!pressedKeys.has(key)) {
+                    pressedKeys.add(key);
+                    startKeyLoop();
+                }
+                return;
+            }
+
+            // Key R mapping for coordinates reset
+            if (key === 'r' || key === 'к') {
+                event.preventDefault();
+                if (typeof handlers.onActionReset === 'function') {
+                    handlers.onActionReset();
+                }
+                return;
+            }
+        }
+
+        // Standard sensory trials inputs mapping
         if (key === 'arrowleft' || key === 'a' || key === 'ф') {
-            if (typeof handlers.onAnswer === 'function') {
-                handlers.onAnswer('left');
+            if (typeof handlers.onActionLeft === 'function') {
+                handlers.onActionLeft();
             }
         } else if (key === 'arrowright' || key === 'd' || key === 'в') {
-            if (typeof handlers.onAnswer === 'function') {
-                handlers.onAnswer('right');
+            if (typeof handlers.onActionRight === 'function') {
+                handlers.onActionRight();
             }
         } else if (key === ' ' || key === 'enter') {
             event.preventDefault();
-            if (typeof handlers.onStartFlash === 'function') {
-                handlers.onStartFlash();
+            if (typeof handlers.onActionPrimary === 'function') {
+                handlers.onActionPrimary();
             }
         }
     });

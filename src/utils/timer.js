@@ -23,13 +23,15 @@ export class PomodoroTimer {
             const infoModal = document.getElementById('info-modal');
             const statsModal = document.getElementById('stats-modal');
             const customAlertModal = document.getElementById('custom-alert-modal');
+            const customConfirmModal = document.getElementById('custom-confirm-modal');
 
             const isSettingsOpen = settingsModal && settingsModal.classList.contains('modal-open');
             const isInfoOpen = infoModal && infoModal.classList.contains('modal-open');
             const isStatsOpen = statsModal && statsModal.classList.contains('modal-open');
             const isAlertOpen = customAlertModal && customAlertModal.classList.contains('modal-open');
+            const isConfirmOpen = customConfirmModal && customConfirmModal.classList.contains('modal-open');
 
-            if (isSettingsOpen || isInfoOpen || isStatsOpen || isAlertOpen) {
+            if (isSettingsOpen || isInfoOpen || isStatsOpen || isAlertOpen || isConfirmOpen) {
                 return; // Maintain state securely while patient interacts with UI
             }
 

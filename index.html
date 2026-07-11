@@ -293,6 +293,16 @@
                             </select>
                         </div>
                     </div>
+                    <div class="settings-row" id="row-flanker-distance" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                            <label data-i18n="lblSettingFlankerDistance"></label>
+                            <select id="select-flanker-distance">
+                                <option value="2.0" data-i18n="optFlankerDistanceClose"></option>
+                                <option value="4.0" data-i18n="optFlankerDistanceFar"></option>
+                            </select>
+                        </div>
+                        <span class="settings-help" data-i18n="helpFlankerDistance"></span>
+                    </div>
                     <!-- CRITICAL: row-orthogonal and row-dynamic visibility/opacities are tied re-actively to chk-crowding in settings.js -->
                     <div class="settings-row" id="row-orthogonal" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
@@ -381,7 +391,7 @@
                                     <span style="color: #3b82f6;">B: <span id="val-calib-b">255</span></span>
                                 </div>
                             </div>
-                            <div style="width: 100%; display: flex; flex-direction: column; gap: 6px; padding-left: 4px;">
+                            <div style="width: 100%; display: flex; flex-direction: column; gap: 6px;">
                                 <div class="slider-row">
                                     <span style="width: 12px; font-size: 11px; font-weight: bold; color: #22c55e;">G</span>
                                     <button class="nudge-btn" data-nudge-target="slider-right-g" data-nudge-step="1" data-nudge-dir="-1">−</button>

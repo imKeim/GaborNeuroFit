@@ -123,33 +123,50 @@ export class SynoptophoreController {
     }
 
     /**
-     * Single stepping action of the motor vergence pull
+     * @description Executes a single stepping action of the motor vergence pull.
+     * Calculates the next desired target coordinates and dispatches them to the Store
+     * for validated state update, respecting axis locks and bounds.
+     * Clinically, this simulates the slow, controlled effort of the extraocular muscles
+     * as they pull the visual axes towards true geometric center (0,0).
+     * @returns {void}
      */
     tickPullingStep() {
         const s = Store.state;
         const t = this.getTranslations();
 
-        // Pull X coordinate towards geometric center
-        if (s.synopTargetX > 0) s.synopTargetX -= 1;
-        else if (s.synopTargetX < 0) s.synopTargetX += 1;
+        let newTargetX = s.synopTargetX;
+        let newTargetY = s.synopTargetY;
 
-        // Pull Y coordinate towards geometric center
-        if (s.synopTargetY > 0) s.synopTargetY -= 1;
-        else if (s.synopTargetY < 0) s.synopTargetY += 1;
+        // Calculate desired pull direction for X coordinate
+        if (newTargetX > 0) newTargetX -= 1;
+        else if (newTargetX < 0) newTargetX += 1;
 
-        // Skip static draw call if animation loop is already yielding dynamic luminance frames
+        // Calculate desired pull direction for Y coordinate
+        if (newTargetY > 0) newTargetY -= 1;
+        else if (newTargetY < 0) newTargetY += 1;
+
+        // Dispatch updated (desired) coordinates to the Store for validation and application.
+        // The Store itself will enforce axis locks and bounds, making this controller cleaner.
+        Store.updateState('synopTargetX', newTargetX);
+        Store.updateState('synopTargetY', newTargetY);
+
+        // Skip static draw call if animation loop is already yielding dynamic luminance frames.
+        // This avoids redundant drawing and potential visual tearing during flicker.
         if (!this.isFlickering) {
-            drawSynoptophoreTargets(this.overlayCanvas, this.overlayCtx, s);
+            drawSynoptophoreTargets(this.overlayCanvas, this.overlayCtx, Store.state); // Use updated state after dispatch
         }
         
-        // Update live vergence progress metrics on the scoreboard in real-time
-        updateScoreboard(s, t);
+        // Update live vergence progress metrics on the scoreboard in real-time.
+        // Provides immediate biofeedback to the patient.
+        updateScoreboard(Store.state, t);
 
-        // Play quiet acoustic click (sonar effect) to coordinate pacing
+        // Play quiet acoustic click (sonar effect) to coordinate pacing.
+        // Auditory cues enhance multimodal sensory integration.
         playCue(s.isMuted);
 
-        // Check if targets successfully merged at coordinate zero
-        if (s.synopTargetX === 0 && s.synopTargetY === 0) {
+        // Check if targets successfully merged at coordinate zero.
+        // This is the primary success condition for a vergence training attempt.
+        if (Store.state.synopTargetX === 0 && Store.state.synopTargetY === 0) {
             this.completeSuccess();
         }
     }

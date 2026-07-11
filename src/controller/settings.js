@@ -11,6 +11,7 @@ const CONFIG_SCHEMA = [
     { id: 'chk-peripheral', key: 'isPeripheralEnabled', type: 'checkbox' },
     { id: 'chk-crowding', key: 'isCrowdingEnabled', type: 'checkbox' },
     { id: 'select-crowding-mode', key: 'crowdingMode', type: 'value' },
+    { id: 'select-flanker-distance', key: 'flankerDistanceCoeff', type: 'float' },
     { id: 'chk-orthogonal-flankers', key: 'isOrthogonalFlankersEnabled', type: 'checkbox' },
     { id: 'chk-dynamic-flankers', key: 'isDynamicFlankersEnabled', type: 'checkbox' },
     { id: 'chk-low-contrast', key: 'allowLowContrast', type: 'checkbox' },
@@ -80,6 +81,8 @@ export class SettingsController {
                 val = el.value;
             } else if (field.type === 'int') {
                 val = parseInt(el.value) || 0;
+            } else if (field.type === 'float') {
+                val = parseFloat(el.value) || 2.0;
             } else if (field.type === 'boolean') {
                 val = (el.value === 'true');
             } else if (field.type === 'percent') {
@@ -167,6 +170,7 @@ export class SettingsController {
             if (field.type === 'checkbox') el.checked = s[field.key];
             else if (field.type === 'value') el.value = s[field.key];
             else if (field.type === 'int') el.value = s[field.key].toString();
+            else if (field.type === 'float') el.value = s[field.key].toFixed(1);
             else if (field.type === 'boolean') el.value = s[field.key] ? 'true' : 'false';
 
             if (field.id === 'slider-left-r') {
@@ -288,6 +292,7 @@ export class SettingsController {
             const rowOrthogonal = document.getElementById('row-orthogonal');
             const rowDynamic = document.getElementById('row-dynamic');
             const rowCrowdingMode = document.getElementById('row-crowding-mode');
+            const rowFlankerDistance = document.getElementById('row-flanker-distance');
 
             if (chkOrthogonal) chkOrthogonal.disabled = !s.isCrowdingEnabled;
             if (chkDynamic) chkDynamic.disabled = !s.isCrowdingEnabled;
@@ -297,6 +302,12 @@ export class SettingsController {
                 rowCrowdingMode.style.display = 'flex';
                 rowCrowdingMode.style.opacity = crowdingOpacity;
                 const selectElement = rowCrowdingMode.querySelector('select');
+                if (selectElement) selectElement.disabled = !s.isCrowdingEnabled;
+            }
+            if (rowFlankerDistance) {
+                rowFlankerDistance.style.display = 'flex';
+                rowFlankerDistance.style.opacity = crowdingOpacity;
+                const selectElement = rowFlankerDistance.querySelector('select');
                 if (selectElement) selectElement.disabled = !s.isCrowdingEnabled;
             }
             if (rowOrthogonal) {
