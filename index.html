@@ -14,8 +14,8 @@
     <meta name="apple-mobile-web-app-title" content="GaborNeuroFit">
     <link rel="apple-touch-icon" href="icon-192.png">
     <meta name="theme-color" content="#131a26">
-  <script type="module" crossorigin src="./assets/index-C_faAHsY.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-BPKJlGpb.css">
+  <script type="module" crossorigin src="./assets/index-DTj3JJij.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-DXkDXB0S.css">
 <link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:inline-sw">if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('./sw.js', { scope: './' })})}</script></head>
 <body>
     <!-- CRITICAL: Fullscreen hardware-accelerated overlay for success/error flash feedback -->
@@ -118,9 +118,9 @@
             
             <!-- Symmetrical Settings Mode Switcher (3-Tab config) -->
             <div id="settings-mode-bar" style="display: flex; background: #131a26; padding: 4px; border-radius: 10px; border: 1px solid #2b354a; margin-bottom: 14px; margin-left: auto; margin-right: auto; width: 100%;">
-                <button id="settings-tab-gabor" class="tab-btn active" data-i18n="tabGabor" style="flex: 1; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; background: #2b354a; color: #3b90ff; cursor: pointer; transition: all 0.2s;"></button>
-                <button id="settings-tab-synop" class="tab-btn" data-i18n="tabSynop" style="flex: 1; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; background: transparent; color: #8e8e93; cursor: pointer; transition: all 0.2s;"></button>
-                <button id="settings-tab-rds" class="tab-btn" data-i18n="tabRDS" style="flex: 1; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; background: transparent; color: #8e8e93; cursor: pointer; transition: all 0.2s;"></button>
+                <button id="settings-tab-gabor" class="tab-btn active" data-i18n="tabGabor"></button>
+                <button id="settings-tab-synop" class="tab-btn" data-i18n="tabSynop"></button>
+                <button id="settings-tab-rds" class="tab-btn" data-i18n="tabRDS"></button>
             </div>
             
             <div class="modal-scroll-body">
@@ -429,7 +429,7 @@
                                 </div>
                             </div>
                         </div>
-                        <button id="btn-fusion-test" class="close-btn" data-i18n="btnFusionTestLabel" style="background: #1a233a; border: 1px solid #3b90ff; color: #3b90ff; margin-top: 14px; font-weight: bold;"></button>
+                        <button id="btn-fusion-test" class="close-btn" data-i18n="btnFusionTestLabel"></button>
                     </div>
                 </div>
 
@@ -677,16 +677,27 @@
                 </div>
 
                 <!-- Profile Management Buttons Grid -->
-                <div style="display: flex; gap: 10px; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 14px;">
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                     <button id="btn-add-profile" class="close-btn" data-i18n="btnAddProfile" style="flex: 1; margin-top: 0; background: rgba(0, 122, 255, 0.12); border: 1px solid rgba(0, 122, 255, 0.25); color: #3b90ff; padding: 10px; font-size: 12px; font-weight: bold;"></button>
                     <button id="btn-delete-profile" class="close-btn" data-i18n="btnDeleteProfile" style="flex: 1; margin-top: 0; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; padding: 10px; font-size: 12px; font-weight: bold;"></button>
                 </div>
 
+                <!-- Global Database Backup/Restore & Wipe Grid (Profile Level Actions) -->
+                <div style="display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;">
+                    <button id="btn-export-csv" class="close-btn" data-i18n="btnExportCSV" style="flex: 1; min-width: 110px; margin-top: 0; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.25); color: #22c55e; padding: 10px; font-size: 12px; font-weight: bold;"></button>
+                    <button id="btn-import-csv" class="close-btn" data-i18n="btnImportCSV" style="flex: 1; min-width: 110px; margin-top: 0; background: rgba(59, 144, 255, 0.12); border: 1px solid rgba(59, 144, 255, 0.25); color: #3b90ff; padding: 10px; font-size: 12px; font-weight: bold;"></button>
+                    <input type="file" id="input-import-csv" accept=".csv" style="display: none;">
+                    <button id="btn-clear-history" class="close-btn" data-i18n="btnClearHistory" style="flex: 1; min-width: 110px; margin-top: 0; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; padding: 10px; font-size: 12px; font-weight: bold;"></button>
+                </div>
+
+                <!-- Symmetrical Divider separating Global Profile Actions from Analytics -->
+                <hr style="border: none; border-top: 1px dashed rgba(255, 255, 255, 0.08); margin: 18px 0;">
+
                 <!-- Symmetrical Tab Segmented Pill Control (3-Tab config) -->
                 <div id="stats-tab-bar" style="display: flex; background: #131a26; padding: 4px; border-radius: 10px; border: 1px solid #2b354a; margin-bottom: 14px;">
-                    <button id="tab-gabor" class="tab-btn active" data-i18n="tabGabor" style="flex: 1; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; background: #2b354a; color: #3b90ff; cursor: pointer; transition: all 0.2s;"></button>
-                    <button id="tab-synop" class="tab-btn" data-i18n="tabSynop" style="flex: 1; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; background: transparent; color: #8e8e93; cursor: pointer; transition: all 0.2s;"></button>
-                    <button id="tab-rds" class="tab-btn" data-i18n="tabRDS" style="flex: 1; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; background: transparent; color: #8e8e93; cursor: pointer; transition: all 0.2s;"></button>
+                    <button id="tab-gabor" class="tab-btn active" data-i18n="tabGabor"></button>
+                    <button id="tab-synop" class="tab-btn" data-i18n="tabSynop"></button>
+                    <button id="tab-rds" class="tab-btn" data-i18n="tabRDS"></button>
                 </div>
 
                 <!-- GABOR SENSORY TRAINING VIEWPORT -->
@@ -741,14 +752,6 @@
                     <div id="rds-leaderboard" style="width: 100%; margin-top: 0; margin-bottom: 14px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; padding: 10px 14px; font-size: 13px; color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.04);">
                         <ul id="leaderboard-list-rds" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; height: 100%; overflow-y: auto; scrollbar-width: none;"></ul>
                     </div>
-                </div>
-
-                <!-- Bottom Management Grid -->
-                <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
-                    <button id="btn-export-csv" class="close-btn" data-i18n="btnExportCSV" style="flex: 1; min-width: 110px; margin-top: 0; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.25); color: #22c55e; padding: 10px; font-size: 12px; font-weight: bold;"></button>
-                    <button id="btn-import-csv" class="close-btn" data-i18n="btnImportCSV" style="flex: 1; min-width: 110px; margin-top: 0; background: rgba(59, 144, 255, 0.12); border: 1px solid rgba(59, 144, 255, 0.25); color: #3b90ff; padding: 10px; font-size: 12px; font-weight: bold;"></button>
-                    <input type="file" id="input-import-csv" accept=".csv" style="display: none;">
-                    <button id="btn-clear-history" class="close-btn" data-i18n="btnClearHistory" style="flex: 1; min-width: 110px; margin-top: 0; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; padding: 10px; font-size: 12px; font-weight: bold;"></button>
                 </div>
             </div>
             <button id="btn-close-stats" class="close-btn">OK</button>
