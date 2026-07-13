@@ -1,7 +1,16 @@
-import { test, expect } from '@playwright/test';
+/*
+ * GaborNeuroFit - End-to-End UI Assurance
+ * Copyright (C) 2026 Pavel Korotkov
+ *
+ * Migrated to TypeScript: Employs strict Playwright Page types for safe
+ * DOM selector resolution and interaction assertions.
+ */
+
+import { test, expect, Page } from '@playwright/test';
 
 test.describe('GaborNeuroFit - End-to-End Mobile Flow', () => {
-    test('should open settings, change language, and successfully trigger a trial flash', async ({ page }) => {
+    // Destructuring with strict Page typing guarantees safe access to Playwright's API
+    test('should open settings, change language, and successfully trigger a trial flash', async ({ page }: { page: Page }) => {
         // 1. Open the local web application using explicit local URL
         await page.goto('http://localhost:5173/');
 
@@ -29,7 +38,7 @@ test.describe('GaborNeuroFit - End-to-End Mobile Flow', () => {
         // 7. Click the START FLASH button to trigger the Gabor stimulus
         await btnStart.click();
 
-        // 8. Verify Gabor canvas becomes visible
+        // 8. Verify Gabor canvas becomes visible strictly isolating the therapeutic arena
         const canvas = page.locator('#gaborCanvas');
         await expect(canvas).toBeVisible();
     });

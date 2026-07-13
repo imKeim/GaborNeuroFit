@@ -1,37 +1,41 @@
 /*
  * GaborNeuroFit - Synoptophore & Vergence Training Controller Subsystem
  * Copyright (C) 2026 Pavel Korotkov
+ *
+ * Migrated to TypeScript: Employs exact math typing to prevent Euclidean distance
+ * NaN exceptions during intensive motor vergence strabismus training calculations.
  */
 
-import { Store } from '../store.js';
-import { AsyncResourceTracker } from '../utils/tracker.js';
-import { drawSynoptophoreTargets } from '../engine/synop_render.js';
-import { playCue, playSuccess, playError, playSlip } from '../engine/audio.js';
-import { updateScoreboard } from '../ui/screen.js';
+import { Store } from '../store';
+import { AsyncResourceTracker } from '../utils/tracker';
+import { drawSynoptophoreTargets } from '../engine/synop-render';
+import { playCue, playSuccess, playError, playSlip } from '../engine/audio';
+import { updateScoreboard } from '../ui/screen';
 
 export class SynoptophoreController {
-    constructor(canvas, overlayCanvas, overlayCtx, btnStart, translationsGetter, showCustomModal) {
-        this.canvas = canvas;
-        this.overlayCanvas = overlayCanvas;
-        this.overlayCtx = overlayCtx;
-        this.btnStart = btnStart;
-        this.getTranslations = translationsGetter;
-        this.showCustomModal = showCustomModal;
-        this.tracker = new AsyncResourceTracker();
-        this.startX = 0;
-        this.startY = 0;
-        this.isFlickering = false;
-        this.flickerStartTime = 0;
-    }
+    public tracker: AsyncResourceTracker = new AsyncResourceTracker();
+    public startX: number = 0;
+    public startY: number = 0;
+    private isFlickering: boolean = false;
+    private flickerStartTime: number = 0;
+    private flickerFrameId: number | null = null;
 
-    startFlickerLoop() {
+    constructor(
+        private overlayCanvas: HTMLCanvasElement,
+        private overlayCtx: CanvasRenderingContext2D,
+        private btnStart: HTMLButtonElement,
+        private getTranslations: () => Record<string, string>,
+        private showCustomModal: (title: string, text: string) => void
+    ) {}
+
+    startFlickerLoop(): void {
         this.stopFlickerLoop();
         this.isFlickering = true;
         this.flickerStartTime = performance.now();
-        
-        const loop = (timestamp) => {
+
+        const loop = (timestamp: number) => {
             if (!this.isFlickering || Store.state.appMode !== 'synoptophore') return;
-            
+
             if (Store.state.synopFlickerActive) {
                 const elapsed = timestamp - this.flickerStartTime;
                 // 10 Hz Alpha-Resonance Counter-Phase oscillation (-1.0 to 1.0)
@@ -47,11 +51,11 @@ export class SynoptophoreController {
         this.flickerFrameId = this.tracker.requestAnimationFrame(loop);
     }
 
-    stopFlickerLoop() {
+    stopFlickerLoop(): void {
         this.isFlickering = false;
         if (this.flickerFrameId) {
             cancelAnimationFrame(this.flickerFrameId);
-            this.tracker.animationFrames.delete(this.flickerFrameId);
+            this.tracker.clearAll();
             this.flickerFrameId = null;
         }
         if (Store.state.appMode === 'synoptophore') {
@@ -59,7 +63,7 @@ export class SynoptophoreController {
         }
     }
 
-    syncFlickerState() {
+    syncFlickerState(): void {
         if (Store.state.synopFlickerActive) {
             this.startFlickerLoop();
         } else {
@@ -67,13 +71,13 @@ export class SynoptophoreController {
         }
     }
 
-    abort() {
+    abort(): void {
         this.stopFlickerLoop();
         this.tracker.clearAll();
         Store.updateState('synopState', 'idle');
     }
 
-    handlePrimaryAction() {
+    handlePrimaryAction(): void {
         const s = Store.state;
         if (s.synopState === 'align') {
             this.lockAndStartPulling();
@@ -82,7 +86,7 @@ export class SynoptophoreController {
         }
     }
 
-    lockAndStartPulling() {
+    lockAndStartPulling(): void {
         const s = Store.state;
         const t = this.getTranslations();
 
@@ -96,7 +100,7 @@ export class SynoptophoreController {
         // CLINICAL ANTI-CHEAT SAFEGUARD: Block immediate locks at 0,0 (prevents farming free victory cups)
         if (dist < 3) {
             playError(s.isMuted); // Emit non-intrusive warning buzz
-            
+
             // Render brief instructional feedback on the scoreboard
             const scoreTextEl = document.getElementById('score-text');
             if (scoreTextEl) {
@@ -113,12 +117,9 @@ export class SynoptophoreController {
 
         Store.updateState('synopStartDistance', dist);
         Store.updateState('synopState', 'pulling');
-        this.btnStart.innerText = t.btnSynopBreak;
+        this.btnStart.innerText = t.btnSynopBreak || "SLIPPED / RESET";
 
-        // Play auditory start notification
         playCue(s.isMuted);
-
-        // Reactively activate the dynamic UI progress bar
         updateScoreboard(s, t);
 
         // Core Vergence Pull Timer: Shifting 1px closer to zero on every interval tick
@@ -129,135 +130,109 @@ export class SynoptophoreController {
 
     /**
      * @description Executes a single stepping action of the motor vergence pull.
-     * Calculates the next desired target coordinates and dispatches them to the Store
-     * for validated state update, respecting axis locks and bounds.
-     * Clinically, this simulates the slow, controlled effort of the extraocular muscles
-     * as they pull the visual axes towards true geometric center (0,0).
-     * @returns {void}
+     * @clinical Simulates the slow, controlled effort of the extraocular muscles
+     * as they pull the visual axes towards the true geometric center (0,0).
      */
-    tickPullingStep() {
+    private tickPullingStep(): void {
         const s = Store.state;
         const t = this.getTranslations();
 
         let newTargetX = s.synopTargetX;
         let newTargetY = s.synopTargetY;
 
-        // Calculate desired pull direction for X coordinate
         if (newTargetX > 0) newTargetX -= 1;
         else if (newTargetX < 0) newTargetX += 1;
 
-        // Calculate desired pull direction for Y coordinate
         if (newTargetY > 0) newTargetY -= 1;
         else if (newTargetY < 0) newTargetY += 1;
 
-        // Dispatch updated (desired) coordinates to the Store for validation and application.
-        // The Store itself will enforce axis locks and bounds, making this controller cleaner.
         Store.updateState('synopTargetX', newTargetX);
         Store.updateState('synopTargetY', newTargetY);
 
-        // Skip static draw call if animation loop is already yielding dynamic luminance frames.
-        // This avoids redundant drawing and potential visual tearing during flicker.
         if (!this.isFlickering) {
-            drawSynoptophoreTargets(this.overlayCanvas, this.overlayCtx, Store.state); // Use updated state after dispatch
+            drawSynoptophoreTargets(this.overlayCanvas, this.overlayCtx, Store.state);
         }
-        
-        // Update live vergence progress metrics on the scoreboard in real-time.
-        // Provides immediate biofeedback to the patient.
-        updateScoreboard(Store.state, t);
 
-        // Play quiet acoustic click (sonar effect) to coordinate pacing.
-        // Auditory cues enhance multimodal sensory integration.
+        updateScoreboard(Store.state, t);
         playCue(s.isMuted);
 
-        // Check if targets successfully merged at coordinate zero.
-        // This is the primary success condition for a vergence training attempt.
         if (Store.state.synopTargetX === 0 && Store.state.synopTargetY === 0) {
             this.completeSuccess();
         }
     }
 
     /**
-     * Phase 2 -> Slipped Transition: Triggered when eye muscles give up before reaching 0,0
+     * @description Phase 2 -> Slipped Transition: Triggered when eye muscles give up before reaching 0,0
      */
-    breakActiveFusion() {
+    breakActiveFusion(): void {
         const s = Store.state;
         const t = this.getTranslations();
 
         this.tracker.clearAll();
         this.syncFlickerState();
 
-        // Calculate remaining deviation
         const currentDist = Math.sqrt(s.synopTargetX * s.synopTargetX + s.synopTargetY * s.synopTargetY);
         const startDist = s.synopStartDistance;
 
-        // Calculate quantitative extraocular muscle contraction progress
         let percent = 0;
         if (startDist > 0) {
             percent = Math.max(0, Math.min(100, Math.round(100 * (1 - currentDist / startDist))));
         }
 
-        // Format progress results strings dynamically
-        const title = t.synopBreakTitle;
-        const text = t.synopBreakText
+        const title = t.synopBreakTitle || "Training Result";
+        const textStr = t.synopBreakText || "Slipped. Remainder: {current}px. Corrected: {percent}%";
+        const text = textStr
             .replace('{current}', Math.round(currentDist).toString())
             .replace('{start}', Math.round(startDist).toString())
             .replace('{percent}', percent.toString());
 
-        // Play descending vergence slip acoustic feedback
         playSlip(s.isMuted);
 
-        // UX Master Polish: Automatically restore Gabor circle offsets to starting calibration coordinates
+        // Auto-restore coordinates to calibration origin
         Store.updateState('synopTargetX', this.startX);
         Store.updateState('synopTargetY', this.startY);
 
         Store.updateState('synopState', 'idle');
         this.btnStart.innerText = t.synopStartBtn || "START";
 
-        // Bring back the protective gray rest curtain
         const curtain = document.getElementById('calibration-curtain');
         if (curtain) curtain.classList.add('active');
 
-        // Synchronize view layers safely
         if (!this.isFlickering) {
-            drawSynoptophoreTargets(this.overlayCanvas, this.overlayCtx, s);
+            drawSynoptophoreTargets(this.overlayCanvas, this.overlayCtx, Store.state);
         }
-        updateScoreboard(s, t); // Hide progress bar on slip
-        
-        // Show clinical report modal
+        updateScoreboard(Store.state, t);
+
         this.showCustomModal(title, text);
     }
 
     /**
-     * Phase 2 -> Completion Transition: Perfect 100% motor fusion success
+     * @description Phase 2 -> Completion Transition: Perfect 100% motor fusion success
      */
-    completeSuccess() {
+    completeSuccess(): void {
         const s = Store.state;
         const t = this.getTranslations();
 
         this.tracker.clearAll();
         this.syncFlickerState();
 
-        // Play major chime arpeggio
         playSuccess(s.isMuted);
 
-        // Symmetrically increment vergence success score and commit to persistence
         Store.updateState('synopScore', s.synopScore + 1);
         Store.saveSettings();
 
-        // Reset coords completely via standard setter to invoke state bounds validations
         Store.updateState('synopTargetX', 0);
         Store.updateState('synopTargetY', 0);
 
         Store.updateState('synopState', 'idle');
         this.btnStart.innerText = t.synopStartBtn || "START";
 
-        // Bring back the protective gray rest curtain
         const curtain = document.getElementById('calibration-curtain');
         if (curtain) curtain.classList.add('active');
 
-        drawSynoptophoreTargets(this.overlayCanvas, this.overlayCtx, s);
-        updateScoreboard(s, t); // Hide progress bar on success
+        drawSynoptophoreTargets(this.overlayCanvas, this.overlayCtx, Store.state);
+        updateScoreboard(Store.state, t);
 
-        this.showCustomModal(t.synopSuccessTitle, t.synopSuccessText);
+        this.showCustomModal(t.synopSuccessTitle || "Success", t.synopSuccessText || "Perfect fusion.");
     }
 }

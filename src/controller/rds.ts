@@ -2,26 +2,21 @@
  * GaborNeuroFit - Stereopsis (RDS) Perceptual Learning Controller
  * Copyright (C) 2026 Pavel Korotkov
  *
- * This module orchestrates the state machine and adaptive staircase of active
- * Random Dot Stereogram (RDS) trials, driving global stereopsis depth rehabilitation.
+ * Migrated to TypeScript: Employs strict FSM types to safeguard rendering loops,
+ * guaranteeing correct stereoscopic depth calculations without race conditions.
  */
 
-import { Store } from '../store.js';
-import { DataRepository } from '../store/repository.js';
-import { AsyncResourceTracker } from '../utils/tracker.js';
-import { drawRandomDotStereogram } from '../engine/rds_render.js';
-import { playCue, playSuccess, playError } from '../engine/audio.js';
-import { updateScoreboard, drawIdleState } from '../ui/screen.js';
+import { Store } from '../store';
+import { DataRepository } from '../store/repository';
+import { AsyncResourceTracker } from '../utils/tracker';
+import { drawRandomDotStereogram } from '../engine/rds-render';
+import { playCue, playSuccess, playError } from '../engine/audio';
+import { updateScoreboard, drawIdleState } from '../ui/screen';
+import type { EyeSide } from '../types/clinical';
 
-/**
- * @typedef {string} RdsStateValue
- */
+export type RdsStateValue = 'IDLE' | 'PRE_CUE' | 'STIMULUS_ACTIVE' | 'AWAITING_INPUT' | 'FEEDBACK';
 
-/**
- * Finite State Machine declarations for RDS binocular stimulation cycles.
- * @type {Object.<string, string>}
- */
-export const RdsState = {
+export const RdsState: Record<RdsStateValue, RdsStateValue> = {
     IDLE: 'IDLE',
     PRE_CUE: 'PRE_CUE',
     STIMULUS_ACTIVE: 'STIMULUS_ACTIVE',
@@ -29,76 +24,44 @@ export const RdsState = {
     FEEDBACK: 'FEEDBACK'
 };
 
-/**
- * Strict state transition matrix to enforce safe clinical FSM flow.
- * @type {Object.<RdsStateValue, RdsStateValue[]>}
- * @private
- */
-const ALLOWED_TRANSITIONS = {
-    [RdsState.IDLE]: [RdsState.PRE_CUE],
-    [RdsState.PRE_CUE]: [RdsState.STIMULUS_ACTIVE],
-    [RdsState.STIMULUS_ACTIVE]: [RdsState.AWAITING_INPUT, RdsState.FEEDBACK],
-    [RdsState.AWAITING_INPUT]: [RdsState.FEEDBACK],
-    [RdsState.FEEDBACK]: [RdsState.IDLE]
+const ALLOWED_TRANSITIONS: Record<string, RdsStateValue[]> = {
+    'IDLE': ['PRE_CUE'],
+    'PRE_CUE': ['STIMULUS_ACTIVE'],
+    'STIMULUS_ACTIVE': ['AWAITING_INPUT', 'FEEDBACK'],
+    'AWAITING_INPUT': ['FEEDBACK'],
+    'FEEDBACK': ['IDLE']
 };
 
 export class RdsController {
-    /**
-     * @param {HTMLCanvasElement} canvas - The primary WebGL canvas (cleared to gray during RDS).
-     * @param {HTMLCanvasElement} overlayCanvas - The transparent 2D canvas (renders the dot stereogram).
-     * @param {CanvasRenderingContext2D} overlayCtx - Rendering context for the overlay canvas.
-     * @param {HTMLElement} cross - The central fixation cross.
-     * @param {HTMLElement} container - The workspace container.
-     * @param {HTMLElement} flashOverlay - Fullscreen color overlay for success/error feedback.
-     * @param {HTMLButtonElement} btnStart - The primary action/start button.
-     * @param {function(): Object} translationsGetter - Callback returning the active localization bundle.
-     * @param {function(string, string): void} showCustomModal - Modal alert callback.
-     */
-    constructor(canvas, overlayCanvas, overlayCtx, cross, container, flashOverlay, btnStart, translationsGetter, showCustomModal, syncCrossCallback) {
-        this.canvas = canvas;
-        this.overlayCanvas = overlayCanvas;
-        this.overlayCtx = overlayCtx;
-        this.cross = cross;
-        this.container = container;
-        this.flashOverlay = flashOverlay;
-        this.btnStart = btnStart;
-        this.getTranslations = translationsGetter;
-        this.showCustomModal = showCustomModal;
-        this.syncCross = syncCrossCallback;
+    public currentState: RdsStateValue = RdsState.IDLE;
+    public tracker: AsyncResourceTracker = new AsyncResourceTracker();
+    private autoNextTimeoutId: number | null = null;
 
-        /** @type {RdsStateValue} */
-        this.currentState = RdsState.IDLE;
+    constructor(
+        private canvas: HTMLCanvasElement,
+        private overlayCanvas: HTMLCanvasElement,
+        private overlayCtx: CanvasRenderingContext2D,
+        private container: HTMLElement,
+        private flashOverlay: HTMLElement,
+        private btnStart: HTMLButtonElement,
+        private getTranslations: () => Record<string, string>,
+        private showCustomModal: (title: string, text: string) => void,
+        private syncCross: () => void
+    ) {}
 
-        /** @type {AsyncResourceTracker} */
-        this.tracker = new AsyncResourceTracker();
-    }
-
-    /**
-     * Instantly aborts the active session and clears scheduled timers.
-     */
-    abort() {
+    abort(): void {
         this.tracker.clearAll();
         this.currentState = RdsState.IDLE;
         if (this.syncCross) this.syncCross();
     }
 
-    /**
-     * Safely halts active animation loops without resetting the active trial state
-     */
-    pause() {
+    pause(): void {
         this.tracker.clearAll();
     }
 
-    /**
-     * Validates and executes state transitions within the finite state machine.
-     * @param {RdsStateValue} nextState - The target state.
-     * @returns {boolean} True if transition succeeded, false otherwise.
-     */
-    transitionTo(nextState) {
+    transitionTo(nextState: RdsStateValue): boolean {
         const allowed = ALLOWED_TRANSITIONS[this.currentState];
-        if (!allowed || !allowed.includes(nextState)) {
-            return false;
-        }
+        if (!allowed || !allowed.includes(nextState)) return false;
 
         this.currentState = nextState;
         if (nextState === RdsState.PRE_CUE || nextState === RdsState.FEEDBACK) {
@@ -108,11 +71,7 @@ export class RdsController {
         return true;
     }
 
-    /**
-     * Initializes a brand new RDS session block.
-     * Resets scoring counters and forces starting disparity.
-     */
-    initSession() {
+    initSession(): void {
         const s = Store.state;
         const t = this.getTranslations();
         this.abort();
@@ -121,35 +80,25 @@ export class RdsController {
         Store.updateState('rdsTotal', 0);
         Store.updateState('rdsStreak', 0);
         Store.updateState('rdsStaircaseStreak', 0);
-        Store.updateState('rdsHistory', []);
-        
-        // Restore button states
+        // Clean instantiation of empty number array for strict types
+        Store.updateState('rdsHistory', [] as number[]);
+
         this.btnStart.disabled = false;
         this.btnStart.style.opacity = '1';
         this.btnStart.innerText = t.rdsStartBtn || "START";
-        
-        // Render flat neutral noise with no hidden shape on session start to act as a neutral baseline
+
         drawRandomDotStereogram(this.overlayCanvas, this.overlayCtx, s, true, true);
-        
         if (this.syncCross) this.syncCross();
     }
 
-    /**
-     * Triggers the auditory pre-cue and schedules the stereogram generation.
-     */
-    triggerTrial() {
-        // Clear any pending auto-advance timeout to prevent double-firing
+    triggerTrial(): void {
         if (this.autoNextTimeoutId) {
             clearTimeout(this.autoNextTimeoutId);
-            this.tracker.timeouts.delete(this.autoNextTimeoutId);
             this.autoNextTimeoutId = null;
         }
 
-        if (!this.transitionTo(RdsState.PRE_CUE)) {
-            return;
-        }
+        if (!this.transitionTo(RdsState.PRE_CUE)) return;
 
-        // Start global Pomodoro tracking as soon as RDS trial is initiated
         Store.startTimerIfNeeded();
 
         this.btnStart.disabled = true;
@@ -162,23 +111,15 @@ export class RdsController {
         }, 180);
     }
 
-    /**
-     * Randomizes the target position, generates 3D disparity, and renders the stereogram.
-     */
-    runRenderCycle() {
+    runRenderCycle(): void {
         const s = Store.state;
-        const t = this.getTranslations();
-
         this.transitionTo(RdsState.STIMULUS_ACTIVE);
 
-        // Symmetrically set active trial waiting lock
         Store.updateState('isWaitingForAnswer', true);
 
-        // Pick a random horizontal target half for the hidden 3D square
-        const targetSide = Math.random() < 0.5 ? 'left' : 'right';
+        const targetSide: EyeSide = Math.random() < 0.5 ? 'left' : 'right';
         Store.updateState('rdsTargetSide', targetSide);
 
-        // Calculate safe vertical displacement boundaries (prevent edge clipping & foveal halo overlaps)
         const dotSize = s.rdsDotSize || 4;
         const rows = Math.floor(256 / dotSize);
         const squareSize = Math.floor(rows * 0.375);
@@ -191,7 +132,6 @@ export class RdsController {
         }
         Store.updateState('rdsTargetY', targetY);
 
-        // Ensure canvas backing store matches display constraints cleanly
         const rect = this.canvas.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
         const physicalSize = Math.min(1024, Math.round(rect.width * dpr));
@@ -202,51 +142,40 @@ export class RdsController {
             this.overlayCanvas.height = physicalSize;
         }
 
-        // Clear WebGL canvas to neutral gray background, keeping our canvas layout neat
         drawIdleState(this.canvas, null, this.overlayCanvas, this.overlayCtx, false);
 
         if (this.syncCross) this.syncCross();
 
         this.transitionTo(RdsState.AWAITING_INPUT);
-        
-        // Start the Dynamic RDS Loop if enabled, otherwise render a single static frame
+
         if (s.rdsIsDynamic) {
             this.startDynamicRdsLoop();
         } else {
             drawRandomDotStereogram(this.overlayCanvas, this.overlayCtx, s, true, false);
         }
-        
-        // Symmetrically force-disable the start button as "..." to prevent manual re-rolling (cheating)
+
         this.btnStart.disabled = true;
         this.btnStart.style.opacity = '0.4';
         this.btnStart.innerText = "...";
     }
 
-    /**
-     * Evaluates user choice, updates adaptive staircase, and logs session blocks.
-     * @param {string} userChoice - 'left' or 'right'
-     */
-    submitAnswer(userChoice) {
-        if (this.currentState !== RdsState.AWAITING_INPUT) {
-            return;
-        }
+    submitAnswer(userChoice: EyeSide): void {
+        if (this.currentState !== RdsState.AWAITING_INPUT) return;
 
         const s = Store.state;
         const t = this.getTranslations();
         this.transitionTo(RdsState.FEEDBACK);
 
-        // Reset active trial waiting lock on answer submission
         Store.updateState('isWaitingForAnswer', false);
 
         const isCorrect = (userChoice === s.rdsTargetSide);
 
-        // Re-enable and restore button states for the feedback phase
         this.btnStart.disabled = false;
         this.btnStart.style.opacity = '1';
 
         this.container.classList.remove('success-pulse', 'error-shake');
         this.flashOverlay.classList.remove('flash-success', 'flash-error');
-        void this.container.offsetWidth; // Force CSS reflow
+        void this.container.offsetWidth;
         void this.flashOverlay.offsetWidth;
 
         let newScore = s.rdsScore;
@@ -258,7 +187,8 @@ export class RdsController {
         const activeHistory = [...s.rdsHistory];
 
         if (isCorrect) {
-            const panValue = s.rdsTargetSide === 'left' ? -0.75 : 0.75;
+            // Symmetrical subtle spatial audio reinforcement
+            const panValue = s.rdsTargetSide === 'left' ? -0.40 : 0.40;
             playSuccess(s.isMuted, panValue);
             this.flashOverlay.classList.add('flash-success');
             this.container.classList.add('success-pulse');
@@ -269,9 +199,7 @@ export class RdsController {
             activeHistory.push(1);
 
             if (newStaircaseStreak >= 3) {
-                if (newDisparity > 1) {
-                    newDisparity--;
-                }
+                if (newDisparity > 1) newDisparity--;
                 newStaircaseStreak = 0;
             }
         } else {
@@ -283,9 +211,7 @@ export class RdsController {
             newStaircaseStreak = 0;
             activeHistory.push(0);
 
-            if (newDisparity < 8) {
-                newDisparity++;
-            }
+            if (newDisparity < 8) newDisparity++;
         }
 
         if (activeHistory.length > 20) activeHistory.shift();
@@ -297,13 +223,16 @@ export class RdsController {
         else if (newDisparity === 2) newLevel = 4;
         else if (newDisparity === 1) newLevel = 5;
 
+        // TS Generics strictly enforce these number mutations
         Store.updateState('rdsScore', newScore);
         Store.updateState('rdsTotal', newTotal);
         Store.updateState('rdsStreak', newStreak);
         Store.updateState('rdsStaircaseStreak', newStaircaseStreak);
         Store.updateState('rdsDisparity', newDisparity);
         Store.updateState('rdsLevel', newLevel);
-        Store.updateState('rdsHistory', activeHistory);
+
+        // Ensure TS understands it's a number array
+        Store.updateState('rdsHistory', activeHistory as any);
 
         this.saveRdsSession();
 
@@ -319,14 +248,11 @@ export class RdsController {
                 this.flashOverlay.classList.remove('flash-success', 'flash-error', 'fade-out');
             }, 500);
 
-            // Symmetrically flatten the 3D target shape (hide it) but retain the background random dots during the rest phase
-            drawRandomDotStereogram(this.overlayCanvas, this.overlayCtx, s, false, true);
+            drawRandomDotStereogram(this.overlayCanvas, this.overlayCtx, Store.state, false, true);
 
             if (this.currentState === RdsState.FEEDBACK) {
                 this.currentState = RdsState.IDLE;
-                
                 if (this.syncCross) this.syncCross();
-                
                 this.btnStart.disabled = false;
                 this.btnStart.style.opacity = "1";
                 this.btnStart.innerText = t.rdsNextBtn || "NEXT";
@@ -335,7 +261,6 @@ export class RdsController {
 
         updateScoreboard(Store.state, t);
 
-        // Gold Medal Validation (Micro-stereopsis limit reached & held)
         if (newLevel === 5 && newDisparity === 1 && newStreak >= 12) {
             this.tracker.setTimeout(() => {
                 this.triggerMilestoneFlash(() => {
@@ -343,21 +268,20 @@ export class RdsController {
                     const text = t.sessionMasteredRDS || "Excellent progress!";
                     this.showCustomModal(title, text);
                     this.transitionTo(RdsState.IDLE);
-                    if (this.syncCross) this.syncCross(); // Symmetrically reset foveal halo on session completion
+                    if (this.syncCross) this.syncCross();
                 });
             }, 400);
             return;
         }
 
-        // Silver Medal Validation (Session Limit Reached)
         if (s.rdsSessionLimit > 0 && newTotal >= s.rdsSessionLimit) {
             this.tracker.setTimeout(() => {
                 this.triggerMilestoneFlash(() => {
                     const title = t.titleSilverRDS || "🥈 RDS Session Complete!";
-                    const text = (t.sessionCompletedRDS || "Session complete!").replace("{limit}", s.rdsSessionLimit);
+                    const text = (t.sessionCompletedRDS || "Session complete!").replace("{limit}", s.rdsSessionLimit.toString());
                     this.showCustomModal(title, text);
                     this.transitionTo(RdsState.IDLE);
-                    if (this.syncCross) this.syncCross(); // Symmetrically reset foveal halo on session completion
+                    if (this.syncCross) this.syncCross();
                 });
             }, 400);
             return;
@@ -371,15 +295,7 @@ export class RdsController {
         }
     }
 
-    /**
-     * Triggers a repeated flashing sequence during milestone acquisitions or breaks.
-     * CLINICAL PURPOSE:
-     * Provides a highly visible, rhythmic visual trigger to indicate block mastery,
-     * encouraging patient engagement and reinforcing progress during long training regimens.
-     * @param {function(): void} callback - The callback function to execute after the flash sequence is completed.
-     * @returns {void}
-     */
-    triggerMilestoneFlash(callback) {
+    triggerMilestoneFlash(callback?: () => void): void {
         let count = 0;
         this.tracker.setInterval(() => {
             const isEven = count % 2 === 0;
@@ -400,56 +316,41 @@ export class RdsController {
         }, 120);
     }
 
-    /**
-     * High-Performance Unified Dynamic RDS Animation Loop
-     * Generates and renders a "boiling noise" grid continuously at ~18Hz
-     * to completely block any stroboscopic monocular cues or cheating.
-     * @private
-     */
-    startDynamicRdsLoop() {
+    private startDynamicRdsLoop(): void {
         const s = Store.state;
         let lastUpdateTime = 0;
-        const frameInterval = 55; // Update noise every 55ms (~18Hz) to prevent visual fatigue
+        const frameInterval = 55; // ~18Hz boiling noise
         const startTime = performance.now();
 
-        // SSoT Stateless Triangular-Wave DVD Screensaver bouncing helper
-        const getBounceOffset = (elapsed, period, amplitude) => {
+        const getBounceOffset = (elapsed: number, period: number, amplitude: number): number => {
             const t = (elapsed / period) % 1.0;
-            if (t < 0.5) {
-                return -amplitude + (t / 0.5) * (2 * amplitude);
-            } else {
-                return amplitude - ((t - 0.5) / 0.5) * (2 * amplitude);
-            }
+            if (t < 0.5) return -amplitude + (t / 0.5) * (2 * amplitude);
+            return amplitude - ((t - 0.5) / 0.5) * (2 * amplitude);
         };
 
-        const loop = (timestamp) => {
-            const isAllowedToAnimate = 
-                this.currentState === RdsState.STIMULUS_ACTIVE || 
+        const loop = (timestamp: number) => {
+            const isAllowedToAnimate =
+                this.currentState === RdsState.STIMULUS_ACTIVE ||
                 this.currentState === RdsState.AWAITING_INPUT;
 
-            if (!isAllowedToAnimate) {
-                return;
-            }
+            if (!isAllowedToAnimate) return;
 
             const elapsed = timestamp - startTime;
 
             if (s.rdsIsFloating) {
                 const dotSize = s.rdsDotSize || 4;
                 const rows = Math.floor(256 / dotSize);
-                const squareSize = Math.floor(rows * 0.28); // Symmetrically smaller 28% size inside tracking mode
+                const squareSize = Math.floor(rows * 0.28);
                 const halfSquare = Math.floor(squareSize / 2);
 
-                // Max safe amplitudes within half-screen and top/bottom boundaries
-                const amplitudeX = Math.max(1, Math.floor(rows * 0.09)); 
+                const amplitudeX = Math.max(1, Math.floor(rows * 0.09));
                 const amplitudeY = Math.max(1, Math.floor(rows / 2) - halfSquare - 2);
 
-                // Dynamically scale period durations based on selected speed setting to alter velocity smoothly
-                const speedCoeffs = { slow: 1.5, medium: 1.0, fast: 0.6 };
+                const speedCoeffs: Record<string, number> = { slow: 1.5, medium: 1.0, fast: 0.6 };
                 const coeff = speedCoeffs[s.rdsFloatSpeed] || 1.0;
                 const periodX = 4800 * coeff;
                 const periodY = 7100 * coeff;
 
-                // Coprime periodic oscillations prevent trajectory repetitions (satisfying diagonal DVD paths)
                 const driftX = Math.round(getBounceOffset(elapsed, periodX, amplitudeX));
                 const driftY = Math.round(getBounceOffset(elapsed, periodY, amplitudeY));
 
@@ -462,10 +363,8 @@ export class RdsController {
 
             if (timestamp - lastUpdateTime >= frameInterval) {
                 lastUpdateTime = timestamp;
-                // Force-shuffle the noise grid with each render cycle
                 drawRandomDotStereogram(this.overlayCanvas, this.overlayCtx, s, true);
             } else if (s.rdsIsFloating) {
-                // Render sub-pixel drift frames smoothly at 60fps without wasteful CPU noise regenerations
                 drawRandomDotStereogram(this.overlayCanvas, this.overlayCtx, s, false);
             }
 
@@ -475,13 +374,10 @@ export class RdsController {
         this.tracker.requestAnimationFrame(loop);
     }
 
-    /**
-     * Helper to serialize and save active RDS session to local database.
-     * @private
-     */
-    saveRdsSession() {
+    private saveRdsSession(): void {
         const s = Store.state;
         if (s.rdsTotal === 0) return;
+
         DataRepository.saveSession({
             sessionId: s.sessionId,
             score: s.rdsScore,

@@ -2,70 +2,84 @@
  * GaborNeuroFit - Procedural Audio Synthesis Engine
  * Copyright (C) 2026 Pavel Korotkov
  *
- * This module leverages the Web Audio API to procedurally synthesize non-intrusive,
- * psychoacoustically optimized acoustic cues for attention pre-cueing and error/success reinforcement.
+ * Migrated to TypeScript: Employs strict null-checks for AudioContext rendering
+ * paths to prevent crashes on strict mobile browsers (iOS Safari context locks).
  */
 
 // Private Web Audio context holder
-let audioCtx = null;
+let audioCtx: AudioContext | null = null;
 
-// Securely instantiate or resume the browser AudioContext on the first physical user interaction
-export function initAudio() {
+/**
+ * @description Securely instantiates or resumes the browser AudioContext on the first
+ * physical user interaction (required by modern auto-play policies).
+ */
+export function initAudio(): void {
     try {
         if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextClass) {
+                audioCtx = new AudioContextClass();
+            }
         }
         if (audioCtx && audioCtx.state === 'suspended') {
             audioCtx.resume();
         }
-        
-        // Render a silent dummy waveform to unlock the audio channel on iOS Safari and Chrome
-        const dummyOsc = audioCtx.createOscillator();
-        const dummyGain = audioCtx.createGain();
-        dummyGain.gain.setValueAtTime(0, audioCtx.currentTime);
-        dummyOsc.connect(dummyGain);
-        dummyGain.connect(audioCtx.destination);
-        dummyOsc.start(0);
-        dummyOsc.stop(audioCtx.currentTime + 0.015);
+
+        if (audioCtx && audioCtx.destination) {
+            // Render a silent dummy waveform to unlock the audio hardware channel on iOS Safari and Chrome
+            const dummyOsc = audioCtx.createOscillator();
+            const dummyGain = audioCtx.createGain();
+            dummyGain.gain.setValueAtTime(0, audioCtx.currentTime);
+            dummyOsc.connect(dummyGain);
+            dummyGain.connect(audioCtx.destination);
+            dummyOsc.start(0);
+            dummyOsc.stop(audioCtx.currentTime + 0.015);
+        }
     } catch (e) {
         console.warn("AudioContext bootstrap bypassed by browser policies:", e);
     }
 }
 
-// Play organic pre-cue Bamboo Click (sound triggers exactly 180ms before visual stimulus flash)
-export function playCue(isMuted) {
-    if (isMuted) return;
+/**
+ * @description Plays organic pre-cue Bamboo Click.
+ *
+ * @clinical Synced exactly 180ms before the visual stimulus flash. This generates cross-modal
+ * sensory pre-activation: auditory networks prime the visual cortex (V1) attention fields,
+ * optimizing neuronal receptivity and reducing accommodative micro-fluctuations in the ciliary muscle.
+ */
+export function playCue(isMuted: boolean): void {
+    if (isMuted || !audioCtx) return;
     try {
         initAudio(); // Ensure context is running
-        
+
         // Introduce a tiny 15ms buffer lookahead to prevent crackle artifacts in hardware DACs
         const now = audioCtx.currentTime + 0.015;
-        
+
         // Synthesize organic hollow wood resonance (950 Hz triangle wave)
         const osc = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(950, now);
-        
+
         gainNode.gain.setValueAtTime(0, now);
         gainNode.gain.linearRampToValueAtTime(0.18, now + 0.002);
         gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-        
+
         // Synthesize sharp metallic impact edge (1600 Hz sine wave)
         const clickOsc = audioCtx.createOscillator();
         const clickGain = audioCtx.createGain();
         clickOsc.type = 'sine';
         clickOsc.frequency.setValueAtTime(1600, now);
-        
+
         clickGain.gain.setValueAtTime(0.08, now);
         clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.006);
-        
+
         osc.connect(gainNode);
         gainNode.connect(audioCtx.destination);
-        
+
         clickOsc.connect(clickGain);
         clickGain.connect(audioCtx.destination);
-        
+
         osc.start(now);
         osc.stop(now + 0.05);
         clickOsc.start(now);
@@ -75,28 +89,33 @@ export function playCue(isMuted) {
     }
 }
 
-// Play negative reinforcement low sweep tone (220 Hz slide to 140 Hz)
-export function playError(isMuted) {
-    if (isMuted) return;
+/**
+ * @description Plays negative reinforcement low sweep tone.
+ *
+ * @clinical Alerts attention networks to recalibrate spatial orientation judgment
+ * without triggering an anxiety response.
+ */
+export function playError(isMuted: boolean): void {
+    if (isMuted || !audioCtx) return;
     try {
         initAudio();
         const now = audioCtx.currentTime + 0.015;
-        
+
         const osc = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
-        
+
         osc.type = 'sine';
         osc.frequency.setValueAtTime(220, now);
-        osc.frequency.linearRampToValueAtTime(140, now + 0.20); 
-        
+        osc.frequency.linearRampToValueAtTime(140, now + 0.20);
+
         // Apply smooth decay envelope to prevent popping sounds
         gainNode.gain.setValueAtTime(0, now);
         gainNode.gain.linearRampToValueAtTime(0.38, now + 0.01);
         gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.20);
-        
+
         osc.connect(gainNode);
         gainNode.connect(audioCtx.destination);
-        
+
         osc.start(now);
         osc.stop(now + 0.20);
     } catch (e) {
@@ -104,30 +123,35 @@ export function playError(isMuted) {
     }
 }
 
-// Play smooth descending sweep for vergence slip/reset (360 Hz exponentially sliding to 110 Hz)
-export function playSlip(isMuted) {
-    if (isMuted) return;
+/**
+ * @description Plays smooth descending sweep for vergence slip/reset.
+ *
+ * @clinical Biofeedback indicating extraocular muscular slip. The descending
+ * exponential frequency maps intuitively to the physical sensation of losing target lock.
+ */
+export function playSlip(isMuted: boolean): void {
+    if (isMuted || !audioCtx) return;
     try {
         initAudio();
         const now = audioCtx.currentTime + 0.015;
         const duration = 0.48;
-        
+
         const osc = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
-        
+
         osc.type = 'sine';
         osc.frequency.setValueAtTime(360, now);
         // Exponential ramp provides a natural acoustic sliding feel
-        osc.frequency.exponentialRampToValueAtTime(110, now + duration); 
-        
+        osc.frequency.exponentialRampToValueAtTime(110, now + duration);
+
         // Volume envelope with quick attack and smooth decay
         gainNode.gain.setValueAtTime(0, now);
         gainNode.gain.linearRampToValueAtTime(0.24, now + 0.02);
         gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
-        
+
         osc.connect(gainNode);
         gainNode.connect(audioCtx.destination);
-        
+
         osc.start(now);
         osc.stop(now + duration);
     } catch (e) {
@@ -135,22 +159,27 @@ export function playSlip(isMuted) {
     }
 }
 
-// Play positive dopamine-releasing Crystal Chime major chord (La-Do#-Mi / A-C#-E)
-export function playSuccess(isMuted, panValue = 0.0) {
-    if (isMuted) return;
+/**
+ * @description Plays positive dopamine-releasing Crystal Chime major chord.
+ *
+ * @clinical Dopaminergic reinforcement pathway. A resolved major chord (A-C#-E) securely
+ * anchors the correct synaptic pattern established during the subliminal visual task.
+ */
+export function playSuccess(isMuted: boolean, panValue: number = 0.0): void {
+    if (isMuted || !audioCtx) return;
     try {
         initAudio();
         const now = audioCtx.currentTime + 0.015;
-        
+
         // Create StereoPannerNode if supported by browser to enable spatial sound rewards
-        let destination = audioCtx.destination;
+        let destination: AudioNode = audioCtx.destination;
         if (audioCtx.createStereoPanner && panValue !== 0.0) {
             const panner = audioCtx.createStereoPanner();
             panner.pan.setValueAtTime(panValue, now);
             panner.connect(audioCtx.destination);
             destination = panner;
         }
-        
+
         // Pitch 1: Root Note A (880 Hz)
         const osc1 = audioCtx.createOscillator();
         const gain1 = audioCtx.createGain();
@@ -159,7 +188,7 @@ export function playSuccess(isMuted, panValue = 0.0) {
         gain1.gain.setValueAtTime(0, now);
         gain1.gain.linearRampToValueAtTime(0.12, now + 0.005);
         gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
-        
+
         // Pitch 2: Major Third C# (1100 Hz, delayed by 30ms to create arpeggio effect)
         const osc2 = audioCtx.createOscillator();
         const gain2 = audioCtx.createGain();
@@ -168,7 +197,7 @@ export function playSuccess(isMuted, panValue = 0.0) {
         gain2.gain.setValueAtTime(0, now + 0.03);
         gain2.gain.linearRampToValueAtTime(0.10, now + 0.035);
         gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
-        
+
         // Pitch 3: Perfect Fifth E (1320 Hz, delayed by 60ms to complete the chime)
         const osc3 = audioCtx.createOscillator();
         const gain3 = audioCtx.createGain();
@@ -177,22 +206,22 @@ export function playSuccess(isMuted, panValue = 0.0) {
         gain3.gain.setValueAtTime(0, now + 0.06);
         gain3.gain.linearRampToValueAtTime(0.08, now + 0.065);
         gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
-        
+
         osc1.connect(gain1);
         gain1.connect(destination);
-        
+
         osc2.connect(gain2);
         gain2.connect(destination);
-        
+
         osc3.connect(gain3);
         gain3.connect(destination);
-        
+
         osc1.start(now);
         osc1.stop(now + 0.18);
-        
+
         osc2.start(now + 0.03);
         osc2.stop(now + 0.28);
-        
+
         osc3.start(now + 0.06);
         osc3.stop(now + 0.45);
     } catch (e) {

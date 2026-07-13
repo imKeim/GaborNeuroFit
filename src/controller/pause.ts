@@ -2,27 +2,38 @@
  * GaborNeuroFit - Pause & Rest Phase Orchestrator Controller
  * Copyright (C) 2026 Pavel Korotkov
  *
- * This module isolates and orchestrates global app pauses, safeguarding active
- * session progress across Gabor, RDS and Synoptophore modalities without visual leakage.
+ * Migrated to TypeScript: Implements strictly typed Dependency Injection (DI).
+ * Ensures safe orchestration of pauses across all FSM clinical domains without visual leakage.
  */
 
-import { Store } from '../store.js';
+import { Store } from '../store';
+import type { GaborController } from './gabor';
+import type { SynoptophoreController } from './synoptophore';
+import type { RdsController } from './rds';
 
 export class PauseController {
-    constructor(trialCtrl, synoptophoreCtrl, rdsCtrl, syncCrossCallback) {
-        this.trialCtrl = trialCtrl;
-        this.synoptophoreCtrl = synoptophoreCtrl;
-        this.rdsCtrl = rdsCtrl;
-        this.syncCross = syncCrossCallback;
-    }
+    constructor(
+        private gaborCtrl: GaborController | null,
+        private synoptophoreCtrl: SynoptophoreController | null,
+        private rdsCtrl: RdsController | null,
+        private syncCross: () => void
+    ) {}
 
-    togglePause() {
+    /**
+     * @description Master toggle for global application pause states.
+     *
+     * @clinical Enforces a strict protection protocol for the extraocular muscles.
+     * Attempting to pause the system while the Synoptophore is actively pulling
+     * muscles to center could cause sudden strabismic diplopia. This orchestrator
+     * safely converts a 'Pause' command into a 'Fusion Slip' to organically relax the muscles instead.
+     */
+    togglePause(): void {
         const s = Store.state;
         const curtain = document.getElementById('calibration-curtain');
         const watermark = document.getElementById('pause-watermark');
         const btnPause = document.getElementById('btn-pause');
 
-        // Clinical guard: Prevent pauses during active Synoptophore motor pulling step to avoid muscular strain
+        // Clinical guard: Protect muscles during active Synoptophore pulling step
         if (s.appMode === 'synoptophore' && s.synopState === 'pulling') {
             if (this.synoptophoreCtrl) this.synoptophoreCtrl.breakActiveFusion();
             return;
@@ -41,14 +52,15 @@ export class PauseController {
             if (watermark) watermark.style.display = 'block';
             if (btnPause) {
                 btnPause.innerText = '▶️';
-                if (window.twemoji) twemoji.parse(btnPause);
+                // @ts-ignore - Ignore missing Twemoji global typings strictly for DOM injection
+                if (window.twemoji) window.twemoji.parse(btnPause);
             }
 
             // 3. Delegate cross synchronization to the centralized updater
             if (this.syncCross) this.syncCross();
 
             // 4. Halt active animation loops without destructive resets
-            if (this.trialCtrl) this.trialCtrl.stopUnifiedRenderingLoop();
+            if (this.gaborCtrl) this.gaborCtrl.stopUnifiedRenderingLoop();
             if (this.synoptophoreCtrl) this.synoptophoreCtrl.stopFlickerLoop();
             if (this.rdsCtrl) this.rdsCtrl.pause(); // Clean pause preserves FSM state
         } else {
@@ -65,17 +77,21 @@ export class PauseController {
             if (watermark) watermark.style.display = 'none';
             if (btnPause) {
                 btnPause.innerText = '⏸️';
-                if (window.twemoji) twemoji.parse(btnPause);
+                // @ts-ignore
+                if (window.twemoji) window.twemoji.parse(btnPause);
             }
 
-            // 3. Delegate cross synchronization to the centralized updater on resume
+            // 3. Delegate cross synchronization on resume
             if (this.syncCross) this.syncCross();
 
             // 4. Symmetrically resume loops only if Gabor or RDS was actively running
             if (s.appMode === 'gabor' && s.isWaitingForAnswer) {
-                if (this.trialCtrl) this.trialCtrl.startUnifiedRenderingLoop();
-            } else if (s.appMode === 'rds' && (this.rdsCtrl.currentState === 'STIMULUS_ACTIVE' || this.rdsCtrl.currentState === 'AWAITING_INPUT')) {
-                if (this.rdsCtrl) this.rdsCtrl.startDynamicRdsLoop();
+                if (this.gaborCtrl) this.gaborCtrl.startUnifiedRenderingLoop(Store.state);
+            } else if (s.appMode === 'rds' && this.rdsCtrl) {
+                if (this.rdsCtrl.currentState === 'STIMULUS_ACTIVE' || this.rdsCtrl.currentState === 'AWAITING_INPUT') {
+                    // Start unified RDS loop symmetrically on resume using an ugly but safe private method bypass for FSM
+                    (this.rdsCtrl as any).startDynamicRdsLoop();
+                }
             }
         }
     }

@@ -2,90 +2,109 @@
  * GaborNeuroFit - Modal Dialogs Management Module
  * Copyright (C) 2026 Pavel Korotkov
  *
- * This module manages the presentational state (visibility) of the Handbook
- * and Configuration modals and invokes callback hooks for settings synchronization.
+ * Migrated to TypeScript: Employs strict null-checks for DOM overlays and
+ * strictly typed functional callbacks to ensure execution safety inside
+ * asynchronous confirmation dialogs.
  */
 
 /**
- * Internal helper to resolve semantic brand colors based on title icons/keywords.
+ * @description Internal helper to resolve semantic brand colors based on title icons/keywords.
  * Implements strict medical severity levels: Danger (Red), Warning (Gold), Success (Green), Info (Blue).
  */
-function resolveHeaderColor(title) {
-    if (title.includes('❌') || title.toLowerCase().includes('danger') || title.toLowerCase().includes('опасно')) return '#ef4444';
+function resolveHeaderColor(title: string): string {
+    const tLower = title.toLowerCase();
+    if (title.includes('❌') || tLower.includes('danger') || tLower.includes('опасно')) return '#ef4444';
     if (title.includes('🥇') || title.includes('🎯') || title.includes('🏆')) return '#22c55e';
-    if (title.includes('⚠️') || title.toLowerCase().includes('warning') || title.includes('Предупреждение')) return '#eab308';
+    if (title.includes('⚠️') || tLower.includes('warning') || title.includes('предупреждение')) return '#eab308';
     return '#3b90ff'; // Standard Clinical Blue fallback
 }
 
-export function openModal(modal) {
+export function openModal(modal: HTMLElement | null): void {
     if (modal) modal.classList.add('modal-open');
 }
 
-export function closeModal(modal) {
+export function closeModal(modal: HTMLElement | null): void {
     if (modal) modal.classList.remove('modal-open');
 }
 
 /**
- * Renders a beautiful non-blocking custom modal window in sRGB space.
+ * @description Renders a precise, non-blocking custom modal window in sRGB space.
  */
-export function showCustomAlert(title, text) {
+export function showCustomAlert(title: string, text: string): void {
     const modal = document.getElementById('custom-alert-modal');
     const titleEl = document.getElementById('custom-alert-title');
     const textEl = document.getElementById('custom-alert-text');
-    
+
     if (!modal || !titleEl || !textEl) return;
-    
+
     titleEl.innerHTML = title;
     textEl.innerHTML = text;
     titleEl.style.color = resolveHeaderColor(title);
-    
+
     openModal(modal);
-    if (window.twemoji) window.twemoji.parse(modal);
+
+    // @ts-ignore - Ignore missing Twemoji global typings strictly for DOM injection
+    if (typeof window !== 'undefined' && window.twemoji) {
+        // @ts-ignore
+        window.twemoji.parse(modal);
+    }
 }
 
 /**
- * Dismisses the custom alert modal non-blockingly
+ * @description Dismisses the custom alert modal non-blockingly
  */
-export function closeCustomAlert() {
+export function closeCustomAlert(): void {
     const modal = document.getElementById('custom-alert-modal');
     closeModal(modal);
 }
 
 /**
- * Renders a beautiful non-blocking custom confirmation dialog with Yes/No actions.
+ * @description Renders a beautiful non-blocking custom confirmation dialog with Yes/No actions.
+ * @param callback - Typed to explicitly return a boolean state resolving the user's intent.
  */
-export function showCustomConfirm(title, text, yesLabel, noLabel, callback) {
+export function showCustomConfirm(
+    title: string,
+    text: string,
+    yesLabel: string,
+    noLabel: string,
+    callback: (isConfirmed: boolean) => void
+): void {
     const modal = document.getElementById('custom-confirm-modal');
     const titleEl = document.getElementById('custom-confirm-title');
     const textEl = document.getElementById('custom-confirm-text');
     const btnYes = document.getElementById('btn-confirm-yes');
     const btnNo = document.getElementById('btn-confirm-no');
-    
+
     if (!modal || !titleEl || !textEl || !btnYes || !btnNo) return;
-    
+
     titleEl.innerHTML = title;
     textEl.innerHTML = text;
     titleEl.style.color = resolveHeaderColor(title);
     btnYes.textContent = yesLabel;
     btnNo.textContent = noLabel;
-    
+
     openModal(modal);
-    if (window.twemoji) window.twemoji.parse(modal);
-    
+
+    // @ts-ignore
+    if (typeof window !== 'undefined' && window.twemoji) {
+        // @ts-ignore
+        window.twemoji.parse(modal);
+    }
+
     // Core event handlers with standard lexical scopes for absolute teardown
     const onYes = () => {
         closeModal(modal);
         cleanup();
         callback(true);
     };
-            
+
     const onNo = () => {
         closeModal(modal);
         cleanup();
         callback(false);
     };
-            
-    const handleKeyDown = (event) => {
+
+    const handleKeyDown = (event: KeyboardEvent) => {
         const key = event.key.toLowerCase();
         if (key === 'enter' || key === ' ') {
             event.preventDefault();
@@ -95,31 +114,37 @@ export function showCustomConfirm(title, text, yesLabel, noLabel, callback) {
             onNo();
         }
     };
-            
+
     const cleanup = () => {
         btnYes.removeEventListener('click', onYes);
         btnNo.removeEventListener('click', onNo);
         window.removeEventListener('keydown', handleKeyDown);
     };
-            
+
     btnYes.addEventListener('click', onYes);
     btnNo.addEventListener('click', onNo);
     window.addEventListener('keydown', handleKeyDown);
 }
 
-// Initialize click listeners for settings and manual popup modals
-export function initModals(onSettingsOpen, onSettingsSave, onStatsOpen) {
-    // Select Handbook modal DOM nodes
+/**
+ * @description Initializes click listeners for settings and manual popup modals
+ * @param onSettingsOpen - Pre-open hook to sync UI selectors with actual store parameters
+ * @param onSettingsSave - Close hook to commit modified UI selectors to store and localStorage
+ * @param onStatsOpen - Hook to trigger relational data rendering just before dashboard appears
+ */
+export function initModals(
+    onSettingsOpen: () => void,
+    onSettingsSave: () => void,
+    onStatsOpen: () => void
+): void {
     const infoModal = document.getElementById('info-modal');
     const btnInfo = document.getElementById('btn-info');
     const btnCloseModal = document.getElementById('btn-close-modal');
 
-    // Select Configuration modal DOM nodes
     const settingsModal = document.getElementById('settings-modal');
     const btnSettings = document.getElementById('btn-settings');
     const btnCloseSettings = document.getElementById('btn-close-settings');
 
-    // Select Statistics modal DOM nodes
     const statsModal = document.getElementById('stats-modal');
     const btnStats = document.getElementById('btn-stats');
     const btnCloseStats = document.getElementById('btn-close-stats');
@@ -132,11 +157,11 @@ export function initModals(onSettingsOpen, onSettingsSave, onStatsOpen) {
         });
     }
 
-    // Bind manual modal triggers
     if (btnInfo && infoModal) {
         btnInfo.addEventListener('click', () => {
             openModal(infoModal);
-            if (window.twemoji) window.twemoji.parse(infoModal); // Lazy-parse handbook on demand
+            // @ts-ignore
+            if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(infoModal);
         });
     }
     if (btnCloseModal && infoModal) {
@@ -145,36 +170,28 @@ export function initModals(onSettingsOpen, onSettingsSave, onStatsOpen) {
         });
     }
 
-    // Bind settings modal triggers with state sync hooks
     if (btnSettings && settingsModal) {
         btnSettings.addEventListener('click', () => {
-            // Trigger pre-open hook to sync UI selectors with actual store parameters
-            if (typeof onSettingsOpen === 'function') {
-                onSettingsOpen();
-            }
+            if (typeof onSettingsOpen === 'function') onSettingsOpen();
             openModal(settingsModal);
-            if (window.twemoji) window.twemoji.parse(settingsModal); // Lazy-parse settings on demand
+            // @ts-ignore
+            if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(settingsModal);
         });
     }
-    
+
     if (btnCloseSettings && settingsModal) {
         btnCloseSettings.addEventListener('click', () => {
-            // Trigger close hook to commit modified UI selectors to store and localStorage
-            if (typeof onSettingsSave === 'function') {
-                onSettingsSave();
-            }
+            if (typeof onSettingsSave === 'function') onSettingsSave();
             closeModal(settingsModal);
         });
     }
 
-    // Bind statistics modal triggers
     if (btnStats && statsModal) {
         btnStats.addEventListener('click', () => {
-            if (typeof onStatsOpen === 'function') {
-                onStatsOpen();
-            }
+            if (typeof onStatsOpen === 'function') onStatsOpen();
             openModal(statsModal);
-            if (window.twemoji) window.twemoji.parse(statsModal); // Lazy-parse statistics on demand
+            // @ts-ignore
+            if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(statsModal);
         });
     }
 

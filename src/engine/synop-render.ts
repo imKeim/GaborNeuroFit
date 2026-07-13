@@ -1,11 +1,29 @@
 /*
  * GaborNeuroFit - 2D Synoptophore Target Renderer Subsystem
  * Copyright (C) 2026 Pavel Korotkov
+ *
+ * Migrated to TypeScript: Enforces strict Canvas 2D typing and parameter extraction
+ * heavily tied to the AppState interface to ensure visual fidelity during vergence.
  */
 
-import { drawFusionLockFrame } from './gabor.js';
+import { drawFusionLockFrame } from './gabor-render';
+import type { AppState } from '../types/clinical';
 
-export function drawSynoptophoreTargets(canvas, ctx, state, factor = 1.0) {
+/**
+ * @description Master mathematical renderer for optometric vergence targets.
+ *
+ * @clinical Translates the digital strabismus deviation vector (synopTargetX / Y) into decoupled
+ * color-channel targets (Dichoptic presentation).
+ * If flicker is active, it runs a counter-phase 10Hz Alpha-resonance interpolation:
+ * oscillating the lazy eye target through the precise SSoT Neutral Gray background (127 sRGB).
+ * This crucially maintains constant average luminescence, preventing pupillary micro-spasms and fatigue.
+ */
+export function drawSynoptophoreTargets(
+    canvas: HTMLCanvasElement | null,
+    ctx: CanvasRenderingContext2D | null,
+    state: AppState,
+    factor: number = 1.0
+): void {
     if (!canvas || !ctx) return;
 
     const scale = canvas.width / 256.0;
@@ -24,16 +42,15 @@ export function drawSynoptophoreTargets(canvas, ctx, state, factor = 1.0) {
 
     // Fade strong eye colors towards neutral gray (127) using the independent Synoptophore contrast factor balancer
     const strongFactor = state.synopStrongEyeContrastFactor;
-    
+
     // Resolve pure channel attenuations for non-lazy channels
     const r_attenuated = isLazyRed ? r : Math.round(127 + (r - 127) * strongFactor);
     const g_attenuated = isLazyRed ? Math.round(127 + (g - 127) * strongFactor) : g;
     const b_attenuated = isLazyRed ? Math.round(127 + (b - 127) * strongFactor) : b;
 
     // CLINICAL COUNTER-PHASE INTERPOLATION (RESONANCE FLICKER) FOR LAZY EYE
-    // Oscillates the target from "Bright Calibrated" to "Dark Inverse" through the neutral gray background.
     const flickerFactor = factor;
-    
+
     const r_lazy = isLazyRed ? Math.max(0, Math.min(255, Math.round(127 + (r - 127) * flickerFactor))) : r_attenuated;
     const g_lazy = isLazyRed ? g_attenuated : Math.max(0, Math.min(255, Math.round(127 + (g - 127) * flickerFactor)));
     const b_lazy = isLazyRed ? b_attenuated : Math.max(0, Math.min(255, Math.round(127 + (b - 127) * flickerFactor)));
@@ -75,11 +92,11 @@ export function drawSynoptophoreTargets(canvas, ctx, state, factor = 1.0) {
         ctx.restore();
     }
 
-    const size = state.synopTargetSize || 65;
+    const size = state.synopTargetSize;
     const lineWidth = Math.max(3, Math.round(size * 0.09));
-    
+
     const dotRadius = size * 0.12;
-    const crossHalf = size * 0.15; 
+    const crossHalf = size * 0.15;
 
     if (state.synopTargetType === 'cross-square') {
         ctx.strokeStyle = strongColor;

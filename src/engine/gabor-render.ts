@@ -2,12 +2,13 @@
  * GaborNeuroFit - Mathematical Visual Stimulation Engine
  * Copyright (C) 2026 Pavel Korotkov
  *
- * This module contains optimized mathematical canvas drawing routines for synthesizing
- * Gabor patches, spatial crowding flankers, zero-disparity stabilization frames, and diagnostic cards.
+ * Migrated to TypeScript: The WebGL rendering pipeline is now fortified with strict
+ * null-checking for shaders, context initialization, and uniform locations.
  */
 
-// Global cache for WebGL context resource manager to prevent memory leaks
-let webGLManagerInstance = null;
+import type { AppState } from '../types/clinical';
+
+let webGLManagerInstance: WebGLResourceManager | null = null;
 
 const VERTEX_SHADER_SOURCE = `
     attribute vec2 a_position;
@@ -73,41 +74,33 @@ const FRAGMENT_SHADER_SOURCE = `
         // Flankers calculations
         float flankerGaborValue = 0.0;
         if (isCrowding) {
-            int crowdMode = int(u_crowding_mode + 0.5); // 0=vertical, 1=horizontal, 2=all
+            int crowdMode = int(u_crowding_mode + 0.5);
 
-            // Helper macro: compute a single flanker Gabor value at given screen-space offset
-            // Top flanker (used in vertical and all-sides)
             vec2 d1 = (st - (center + vec2(offsetX, offsetY - flankerOffset) * u_scale)) / u_scale;
             float x_t1 = d1.x * cos(flankerAngleRad) + d1.y * sin(flankerAngleRad);
             float y_t1 = -d1.x * sin(flankerAngleRad) + d1.y * cos(flankerAngleRad);
             float g_top = exp(-(x_t1*x_t1 + aspectRatio*aspectRatio*y_t1*y_t1) / (2.0*sigma*sigma)) * cos(2.0*3.14159265*x_t1*freq + flankerPhaseOffset);
 
-            // Bottom flanker
             vec2 d2 = (st - (center + vec2(offsetX, offsetY + flankerOffset) * u_scale)) / u_scale;
             float x_t2 = d2.x * cos(flankerAngleRad) + d2.y * sin(flankerAngleRad);
             float y_t2 = -d2.x * sin(flankerAngleRad) + d2.y * cos(flankerAngleRad);
             float g_bot = exp(-(x_t2*x_t2 + aspectRatio*aspectRatio*y_t2*y_t2) / (2.0*sigma*sigma)) * cos(2.0*3.14159265*x_t2*freq + flankerPhaseOffset);
 
-            // Left flanker
             vec2 d3 = (st - (center + vec2(offsetX - flankerOffset, offsetY) * u_scale)) / u_scale;
             float x_t3 = d3.x * cos(flankerAngleRad) + d3.y * sin(flankerAngleRad);
             float y_t3 = -d3.x * sin(flankerAngleRad) + d3.y * cos(flankerAngleRad);
             float g_lft = exp(-(x_t3*x_t3 + aspectRatio*aspectRatio*y_t3*y_t3) / (2.0*sigma*sigma)) * cos(2.0*3.14159265*x_t3*freq + flankerPhaseOffset);
 
-            // Right flanker
             vec2 d4 = (st - (center + vec2(offsetX + flankerOffset, offsetY) * u_scale)) / u_scale;
             float x_t4 = d4.x * cos(flankerAngleRad) + d4.y * sin(flankerAngleRad);
             float y_t4 = -d4.x * sin(flankerAngleRad) + d4.y * cos(flankerAngleRad);
             float g_rgt = exp(-(x_t4*x_t4 + aspectRatio*aspectRatio*y_t4*y_t4) / (2.0*sigma*sigma)) * cos(2.0*3.14159265*x_t4*freq + flankerPhaseOffset);
 
             if (crowdMode == 1) {
-                // Horizontal only: left + right
                 flankerGaborValue = (g_lft + g_rgt) * 0.55 * fade;
             } else if (crowdMode == 2) {
-                // All four sides — scale down to maintain equal perceptual weight per flanker
                 flankerGaborValue = (g_top + g_bot + g_lft + g_rgt) * 0.275 * fade;
             } else {
-                // Default: vertical only — top + bottom
                 flankerGaborValue = (g_top + g_bot) * 0.55 * fade;
             }
         }
@@ -116,7 +109,6 @@ const FRAGMENT_SHADER_SOURCE = `
         vec3 color = vec3(L_bg);
 
         if (isAnaglyph) {
-            // Apply calibration scales ONLY to dynamic Gabor wave oscillations (deltas)
             float delta_lazy = centralGaborValue * L_bg * centralContrast;
             float delta_strong = flankerGaborValue * L_bg * flankerContrast;
 
@@ -141,20 +133,34 @@ const FRAGMENT_SHADER_SOURCE = `
 `;
 
 class WebGLResourceManager {
-    constructor(canvas) {
+    public canvas: HTMLCanvasElement;
+    public gl: WebGLRenderingContext | null;
+    public isReady: boolean;
+    private program: WebGLProgram | null = null;
+
+    private u_resolution: WebGLUniformLocation | null = null;
+    private u_scale: WebGLUniformLocation | null = null;
+    private u_gabor_main: WebGLUniformLocation | null = null;
+    private u_gabor_geom: WebGLUniformLocation | null = null;
+    private u_flanker_main: WebGLUniformLocation | null = null;
+    private u_calib_scale: WebGLUniformLocation | null = null;
+    private u_flags: WebGLUniformLocation | null = null;
+    private u_crowding_mode: WebGLUniformLocation | null = null;
+
+    constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
-        // Request deep 24-bit opaque rendering, subpixel anti-aliasing, and force discrete high-performance GPU Swap Chain
-        const glOptions = { 
-            depth: false, 
-            antialias: true, 
+        const glOptions = {
+            depth: false,
+            antialias: true,
             alpha: false,
             premultipliedAlpha: false,
             powerPreference: "high-performance",
-            preserveDrawingBuffer: false // Fast hardware buffer page flipping enabled
+            preserveDrawingBuffer: false
         };
-        this.gl = canvas.getContext('webgl', glOptions) || 
-                  canvas.getContext('experimental-webgl', glOptions);
+        this.gl = (canvas.getContext('webgl', glOptions) ||
+                   canvas.getContext('experimental-webgl', glOptions)) as WebGLRenderingContext | null;
         this.isReady = false;
+
         if (this.gl) {
             this.init();
         }
@@ -162,11 +168,12 @@ class WebGLResourceManager {
 
     init() {
         const gl = this.gl;
+        if (!gl) return;
+
         const program = this.createProgram(VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE);
         if (!program) return;
         this.program = program;
 
-        // Map attribute positions
         const positionLocation = gl.getAttribLocation(program, 'a_position');
         const buffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
@@ -178,7 +185,6 @@ class WebGLResourceManager {
         gl.enableVertexAttribArray(positionLocation);
         gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
-        // Cache uniform addresses
         this.u_resolution = gl.getUniformLocation(program, 'u_resolution');
         this.u_scale = gl.getUniformLocation(program, 'u_scale');
         this.u_gabor_main = gl.getUniformLocation(program, 'u_gabor_main');
@@ -201,13 +207,17 @@ class WebGLResourceManager {
         this.isReady = false;
     }
 
-    createProgram(vertexSrc, fragmentSrc) {
+    createProgram(vertexSrc: string, fragmentSrc: string): WebGLProgram | null {
         const gl = this.gl;
+        if (!gl) return null;
+
         const vs = this.compileShader(vertexSrc, gl.VERTEX_SHADER);
         const fs = this.compileShader(fragmentSrc, gl.FRAGMENT_SHADER);
         if (!vs || !fs) return null;
 
         const program = gl.createProgram();
+        if (!program) return null;
+
         gl.attachShader(program, vs);
         gl.attachShader(program, fs);
         gl.linkProgram(program);
@@ -219,9 +229,13 @@ class WebGLResourceManager {
         return program;
     }
 
-    compileShader(src, type) {
+    compileShader(src: string, type: number): WebGLShader | null {
         const gl = this.gl;
+        if (!gl) return null;
+
         const shader = gl.createShader(type);
+        if (!shader) return null;
+
         gl.shaderSource(shader, src);
         gl.compileShader(shader);
         if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
@@ -231,11 +245,23 @@ class WebGLResourceManager {
         return shader;
     }
 
-    render(state, angleDeg, centralContrast, flankerContrast, freq, sigma, offsetX, offsetY, flankerPhaseOffset, aspectRatio, hideCentral, scale) {
+    render(
+        state: AppState,
+        angleDeg: number,
+        centralContrast: number,
+        flankerContrast: number,
+        freq: number,
+        sigma: number,
+        offsetX: number,
+        offsetY: number,
+        flankerPhaseOffset: number,
+        aspectRatio: number,
+        hideCentral: boolean,
+        scale: number
+    ): void {
         const gl = this.gl;
-        
-        // CRITICAL WebGL Clear: Explicitly clear color buffer with sRGB neutral gray before rendering.
-        // This completely prevents GPU frame memory leakage (flicker ghosts/moiré patterns) under rapid temporal modulation.
+        if (!gl || !this.program) return;
+
         gl.clearColor(0.21763, 0.21763, 0.21763, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
@@ -244,16 +270,11 @@ class WebGLResourceManager {
 
         const angleRad = (angleDeg * Math.PI) / 180;
         const flankerAngleRad = state.isOrthogonalFlankersEnabled ? (angleRad + Math.PI / 2) : 0;
-        
-        // Calculate the spatial wavelength (lambda = 1.0 / frequency).
-        // Clinically, lateral facilitation is optimal at 4 lambda.
+
         const wavelength = 1.0 / freq;
-        
-        // Ensure that the flanker spacing is never less than 1.8 * sigma (to prevent overlapping on high frequencies)
-        // while maintaining the exact 4 lambda clinical distance on lower stages.
         const flankerOffset = Math.max(sigma * 1.8, wavelength * state.flankerDistanceCoeff);
-        
-        const crowdingModeMap = { vertical: 0, horizontal: 1, all: 2 };
+
+        const crowdingModeMap: Record<string, number> = { vertical: 0, horizontal: 1, all: 2 };
         const crowdingModeVal = crowdingModeMap[state.crowdingMode] ?? 0;
 
         gl.uniform2f(this.u_resolution, this.canvas.width, this.canvas.height);
@@ -261,87 +282,74 @@ class WebGLResourceManager {
         gl.uniform4f(this.u_gabor_main, -angleRad, centralContrast, freq, sigma);
         gl.uniform3f(this.u_gabor_geom, offsetX, -offsetY, aspectRatio);
         gl.uniform4f(this.u_flanker_main, -flankerAngleRad, flankerContrast * state.strongEyeContrastFactor, flankerOffset, flankerPhaseOffset);
-        
-        // Map raw slider value [0..255] to a normalized offset multiplier [-1.0 .. 1.0] relative to 127 neutral center.
-        // This mathematically aligns the WebGL shader rendering with the 2D canvas calibrations.
-        const mapScale = (val) => (val - 127.0) / 128.0;
+
+        const mapScale = (val: number) => (val - 127.0) / 128.0;
         gl.uniform3f(
-            this.u_calib_scale, 
-            mapScale(state.calibratorLeftR), 
-            mapScale(state.calibratorRightG), 
+            this.u_calib_scale,
+            mapScale(state.calibratorLeftR),
+            mapScale(state.calibratorRightG),
             mapScale(state.calibratorRightB)
         );
-        
-        gl.uniform4f(this.u_flags, state.isAnaglyphEnabled ? 1.0 : 0.0, state.isCrowdingEnabled ? 1.0 : 0.0, (state.lazyEyeSide === state.redEyeSide) ? 1.0 : 0.0, hideCentral ? 1.0 : 0.0);
+
+        gl.uniform4f(
+            this.u_flags,
+            state.isAnaglyphEnabled ? 1.0 : 0.0,
+            state.isCrowdingEnabled ? 1.0 : 0.0,
+            (state.lazyEyeSide === state.redEyeSide) ? 1.0 : 0.0,
+            hideCentral ? 1.0 : 0.0
+        );
         gl.uniform1f(this.u_crowding_mode, crowdingModeVal);
 
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
 }
 
-// Draw persistent zero-disparity visual stabilization lock frame (Executed on top transparent layer)
-export function drawFusionLockFrame(canvas, ctx, scale = 1.0) {
+/**
+ * @description Draws persistent zero-disparity visual stabilization lock frame.
+ */
+export function drawFusionLockFrame(_canvas: HTMLCanvasElement | null, ctx: CanvasRenderingContext2D | null, scale: number = 1.0): void {
+    if (!ctx) return;
     ctx.save();
-    // Transform coordinates dynamically to logical 256 boundaries to prevent visual scale drift
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
 
     ctx.strokeStyle = '#2c2c2c';
     ctx.lineWidth = 2;
-    
-    // Outer boundary alignment frame
+
     ctx.beginPath();
     ctx.rect(8, 8, 240, 240);
     ctx.stroke();
-    
+
     ctx.lineWidth = 1.5;
-    
-    // Top-left corner
-    ctx.beginPath();
-    ctx.moveTo(28, 14);
-    ctx.lineTo(14, 14);
-    ctx.lineTo(14, 28);
-    ctx.stroke();
-    
-    // Top-right corner
-    ctx.beginPath();
-    ctx.moveTo(228, 14);
-    ctx.lineTo(242, 14);
-    ctx.lineTo(242, 28);
-    ctx.stroke();
-    
-    // Bottom-left corner
-    ctx.beginPath();
-    ctx.moveTo(14, 228);
-    ctx.lineTo(14, 242);
-    ctx.lineTo(28, 242);
-    ctx.stroke();
-    
-    // Bottom-right corner
-    ctx.beginPath();
-    ctx.moveTo(242, 228);
-    ctx.lineTo(242, 242);
-    ctx.lineTo(228, 242);
-    ctx.stroke();
+
+    ctx.beginPath(); ctx.moveTo(28, 14); ctx.lineTo(14, 14); ctx.lineTo(14, 28); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(228, 14); ctx.lineTo(242, 14); ctx.lineTo(242, 28); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(14, 228); ctx.lineTo(14, 242); ctx.lineTo(28, 242); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(242, 228); ctx.lineTo(242, 242); ctx.lineTo(228, 242); ctx.stroke();
 
     ctx.restore();
 }
 
-// Generate diagnostic calibration card to verify dichoptic channel isolation (Executed on top transparent layer)
-export function drawFusionTestPattern(canvas, ctx, state) {
+/**
+ * @description Generates diagnostic calibration card to verify dichoptic channel isolation.
+ *
+ * @clinical By displaying a deeply colored 'L' and 'R' on an exact sRGB neutral gray background,
+ * the patient can physically verify ocular dominance and fine-tune contrast attenuation
+ * until the suppressed eye is granted cortical access (breaking the interocular suppression barrier).
+ */
+export function drawFusionTestPattern(canvas: HTMLCanvasElement | null, ctx: CanvasRenderingContext2D | null, state: AppState): void {
+    if (!canvas || !ctx) return;
+
     const scale = canvas.width / 256.0;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
-    // Unify test card rendering in the logical 256x256 workspace
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
-    
-    // Solid high-contrast corner anchor boxes shifted safely inward
+
     ctx.fillStyle = '#2c2c2c';
     ctx.fillRect(35, 35, 20, 20);
     ctx.fillRect(256 - 55, 35, 20, 20);
     ctx.fillRect(35, 256 - 55, 20, 20);
     ctx.fillRect(256 - 55, 256 - 55, 20, 20);
-    
-    // Configure standard typography rules for balanced, pixel-perfect alignment
+
     ctx.font = 'bold 42px Overpass';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -358,32 +366,23 @@ export function drawFusionTestPattern(canvas, ctx, state) {
     const isRightStrong = state.lazyEyeSide === 'left';
     const strongFactor = isSynop ? state.synopStrongEyeContrastFactor : state.strongEyeContrastFactor;
 
-    // Symmetrically attenuate the strong eye's letter color delta from the neutral 127 gray background in real-time.
-    // This allows patients to visually find their exact binocular suppression threshold.
     const leftR_calibrated = Math.round(127 + (leftR - 127) * (isLeftStrong ? strongFactor : 1.0));
     const rightG_calibrated = Math.round(127 + (rightG - 127) * (isRightStrong ? strongFactor : 1.0));
     const rightB_calibrated = Math.round(127 + (rightB - 127) * (isRightStrong ? strongFactor : 1.0));
 
-    // Render Left (Red channel) target text
-    ctx.fillStyle = `rgb(${leftR_calibrated}, 127, 127)`; 
+    ctx.fillStyle = `rgb(${leftR_calibrated}, 127, 127)`;
     ctx.fillText('L', cx - 55, cy + 4);
-    
-    // Render Right (Cyan channel) target text
-    ctx.fillStyle = `rgb(127, ${rightG_calibrated}, ${rightB_calibrated})`; 
+
+    ctx.fillStyle = `rgb(127, ${rightG_calibrated}, ${rightB_calibrated})`;
     ctx.fillText('R', cx + 55, cy + 4);
 
-    // Draw mathematically perfect, pixel-aligned central fixation cross
     ctx.strokeStyle = '#2c2c2c';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(cx - 8, cy);
-    ctx.lineTo(cx + 8, cy);
-    ctx.moveTo(cx, cy - 8);
-    ctx.lineTo(cx, cy + 8);
+    ctx.moveTo(cx - 8, cy); ctx.lineTo(cx + 8, cy);
+    ctx.moveTo(cx, cy - 8); ctx.lineTo(cx, cy + 8);
     ctx.stroke();
 
-    // Overlay zero-disparity stabilizers to ensure motor fusion is lockable during calibration
-    // Symmetrically force the lock frame on during Synoptophore calibration tests
     if (isSynop || state.isFusionLockEnabled) {
         drawFusionLockFrame(canvas, ctx, scale);
     }
@@ -391,8 +390,26 @@ export function drawFusionTestPattern(canvas, ctx, state) {
     ctx.restore();
 }
 
-// Modern unified entry point for Gabor rendering with transparent GPU execution.
-export function renderGabor(canvas, ctx, state, angleDeg, centralContrast, flankerContrast, freq, sigma, offsetX = 0, offsetY = 0, flankerPhaseOffset = 0, aspectRatio = 1.0, hideCentral = false) {
+/**
+ * @description Modern unified entry point for Gabor rendering with transparent GPU execution.
+ */
+export function renderGabor(
+    canvas: HTMLCanvasElement | null,
+    _ctx: CanvasRenderingContext2D | null, // WebGL context derives intrinsically, skipping 2D context map execution
+    state: AppState,
+    angleDeg: number,
+    centralContrast: number,
+    flankerContrast: number,
+    freq: number,
+    sigma: number,
+    offsetX: number = 0,
+    offsetY: number = 0,
+    flankerPhaseOffset: number = 0,
+    aspectRatio: number = 1.0,
+    hideCentral: boolean = false
+): void {
+    if (!canvas) return;
+
     if (webGLManagerInstance && webGLManagerInstance.canvas !== canvas) {
         webGLManagerInstance.destroy();
         webGLManagerInstance = null;
@@ -407,7 +424,6 @@ export function renderGabor(canvas, ctx, state, angleDeg, centralContrast, flank
     if (webGLManagerInstance.isReady) {
         webGLManagerInstance.render(state, angleDeg, centralContrast, flankerContrast, freq, sigma, offsetX, offsetY, flankerPhaseOffset, aspectRatio, hideCentral, scale);
     } else {
-        // Fallback to error logging if WebGL initialization failed (e.g. hardware acceleration disabled)
         console.error("WebGL 1.0 initialization failed. GaborNeuroFit requires GPU hardware acceleration to maintain clinical 10 Hz visual temporal pacing.");
     }
 }

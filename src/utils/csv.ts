@@ -4,13 +4,13 @@
  */
 
 /**
- * Highly optimized RFC 4180 compliant CSV parser (State Machine)
+ * @description Highly optimized RFC 4180 compliant CSV parser (State Machine).
  * @param {string} text - The raw CSV input string
  * @returns {string[][]} A 2D array representing rows and cells
  */
-export function parseCSV(text) {
-    const result = [];
-    let row = [''];
+export function parseCSV(text: string): string[][] {
+    const result: string[][] = [];
+    let row: string[] = [''];
     let inQuotes = false;
 
     for (let i = 0; i < text.length; i++) {
@@ -46,13 +46,15 @@ export function parseCSV(text) {
 }
 
 /**
- * Safely serializes headers and rows into a standardized RFC 4180 CSV string
+ * @description Safely serializes headers and rows into a standardized RFC 4180 CSV string.
  * @param {string[]} headers - Array of header strings
  * @param {any[][]} rows - 2D array of row cells
  * @returns {string} Fully encoded CSV string with BOM marker
  */
-export function serializeCSV(headers, rows) {
-    const escapeCell = (val) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function serializeCSV(headers: string[], rows: any[][]): string {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const escapeCell = (val: any): string => {
         const str = val === null || val === undefined ? '' : String(val);
         // If the cell contains commas, quotes, or newlines, it must be escaped
         if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {

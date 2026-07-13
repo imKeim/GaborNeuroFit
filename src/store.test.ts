@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { Store } from './store.js';
+import { Store } from './store'; // Убрали .js
 
 describe('GaborNeuroFit - Adaptive Staircase Math', () => {
     // Reset the global state to baseline before executing each test scenario
@@ -29,7 +29,7 @@ describe('GaborNeuroFit - Adaptive Staircase Math', () => {
         Store.registerResult(true); // 1st success, contrast remains 0.50
         Store.registerResult(true); // 2nd success, contrast remains 0.50
         Store.registerResult(true); // 3rd success -> triggers contrast drop!
-        
+
         // Contrast should drop from 0.50 to 0.45 (-0.05) and reset staircase streak
         expect(Store.state.autoContrast).toBe(0.45);
         expect(Store.state.staircaseStreak).toBe(0);
@@ -40,7 +40,7 @@ describe('GaborNeuroFit - Adaptive Staircase Math', () => {
         for (let i = 0; i < 20; i++) {
             Store.registerResult(true);
         }
-        
+
         // Stage difficulty should automatically advance from 1 to 2
         expect(Store.state.currentLevel).toBe(2);
         expect(Store.state.autoContrast).toBe(0.40); // Resets contrast to default baseline

@@ -6,15 +6,32 @@
  */
 
 import { Store } from '../store.js';
+import type { AppState } from '../types/clinical';
 
 export class PomodoroTimer {
-    constructor(onTick, onComplete) {
+    private onTick: (state: AppState) => void;
+    private onComplete: (state: AppState) => void;
+    private intervalId: number | null = null;
+
+    constructor(onTick: (state: AppState) => void, onComplete: (state: AppState) => void) {
         this.onTick = onTick;
         this.onComplete = onComplete;
     }
 
-    init() {
-        setInterval(() => {
+    /**
+     * @description Initializes the 1-second Pomodoro heartbeat.
+     *
+     * @clinical Forces periodic recovery intervals. Continuous near-point active foveation
+     * (especially during cross-eyed stereogram fusion) induces extreme ciliary muscle fatigue
+     * (accommodative spasm). The timer forces the patient to look at a distant target (20/20/20 rule)
+     * to safely relax parasympathetic innervation.
+     */
+    init(): void {
+        if (this.intervalId !== null) {
+            window.clearInterval(this.intervalId);
+        }
+
+        this.intervalId = window.setInterval(() => {
             const s = Store.state;
             if (!s.timerIsRunning || s.timerLimitMinutes === 0) return;
 
@@ -25,11 +42,11 @@ export class PomodoroTimer {
             const customAlertModal = document.getElementById('custom-alert-modal');
             const customConfirmModal = document.getElementById('custom-confirm-modal');
 
-            const isSettingsOpen = settingsModal && settingsModal.classList.contains('modal-open');
-            const isInfoOpen = infoModal && infoModal.classList.contains('modal-open');
-            const isStatsOpen = statsModal && statsModal.classList.contains('modal-open');
-            const isAlertOpen = customAlertModal && customAlertModal.classList.contains('modal-open');
-            const isConfirmOpen = customConfirmModal && customConfirmModal.classList.contains('modal-open');
+            const isSettingsOpen = settingsModal?.classList.contains('modal-open') ?? false;
+            const isInfoOpen = infoModal?.classList.contains('modal-open') ?? false;
+            const isStatsOpen = statsModal?.classList.contains('modal-open') ?? false;
+            const isAlertOpen = customAlertModal?.classList.contains('modal-open') ?? false;
+            const isConfirmOpen = customConfirmModal?.classList.contains('modal-open') ?? false;
 
             if (isSettingsOpen || isInfoOpen || isStatsOpen || isAlertOpen || isConfirmOpen) {
                 return; // Maintain state securely while patient interacts with UI
