@@ -1,0 +1,17 @@
+# .github/dependabot.yml
+version: 2
+updates:
+  # Configure automated dependency scanning for Node.js (npm)
+  - package-ecosystem: "npm"
+    # Target directory for package.json
+    directory: "/"
+    # Frequency of scanning iterations
+    schedule:
+      interval: "monthly"
+      day: "monday"
+    # Enforce Conventional Commits specification for PRs
+    commit-message:
+      prefix: "chore(deps)"
+    # Auto-tag Pull Requests for streamlined repository filtering
+    labels:
+      - "dependencies"

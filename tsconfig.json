@@ -17,12 +17,8 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-
-    /* Incremental Migration Architecture */
-    "allowJs": true,
-    "checkJs": false
+    "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/**/*.ts", "src/**/*.js", "scripts/**/*.ts", "vite.config.js", "playwright.config.js"],
+  "include": ["src/**/*.ts", "scripts/**/*.ts", "vite.config.ts", "playwright.config.ts"],
   "exclude": ["node_modules", "dist", "public"]
 }

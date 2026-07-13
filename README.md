@@ -14,13 +14,18 @@
   <!-- GNU GPL v3 License -->
   <a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License: GPL v3"></a>
   
-  <!-- Core Dev Tools & Languages -->
+  <!-- Core Arch & Languages -->
+  <img src="https://img.shields.io/badge/TypeScript-Strict-3178C6?style=flat&logo=typescript&logoColor=white" alt="TypeScript">
   <img src="https://img.shields.io/badge/Vite-646CFF?style=flat&logo=Vite&logoColor=white" alt="Vite">
-  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black" alt="JavaScript">
   <img src="https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white" alt="HTML5">
   <img src="https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=css3&logoColor=white" alt="CSS3">
-  
-  <!-- Clinical Audio Engine -->
+
+  <!-- Testing Pyramid & QA -->
+  <img src="https://img.shields.io/badge/Vitest-Unit_Tests-729B1B?style=flat&logo=vitest&logoColor=white" alt="Vitest">
+  <img src="https://img.shields.io/badge/Playwright-E2E-2EAD33?style=flat&logo=playwright&logoColor=white" alt="Playwright">
+  <img src="https://img.shields.io/badge/Dependabot-Active-025E8C?style=flat&logo=dependabot&logoColor=white" alt="Dependabot">
+
+  <!-- Clinical Hardware APIs -->
   <img src="https://img.shields.io/badge/Web%20Audio-FF5722?style=flat&logo=soundcharts&logoColor=white" alt="Web Audio API">
   
   <!-- Platforms & Open Source status -->

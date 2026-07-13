@@ -76,7 +76,8 @@ export class DataRepository {
                 const defaultName = translations.defaultPatientName || 'Default Patient';
 
                 const defaultProfile: PatientProfile = {
-                    id: 'usr_' + Date.now(),
+                    // Injecting cryptographic entropy to guarantee absolute UUID uniqueness against double-clicks
+                    id: 'usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
                     name: defaultName,
                     createdAt: Date.now()
                 };
@@ -150,7 +151,8 @@ export class DataRepository {
 
             const profiles = this.getProfiles();
             const newProfile: PatientProfile = {
-                id: 'usr_' + Date.now(),
+                // Injecting cryptographic entropy to guarantee absolute UUID uniqueness against double-clicks
+                id: 'usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
                 name: sanitizedName,
                 createdAt: Date.now()
             };

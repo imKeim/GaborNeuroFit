@@ -19,12 +19,13 @@ vi.mock('./engine/audio', () => ({
     playSlip: vi.fn()
 }));
 
-vi.mock('./engine/gabor-render', () => ({
+vi.mock('../engine/gabor-render', () => ({
     renderGabor: vi.fn(),
     drawFusionLockFrame: vi.fn()
 }));
 
-vi.mock('./ui/screen', () => ({
+// Isolate the FSM logic from physical DOM UI rendering faults
+vi.mock('../ui/screen', () => ({
     updateScoreboard: vi.fn(),
     updateStatusBar: vi.fn(),
     drawIdleState: vi.fn()

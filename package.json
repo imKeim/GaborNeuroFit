@@ -10,8 +10,8 @@
     "type-check": "tsc --noEmit",
     "test": "vitest run --reporter=verbose",
     "test:watch": "vitest --reporter=verbose",
-    "test:e2e": "playwright test --config=playwright.config.js",
-    "test:e2e:ui": "playwright test --config=playwright.config.js --ui",
+    "test:e2e": "playwright test --config=playwright.config.ts",
+    "test:e2e:ui": "playwright test --config=playwright.config.ts --ui",
     "build-assets": "npx tsx scripts/generate-assets.ts"
   },
   "devDependencies": {
