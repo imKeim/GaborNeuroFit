@@ -62,12 +62,6 @@ export class DashboardController {
                 tabGabor.classList.remove('active');
                 tabSynop.classList.remove('active');
                 tabRds.classList.remove('active');
-                tabGabor.style.background = 'transparent';
-                tabSynop.style.background = 'transparent';
-                tabRds.style.background = 'transparent';
-                tabGabor.style.color = '#8e8e93';
-                tabSynop.style.color = '#8e8e93';
-                tabRds.style.color = '#8e8e93';
                 contentGabor.style.display = 'none';
                 contentSynop.style.display = 'none';
                 contentRds.style.display = 'none';
@@ -76,24 +70,18 @@ export class DashboardController {
             tabGabor.addEventListener('click', () => {
                 resetTabs();
                 tabGabor.classList.add('active');
-                tabGabor.style.background = '#2b354a';
-                tabGabor.style.color = '#3b90ff';
                 contentGabor.style.display = 'block';
             });
 
             tabSynop.addEventListener('click', () => {
                 resetTabs();
                 tabSynop.classList.add('active');
-                tabSynop.style.background = '#2b354a';
-                tabSynop.style.color = '#3b90ff';
                 contentSynop.style.display = 'block';
             });
 
             tabRds.addEventListener('click', () => {
                 resetTabs();
                 tabRds.classList.add('active');
-                tabRds.style.background = '#2b354a';
-                tabRds.style.color = '#3b90ff';
                 contentRds.style.display = 'block';
             });
         }

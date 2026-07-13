@@ -373,12 +373,6 @@ window.addEventListener('load', async () => {
         () => syncCrossVisualState()
     );
 
-    // Instantiate newly decoupled single-responsibility modules
-    dashboardController = new DashboardController(() => activeTranslations);
-
-    // Instantiate PauseController in strict dependency injection manner
-    pauseController = new PauseController(trialController, synoptophoreController, rdsController);
-
     // Symmetrical Monkey-Patching (Decorator Pattern) to capture motor kinematics without bloating physical loops
     const originalSuccess = synoptophoreController.completeSuccess;
     synoptophoreController.completeSuccess = function() {
@@ -457,11 +451,9 @@ window.addEventListener('load', async () => {
                     
             if (btnFusionTest) {
                 if (trialController.isAnaglyphTestActive) {
-                    btnFusionTest.style.background = '#3b90ff';
-                    btnFusionTest.style.color = '#131a26';
+                    btnFusionTest.classList.add('active');
                 } else {
-                    btnFusionTest.style.background = '#1a233a';
-                    btnFusionTest.style.color = '#3b90ff';
+                    btnFusionTest.classList.remove('active');
                 }
             }
             
@@ -902,8 +894,7 @@ window.addEventListener('load', async () => {
                 trialController.isAnaglyphTestActive = !trialController.isAnaglyphTestActive;
                 
                 if (trialController.isAnaglyphTestActive) {
-                    btnFusionTest.style.background = '#3b90ff';
-                    btnFusionTest.style.color = '#131a26';
+                    btnFusionTest.classList.add('active');
                     
                     // Snapshot & Save current scroll position before entering compact calibration sheet
                     if (scrollBody && settingsModal) {
@@ -944,8 +935,7 @@ window.addEventListener('load', async () => {
                         calibrationCurtain.classList.remove('active');
                     }
                 } else {
-                    btnFusionTest.style.background = '#1a233a';
-                    btnFusionTest.style.color = '#3b90ff';
+                    btnFusionTest.classList.remove('active');
                     
                     // Remove calibration bottom sheet layout class and restore normal settings view
                     if (settingsModal) {

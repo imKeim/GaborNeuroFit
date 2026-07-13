@@ -204,25 +204,13 @@ export class SettingsController {
             btnTabGabor.classList.remove('active');
             btnTabSynop.classList.remove('active');
             btnTabRds.classList.remove('active');
-            btnTabGabor.style.background = 'transparent';
-            btnTabSynop.style.background = 'transparent';
-            btnTabRds.style.background = 'transparent';
-            btnTabGabor.style.color = '#8e8e93';
-            btnTabSynop.style.color = '#8e8e93';
-            btnTabRds.style.color = '#8e8e93';
 
             if (s.appMode === 'synoptophore') {
                 btnTabSynop.classList.add('active');
-                btnTabSynop.style.background = '#2b354a';
-                btnTabSynop.style.color = '#3b90ff';
             } else if (s.appMode === 'rds') {
                 btnTabRds.classList.add('active');
-                btnTabRds.style.background = '#2b354a';
-                btnTabRds.style.color = '#3b90ff';
             } else {
                 btnTabGabor.classList.add('active');
-                btnTabGabor.style.background = '#2b354a';
-                btnTabGabor.style.color = '#3b90ff';
             }
         }
 

@@ -464,6 +464,40 @@ canvas {
    6. MODAL INTERFACES & CALIBRATION SHEETS
    ========================================================================== */
 
+/* Segmented Tab Controls & Navigation */
+.tab-btn {
+    flex: 1;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: bold;
+    background: transparent;
+    color: #8e8e93;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tab-btn.active {
+    background: #2b354a !important;
+    color: #3b90ff !important;
+}
+
+/* Dichoptic Calibration Button */
+#btn-fusion-test {
+    background: #1a233a;
+    border: 1px solid #3b90ff;
+    color: #3b90ff;
+    margin-top: 14px;
+    font-weight: bold;
+    transition: background 0.2s, color 0.2s;
+}
+
+#btn-fusion-test.active {
+    background: #3b90ff !important;
+    color: #131a26 !important;
+}
+
 .modal {
     display: flex; /* Always strictly flex. Visibility is handled by opacity & visibility properties */
     position: fixed;
