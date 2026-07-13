@@ -68,6 +68,30 @@ function downloadSvg(codePoint, targetPath) {
   });
 }
 
+/**
+ * Generates a padded maskable icon over a solid white background (W3C PWA standard)
+ */
+async function createMaskableIcon(svgSource, size, outputPath) {
+    const padding = Math.round(size * 0.12); // Safe 12% padding zone
+    const innerSize = size - padding * 2;
+    
+    const resizedLogo = await sharp(svgSource)
+        .resize(innerSize, innerSize)
+        .toBuffer();
+        
+    await sharp({
+        create: {
+            width: size,
+            height: size,
+            channels: 4,
+            background: { r: 255, g: 255, b: 255, alpha: 1 } // Solid white background
+        }
+    })
+    .composite([{ input: resizedLogo, gravity: 'center' }])
+    .png()
+    .toFile(outputPath);
+}
+
 async function run() {
   try {
     console.log('🧿 [Assets Engine] Commencing assets generation cycle...');
@@ -80,7 +104,11 @@ async function run() {
     console.log('[Assets Engine] Processing responsive application icons via Sharp...');
     await sharp(SVG_SOURCE).resize(192, 192).png().toFile(path.join(PUBLIC_DIR, 'icon-192.png'));
     await sharp(SVG_SOURCE).resize(512, 512).png().toFile(path.join(PUBLIC_DIR, 'icon-512.png'));
-    console.log('[Assets Engine] Standard icons generated successfully.');
+
+    // Generate compliant W3C maskable icons to prevent mobile clipping and black backgrounds on iOS
+    await createMaskableIcon(SVG_SOURCE, 192, path.join(PUBLIC_DIR, 'icon-192-maskable.png'));
+    await createMaskableIcon(SVG_SOURCE, 512, path.join(PUBLIC_DIR, 'icon-512-maskable.png'));
+    console.log('[Assets Engine] Standard and maskable icons generated successfully.');
 
     // 2. Fetch required vector emojis to build robust offline runtime
     if (!fs.existsSync(EMOJIS_DIR)) {

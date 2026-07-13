@@ -21,21 +21,12 @@ import { PomodoroTimer } from './utils/timer.js';
 import { drawSynoptophoreTargets } from './engine/synop_render.js';
 import { drawRandomDotStereogram } from './engine/rds_render.js';
 
+// Import decoupled bootstrap and i18n modules
+import { resizeCanvasesToDPR } from './utils/bootstrap.js';
+import { loadLanguage } from './utils/i18n.js';
+
 // Global cache for the active localization dictionary
 let activeTranslations = {};
-
-// Intercept Twemoji parser globally to enforce absolute offline local path loading
-if (window.twemoji) {
-    const originalParse = window.twemoji.parse;
-    window.twemoji.parse = function (target, options) {
-        const localOptions = Object.assign({
-            folder: 'emojis',
-            ext: '.svg',
-            base: './'
-        }, options);
-        return originalParse.call(window.twemoji, target, localOptions);
-    };
-}
 
 // References to our core OOP controllers instances
 let trialController = null;
@@ -67,24 +58,6 @@ const btnStart = document.getElementById('btn-start');
 const btnFusionTest = document.getElementById('btn-fusion-test');
 
 const customAlertModal = document.getElementById('custom-alert-modal');
-
-/**
- * @description Dynamically scales the canvas and overlay backing stores to match 
- * the high-DPI (Retina) physical pixel boundaries of the active display device.
- * This prevents browser-side linear upscaling blur, keeping all Gabor and RDS assets perfectly sharp.
- * @private
- */
-function resizeCanvasesToDPR() {
-    const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    const physicalSize = Math.min(1024, Math.round(rect.width * dpr));
-    if (canvas.width !== physicalSize) {
-        canvas.width = physicalSize;
-        canvas.height = physicalSize;
-        overlayCanvas.width = physicalSize;
-        overlayCanvas.height = physicalSize;
-    }
-}
 
 /**
  * @description Symmetrically synchronizes the HTML central fixation cross 
@@ -142,59 +115,8 @@ function triggerSynopDragEffects() {
  * Asynchronously loads translations from external static JSON bundles and updates DOM
  */
 export async function setLanguage(lang) {
-    try {
-        const response = await fetch(`./i18n/${lang}.json`);
-        activeTranslations = await response.json();
-    } catch (e) {
-        console.error("Failed to load translation bundle, falling back to English:", e);
-        try {
-            const fallbackResponse = await fetch(`./i18n/en.json`);
-            activeTranslations = await fallbackResponse.json();
-        } catch (fallbackError) {
-            console.error("Critical: Failed to load fallback English translation bundle:", fallbackError);
-        }
-    }
-
-    Store.state.currentLang = lang;
-    Store.saveSettings();
-
+    activeTranslations = await loadLanguage(lang);
     const t = activeTranslations;
-
-    // Declaratively resolve all plain text localization nodes safely via textContent
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (t[key] !== undefined) {
-            el.textContent = t[key];
-        }
-    });
-
-    // Resolve elements containing rich formatting markup safely via innerHTML
-    document.querySelectorAll('[data-i18n-html]').forEach(el => {
-        const key = el.getAttribute('data-i18n-html');
-        if (t[key] !== undefined) {
-            el.innerHTML = t[key];
-        }
-    });
-
-    // Declaratively resolve input placeholders safely
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-        const key = el.getAttribute('data-i18n-placeholder');
-        if (t[key] !== undefined) {
-            el.placeholder = t[key];
-        }
-    });
-
-    // Symmetrically handle procedural stage selector options
-    for (let i = 1; i <= 5; i++) {
-        const el = document.getElementById('opt-stage-' + i);
-        if (el) {
-            el.textContent = i === 5 ? t.optStage5 : (lang === 'ru' ? `Этап ${i}` : `Stage ${i}`);
-        }
-    }
-
-    // Synchronize the language selection dropdown value
-    const selectLang = document.getElementById('select-lang');
-    if (selectLang) selectLang.value = lang;
 
     // Symmetrically toggle display modes of Gabor vs Synoptophore action buttons
     const btnReset = document.getElementById('btn-reset');
@@ -235,8 +157,8 @@ export async function setLanguage(lang) {
     }
 
     // Trigger reactive View panel redraws to initialize HUD on load
-    updateScoreboard(Store.state, activeTranslations);
-    updateStatusBar(Store.state, activeTranslations);
+    updateScoreboard(Store.state, t);
+    updateStatusBar(Store.state, t);
     
     // Parse vector emojis using Twemoji loader strictly on active dynamic panels to eliminate document-wide reflow lag
     if (window.twemoji) {
@@ -982,11 +904,6 @@ window.addEventListener('load', async () => {
     updateMuteBtnUI();
     settingsController.bindSettingsInteractions();
     bindLangSelectors();
-
-    // Register audio activation listeners
-    window.addEventListener('click', initAudio, { once: true });
-    window.addEventListener('touchstart', initAudio, { once: true, passive: true });
-    window.addEventListener('keydown', initAudio, { once: true });
 
     syncCrossVisualState(); // Sync cross states with newly loaded translations
         
