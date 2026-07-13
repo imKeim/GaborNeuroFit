@@ -184,7 +184,7 @@ export class RdsController {
         let newStaircaseStreak = s.rdsStaircaseStreak;
         let newDisparity = s.rdsDisparity;
 
-        const activeHistory = [...s.rdsHistory];
+        const activeHistory = s.rdsHistory ? [...s.rdsHistory] : [];
 
         if (isCorrect) {
             // Symmetrical subtle spatial audio reinforcement

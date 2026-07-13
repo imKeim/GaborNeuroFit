@@ -347,8 +347,22 @@ window.addEventListener('load', async () => {
         }
     }, () => activeTranslations);
 
+    // Architectural Interceptor: Safeguards resources and clinical timers when view is obstructed
+    function enforceSystemPause(): void {
+        if (!Store.state.isPaused && pauseController) {
+            pauseController.togglePause();
+        }
+    }
+
+    // Additive binding for standalone Handbook modal
+    const btnInfo = document.getElementById('btn-info');
+    if (btnInfo) {
+        btnInfo.addEventListener('click', enforceSystemPause);
+    }
+
     initModals(
         () => {
+            enforceSystemPause();
             Store.loadSettings();
 
             // Take snapshot of critical clinical parameters to detect destructive changes later
@@ -371,6 +385,7 @@ window.addEventListener('load', async () => {
             saveSettingsFromUI();
         },
         () => {
+            enforceSystemPause();
             if (dashboardController) dashboardController.refreshStatsUI();
         }
     );
@@ -677,10 +692,16 @@ window.addEventListener('load', async () => {
 
             const watermark = document.getElementById('pause-watermark');
             const bPause = document.getElementById('btn-pause');
-            if (watermark) watermark.style.display = 'none';
+            const controlsLayout = document.getElementById('controls-layout');
+            const container = document.getElementById('container');
+
+            if (watermark) watermark.classList.remove('active');
+            if (controlsLayout) controlsLayout.classList.remove('paused-state');
+            if (container) container.classList.remove('paused-state');
+
             if (bPause) {
                 bPause.innerText = '⏸️';
-                // @ts-ignore
+                // @ts-ignore 
                 if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(bPause);
             }
 
@@ -781,6 +802,9 @@ window.addEventListener('load', async () => {
                         if (scrollBody) scrollBody.scrollTop = 0;
                     }
 
+                    // Architectural delegation: Suspend watermark rendering to clear center field for calibration
+                    if (pauseController) pauseController.overrideWatermarkVisibility(true);
+
                     const selectRedSide = document.getElementById('select-red-side') as HTMLSelectElement | null;
                     const selectLazySide = document.getElementById('select-lazy-side') as HTMLSelectElement | null;
                     // Generic state mutation
@@ -810,6 +834,9 @@ window.addEventListener('load', async () => {
                     if (scrollBody && settingsModal && (settingsModal as any)._savedScrollTop !== undefined) {
                         scrollBody.scrollTop = (settingsModal as any)._savedScrollTop;
                     }
+
+                    // Architectural delegation: Safely restore watermark
+                    if (pauseController) pauseController.overrideWatermarkVisibility(false);
 
                     drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.appMode === 'synoptophore' || Store.state.isFusionLockEnabled);
 

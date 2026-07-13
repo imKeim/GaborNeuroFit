@@ -29,9 +29,10 @@ export class PauseController {
      */
     togglePause(): void {
         const s = Store.state;
-        const curtain = document.getElementById('calibration-curtain');
+        const container = document.getElementById('container');
         const watermark = document.getElementById('pause-watermark');
         const btnPause = document.getElementById('btn-pause');
+        const controlsLayout = document.getElementById('controls-layout');
 
         // Clinical guard: Protect muscles during active Synoptophore pulling step
         if (s.appMode === 'synoptophore' && s.synopState === 'pulling') {
@@ -47,13 +48,14 @@ export class PauseController {
             Store.updateState('savedTimerRunningState', s.timerIsRunning);
             Store.updateState('timerIsRunning', false);
 
-            // 2. Shut curtain and raise highly salient paused watermark
-            if (curtain) curtain.classList.add('active');
-            if (watermark) watermark.style.display = 'block';
+            // 2. Dim the visual arena and raise highly salient paused watermark
+            if (container) container.classList.add('paused-state');
+            if (watermark) watermark.classList.add('active');
+            if (controlsLayout) controlsLayout.classList.add('paused-state');
             if (btnPause) {
                 btnPause.innerText = '▶️';
-                // @ts-ignore - Ignore missing Twemoji global typings strictly for DOM injection
-                if (window.twemoji) window.twemoji.parse(btnPause);
+                // @ts-ignore
+                if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(btnPause);
             }
 
             // 3. Delegate cross synchronization to the centralized updater
@@ -62,23 +64,19 @@ export class PauseController {
             // 4. Halt active animation loops without destructive resets
             if (this.gaborCtrl) this.gaborCtrl.stopUnifiedRenderingLoop();
             if (this.synoptophoreCtrl) this.synoptophoreCtrl.stopFlickerLoop();
-            if (this.rdsCtrl) this.rdsCtrl.pause(); // Clean pause preserves FSM state
+            if (this.rdsCtrl) this.rdsCtrl.pause();
         } else {
             // 1. Restore Pomodoro countdown timer state
             Store.updateState('timerIsRunning', s.savedTimerRunningState);
 
-            // 2. Symmetrically dissolve rest shutter curtain
-            if (curtain) {
-                const isSynopRest = (s.appMode === 'synoptophore' && s.synopState === 'idle');
-                if (!isSynopRest) {
-                    curtain.classList.remove('active');
-                }
-            }
-            if (watermark) watermark.style.display = 'none';
+            // 2. Symmetrically restore arena brightness (Curtain logic untouched to preserve Synoptophore Idle rest state)
+            if (container) container.classList.remove('paused-state');
+            if (watermark) watermark.classList.remove('active');
+            if (controlsLayout) controlsLayout.classList.remove('paused-state');
             if (btnPause) {
                 btnPause.innerText = '⏸️';
                 // @ts-ignore
-                if (window.twemoji) window.twemoji.parse(btnPause);
+                if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(btnPause);
             }
 
             // 3. Delegate cross synchronization on resume
@@ -89,9 +87,29 @@ export class PauseController {
                 if (this.gaborCtrl) this.gaborCtrl.startUnifiedRenderingLoop(Store.state);
             } else if (s.appMode === 'rds' && this.rdsCtrl) {
                 if (this.rdsCtrl.currentState === 'STIMULUS_ACTIVE' || this.rdsCtrl.currentState === 'AWAITING_INPUT') {
-                    // Start unified RDS loop symmetrically on resume using an ugly but safe private method bypass for FSM
+                    // Start unified RDS loop symmetrically on resume
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     (this.rdsCtrl as any).startDynamicRdsLoop();
                 }
+            }
+        }
+    }
+
+    /**
+     * @description Surgical override to temporarily hide the pause watermark.
+     * @clinical Mandatory during Anaglyph Lens Calibration. The test pattern 'L/R'
+     * is rendered precisely in the center, which would otherwise be obscured by the large "PAUSED" text.
+     */
+    overrideWatermarkVisibility(hide: boolean): void {
+        const watermark = document.getElementById('pause-watermark');
+        if (!watermark) return;
+
+        if (hide) {
+            watermark.classList.remove('active');
+        } else {
+            // Restore visibility strictly if the system is currently paused
+            if (Store.state.isPaused) {
+                watermark.classList.add('active');
             }
         }
     }

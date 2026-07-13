@@ -112,7 +112,8 @@ export const Store = {
         timerIsRunning: false,
         savedTimerRunningState: false,
 
-        trialHistory: [] as number[]
+        trialHistory: [] as number[],
+        rdsHistory: [] as number[]
     } as AppState,
 
     rotateSessionId() {
