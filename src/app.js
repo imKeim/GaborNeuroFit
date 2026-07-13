@@ -7,16 +7,19 @@
 import { Store } from './store.js';
 import { DataRepository } from './store/repository.js';
 import { drawFusionTestPattern } from './engine/gabor.js';
-import { initAudio, playError, playSuccess } from './engine/audio.js';
+import { initAudio, playCue, playError, playSuccess } from './engine/audio.js';
 import { updateScoreboard, drawIdleState, updateStatusBar } from './ui/screen.js';
 import { initModals, showCustomAlert, closeCustomAlert, showCustomConfirm } from './ui/modal.js';
 import { bindInputControls } from './ui/controls.js';
 import { TrialController, TrialState } from './controller/trial.js';
 import { SettingsController } from './controller/settings.js';
 import { SynoptophoreController } from './controller/synoptophore.js';
+import { RdsController } from './controller/rds.js';
 import { DashboardController } from './controller/dashboard.js';
+import { PauseController } from './controller/pause.js';
 import { PomodoroTimer } from './utils/timer.js';
 import { drawSynoptophoreTargets } from './engine/synop_render.js';
+import { drawRandomDotStereogram } from './engine/rds_render.js';
 
 // Global cache for the active localization dictionary
 let activeTranslations = {};
@@ -38,11 +41,20 @@ if (window.twemoji) {
 let trialController = null;
 let settingsController = null;
 let synoptophoreController = null;
+let rdsController = null; // Instantiated RDS controller
 let dashboardController = null;
+let pauseController = null;
+
+// Settings Snapshot State holds (Protects session progress on non-critical config changes)
+let snapAppMode = null;
+let snapPresetMode = null;
+let snapLevel = null;
+let snapTimerLimit = null;
 
 // Abstracted dragging coordinates context holds
 let dragStartX = 0;
 let dragStartY = 0;
+let dragStartStrongFactor = 0.3; // Calibrated contrast factor context holder
 
 // Primary DOM References for view rendering
 const canvas = document.getElementById('gaborCanvas');
@@ -55,6 +67,62 @@ const btnStart = document.getElementById('btn-start');
 const btnFusionTest = document.getElementById('btn-fusion-test');
 
 const customAlertModal = document.getElementById('custom-alert-modal');
+
+/**
+ * @description Dynamically scales the canvas and overlay backing stores to match 
+ * the high-DPI (Retina) physical pixel boundaries of the active display device.
+ * This prevents browser-side linear upscaling blur, keeping all Gabor and RDS assets perfectly sharp.
+ * @private
+ */
+function resizeCanvasesToDPR() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const physicalSize = Math.min(1024, Math.round(rect.width * dpr));
+    if (canvas.width !== physicalSize) {
+        canvas.width = physicalSize;
+        canvas.height = physicalSize;
+        overlayCanvas.width = physicalSize;
+        overlayCanvas.height = physicalSize;
+    }
+}
+
+/**
+ * @description Symmetrically synchronizes the HTML central fixation cross 
+ * with the global application pause, modality and configuration settings.
+ * @public
+ */
+function syncCrossVisualState() {
+    const s = Store.state;
+    const crossNode = document.getElementById('cross');
+    if (!crossNode) return;
+
+    if (s.appMode === 'synoptophore') {
+        crossNode.style.display = 'none';
+    } else if (s.appMode === 'rds') {
+        crossNode.style.display = 'block';
+        if (s.rdsIsPermanentCrossEnabled) {
+            const rdsState = rdsController ? rdsController.currentState : 'IDLE';
+            const isStimulusActive = (rdsState === 'STIMULUS_ACTIVE' || rdsState === 'AWAITING_INPUT') && !s.isPaused;
+            
+            if (isStimulusActive) {
+                crossNode.className = 'cross-white-halo';
+            } else {
+                crossNode.className = 'cross-hidden'; // Absolutely no cross anywhere else (idle, feedback, pre-cue, pause)
+            }
+        } else {
+            crossNode.className = 'cross-hidden';
+        }
+    } else {
+        crossNode.style.display = 'block';
+        if (s.isPaused) {
+            crossNode.className = 'cross-dimmed';
+        } else if (s.isPermanentCrossEnabled) {
+            crossNode.className = 'cross-dimmed';
+        } else {
+            crossNode.className = 'cross-hidden';
+        }
+    }
+}
 
 /**
  * @description Centralized helper to trigger side-effects during target alignment.
@@ -79,7 +147,12 @@ export async function setLanguage(lang) {
         activeTranslations = await response.json();
     } catch (e) {
         console.error("Failed to load translation bundle, falling back to English:", e);
-        return;
+        try {
+            const fallbackResponse = await fetch(`./i18n/en.json`);
+            activeTranslations = await fallbackResponse.json();
+        } catch (fallbackError) {
+            console.error("Critical: Failed to load fallback English translation bundle:", fallbackError);
+        }
     }
 
     Store.state.currentLang = lang;
@@ -135,7 +208,24 @@ export async function setLanguage(lang) {
 
     // Procedurally assign the dynamic state-dependent Start button text on load
     if (Store.state.appMode === 'synoptophore') {
-        btnStart.innerText = (Store.state.synopState === 'align') ? t.btnSynopLock : t.btnSynopBreak;
+        if (Store.state.synopState === 'idle') {
+            btnStart.innerText = t.synopStartBtn || "START";
+        } else if (Store.state.synopState === 'align') {
+            btnStart.innerText = t.btnSynopLock;
+        } else {
+            btnStart.innerText = t.btnSynopBreak;
+        }
+    } else if (Store.state.appMode === 'rds') {
+        // Symmetrically clear standard exposure labels in RDS to prevent clinical confusion
+        if (rdsController && rdsController.currentState === 'AWAITING_INPUT') {
+            btnStart.disabled = true;
+            btnStart.style.opacity = '0.4';
+            btnStart.innerText = "...";
+        } else {
+            btnStart.disabled = false;
+            btnStart.style.opacity = '1';
+            btnStart.innerText = (Store.state.rdsTotal > 0 && !Store.state.autoAdvance) ? (t.rdsNextBtn || "NEXT") : (t.rdsStartBtn || "START");
+        }
     } else {
         if (!Store.state.isWaitingForAnswer) {
             btnStart.innerText = (Store.state.total > 0 && !Store.state.autoAdvance) ? t.nextBtn : t.startBtn;
@@ -161,13 +251,42 @@ export async function setLanguage(lang) {
 function runFlash() {
     const s = Store.state;
     
-    // Start global Pomodoro tracking on first primary action
-    Store.startTimerIfNeeded();
+    // Smoothly melt the initial calibration gray curtain on the very first active therapy launch
+    const curtain = document.getElementById('calibration-curtain');
+    if (curtain && curtain.classList.contains('active')) {
+        curtain.classList.remove('active');
+    }
 
-    // Route inputs to Synoptophore controller when in synoptophore mode
+    // Route inputs depending on active appMode (Single Source of Truth)
+    if (s.appMode === 'rds') {
+        // Enforce FSM state check: block spacebar/trigger clicks during active trials
+        if (rdsController && rdsController.currentState === 'IDLE') {
+            rdsController.triggerTrial(); // Symmetrically trigger new randomized trial (no re-shows allowed)
+        }
+        return;
+    }
+
     if (s.appMode === 'synoptophore') {
-        if (synoptophoreController) {
-            synoptophoreController.handlePrimaryAction();
+        if (s.synopState === 'idle') {
+            // Play auditory start notification
+            playCue(s.isMuted);
+
+            // Melt the shutter rest curtain
+            const curtain = document.getElementById('calibration-curtain');
+            if (curtain) curtain.classList.remove('active');
+
+            // Transition state and trigger Pomodoro countdown
+            Store.updateState('synopState', 'align');
+            Store.startTimerIfNeeded();
+
+            // Draw targets and sync UI
+            drawSynoptophoreTargets(overlayCanvas, overlayCtx, s);
+            btnStart.innerText = activeTranslations.btnSynopLock;
+            updateScoreboard(s, activeTranslations);
+        } else {
+            if (synoptophoreController) {
+                synoptophoreController.handlePrimaryAction();
+            }
         }
         return;
     }
@@ -196,10 +315,16 @@ function bindLangSelectors() {
  * Orchestrator bootstrap initialization block
  */
 window.addEventListener('load', async () => {
+    // Instantly scale the canvas backing stores to prevent initial-load blurry upscaling
+    resizeCanvasesToDPR();
+
     Store.loadSettings();
 
-    // Initialize Relational Multi-Patient Local Database
-    DataRepository.init();
+    // 1. Fetch and load translation bundle asynchronously first
+    await setLanguage(Store.state.currentLang);
+
+    // 2. Initialize database synchronously using fully loaded translations (retaining zero-hardcode SSoT)
+    DataRepository.init(activeTranslations);
     DataRepository.migrateLegacyDatabase();
 
     // Instantiate core controllers with WebGL Canvas and Overlay Context
@@ -224,8 +349,35 @@ window.addEventListener('load', async () => {
         showCustomAlert
     );
 
+    rdsController = new RdsController(
+        canvas,
+        overlayCanvas,
+        overlayCtx,
+        cross,
+        container,
+        flashOverlay,
+        btnStart,
+        () => activeTranslations,
+        showCustomAlert,
+        () => syncCrossVisualState()
+    );
+
     // Instantiate newly decoupled single-responsibility modules
     dashboardController = new DashboardController(() => activeTranslations);
+
+    // Instantiate PauseController in strict dependency injection manner
+    pauseController = new PauseController(
+        trialController, 
+        synoptophoreController, 
+        rdsController,
+        () => syncCrossVisualState()
+    );
+
+    // Instantiate newly decoupled single-responsibility modules
+    dashboardController = new DashboardController(() => activeTranslations);
+
+    // Instantiate PauseController in strict dependency injection manner
+    pauseController = new PauseController(trialController, synoptophoreController, rdsController);
 
     // Symmetrical Monkey-Patching (Decorator Pattern) to capture motor kinematics without bloating physical loops
     const originalSuccess = synoptophoreController.completeSuccess;
@@ -234,15 +386,23 @@ window.addEventListener('load', async () => {
         originalSuccess.call(synoptophoreController);
         
         // Save successful vergence sweep
-        DataRepository.saveSession(
-            Store.state.sessionId, 0, 0, 0, 0, 'synoptophore', 
-            Store.state.synopPullSpeed, Store.state.isAnaglyphEnabled, 
-            Store.state.strongEyeContrastFactor,
-            Store.state.lazyEyeSide,
-            Store.state.synopFlickerActive, // Flicker active for Synoptophore
-            false, false, false, // Gabor-only parameters are irrelevant
-            0, 0, startDist, 'success'
-        );
+        DataRepository.saveSession({
+            sessionId: Store.state.sessionId,
+            score: 0,
+            total: 0,
+            level: 0,
+            contrast: 0,
+            protocol: 'synoptophore', 
+            speed: Store.state.synopPullSpeed, 
+            isAnaglyph: Store.state.isAnaglyphEnabled, 
+            balance: Store.state.synopStrongEyeContrastFactor, // Use proper Synoptophore balance parameter
+            lazyEyeSide: Store.state.lazyEyeSide,
+            isFlicker: Store.state.synopFlickerActive,
+            targetX: 0,
+            targetY: 0,
+            startDistance: startDist,
+            outcome: 'success'
+        });
         Store.rotateSessionId(); // Symmetrically rotate ID for the subsequent attempt
     };
 
@@ -255,15 +415,23 @@ window.addEventListener('load', async () => {
         originalBreak.call(synoptophoreController);
         
         // Save slipped vergence sweep
-        DataRepository.saveSession(
-            Store.state.sessionId, 0, 0, 0, 0, 'synoptophore', 
-            Store.state.synopPullSpeed, Store.state.isAnaglyphEnabled, 
-            Store.state.strongEyeContrastFactor,
-            Store.state.lazyEyeSide,
-            Store.state.synopFlickerActive, // Flicker active for Synoptophore
-            false, false, false, // Gabor-only parameters are irrelevant
-            targetX, targetY, startDist, 'slip'
-        );
+        DataRepository.saveSession({
+            sessionId: Store.state.sessionId,
+            score: 0,
+            total: 0,
+            level: 0,
+            contrast: 0,
+            protocol: 'synoptophore', 
+            speed: Store.state.synopPullSpeed, 
+            isAnaglyph: Store.state.isAnaglyphEnabled, 
+            balance: Store.state.synopStrongEyeContrastFactor, // Use proper Synoptophore balance parameter
+            lazyEyeSide: Store.state.lazyEyeSide,
+            isFlicker: Store.state.synopFlickerActive,
+            targetX: targetX,
+            targetY: targetY,
+            startDistance: startDist,
+            outcome: 'slip'
+        });
         Store.rotateSessionId();
     };
 
@@ -275,11 +443,17 @@ window.addEventListener('load', async () => {
         if (trialController && trialController.isAnaglyphTestActive) {
             drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
         }
-    });
+    }, () => activeTranslations);
     
     initModals(
         () => {
             Store.loadSettings();
+            
+            // Take snapshot of critical clinical parameters to detect destructive changes later
+            snapAppMode = Store.state.appMode;
+            snapPresetMode = Store.state.presetMode;
+            snapLevel = Store.state.currentLevel;
+            snapTimerLimit = Store.state.timerLimitMinutes;
                     
             if (btnFusionTest) {
                 if (trialController.isAnaglyphTestActive) {
@@ -305,30 +479,37 @@ window.addEventListener('load', async () => {
     bindInputControls({
         onActionLeft: () => {
             const s = Store.state;
+            if (s.isPaused) return; // Enforce strict input blocking during pause
             if (trialController && trialController.isAnaglyphTestActive) return; // Prevent gameplay inputs during calibration
             if (s.appMode === 'synoptophore') {
                 if (s.synopState === 'align') {
                     Store.updateState('synopTargetX', s.synopTargetX - 1);
                     triggerSynopDragEffects();
                 }
+            } else if (s.appMode === 'rds') {
+                rdsController.submitAnswer('left'); // Route stereoscopic choice
             } else {
                 trialController.submitAnswer('left');
             }
         },
         onActionRight: () => {
             const s = Store.state;
+            if (s.isPaused) return; // Enforce strict input blocking during pause
             if (trialController && trialController.isAnaglyphTestActive) return; // Prevent gameplay inputs during calibration
             if (s.appMode === 'synoptophore') {
                 if (s.synopState === 'align') {
                     Store.updateState('synopTargetX', s.synopTargetX + 1);
                     triggerSynopDragEffects();
                 }
+            } else if (s.appMode === 'rds') {
+                rdsController.submitAnswer('right'); // Route stereoscopic choice
             } else {
                 trialController.submitAnswer('right');
             }
         },
         onActionReset: () => {
             const s = Store.state;
+            if (s.isPaused) return; // Enforce strict input blocking during pause
             if (s.appMode === 'synoptophore' && s.synopState === 'align') {
                 Store.updateState('synopTargetX', 0);
                 Store.updateState('synopTargetY', 0);
@@ -337,6 +518,10 @@ window.addEventListener('load', async () => {
             }
         },
         onActionPrimary: () => {
+            if (Store.state.isPaused) {
+                if (pauseController) pauseController.togglePause(); // Space removes from Pause!
+                return;
+            }
             runFlash();
         },
         onActionMuteToggle: () => {
@@ -345,17 +530,73 @@ window.addEventListener('load', async () => {
             updateMuteBtnUI();
         },
         onActionCanvasClick: () => {
-            // Symmetrically limit canvas click exposure to Gabor trials to prevent disruption of Synoptophore target states
-            if (Store.state.appMode === 'gabor') {
-                runFlash();
+            const s = Store.state;
+            if (s.isPaused) return; // Enforce strict input blocking during pause
+            const curtain = document.getElementById('calibration-curtain');
+            const isInitialStart = curtain && curtain.classList.contains('active');
+
+            // If the solid gray curtain is active on first load, any canvas click/tap 
+            // acts as a unified "First Start" command across all three modalities.
+            if (isInitialStart) {
+                if (s.appMode === 'synoptophore') {
+                    runFlash(); // Correctly route starting transition via main orchestrator
+                    return;
+                }
+                
+                // Symmetrically melt the initial curtain
+                curtain.classList.remove('active');
+
+                if (s.appMode === 'rds') {
+                    // In RDS, first click melts curtain and starts the very first active trial
+                    if (rdsController) {
+                        rdsController.triggerTrial();
+                    }
+                    return;
+                }
+                if (s.appMode === 'gabor') {
+                    runFlash(); // In Gabor, first click melts curtain and triggers first flash
+                    return;
+                }
+            }
+
+            // Standard gameplay canvas clicks (when curtain is already melted):
+            if (s.appMode === 'synoptophore') {
+                Store.startTimerIfNeeded(); 
+                updateScoreboard(Store.state, activeTranslations); 
+                return;
+            }
+
+            if (s.appMode === 'gabor') {
+                runFlash(); 
+            } else if (s.appMode === 'rds') {
+                if (rdsController && rdsController.currentState === 'IDLE') {
+                    rdsController.triggerTrial();
+                }
             }
         },
         onDragStart: () => {
+            const s = Store.state;
+            if (s.isPaused) return; // Enforce strict input blocking during pause
+            // Symmetrically melt the initial gray curtain instantly on first physical press-down (MouseDown / TouchStart)
+            const curtain = document.getElementById('calibration-curtain');
+            if (curtain && curtain.classList.contains('active')) {
+                if (s.appMode === 'synoptophore') {
+                    runFlash(); // Correctly route starting transition via main orchestrator
+                    return;
+                }
+                curtain.classList.remove('active');
+            }
+
+            // Automatically start Pomodoro timer on drag start for active muscle training
+            Store.startTimerIfNeeded();
+
             dragStartX = Store.state.synopTargetX;
             dragStartY = Store.state.synopTargetY;
+            dragStartStrongFactor = Store.state.appMode === 'synoptophore' ? Store.state.synopStrongEyeContrastFactor : Store.state.strongEyeContrastFactor;
         },
         onDragUpdate: (deltaX, deltaY) => {
             const s = Store.state;
+            if (s.isPaused) return; // Enforce strict input blocking during pause
             if (trialController && trialController.isAnaglyphTestActive) {
                 // Calibration touchscreen vertical swipe nudge: adjust contrast factor and redraw test card
                 const isSynop = s.appMode === 'synoptophore';
@@ -406,14 +647,18 @@ window.addEventListener('load', async () => {
                 return;
             }
 
-            // Gabor mode swiping gesture calculations
+            // Gabor and RDS mode swiping gesture calculations
             const minSwipeDistance = 45;
             const maxVerticalDeviation = 45;
             const maxSwipeTime = 300;
 
             if (deltaTime <= maxSwipeTime && Math.abs(deltaXTotal) >= minSwipeDistance && Math.abs(deltaYTotal) <= maxVerticalDeviation) {
                 const direction = deltaXTotal < 0 ? 'left' : 'right';
-                trialController.submitAnswer(direction);
+                if (s.appMode === 'rds') {
+                    rdsController.submitAnswer(direction); // Support mobile swipes in RDS!
+                } else {
+                    trialController.submitAnswer(direction);
+                }
             }
         },
         onDragMovePreventDefault: () => {
@@ -456,84 +701,171 @@ window.addEventListener('load', async () => {
                 triggerSynopDragEffects();
             }
         },
+        onActionPauseToggle: () => {
+            if (pauseController) pauseController.togglePause();
+        },
         onEscape: () => {
             const confirmModal = document.getElementById('custom-confirm-modal');
             const settingsModal = document.getElementById('settings-modal');
             const infoModal = document.getElementById('info-modal');
             const statsModal = document.getElementById('stats-modal');
 
-            // Escape key toggle trigger during active 3D test alignment calibration
-            if (trialController && trialController.isAnaglyphTestActive) {
-                const btnFusionTest = document.getElementById('btn-fusion-test');
-                if (btnFusionTest) btnFusionTest.click();
+            const isConfirmOpen = confirmModal && confirmModal.classList.contains('modal-open');
+            const isSettingsOpen = settingsModal && settingsModal.classList.contains('modal-open');
+            const isInfoOpen = infoModal && infoModal.classList.contains('modal-open');
+            const isStatsOpen = statsModal && statsModal.classList.contains('modal-open');
+
+            // 1. Modals Priority: Escape closes active overlays before taking action on Pause
+            if (isConfirmOpen || isSettingsOpen || isInfoOpen || isStatsOpen || (trialController && trialController.isAnaglyphTestActive)) {
+                if (trialController && trialController.isAnaglyphTestActive) {
+                    const btnFusionTest = document.getElementById('btn-fusion-test');
+                    if (btnFusionTest) btnFusionTest.click();
+                    return;
+                }
+                if (isConfirmOpen) return;
+                if (customAlertModal && customAlertModal.classList.contains('modal-open')) {
+                    closeCustomAlert();
+                    return;
+                }
+                if (isSettingsOpen) {
+                    saveSettingsFromUI();
+                    settingsModal.classList.remove('modal-open');
+                }
+                if (isInfoOpen) {
+                    infoModal.classList.remove('modal-open');
+                }
+                if (isStatsOpen) {
+                    statsModal.classList.remove('modal-open');
+                }
                 return;
             }
 
-            if (confirmModal && confirmModal.classList.contains('modal-open')) return;
-            if (customAlertModal && customAlertModal.classList.contains('modal-open')) {
-                closeCustomAlert();
+            // 2. Pause Priority: If no modals are active and the game is paused, Escape resumes the session!
+            if (Store.state.isPaused) {
+                if (pauseController) pauseController.togglePause();
                 return;
-            }
-            if (settingsModal && settingsModal.classList.contains('modal-open')) {
-                saveSettingsFromUI();
-                settingsModal.classList.remove('modal-open');
-            }
-            if (infoModal && infoModal.classList.contains('modal-open')) {
-                infoModal.classList.remove('modal-open');
-            }
-            if (statsModal && statsModal.classList.contains('modal-open')) {
-                statsModal.classList.remove('modal-open');
             }
         }
     });
+
+    // Connect global pause session action listener
+    const btnPause = document.getElementById('btn-pause');
+    if (btnPause) {
+        btnPause.addEventListener('click', () => {
+            if (pauseController) pauseController.togglePause();
+        });
+    }
 
     function saveSettingsFromUI() {
         settingsController.syncStateFromUI();
         Store.saveSettings();
         
-        // Reset session progress variables via centralized Store method
-        Store.resetSessionProgress();
-    
-        // Deactivate active calibration patterns on settings menu save
-        trialController.isAnaglyphTestActive = false;
-        const settingsModal = document.getElementById('settings-modal');
-        if (settingsModal) settingsModal.classList.remove('calibration-mode');
+        // Detect if critical therapeutic parameters changed
+        const isCriticalChange = (
+            snapAppMode !== Store.state.appMode ||
+            snapPresetMode !== Store.state.presetMode ||
+            snapLevel !== Store.state.currentLevel
+        );
 
-        // Gracefully abort the trial execution state machine without direct FSM mutations
-        trialController.abort();
-        if (synoptophoreController) {
-            synoptophoreController.abort();
-        }
+        const isTimerChanged = (snapTimerLimit !== Store.state.timerLimitMinutes);
 
-        // Symmetrically toggle display modes of Gabor vs Synoptophore action buttons on menu close
         const btnReset = document.getElementById('btn-reset');
         const btnLeft = document.getElementById('btn-left');
         const btnRight = document.getElementById('btn-right');
         const isSynop = (Store.state.appMode === 'synoptophore');
-
+        const isRds = (Store.state.appMode === 'rds');
+        
+        // Symmetrically toggle display modes of action buttons on menu close
         if (btnReset) btnReset.style.display = isSynop ? 'flex' : 'none';
         if (btnLeft) btnLeft.style.display = isSynop ? 'none' : 'flex';
         if (btnRight) btnRight.style.display = isSynop ? 'none' : 'flex';
 
-        if (Store.state.appMode === 'synoptophore') {
-            // CLEAR WebGL context and draw 2D Synoptophore targets (prevents Gabor ghosts)
-            drawIdleState(canvas, null, overlayCanvas, overlayCtx, true); // Always draw fusion lock in Synoptophore
-            if (Store.state.synopFlickerActive) {
-                synoptophoreController.startFlickerLoop();
-            } else {
-                synoptophoreController.stopFlickerLoop();
-            }
-            cross.style.display = 'none'; // Suppress static HTML central cross
+        if (isRds) {
+            container.classList.add('mode-rds');
         } else {
-            if (!trialController.isAnaglyphTestActive) {
-                drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
+            container.classList.remove('mode-rds');
+        }
+
+        if (isCriticalChange) {
+            // --- PATH 1: DESTRUCTIVE CHANGE (Wipe session, abort controllers) ---
+            
+            // Hard reset sets isPaused = false internally
+            Store.resetSessionProgress(); 
+
+            if (trialController) trialController.stopUnifiedRenderingLoop();
+            if (synoptophoreController) synoptophoreController.stopFlickerLoop();
+
+            // Clear Pause UI residue safely
+            const watermark = document.getElementById('pause-watermark');
+            const btnPause = document.getElementById('btn-pause');
+            if (watermark) watermark.style.display = 'none';
+            if (btnPause) {
+                btnPause.innerText = '⏸️';
+                if (window.twemoji) twemoji.parse(btnPause);
+            }
+
+            trialController.isAnaglyphTestActive = false;
+            const settingsModal = document.getElementById('settings-modal');
+            if (settingsModal) settingsModal.classList.remove('calibration-mode');
+
+            if (trialController) trialController.abort();
+            if (synoptophoreController) synoptophoreController.abort();
+            if (rdsController) rdsController.abort();
+
+            if (isSynop) {
+                const curtain = document.getElementById('calibration-curtain');
+                if (curtain) curtain.classList.add('active'); // Rest curtain
+                Store.updateState('synopState', 'idle');
+                drawIdleState(canvas, null, overlayCanvas, overlayCtx, true); 
+                cross.style.display = 'none'; 
+            } else if (isRds) {
+                drawIdleState(canvas, null, overlayCanvas, overlayCtx, false);
                 cross.style.display = 'block';
             } else {
-                drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
-                cross.style.display = 'none';
+                drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
+                cross.style.display = 'block';
+            }
+        } else {
+            // --- PATH 2: NON-DESTRUCTIVE CHANGE (Preserve streaks and pause state) ---
+            
+            // Clear test pattern state
+            trialController.isAnaglyphTestActive = false;
+            const settingsModal = document.getElementById('settings-modal');
+            if (settingsModal) settingsModal.classList.remove('calibration-mode');
+
+            // Symmetrical Pomodoro Sync: If the timer limit was changed, reset the remaining clock
+            if (isTimerChanged) {
+                Store.updateState('timerRemainingSeconds', Store.state.timerLimitMinutes * 60);
+                Store.updateState('timerIsRunning', false);
+                
+                // If in Synoptophore, change of Pomodoro requires returning to idle Rest Curtain to start timed block
+                if (isSynop) {
+                    if (synoptophoreController) synoptophoreController.stopFlickerLoop();
+                    Store.updateState('synopState', 'idle');
+                    const curtain = document.getElementById('calibration-curtain');
+                    if (curtain) curtain.classList.add('active');
+                    drawIdleState(canvas, null, overlayCanvas, overlayCtx, true);
+                    cross.style.display = 'none';
+                }
+            }
+
+            // If game is NOT paused, forcefully re-render idle canvases to apply any subpixel color tweaks immediately
+            if (!Store.state.isPaused) {
+                if (isSynop) {
+                    // Only draw synop targets if we didn't just force it back to idle rest state
+                    if (Store.state.synopState !== 'idle' && !Store.state.synopFlickerActive) {
+                        drawSynoptophoreTargets(overlayCanvas, overlayCtx, Store.state);
+                    }
+                } else if (isRds && rdsController && rdsController.currentState === 'IDLE') {
+                    drawIdleState(canvas, null, overlayCanvas, overlayCtx, false);
+                } else if (!isSynop && !isRds && trialController && trialController.currentState === 'IDLE') {
+                    drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
+                }
             }
         }
+        
         setLanguage(Store.state.currentLang);
+        syncCrossVisualState(); // Instant cross updates on settings close
     }
 
     function updateMuteBtnUI() {
@@ -589,14 +921,8 @@ window.addEventListener('load', async () => {
                     if (selectRedSide) Store.state.redEyeSide = selectRedSide.value;
                     if (selectLazySide) Store.state.lazyEyeSide = selectLazySide.value;
 
-                    // Dynamically scale canvas backing store to prevent calibration test blur
-                    const rect = canvas.getBoundingClientRect();
-                    const dpr = window.devicePixelRatio || 1;
-                    const physicalSize = Math.min(1024, Math.round(rect.width * dpr));
-                    canvas.width = physicalSize;
-                    canvas.height = physicalSize;
-                    overlayCanvas.width = physicalSize;
-                    overlayCanvas.height = physicalSize;
+                    // Symmetrically scale canvas backing store using the centralized helper to prevent calibration test blur
+                    resizeCanvasesToDPR();
                     
                     // Stop Synoptophore animation rendering during calibration test to avoid screen buffer overwrites
                     if (synoptophoreController) {
@@ -672,10 +998,16 @@ window.addEventListener('load', async () => {
     window.addEventListener('touchstart', initAudio, { once: true, passive: true });
     window.addEventListener('keydown', initAudio, { once: true });
 
-    await setLanguage(Store.state.currentLang);
-    
+    syncCrossVisualState(); // Sync cross states with newly loaded translations
+        
     // F5 HOT-RELOAD FIX: Ensure correct visual state rendering on page refresh
     if (Store.state.appMode === 'synoptophore') {
+        const curtain = document.getElementById('calibration-curtain');
+        if (curtain) curtain.classList.add('active'); // Set rest shutter curtain on load for Synoptophore
+        
+        Store.updateState('synopState', 'idle');
+
+        container.classList.remove('mode-rds');
         drawIdleState(canvas, null, overlayCanvas, overlayCtx, true); // Always draw fusion lock in Synoptophore
         if (Store.state.synopFlickerActive) {
             synoptophoreController.startFlickerLoop();
@@ -683,7 +1015,12 @@ window.addEventListener('load', async () => {
             drawSynoptophoreTargets(overlayCanvas, overlayCtx, Store.state);
         }
         cross.style.display = 'none';
+    } else if (Store.state.appMode === 'rds') {
+        // Clear WebGL context to neutral gray on reload, keeping the screen gray until start
+        drawIdleState(canvas, null, overlayCanvas, overlayCtx, false);
+        cross.style.display = 'block';
     } else {
+        container.classList.remove('mode-rds');
         drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
         cross.style.display = 'block';
     }
@@ -696,9 +1033,10 @@ window.addEventListener('load', async () => {
         (state) => {
             if (trialController) trialController.abort();
             if (synoptophoreController) synoptophoreController.abort();
-            
+            if (rdsController) rdsController.abort();
+                    
             drawIdleState(canvas, null, overlayCanvas, overlayCtx, state.appMode === 'synoptophore' || state.isFusionLockEnabled);
-            
+                    
             const t = activeTranslations;
             if (state.appMode === 'synoptophore') {
                 if (state.synopFlickerActive) {
@@ -708,6 +1046,10 @@ window.addEventListener('load', async () => {
                 }
                 cross.style.display = 'none';
                 btnStart.innerText = t.btnSynopLock;
+            } else if (state.appMode === 'rds') {
+                cross.style.display = 'block';
+                btnStart.innerText = t.startBtn;
+                drawIdleState(canvas, null, overlayCanvas, overlayCtx, false); // Symmetrically clear to flat relaxing gray on Pomodoro pause
             } else {
                 cross.style.display = 'block';
                 btnStart.innerText = t.startBtn;
@@ -718,4 +1060,7 @@ window.addEventListener('load', async () => {
         }
     );
     pomodoro.init();
+
+    // Smoothly fade in the fully translated, stable UI layout (FOUC prevention)
+    document.getElementById('app-wrapper').classList.add('loaded');
 });

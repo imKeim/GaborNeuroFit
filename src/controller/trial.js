@@ -185,10 +185,22 @@ export class TrialController {
      * @returns {void}
      */
     triggerTrial() {
+        // Clear any pending auto-advance timeout to prevent double-firing
+        if (this.autoNextTimeoutId) {
+            clearTimeout(this.autoNextTimeoutId);
+            this.tracker.timeouts.delete(this.autoNextTimeoutId);
+            this.autoNextTimeoutId = null;
+        }
+
         if (!this.transitionTo(TrialState.PRE_CUE)) {
             return;
         }
 
+        // Start global Pomodoro tracking as soon as Gabor trial is initiated
+        Store.startTimerIfNeeded();
+
+        this.btnStart.disabled = true;
+        this.btnStart.style.opacity = "0.4";
         this.btnStart.innerText = "...";
         playCue(Store.state.isMuted);
 
@@ -209,6 +221,8 @@ export class TrialController {
             return; 
         }
 
+        this.btnStart.disabled = true;
+        this.btnStart.style.opacity = "0.4";
         this.btnStart.innerText = "...";
         playCue(Store.state.isMuted);
 
@@ -298,9 +312,10 @@ export class TrialController {
             }
         }
 
+        const gaborStreakEl = document.getElementById('badge-gabor-streak');
         document.getElementById('current-contrast').innerText = Math.round(s.autoContrast * 100);
         document.getElementById('current-level').innerText = s.currentLevel;
-        document.getElementById('current-streak').innerText = s.correctStreak;
+        if (gaborStreakEl) gaborStreakEl.innerHTML = `🔥 <strong>${s.correctStreak}</strong>`;
 
         let crossSize = 36;
         if (s.currentLevel === 1) crossSize = 36;
@@ -337,10 +352,14 @@ export class TrialController {
                 this.stopUnifiedRenderingLoop();
                 drawIdleState(this.canvas, this.ctx, this.overlayCanvas, this.overlayCtx, s.isFusionLockEnabled);
                 this.cross.classList.remove('cross-dimmed', 'cross-hidden');
+                this.btnStart.disabled = false;
+                this.btnStart.style.opacity = "1";
                 this.btnStart.innerText = t.reflashBtn;
                 this.transitionTo(TrialState.AWAITING_INPUT);
             }, flashDuration);
         } else {
+            this.btnStart.disabled = false;
+            this.btnStart.style.opacity = "1";
             this.btnStart.innerText = t.reflashBtn;
             this.transitionTo(TrialState.AWAITING_INPUT);
         }
@@ -389,6 +408,10 @@ export class TrialController {
 
         drawIdleState(this.canvas, this.ctx, this.overlayCanvas, this.overlayCtx, s.isFusionLockEnabled);
 
+        this.btnStart.disabled = true;
+        this.btnStart.style.opacity = "0.4";
+        this.btnStart.innerText = "...";
+
         this.tracker.setTimeout(() => {
             this.flashOverlay.classList.add('fade-out');
             this.container.classList.remove('success-pulse', 'error-shake');
@@ -399,6 +422,11 @@ export class TrialController {
 
             if (this.currentState === TrialState.FEEDBACK) {
                 this.currentState = TrialState.IDLE;
+
+                // Symmetrically restore and enable the Action button for fast-skipping the remaining rest delay
+                this.btnStart.disabled = false;
+                this.btnStart.style.opacity = "1";
+                this.btnStart.innerText = this.getTranslations().nextBtn;
             }
         }, 300);
 
@@ -441,11 +469,13 @@ export class TrialController {
         }
 
         if (s.autoAdvance) {
-            this.btnStart.innerText = "...";
-            this.tracker.setTimeout(() => {
+            this.autoNextTimeoutId = this.tracker.setTimeout(() => {
+                this.autoNextTimeoutId = null;
                 this.triggerTrial();
-            }, 900);
+            }, 1200); // 300ms feedback + 900ms rest = 1200ms total autoNext delay
         } else {
+            this.btnStart.disabled = false;
+            this.btnStart.style.opacity = "1";
             this.btnStart.innerText = this.getTranslations().nextBtn;
             this.currentState = TrialState.IDLE;
         }

@@ -291,6 +291,20 @@ export function bindInputControls(handlers) {
             return;
         }
 
+        // Ergonomic Guard: Block game hotkeys if the user is currently typing in input text fields
+        if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+            return;
+        }
+
+        // Fast Pause Session Hotkey (Dual-layout mapping for English 'P' and Russian 'З')
+        if (key === 'p' || key === 'з') {
+            event.preventDefault();
+            if (typeof handlers.onActionPauseToggle === 'function') {
+                handlers.onActionPauseToggle();
+            }
+            return;
+        }
+
         // Abstracted Keyboard Routing layer (Dynamic activation based on Switchboard state)
         if (typeof handlers.onDirectionalShift === 'function' && 
             typeof handlers.isDirectionalHoldActive === 'function' && 

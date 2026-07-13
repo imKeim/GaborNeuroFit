@@ -35,16 +35,26 @@ const CONFIG_SCHEMA = [
     { id: 'select-target-type', key: 'synopTargetType', type: 'value' },
     { id: 'chk-synop-lazy-grid', key: 'synopShowLazyGrid', type: 'checkbox' },
     { id: 'chk-synop-strong-grid', key: 'synopShowStrongGrid', type: 'checkbox' },
-    { selectId: 'select-target-size', key: 'synopTargetSize', type: 'int' },
+    { id: 'select-target-size', key: 'synopTargetSize', type: 'int' },
     { id: 'chk-synop-flicker', key: 'synopFlickerActive', type: 'checkbox' },
     { id: 'chk-synop-lock-y', key: 'synopLockVertical', type: 'checkbox' },
     { id: 'chk-synop-lock-x', key: 'synopLockHorizontal', type: 'checkbox' },
-    { id: 'chk-permanent-cross', key: 'isPermanentCrossEnabled', type: 'checkbox' }
+    { id: 'chk-permanent-cross', key: 'isPermanentCrossEnabled', type: 'checkbox' },
+    { id: 'select-rds-dot-size', key: 'rdsDotSize', type: 'int' },
+    { id: 'select-rds-density', key: 'rdsDensity', type: 'float' },
+    { id: 'select-rds-start-disparity', key: 'rdsStartDisparity', type: 'int' },
+    { id: 'select-rds-autonext', key: 'rdsAutoAdvance', type: 'boolean' },
+    { id: 'chk-rds-dynamic', key: 'rdsIsDynamic', type: 'checkbox' },
+    { id: 'chk-rds-randomize-vertical', key: 'rdsRandomizeVertical', type: 'checkbox' },
+    { id: 'chk-rds-floating', key: 'rdsIsFloating', type: 'checkbox' },
+    { id: 'select-rds-float-speed', key: 'rdsFloatSpeed', type: 'value' },
+    { id: 'chk-rds-permanent-cross', key: 'rdsIsPermanentCrossEnabled', type: 'checkbox' }
 ];
 
 export class SettingsController {
-    constructor(onSyncCallback) {
+    constructor(onSyncCallback, translationsGetter) {
         this.onSyncCallback = onSyncCallback;
+        this.getTranslations = translationsGetter;
         this.anaglyphPanel = document.getElementById('anaglyph-settings-panel');
         this.valStrongAttenuation = document.getElementById('val-strong-attenuation');
         this.selectPresetMode = document.getElementById('select-preset-mode');
@@ -76,6 +86,8 @@ export class SettingsController {
                     if (field.key === 'isCrowdingEnabled') lastActiveTrigger = 'crowding';
                     if (field.key === 'isStaticEnabled') lastActiveTrigger = 'static';
                     if (field.key === 'isFlickerEnabled') lastActiveTrigger = 'flicker';
+                    if (field.key === 'rdsRandomizeVertical') lastActiveTrigger = 'rdsRandomizeVertical';
+                    if (field.key === 'rdsIsFloating') lastActiveTrigger = 'rdsIsFloating';
                 }
             } else if (field.type === 'value') {
                 val = el.value;
@@ -89,7 +101,9 @@ export class SettingsController {
                 val = parseFloat(el.value) / 100;
             }
             
-            if (field.id === 'range-strong-attenuation') {
+            if (field.id === 'select-session-limit') {
+                Store.updateState(s.appMode === 'rds' ? 'rdsSessionLimit' : 'sessionLimit', val);
+            } else if (field.id === 'range-strong-attenuation') {
                 Store.updateState(s.appMode === 'synoptophore' ? 'synopStrongEyeContrastFactor' : 'strongEyeContrastFactor', val);
                 if (this.valStrongAttenuation) {
                     this.valStrongAttenuation.innerText = el.value + '%';
@@ -128,6 +142,37 @@ export class SettingsController {
     updatePresetUI() {
         const s = Store.state;
         const isSynop = s.appMode === 'synoptophore';
+        const t = this.getTranslations ? this.getTranslations() : {};
+
+        // Dynamically rebuild Session Limit options depending on active mode (FOUC & clinical safety)
+        const selectLimit = document.getElementById('select-session-limit');
+        if (selectLimit) {
+            const curVal = s.sessionLimit;
+            const noLimitTxt = t.optLimitNo || "No Limit";
+            if (s.appMode === 'rds') {
+                const labelSprint = t.optLimitRdsSprint || "Sprint";
+                const labelStandard = t.optLimitRdsStandard || "Standard";
+                const labelMax = t.optLimitRdsMax || "Max";
+                selectLimit.innerHTML = `
+                    <option value="0" ${curVal === 0 ? 'selected' : ''}>${noLimitTxt}</option>
+                    <option value="15" ${curVal === 15 ? 'selected' : ''}>15 (${labelSprint})</option>
+                    <option value="25" ${curVal === 25 ? 'selected' : ''}>25 (${labelStandard})</option>
+                    <option value="40" ${curVal === 40 ? 'selected' : ''}>40 (${labelMax})</option>
+                `;
+            } else {
+                const labelBlitz = t.optLimitGaborBlitz || "Blitz";
+                const labelStandard = t.optLimitGaborStandard || "Standard";
+                const labelIntense = t.optLimitGaborIntense || "Intense";
+                const labelMax = t.optLimitGaborMax || "Max";
+                selectLimit.innerHTML = `
+                    <option value="0" ${curVal === 0 ? 'selected' : ''}>${noLimitTxt}</option>
+                    <option value="40" ${curVal === 40 ? 'selected' : ''}>40 (${labelBlitz})</option>
+                    <option value="80" ${curVal === 80 ? 'selected' : ''}>80 (${labelStandard})</option>
+                    <option value="120" ${curVal === 120 ? 'selected' : ''}>120 (${labelIntense})</option>
+                    <option value="160" ${curVal === 160 ? 'selected' : ''}>160 (${labelMax})</option>
+                `;
+            }
+        }
 
         if (!isSynop) {
             // Safeguard: Automatically clamp Gabor subpixel calibrations to prevent negative phase underflow.
@@ -150,31 +195,46 @@ export class SettingsController {
             Store.applyPresetTemplate(s.presetMode);
         }
 
-        // Synchronize active highlights of settings segmented tab controller
+        // Synchronize active highlights of settings segmented tab controller (3-Tab config)
         const btnTabGabor = document.getElementById('settings-tab-gabor');
         const btnTabSynop = document.getElementById('settings-tab-synop');
-        if (btnTabGabor && btnTabSynop) {
-            const isSynop = (s.appMode === 'synoptophore');
-            if (isSynop) {
+        const btnTabRds = document.getElementById('settings-tab-rds');
+        
+        if (btnTabGabor && btnTabSynop && btnTabRds) {
+            btnTabGabor.classList.remove('active');
+            btnTabSynop.classList.remove('active');
+            btnTabRds.classList.remove('active');
+            btnTabGabor.style.background = 'transparent';
+            btnTabSynop.style.background = 'transparent';
+            btnTabRds.style.background = 'transparent';
+            btnTabGabor.style.color = '#8e8e93';
+            btnTabSynop.style.color = '#8e8e93';
+            btnTabRds.style.color = '#8e8e93';
+
+            if (s.appMode === 'synoptophore') {
                 btnTabSynop.classList.add('active');
-                btnTabGabor.classList.remove('active');
                 btnTabSynop.style.background = '#2b354a';
                 btnTabSynop.style.color = '#3b90ff';
-                btnTabGabor.style.background = 'transparent';
-                btnTabGabor.style.color = '#8e8e93';
+            } else if (s.appMode === 'rds') {
+                btnTabRds.classList.add('active');
+                btnTabRds.style.background = '#2b354a';
+                btnTabRds.style.color = '#3b90ff';
             } else {
                 btnTabGabor.classList.add('active');
-                btnTabSynop.classList.remove('active');
                 btnTabGabor.style.background = '#2b354a';
                 btnTabGabor.style.color = '#3b90ff';
-                btnTabSynop.style.background = 'transparent';
-                btnTabSynop.style.color = '#8e8e93';
             }
         }
 
         CONFIG_SCHEMA.forEach(field => {
             const el = document.getElementById(field.id);
             if (!el) return;
+
+            if (field.id === 'select-session-limit') {
+                el.value = (s.appMode === 'rds' ? s.rdsSessionLimit : s.sessionLimit).toString();
+                this.updateSliderTrackGradient(el);
+                return;
+            }
 
             if (field.id === 'range-strong-attenuation') {
                 const targetFactor = s.appMode === 'synoptophore' ? s.synopStrongEyeContrastFactor : s.strongEyeContrastFactor;
@@ -187,7 +247,7 @@ export class SettingsController {
             if (field.type === 'checkbox') el.checked = s[field.key];
             else if (field.type === 'value') el.value = s[field.key];
             else if (field.type === 'int') el.value = s[field.key].toString();
-            else if (field.type === 'float') el.value = s[field.key].toFixed(1);
+            else if (field.type === 'float') el.value = s[field.key].toString();
             else if (field.type === 'boolean') el.value = s[field.key] ? 'true' : 'false';
 
             if (field.id === 'slider-left-r') {
@@ -260,14 +320,17 @@ export class SettingsController {
 
     updateVisibilityPanels() {
         const s = Store.state;
+        const isGabor = (s.appMode === 'gabor');
         const isSynop = (s.appMode === 'synoptophore');
+        const isRds = (s.appMode === 'rds');
 
         const groups = [
-            { num: 1, visible: true },
-            { num: 2, visible: !isSynop },
-            { num: 3, visible: !isSynop },
-            { num: 4, visible: true },
-            { num: 5, visible: isSynop }
+            { num: 1, visible: true },    // Base Protocol (Symmetrically always visible for Language & Pomodoro)
+            { num: 2, visible: isGabor }, // Temporal Pacing
+            { num: 3, visible: isGabor }, // Spatial Config
+            { num: 4, visible: isGabor || isSynop || isRds }, // 3D Calibration (Always open in stereoscopic runs)
+            { num: 5, visible: isSynop }, // Synoptophore & Vergence
+            { num: 6, visible: isRds }    // Stereogram & Depth (Group 6)
         ];
 
         groups.forEach(g => {
@@ -285,15 +348,45 @@ export class SettingsController {
         });
 
         const gaborRows = [
-            'row-preset-mode', 'row-start-level', 'row-autonext', 'row-session-limit',
+            'row-preset-mode', 'row-start-level', 'row-autonext',
             'row-anaglyph-toggle', 'row-fusion-lock'
         ];
+        const showGaborRow = (s.appMode === 'gabor');
         gaborRows.forEach(id => {
             const row = document.getElementById(id);
             if (row) {
-                row.style.display = isSynop ? 'none' : '';
+                row.style.display = showGaborRow ? '' : 'none';
             }
         });
+
+        const rdsRows = [
+            'row-rds-autonext'
+        ];
+        const showRdsRow = (s.appMode === 'rds');
+        rdsRows.forEach(id => {
+            const row = document.getElementById(id);
+            if (row) {
+                row.style.display = showRdsRow ? '' : 'none';
+            }
+        });
+
+        const rowRdsFloatSpeed = document.getElementById('row-rds-floating-speed');
+        if (rowRdsFloatSpeed) {
+            rowRdsFloatSpeed.style.display = showRdsRow ? 'flex' : 'none';
+            rowRdsFloatSpeed.style.opacity = s.rdsIsFloating ? '1' : '0.5';
+            const selectEl = rowRdsFloatSpeed.querySelector('select');
+            if (selectEl) selectEl.disabled = !s.rdsIsFloating;
+        }
+
+        const rowRdsPermanentCross = document.getElementById('row-rds-permanent-cross');
+        if (rowRdsPermanentCross) {
+            rowRdsPermanentCross.style.display = showRdsRow ? 'flex' : 'none';
+        }
+
+        const rowSessionLimit = document.getElementById('row-session-limit');
+        if (rowSessionLimit) {
+            rowSessionLimit.style.display = (isGabor || isRds) ? '' : 'none';
+        }
 
         if (!isSynop) {
             const chkFlicker = document.getElementById('chk-flicker');
@@ -337,15 +430,22 @@ export class SettingsController {
             }
         }
 
+        const rowStrongAttenuation = document.getElementById('row-strong-attenuation');
+        if (rowStrongAttenuation) {
+            // Symmetrically hide the attenuation slider during RDS to avoid UI confusion,
+            // since spatial disparity rendering requires strict unattenuated 100% boundary contrast.
+            rowStrongAttenuation.style.display = isRds ? 'none' : 'flex';
+        }
+
         if (this.anaglyphPanel) {
             this.anaglyphPanel.style.display = 'block';
-            this.anaglyphPanel.style.opacity = (s.isAnaglyphEnabled || isSynop) ? '1' : '0.4';
+            this.anaglyphPanel.style.opacity = (s.isAnaglyphEnabled || isSynop || isRds) ? '1' : '0.4';
             this.anaglyphPanel.querySelectorAll('input, select, button').forEach(input => {
                 if (input.id !== 'chk-fusion-lock' && input.id !== 'chk-anaglyph') {
                     if (input.id === 'slider-left-r' || input.id === 'slider-right-g' || input.id === 'slider-right-b' || input.id === 'range-strong-attenuation') {
                         input.disabled = false;
                     } else {
-                        input.disabled = (isSynop) ? false : !s.isAnaglyphEnabled;
+                        input.disabled = (isSynop || isRds) ? false : !s.isAnaglyphEnabled;
                     }
                 }
             });
@@ -356,7 +456,7 @@ export class SettingsController {
         if (headerAnaglyph) {
             const isMonocularPreset = (s.presetMode === 'occlusion' || s.presetMode === 'blitz');
             const shouldDisable3D = !s.isAnaglyphEnabled && isMonocularPreset;
-            if (shouldDisable3D && !isSynop) {
+            if (shouldDisable3D && !isSynop && !isRds) {
                 headerAnaglyph.style.opacity = '0.35';
                 headerAnaglyph.style.pointerEvents = 'none';
                 if (contentAnaglyph) contentAnaglyph.classList.remove('open');
@@ -386,10 +486,12 @@ export class SettingsController {
             });
         }
 
-        // Segmented settings mode switcher click hooks (Iteration 4)
+        // Segmented settings mode switcher click hooks (3-Tab config)
         const btnTabGabor = document.getElementById('settings-tab-gabor');
         const btnTabSynop = document.getElementById('settings-tab-synop');
-        if (btnTabGabor && btnTabSynop) {
+        const btnTabRds = document.getElementById('settings-tab-rds');
+        
+        if (btnTabGabor && btnTabSynop && btnTabRds) {
             btnTabGabor.addEventListener('click', () => {
                 Store.updateState('appMode', 'gabor');
                 this.updatePresetUI();
@@ -398,6 +500,12 @@ export class SettingsController {
 
             btnTabSynop.addEventListener('click', () => {
                 Store.updateState('appMode', 'synoptophore');
+                this.updatePresetUI();
+                if (typeof this.onSyncCallback === 'function') this.onSyncCallback();
+            });
+
+            btnTabRds.addEventListener('click', () => {
+                Store.updateState('appMode', 'rds');
                 this.updatePresetUI();
                 if (typeof this.onSyncCallback === 'function') this.onSyncCallback();
             });

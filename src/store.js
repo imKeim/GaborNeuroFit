@@ -19,7 +19,7 @@ export const Store = {
         currentLang: 'en',
         presetMode: 'occlusion',
         lastGaborPreset: 'occlusion',
-        sessionLimit: 0,
+        sessionLimit: 80,
         timerLimitMinutes: 0,
         timerRemainingSeconds: 0,
         timerIsRunning: false,
@@ -51,11 +51,13 @@ export const Store = {
         synopCalibratorRightB: 255,    // Separate Synoptophore calibrator Right B
         trialHistory: [],
         isPermanentCrossEnabled: false, // Smoothly faded persistent central anchor
+        isPaused: false,
+        savedTimerRunningState: false,
         
         // Synoptophore (Prism & Vergence Training) State Space
         appMode: 'gabor',               
-        synopState: 'align',            
-        synopTargetX: 0,                
+        synopState: 'idle',            
+        synopTargetX: 0,             
         synopTargetY: 0,                
         synopStartDistance: 0,          
         synopPullSpeed: 2500,           
@@ -67,32 +69,39 @@ export const Store = {
         synopFlickerActive: false,      // 10Hz resonance toggle for Synoptophore
         synopLockVertical: false,       // Y-Axis physical restriction lock
         synopLockHorizontal: false,     // X-Axis physical restriction lock
-        flankerDistanceCoeff: 2.0       // 2.0 = Crowding (default), 4.0 = Lateral Facilitation
+        flankerDistanceCoeff: 2.0,      // 2.0 = Crowding (default), 4.0 = Lateral Facilitation
+        
+        // Stereopsis / Random Dot Stereogram (RDS) State Space
+        rdsLevel: 1,                    // Active depth resolution stage (1 to 5)
+        rdsDotSize: 4,                  // Pixel scale of a single noise cell (2, 4, 6)
+        rdsDensity: 0.50,               // Ratio of active noise cells (0.35, 0.50, 0.65)
+        rdsStartDisparity: 8,           // Starting cell shift (1 to 8 - default 8px / Stage 1)
+        rdsDisparity: 8,                // Active depth disparity (computed based on rdsLevel)
+        rdsAutoAdvance: true,           // Dedicated active stereogram auto-pacing toggle
+        rdsTargetSide: 'left',          // 'left' or 'right' hidden shape position
+        rdsScore: 0,
+        rdsTotal: 0,
+        rdsStreak: 0,
+        rdsStaircaseStreak: 0,
+        rdsHistory: [],
+        rdsIsDynamic: true,             // Clinical gold standard default (Boiling Noise)
+        rdsRandomizeVertical: false,    // Off by default for comfortable initial training
+        rdsTargetY: 0,                  // Active dynamic vertical offset in grid cells
+        rdsIsFloating: false,           // Dynamic pursuit tracking off by default
+        rdsFloatSpeed: 'medium',        // Fluid velocity scaling for pursuit tracking
+        rdsIsPermanentCrossEnabled: true, // Show central zero-disparity anchor by default
+        rdsDriftX: 0,                   // Smooth real-time drift X offset
+        rdsDriftY: 0,                   // Smooth real-time drift Y offset
+        rdsSessionLimit: 25             // SSoT Isomorphic Independent RDS Limit
     },
 
-    /**
-     * @description Rotates the current session ID. This is done when switching between Gabor and Synoptophore modes,
-     * or when a Synoptophore session completes/slips, to ensure each distinct training block is recorded uniquely.
-     * Clinically, this prevents cross-contamination of metrics between different therapeutic approaches.
-     * @returns {void}
-     */
     rotateSessionId() {
         this.state.sessionId = 'session_' + Date.now();
     },
 
-    /**
-     * @description Centralized, validated state updater. All modifications to the Store.state
-     * must pass through this method to enforce data integrity, bounds checking, and reactive side-effects.
-     * This embodies the Single Source of Truth (SSoT) principle.
-     * @param {string} key - The state property to update.
-     * @param {*} value - The new value for the state property.
-     * @returns {void}
-     */
     updateState(key, value) {
         let isPresetChanged = false;
 
-        // Ensure session ID rotates when primary application mode or Gabor preset changes.
-        // Clinically, each distinct therapeutic mode is a new "session" for data tracking.
         if (key === 'appMode' || key === 'presetMode') {
             if (this.state[key] !== value) {
                 this.rotateSessionId();
@@ -100,7 +109,41 @@ export const Store = {
             }
         }
 
-        // Enforce mutual exclusivity for Synoptophore axis locks
+        // SSoT Clinical Safeguard: RDS requires strictly active anaglyph color channel splitting
+        if (key === 'appMode') {
+            if (value === 'rds') {
+                this.state.isAnaglyphEnabled = true;
+            }
+        }
+        if (key === 'isAnaglyphEnabled' && this.state.appMode === 'rds') {
+            this.state.isAnaglyphEnabled = true;
+            return; // Block turning off 3D during active RDS session
+        }
+
+        // Validate RDS properties and enforce strict limits at the Store level
+        if (key === 'rdsLevel') {
+            this.state.rdsLevel = Math.max(1, Math.min(5, parseInt(value) || 1));
+            return;
+        }
+        if (key === 'rdsDotSize') {
+            const parsed = parseInt(value);
+            this.state.rdsDotSize = [2, 4, 6].includes(parsed) ? parsed : 4;
+            return;
+        }
+        if (key === 'rdsDensity') {
+            const parsed = parseFloat(value);
+            this.state.rdsDensity = [0.35, 0.50, 0.65].includes(parsed) ? parsed : 0.50;
+            return;
+        }
+        if (key === 'rdsStartDisparity') {
+            this.state.rdsStartDisparity = Math.max(1, Math.min(8, parseInt(value) || 4));
+            return;
+        }
+        if (key === 'rdsScore' || key === 'rdsTotal' || key === 'rdsStreak' || key === 'rdsStaircaseStreak') {
+            this.state[key] = Math.max(0, parseInt(value) || 0);
+            return;
+        }
+
         if (key === 'synopLockVertical') {
             this.state.synopLockVertical = !!value;
             if (this.state.synopLockVertical) {
@@ -186,8 +229,21 @@ export const Store = {
         // Default assignment for other keys
         this.state[key] = value;
 
-        // Trigger application routing ONLY when preset actually changes
-        if (key === 'presetMode' && isPresetChanged) {
+        // Symmetrically sync RDS macro-level whenever disparity or start disparity changes
+        if (key === 'rdsStartDisparity' || key === 'rdsDisparity') {
+            const d = this.state[key];
+            let newLvl = 1;
+            if (d <= 8 && d >= 7) newLvl = 1;
+            else if (d <= 6 && d >= 5) newLvl = 2;
+            else if (d <= 4 && d >= 3) newLvl = 3;
+            else if (d === 2) newLvl = 4;
+            else if (d === 1) newLvl = 5;
+            this.state.rdsLevel = newLvl;
+            if (key === 'rdsStartDisparity') this.state.rdsDisparity = d;
+        }
+
+        // Trigger application routing ONLY when preset actually changes and we are in Gabor mode
+        if (key === 'presetMode' && isPresetChanged && this.state.appMode === 'gabor') {
             this.applyPresetTemplate(value);
         }
     },
@@ -200,6 +256,30 @@ export const Store = {
         this.state.trialHistory = [];
         this.state.timerRemainingSeconds = this.state.timerLimitMinutes * 60;
         this.state.timerIsRunning = false;
+        this.state.synopState = 'idle';
+        this.state.isPaused = false;
+        this.state.savedTimerRunningState = false;
+        
+        // Reset active RDS session metrics symmetrically
+        this.state.rdsScore = 0;
+        this.state.rdsTotal = 0;
+        this.state.rdsStreak = 0;
+        this.state.rdsStaircaseStreak = 0;
+        this.state.rdsHistory = [];
+        
+        // Symmetrically synchronize the active disparity threshold to the newly saved starting parameters
+        this.state.rdsDisparity = this.state.rdsStartDisparity;
+
+        // Dynamically resolve rdsLevel based on active rdsDisparity on session reset
+        let resetLvl = 1;
+        const rd = this.state.rdsDisparity;
+        if (rd <= 8 && rd >= 7) resetLvl = 1;
+        else if (rd <= 6 && rd >= 5) resetLvl = 2;
+        else if (rd <= 4 && rd >= 3) resetLvl = 3;
+        else if (rd === 2) resetLvl = 4;
+        else if (rd === 1) resetLvl = 5;
+        this.state.rdsLevel = resetLvl;
+            
         this.rotateSessionId();
     },
 
@@ -234,6 +314,15 @@ export const Store = {
         } else if (!lastActiveTrigger && s.isFlickerEnabled) {
             s.isStaticEnabled = true;
         }
+
+        // Symmetrical mutual exclusivity for RDS eccentricity vs pursuit
+        if (lastActiveTrigger === 'rdsRandomizeVertical') {
+            if (s.rdsRandomizeVertical) s.rdsIsFloating = false;
+        } else if (lastActiveTrigger === 'rdsIsFloating') {
+            if (s.rdsIsFloating) s.rdsRandomizeVertical = false;
+        } else {
+            if (s.rdsRandomizeVertical && s.rdsIsFloating) s.rdsIsFloating = false;
+        }
     },
 
     loadSettings() {
@@ -242,7 +331,7 @@ export const Store = {
             this.state.lastGaborPreset = localStorage.getItem('gabor_last_gabor_preset') || 'occlusion';
             this.state.currentLevel = parseInt(localStorage.getItem('gabor_start_level') || '1');
             this.state.autoAdvance = localStorage.getItem('gabor_autonext') !== 'false';
-            this.state.sessionLimit = parseInt(localStorage.getItem('gabor_limit') || '0');
+            this.state.sessionLimit = parseInt(localStorage.getItem('gabor_limit') || '80');
             this.state.timerLimitMinutes = parseInt(localStorage.getItem('gabor_timer_limit') || '0');
             this.state.allowStageAdvance = localStorage.getItem('gabor_stage_advance') !== 'false';
             this.state.flashDurationMode = localStorage.getItem('gabor_flash_mode') || 'adaptive';
@@ -257,8 +346,19 @@ export const Store = {
             this.state.isStaticEnabled = localStorage.getItem('gabor_static') === 'true';
             this.state.isFlickerEnabled = localStorage.getItem('gabor_flicker') === 'true';
             this.state.isMuted = localStorage.getItem('gabor_muted') === 'true';
-            this.state.currentLang = localStorage.getItem('gabor_lang') || 'en';
+            
+            // Unified locale bootstrapping (Bootstrap user settings or fallback to browser system language)
+            const storedLang = localStorage.getItem('gabor_lang');
+            if (storedLang) {
+                this.state.currentLang = storedLang;
+            } else {
+                const supportedLanguages = ['en', 'ru'];
+                const browserLang = navigator.language ? navigator.language.split('-')[0].toLowerCase() : 'en';
+                this.state.currentLang = supportedLanguages.includes(browserLang) ? browserLang : 'en';
+            }
+            
             this.state.isPermanentCrossEnabled = localStorage.getItem('gabor_permanent_cross') === 'true';
+            this.state.flankerDistanceCoeff = parseFloat(localStorage.getItem('gabor_flanker_distance_coeff') || '2.0');
             
             // Hardware & 3D Settings (Global)
             this.state.isAnaglyphEnabled = localStorage.getItem('gabor_anaglyph') !== 'false';
@@ -286,76 +386,36 @@ export const Store = {
             this.state.synopFlickerActive = localStorage.getItem('gabor_synop_flicker_active') === 'true';
             this.state.synopLockVertical = localStorage.getItem('gabor_synop_lock_y') === 'true';
             this.state.synopLockHorizontal = localStorage.getItem('gabor_synop_lock_x') === 'true';
+            
+            // Persistent RDS properties loads
+            this.state.rdsLevel = Math.max(1, Math.min(5, parseInt(localStorage.getItem('gabor_rds_level') || '1')));
+            this.state.rdsDotSize = parseInt(localStorage.getItem('gabor_rds_dot_size') || '4');
+            this.state.rdsDensity = parseFloat(localStorage.getItem('gabor_rds_density') || '0.50');
+            this.state.rdsStartDisparity = Math.max(1, Math.min(8, parseInt(localStorage.getItem('gabor_rds_start_disparity') || '4')));
+            this.state.rdsAutoAdvance = localStorage.getItem('gabor_rds_autonext') !== 'false';
+            this.state.rdsIsDynamic = localStorage.getItem('gabor_rds_dynamic') !== 'false';
+            this.state.rdsRandomizeVertical = localStorage.getItem('gabor_rds_randomize_vertical') === 'true';
+            this.state.rdsIsFloating = localStorage.getItem('gabor_rds_floating') === 'true';
+            this.state.rdsFloatSpeed = localStorage.getItem('gabor_rds_float_speed') || 'medium';
+            this.state.rdsIsPermanentCrossEnabled = localStorage.getItem('gabor_rds_permanent_cross') !== 'false';
+            this.state.rdsSessionLimit = parseInt(localStorage.getItem('gabor_rds_session_limit') || '25');
+
+            // Dynamically resolve active rdsLevel based on rdsDisparity on cold launch (F5)
+            let initLvl = 1;
+            const d = this.state.rdsDisparity;
+            if (d <= 8 && d >= 7) initLvl = 1;
+            else if (d <= 6 && d >= 5) initLvl = 2;
+            else if (d <= 4 && d >= 3) initLvl = 3;
+            else if (d === 2) initLvl = 4;
+            else if (d === 1) initLvl = 5;
+            this.state.rdsLevel = initLvl;
         } catch (e) {}
         
         const storedAppMode = localStorage.getItem('gabor_app_mode');
         if (storedAppMode === 'synoptophore') {
             this.state.appMode = 'synoptophore';
-        } else {
-            this.state.appMode = 'gabor';
-            this.applyPresetTemplate(this.state.presetMode);
-        }
-
-        this.resolveConflicts(null);
-    },
-
-    saveSettings() {
-        try {
-            localStorage.setItem('gabor_app_mode', this.state.appMode);
-            localStorage.setItem('gabor_preset_mode', this.state.presetMode);
-            localStorage.setItem('gabor_last_gabor_preset', this.state.lastGaborPreset);
-            localStorage.setItem('gabor_start_level', this.state.currentLevel);
-            localStorage.setItem('gabor_autonext', this.state.autoAdvance ? "true" : "false");
-            localStorage.setItem('gabor_limit', this.state.sessionLimit);
-            localStorage.setItem('gabor_timer_limit', this.state.timerLimitMinutes.toString());
-            localStorage.setItem('gabor_stage_advance', this.state.allowStageAdvance ? "true" : "false");
-            localStorage.setItem('gabor_flash_mode', this.state.flashDurationMode);
-            localStorage.setItem('gabor_peripheral', this.state.isPeripheralEnabled ? "true" : "false");
-            localStorage.setItem('gabor_crowding', this.state.isCrowdingEnabled ? "true" : "false");
-            localStorage.setItem('gabor_crowding_mode', this.state.crowdingMode);
-            localStorage.setItem('gabor_orthogonal', this.state.isOrthogonalFlankersEnabled ? "true" : "false");
-            localStorage.setItem('gabor_dynamic_flankers', this.state.isDynamicFlankersEnabled ? "true" : "false");
-            localStorage.setItem('gabor_low_contrast', this.state.allowLowContrast ? "true" : "false");
-            localStorage.setItem('gabor_wide_variance', this.state.allowWideVariance ? "true" : "false");
-            localStorage.setItem('gabor_shape_variance', this.state.allowShapeVariance ? "true" : "false");
-            localStorage.setItem('gabor_static', this.state.isStaticEnabled ? "true" : "false");
-            localStorage.setItem('gabor_flicker', this.state.isFlickerEnabled ? "true" : "false");
-            localStorage.setItem('gabor_muted', this.state.isMuted ? "true" : "false");
-            localStorage.setItem('gabor_lang', this.state.currentLang);
-            localStorage.setItem('gabor_permanent_cross', this.state.isPermanentCrossEnabled ? "true" : "false");
-            localStorage.setItem('gabor_flanker_distance_coeff', this.state.flankerDistanceCoeff.toString()); // New: Flanker distance
-            
-            // Hardware & 3D Settings (Global)
-            this.state.isAnaglyphEnabled = localStorage.getItem('gabor_anaglyph') !== 'false';
-            this.state.redEyeSide = localStorage.getItem('gabor_red_side') || 'left';
-            this.state.lazyEyeSide = localStorage.getItem('gabor_lazy_side') || 'left';
-            this.state.strongEyeContrastFactor = parseFloat(localStorage.getItem('gabor_strong_factor') || '0.3');
-            this.state.synopStrongEyeContrastFactor = parseFloat(localStorage.getItem('gabor_synop_strong_factor') || '0.3');
-            this.state.isFusionLockEnabled = localStorage.getItem('gabor_fusion_lock') !== 'false';
-            
-            this.state.calibratorLeftR = Math.max(0, Math.min(255, parseInt(localStorage.getItem('gabor_calib_left_r') || '255')));
-            this.state.calibratorRightG = Math.max(0, Math.min(255, parseInt(localStorage.getItem('gabor_calib_right_g') || '255')));
-            this.state.calibratorRightB = Math.max(0, Math.min(255, parseInt(localStorage.getItem('gabor_calib_right_b') || '255')));
-
-            this.state.synopCalibratorLeftR = Math.max(0, Math.min(255, parseInt(localStorage.getItem('gabor_synop_calib_left_r') || '255')));
-            this.state.synopCalibratorRightG = Math.max(0, Math.min(255, parseInt(localStorage.getItem('gabor_synop_calib_right_g') || '255')));
-            this.state.synopCalibratorRightB = Math.max(0, Math.min(255, parseInt(localStorage.getItem('gabor_synop_calib_right_b') || '255')));
-
-            // Persistent Synoptophore properties loads
-            this.state.synopPullSpeed = parseInt(localStorage.getItem('gabor_synop_pull_speed') || '2500');
-            this.state.synopTargetType = localStorage.getItem('gabor_synop_target_type') || 'ring-dot';
-            this.state.synopShowLazyGrid = localStorage.getItem('gabor_synop_lazy_grid') === 'true';
-            this.state.synopShowStrongGrid = localStorage.getItem('gabor_synop_strong_grid') === 'true';
-            this.state.synopTargetSize = parseInt(localStorage.getItem('gabor_synop_target_size') || '65');
-            this.state.synopScore = parseInt(localStorage.getItem('gabor_synop_score') || '0');
-            this.state.synopFlickerActive = localStorage.getItem('gabor_synop_flicker_active') === 'true';
-            this.state.synopLockVertical = localStorage.getItem('gabor_synop_lock_y') === 'true';
-            this.state.synopLockHorizontal = localStorage.getItem('gabor_synop_lock_x') === 'true';
-        } catch (e) {}
-        
-        const storedAppMode = localStorage.getItem('gabor_app_mode');
-        if (storedAppMode === 'synoptophore') {
-            this.state.appMode = 'synoptophore';
+        } else if (storedAppMode === 'rds') {
+            this.state.appMode = 'rds';
         } else {
             this.state.appMode = 'gabor';
             this.applyPresetTemplate(this.state.presetMode);
@@ -416,6 +476,19 @@ export const Store = {
             localStorage.setItem('gabor_synop_flicker_active', this.state.synopFlickerActive ? "true" : "false");
             localStorage.setItem('gabor_synop_lock_y', this.state.synopLockVertical ? "true" : "false");
             localStorage.setItem('gabor_synop_lock_x', this.state.synopLockHorizontal ? "true" : "false");
+            
+            // Persistent RDS properties saves
+            localStorage.setItem('gabor_rds_level', this.state.rdsLevel.toString());
+            localStorage.setItem('gabor_rds_dot_size', this.state.rdsDotSize.toString());
+            localStorage.setItem('gabor_rds_density', this.state.rdsDensity.toString());
+            localStorage.setItem('gabor_rds_start_disparity', this.state.rdsStartDisparity.toString());
+            localStorage.setItem('gabor_rds_autonext', this.state.rdsAutoAdvance ? "true" : "false");
+            localStorage.setItem('gabor_rds_dynamic', this.state.rdsIsDynamic ? "true" : "false");
+            localStorage.setItem('gabor_rds_randomize_vertical', this.state.rdsRandomizeVertical ? "true" : "false");
+            localStorage.setItem('gabor_rds_floating', this.state.rdsIsFloating ? "true" : "false");
+            localStorage.setItem('gabor_rds_float_speed', this.state.rdsFloatSpeed);
+            localStorage.setItem('gabor_rds_permanent_cross', this.state.rdsIsPermanentCrossEnabled ? "true" : "false");
+            localStorage.setItem('gabor_rds_session_limit', this.state.rdsSessionLimit.toString());
         } catch (e) {}
     },
 
@@ -431,7 +504,6 @@ export const Store = {
 
     applyPresetTemplate(mode) {
         this.state.presetMode = mode;
-        this.state.appMode = 'gabor'; // Presets only apply to Gabor mode!
         this.state.flankerDistanceCoeff = 2.0; // Symmetrically reset flanker spacing to standard crowding bounds during preset activation
         
         if (mode === 'occlusion') {
@@ -499,24 +571,23 @@ export const Store = {
 
     saveSession() {
         if (this.state.total === 0) return;
-        DataRepository.saveSession(
-            this.state.sessionId,
-            this.state.score,
-            this.state.total,
-            this.state.currentLevel,
-            this.state.autoContrast,
-            this.state.presetMode,
-            this.state.flashDurationMode,
-            this.state.isAnaglyphEnabled,
-            this.state.strongEyeContrastFactor,
-            this.state.lazyEyeSide,
-            this.state.isFlickerEnabled,
-            this.state.isCrowdingEnabled,
-            this.state.isPeripheralEnabled,
-            this.state.isPermanentCrossEnabled,
-            null, null, null, null,
-            this.state.flankerDistanceCoeff // Append current flanker spacing to the persistence pipeline
-        );
+        DataRepository.saveSession({
+            sessionId: this.state.sessionId,
+            score: this.state.score,
+            total: this.state.total,
+            level: this.state.currentLevel,
+            contrast: this.state.autoContrast,
+            protocol: this.state.presetMode,
+            speed: this.state.flashDurationMode,
+            isAnaglyph: this.state.isAnaglyphEnabled,
+            balance: this.state.strongEyeContrastFactor,
+            lazyEyeSide: this.state.lazyEyeSide,
+            isFlicker: this.state.isFlickerEnabled,
+            isCrowding: this.state.isCrowdingEnabled,
+            isPeripheral: this.state.isPeripheralEnabled,
+            isPermanentCross: this.state.isPermanentCrossEnabled,
+            flankerDistanceCoeff: this.state.flankerDistanceCoeff
+        });
     },
     getHistory() {
         return DataRepository.getSessionsForActiveUser();

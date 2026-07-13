@@ -5,7 +5,7 @@
 
 import { Store } from '../store.js';
 import { DataRepository } from '../store/repository.js';
-import { renderProgressChart, renderSynopProgressChart, updateLeaderboard, updateSynopLeaderboard, getCompactPresetLabel, updateScoreboard } from '../ui/screen.js';
+import { renderProgressChart, renderSynopProgressChart, renderRdsProgressChart, updateLeaderboard, updateSynopLeaderboard, updateRdsLeaderboard, getCompactPresetLabel, updateScoreboard } from '../ui/screen.js';
 import { showCustomAlert, showCustomConfirm } from '../ui/modal.js';
 
 export class DashboardController {
@@ -37,6 +37,11 @@ export class DashboardController {
         renderSynopProgressChart(synopSessions, t);
         updateSynopLeaderboard(synopSessions, t, Store.state.currentLang);
 
+        // Refresh Stereopsis Tab (Depth database queries)
+        const rdsSessions = DataRepository.getRdsSessionsForActiveUser();
+        renderRdsProgressChart(rdsSessions, t);
+        updateRdsLeaderboard(rdsSessions, t, Store.state.currentLang);
+
         const statsModal = document.getElementById('stats-modal');
         if (window.twemoji && statsModal) {
             window.twemoji.parse(statsModal);
@@ -44,33 +49,52 @@ export class DashboardController {
     }
 
     bindEvents() {
-        // Segmented Tabs Click Listeners for Statistics
+        // Segmented Tabs Click Listeners for Statistics (3-Tab config)
         const tabGabor = document.getElementById('tab-gabor');
         const tabSynop = document.getElementById('tab-synop');
+        const tabRds = document.getElementById('tab-rds');
         const contentGabor = document.getElementById('tab-gabor-content');
         const contentSynop = document.getElementById('tab-tab-synop-content');
+        const contentRds = document.getElementById('tab-rds-content');
 
-        if (tabGabor && tabSynop && contentGabor && contentSynop) {
-            tabGabor.addEventListener('click', () => {
-                tabGabor.classList.add('active');
+        if (tabGabor && tabSynop && tabRds && contentGabor && contentSynop && contentRds) {
+            const resetTabs = () => {
+                tabGabor.classList.remove('active');
                 tabSynop.classList.remove('active');
+                tabRds.classList.remove('active');
+                tabGabor.style.background = 'transparent';
+                tabSynop.style.background = 'transparent';
+                tabRds.style.background = 'transparent';
+                tabGabor.style.color = '#8e8e93';
+                tabSynop.style.color = '#8e8e93';
+                tabRds.style.color = '#8e8e93';
+                contentGabor.style.display = 'none';
+                contentSynop.style.display = 'none';
+                contentRds.style.display = 'none';
+            };
+
+            tabGabor.addEventListener('click', () => {
+                resetTabs();
+                tabGabor.classList.add('active');
                 tabGabor.style.background = '#2b354a';
                 tabGabor.style.color = '#3b90ff';
-                tabSynop.style.background = 'transparent';
-                tabSynop.style.color = '#8e8e93';
                 contentGabor.style.display = 'block';
-                contentSynop.style.display = 'none';
             });
 
             tabSynop.addEventListener('click', () => {
+                resetTabs();
                 tabSynop.classList.add('active');
-                tabGabor.classList.remove('active');
                 tabSynop.style.background = '#2b354a';
                 tabSynop.style.color = '#3b90ff';
-                tabGabor.style.background = 'transparent';
-                tabGabor.style.color = '#8e8e93';
                 contentSynop.style.display = 'block';
-                contentGabor.style.display = 'none';
+            });
+
+            tabRds.addEventListener('click', () => {
+                resetTabs();
+                tabRds.classList.add('active');
+                tabRds.style.background = '#2b354a';
+                tabRds.style.color = '#3b90ff';
+                contentRds.style.display = 'block';
             });
         }
 
@@ -173,39 +197,42 @@ export class DashboardController {
         const btnExportCsv = document.getElementById('btn-export-csv');
         if (btnExportCsv) {
             btnExportCsv.addEventListener('click', () => {
+                const t = this.getTranslations();
                 const sessions = DataRepository.getSessionsForActiveUser();
                 if (sessions.length === 0) return;
 
-                const headers = ["Date", "Mode", "Lazy Eye Side", "Score/Total", "Accuracy %", "Gabor Stage", "Contrast Threshold %", "Contrast Balancer %", "10Hz Flicker", "Visual Crowding", "Peripheral Shift", "Permanent Cross", "Synop Deviation X (px)", "Synop Deviation Y (px)", "Synop Start Distance (px)", "Outcome"];
+                const headers = (t.csvHeaders || "Date,Mode,Lazy Eye Side,Score/Total,Accuracy %,Gabor Stage,Contrast Threshold %,Contrast Balancer %,10Hz Flicker,Visual Crowding,Peripheral Shift,Permanent Cross,Synop Deviation X (px),Synop Deviation Y (px),Synop Start Distance (px),Outcome,RDS Dot Size (px),RDS Dot Density %,RDS Disparity Threshold (px)").split(',');
                         
                 const rows = sessions.map(s => {
                     const dateStr = new Date(s.timestamp).toISOString().replace(/T/, ' ').replace(/\..+/, '');
                     const accuracy = s.total > 0 ? ((s.score / s.total) * 100).toFixed(1) : '0';
                             
                     const isSynop = s.protocol === 'synoptophore';
-                    const modeLabel = isSynop ? "Synoptophore" : getCompactPresetLabel(s.protocol, Store.state.currentLang);
+                    const isRds = s.protocol === 'rds';
+                    const modeLabel = getCompactPresetLabel(s.protocol, t);
                     
                     const eyeSide = s.lazyEyeSide ? s.lazyEyeSide.toUpperCase() : 'LEFT';
-                    const isFlickerOn = isSynop ? (s.synopFlickerActive ? "ON" : "OFF") : (s.isFlickerEnabled ? "ON" : "OFF");
-                    
-                    // Symmetrically export spatial spacing metrics as detailed text values
-                    const isCrowdingOn = isSynop ? "OFF" : (s.isCrowdingEnabled ? (s.flankerDistanceCoeff === 4.0 ? "ON (Far 4x)" : "ON (Close 2x)") : "OFF");
-                    
-                    const isPeripheralOn = isSynop ? "OFF" : (s.isPeripheralEnabled ? "ON" : "OFF");
-                    const isCrossOn = isSynop ? "OFF" : (s.isPermanentCrossEnabled ? "ON" : "OFF");
+                    const isFlickerOn = isSynop ? (s.synopFlickerActive ? "ON" : "OFF") : (isRds ? "OFF" : (s.isFlickerEnabled ? "ON" : "OFF"));
+                    const isCrowdingOn = isSynop ? "OFF" : (isRds ? "OFF" : (s.isCrowdingEnabled ? (s.flankerDistanceCoeff === 4.0 ? "ON (Far 4x)" : "ON (Close 2x)") : "OFF"));
+                    const isPeripheralOn = isSynop || isRds ? "OFF" : (s.isPeripheralEnabled ? "ON" : "OFF");
+                    const isCrossOn = isSynop || isRds ? "OFF" : (s.isPermanentCrossEnabled ? "ON" : "OFF");
 
                     return [
                         `"${dateStr}"`, `"${modeLabel}"`, `"${eyeSide}"`,
                         isSynop ? `""` : `"${s.score}/${s.total}"`,
                         isSynop ? `""` : `"${accuracy}%"`,
                         isSynop ? `""` : s.level,
-                        isSynop ? `""` : `"${s.contrast}%"`,
-                        `"${s.balance}%"`, `"${isFlickerOn}"`, `"${isCrowdingOn}"`,
+                        isSynop || isRds ? `""` : `"${s.contrast}%"`,
+                        isSynop || isRds ? `""` : `"${s.balance}%"`, 
+                        `"${isFlickerOn}"`, `"${isCrowdingOn}"`,
                         `"${isPeripheralOn}"`, `"${isCrossOn}"`,
                         isSynop ? (s.synopTargetX || 0) : `""`,
                         isSynop ? (s.synopTargetY || 0) : `""`,
                         isSynop ? (s.synopStartDistance || 0).toFixed(0) : `""`,
-                        isSynop ? `"${(s.synopOutcome || 'slip').toUpperCase()}"` : `""`
+                        isSynop ? `"${(s.synopOutcome || 'slip').toUpperCase()}"` : (isRds ? `"FUSED"` : `""`),
+                        isRds ? s.rdsDotSize : `""`,
+                        isRds ? (s.rdsDensity ? Math.round(s.rdsDensity * 100) + "%" : `""`) : `""`,
+                        isRds ? s.rdsDisparity : `""`
                     ].join(',');
                 });
 
@@ -323,14 +350,20 @@ export class DashboardController {
                 else if (protocol.includes('🕶️')) protocol = 'binocular';
                 else if (protocol.includes('🎯')) protocol = 'peripheral';
                 else if (protocol.includes('⚡')) protocol = 'blitz';
-                else if (protocol.includes('🌀')) protocol = 'flicker';
-                else if (protocol.includes('🧲') || protocol.toLowerCase().includes('vergence')) protocol = 'synoptophore';
+                else if (protocol.includes('🌀') || protocol.toLowerCase().includes('flicker')) protocol = 'flicker';
+                else if (protocol.includes('🧊') || protocol.toLowerCase().includes('stereogram') || protocol.toLowerCase().includes('rds')) protocol = 'rds';
+                else if (protocol.includes('🧲') || protocol.toLowerCase().includes('vergence') || protocol.toLowerCase().includes('synoptophore')) protocol = 'synoptophore';
                 else protocol = 'custom';
 
                 // Safely parse advanced spatial spacing coefficient from the imported crowding column
                 const crowdingRaw = getCol(row, "Visual Crowding");
                 const isCrowdingEnabled = crowdingRaw.includes("ON");
                 const flankerDistanceCoeff = crowdingRaw.includes("Far") ? 4.0 : 2.0;
+
+                // Safely parse advanced RDS properties
+                const rdsDotSize = parseInt(getCol(row, "RDS Dot Size (px)")) || null;
+                const rdsDensity = getCol(row, "RDS Dot Density %") ? parseFloat(getCol(row, "RDS Dot Density %").replace('%', '')) / 100 : null;
+                const rdsDisparity = parseInt(getCol(row, "RDS Disparity Threshold (px)")) || null;
 
                 parsedSessions.push({
                     id: 'imported_session_' + timestamp + '_' + Math.random().toString(36).substr(2, 5),
@@ -352,7 +385,10 @@ export class DashboardController {
                     targetX: parseInt(getCol(row, "Synop Deviation X (px)")) || null,
                     targetY: parseInt(getCol(row, "Synop Deviation Y (px)")) || null,
                     startDistance: parseFloat(getCol(row, "Synop Start Distance (px)")) || null,
-                    outcome: outcome || null
+                    outcome: outcome || null,
+                    rdsDotSize: rdsDotSize,
+                    rdsDensity: rdsDensity,
+                    rdsDisparity: rdsDisparity
                 });
             }
 
@@ -377,12 +413,30 @@ export class DashboardController {
                 (isConfirmed) => {
                     if (isConfirmed) {
                         parsedSessions.forEach(s => {
-                            DataRepository.saveSession(
-                                s.id, s.score, s.total, s.level, s.contrast, s.protocol, s.speed,
-                                s.isAnaglyph, s.balance, s.lazyEyeSide, s.isFlicker, s.isCrowding,
-                                s.isPeripheral, s.isPermanentCross, s.targetX, s.targetY, s.startDistance, s.outcome,
-                                s.flankerDistanceCoeff // Pipe the extracted flanker distance coeff directly to persistence
-                            );
+                            DataRepository.saveSession({
+                                sessionId: s.id,
+                                score: s.score,
+                                total: s.total,
+                                level: s.level,
+                                contrast: s.contrast,
+                                protocol: s.protocol,
+                                speed: s.speed,
+                                isAnaglyph: s.isAnaglyph,
+                                balance: s.balance,
+                                lazyEyeSide: s.lazyEyeSide,
+                                isFlicker: s.isFlicker,
+                                isCrowding: s.isCrowding,
+                                isPeripheral: s.isPeripheral,
+                                isPermanentCross: s.isPermanentCross,
+                                targetX: s.targetX,
+                                targetY: s.targetY,
+                                startDistance: s.startDistance,
+                                outcome: s.outcome,
+                                flankerDistanceCoeff: s.flankerDistanceCoeff,
+                                rdsDotSize: s.rdsDotSize,
+                                rdsDensity: s.rdsDensity,
+                                rdsDisparity: s.rdsDisparity
+                            });
                         });
 
                         updateScoreboard(Store.state, t);

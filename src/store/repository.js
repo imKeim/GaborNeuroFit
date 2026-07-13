@@ -16,17 +16,17 @@ export class DataRepository {
     /**
      * Verifies the integrity of the local database.
      * Automatically bootstraps a default profile if the database is blank.
+     * @param {Object} translations - Fully loaded translation dictionary (activeTranslations)
      */
-    static init() {
+    static init(translations = {}) {
         try {
             let profiles = this.getProfiles();
             let activeUid = localStorage.getItem(this.KEYS.ACTIVE_UID);
 
             // Bootstrap phase: Ensure at least one profile exists
             if (profiles.length === 0) {
-                const isRu = (localStorage.getItem('gabor_lang') === 'ru') || 
-                             (navigator.language && navigator.language.startsWith('ru'));
-                const defaultName = isRu ? 'Пациент по умолчанию' : 'Default Patient';
+                // Retrieve the localized default name declaratively from the translation pack
+                const defaultName = translations.defaultPatientName || 'Default Patient';
 
                 const defaultProfile = {
                     id: 'usr_' + Date.now(),
@@ -160,7 +160,12 @@ export class DataRepository {
      * Appends a newly acquired training session to the active patient context.
      * Implements a robust UPSERT engine based on the active session ID to prevent duplicate entry spam.
      */
-    static saveSession(sessionId, score, total, level, contrast, protocol, speed, isAnaglyph, balance, lazyEyeSide = 'left', isFlicker = false, isCrowding = false, isPeripheral = false, isPermanentCross = false, targetX = null, targetY = null, startDistance = null, outcome = null, flankerDistanceCoeff = 2.0) {
+    static saveSession({
+        sessionId, score, total, level, contrast, protocol, speed, isAnaglyph, balance,
+        lazyEyeSide = 'left', isFlicker = false, isCrowding = false, isPeripheral = false, isPermanentCross = false,
+        targetX = null, targetY = null, startDistance = null, outcome = null,
+        flankerDistanceCoeff = 2.0, rdsDotSize = null, rdsDensity = null, rdsDisparity = null
+    }) {
         try {
             const activeUid = this.getActiveProfileId();
             if (!activeUid) return;
@@ -186,6 +191,11 @@ export class DataRepository {
                 isPeripheralEnabled: !!isPeripheral,
                 isPermanentCrossEnabled: !!isPermanentCross,
                 flankerDistanceCoeff: parseFloat(flankerDistanceCoeff) || 2.0,
+                
+                // Polymorphic Random Dot Stereogram (RDS) Parameters
+                rdsDotSize: rdsDotSize !== null ? parseInt(rdsDotSize) : null,
+                rdsDensity: rdsDensity !== null ? parseFloat(rdsDensity) : null,
+                rdsDisparity: rdsDisparity !== null ? parseInt(rdsDisparity) : null,
                 
                 // Polymorphic Synoptophore Kinematics (strictly nullified for Gabor sensory sessions)
                 synopTargetX: targetX !== null ? parseInt(targetX) : null,
@@ -244,7 +254,7 @@ export class DataRepository {
      * Retrieves exclusively sensory Gabor training sessions for the active user (SSoT compliant)
      */
     static getGaborSessionsForActiveUser() {
-        return this.getSessionsForActiveUser().filter(s => s.protocol !== 'synoptophore');
+        return this.getSessionsForActiveUser().filter(s => s.protocol !== 'synoptophore' && s.protocol !== 'rds');
     }
 
     /**
@@ -252,6 +262,13 @@ export class DataRepository {
      */
     static getSynopSessionsForActiveUser() {
         return this.getSessionsForActiveUser().filter(s => s.protocol === 'synoptophore');
+    }
+
+    /**
+     * Retrieves exclusively stereoscopic RDS training sessions for the active user (SSoT compliant)
+     */
+    static getRdsSessionsForActiveUser() {
+        return this.getSessionsForActiveUser().filter(s => s.protocol === 'rds');
     }
 
     /**

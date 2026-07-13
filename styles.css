@@ -69,8 +69,17 @@ body {
     /* Combine safe area insets and base padding to prevent zero-height compression on standard screens */
     padding-top: calc(var(--padding-dynamic-v) + env(safe-area-inset-top, 0px));
     padding-bottom: calc(var(--padding-dynamic-v) + env(safe-area-inset-bottom, 0px));
+    
+    /* SSoT Cold Launch FOUC Prevention (Fades in the fully initialized translated UI) */
+    opacity: 0;
+    will-change: opacity;
+    
     /* Added dimensional transitions to morph smoothly when dragged between Full HD and QHD+ monitors */
-    transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, max-width 0.3s ease, max-height 0.3s ease, padding 0.3s ease, font-size 0.3s ease;
+    transition: opacity 0.22s ease-out, background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, max-width 0.3s ease, max-height 0.3s ease, padding 0.3s ease, font-size 0.3s ease;
+}
+
+#app-wrapper.loaded {
+    opacity: 1;
 }
 
 /* Desktop Therapeutic Diffuse Glassmorphism adaptation rule */
@@ -195,8 +204,19 @@ img.emoji {
     overflow: hidden;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
     cursor: pointer;
-    transition: transform 0.2s ease-out, width 0.3s ease, height 0.3s ease; /* Transition container scaling */
+    transition: width 0.3s ease, height 0.3s ease; /* Decoupled transform to prevent transition/animation conflicts */
     touch-action: manipulation;
+    
+    /* Hardware Accelerated GPU Compositing */
+    will-change: transform;
+    backface-visibility: hidden;
+    transform: translate3d(0, 0, 0);
+    transform-origin: center center;
+}
+
+/* Symmetrically disable pointer finger cursor in RDS mode to maintain correct visual affordance */
+#container.mode-rds {
+    cursor: default !important;
 }
 
 canvas {
@@ -221,15 +241,28 @@ canvas {
 }
 
 #cross {
-    font-size: 36px;
-    color: #2c2c2c;
+    font-size: 36px; /* Controlled dynamically by JS (36px down to 12px) */
     position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0.66em; /* Tightly wraps the 0.44em cross lines */
+    height: 0.66em;
     display: block;
-    font-weight: 300;
     opacity: 1;
-    /* Faster 150ms transition perfectly matches rapid millisecond-accurate flashes */
-    transition: font-size 0.2s ease, opacity 0.15s cubic-bezier(0.25, 1, 0.5, 1);
+    /* Symmetrical hardware-accelerated transitions for clean, color-stable foveal cross fading */
+    transition: 
+        font-size 0.2s ease, 
+        opacity 0.15s cubic-bezier(0.25, 1, 0.5, 1),
+        background-color 0.15s ease,
+        box-shadow 0.15s ease;
     z-index: 15; /* Render above all canvas elements */
+    
+    /* Clinical Foveal Isolation Halo (Anti-masking zone) */
+    background-color: rgba(127, 127, 127, 0.66); /* Semi-transparent baseline gray */
+    border-radius: 66%;
+    /* Enhanced ultra-soft semi-transparent Gaussian feathering to seamlessly dissolve into random noise */
+    box-shadow: 0 0 0.33em 0.2em rgba(127, 127, 127, 0.65); 
 }
 
 #cross.cross-dimmed {
@@ -237,7 +270,41 @@ canvas {
 }
 
 #cross.cross-hidden {
-    opacity: 0; /* Fully faded state for sensory contrast tests */
+    opacity: 0;
+}
+
+#cross.cross-no-halo {
+    background: transparent !important;
+    box-shadow: none !important;
+    opacity: 0.35;
+}
+
+/* SSoT Clinical Contrast Enhancement for active Stereogram foveation */
+#cross.cross-white-halo {
+    background-color: rgba(255, 255, 255, 0.65);
+    box-shadow: 0 0 0.25em 0.2em rgba(255, 255, 255, 0.65);
+}
+
+/* Scalable CSS Hardware-Stabilized Foveal Lines */
+.cross-line-h, .cross-line-v {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #2c2c2c;
+    border-radius: 1px;
+    /* Clinical Foveal Halo: Symmetrical border shadow ensures visibility under any filter */
+    box-shadow: 0 0 0 1px rgba(200, 200, 200, 0.8);
+}
+
+.cross-line-h {
+    width: 0.44em;
+    height: 0.055em;
+}
+
+.cross-line-v {
+    width: 0.055em;
+    height: 0.44em;
 }
 
 /* ==========================================================================
@@ -1183,7 +1250,9 @@ input[type="range"]::-moz-range-thumb {
     .settings-row label,
     .settings-row select,
     .modal-content select,
-    #leaderboard {
+    #leaderboard,
+    #synop-leaderboard,
+    #rds-leaderboard {
         font-size: 16px;
     }
 
@@ -1214,5 +1283,12 @@ input[type="range"]::-moz-range-thumb {
         width: 36px;
         height: 36px;
         font-size: 20px;
+    }
+
+    /* Symmetrically scale up the segmented tab switches on QHD+/4K clinical displays */
+    .tab-btn {
+        font-size: 14px !important;
+        padding: 8px 16px !important;
+        border-radius: 10px !important;
     }
 }

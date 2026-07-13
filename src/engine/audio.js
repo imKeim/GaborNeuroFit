@@ -136,11 +136,20 @@ export function playSlip(isMuted) {
 }
 
 // Play positive dopamine-releasing Crystal Chime major chord (La-Do#-Mi / A-C#-E)
-export function playSuccess(isMuted) {
+export function playSuccess(isMuted, panValue = 0.0) {
     if (isMuted) return;
     try {
         initAudio();
         const now = audioCtx.currentTime + 0.015;
+        
+        // Create StereoPannerNode if supported by browser to enable spatial sound rewards
+        let destination = audioCtx.destination;
+        if (audioCtx.createStereoPanner && panValue !== 0.0) {
+            const panner = audioCtx.createStereoPanner();
+            panner.pan.setValueAtTime(panValue, now);
+            panner.connect(audioCtx.destination);
+            destination = panner;
+        }
         
         // Pitch 1: Root Note A (880 Hz)
         const osc1 = audioCtx.createOscillator();
@@ -170,13 +179,13 @@ export function playSuccess(isMuted) {
         gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
         
         osc1.connect(gain1);
-        gain1.connect(audioCtx.destination);
+        gain1.connect(destination);
         
         osc2.connect(gain2);
-        gain2.connect(audioCtx.destination);
+        gain2.connect(destination);
         
         osc3.connect(gain3);
-        gain3.connect(audioCtx.destination);
+        gain3.connect(destination);
         
         osc1.start(now);
         osc1.stop(now + 0.18);

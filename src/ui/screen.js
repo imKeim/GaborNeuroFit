@@ -11,6 +11,18 @@ import { drawFusionLockFrame } from '../engine/gabor.js';
 // Physiological constant: 16 pixels shift equates to 1 Prism Diopter (Δ) at 50-70cm working distance.
 const PIXELS_PER_PRISM_DIOPTER = 16.0;
 
+/**
+ * @description Symmetrical string template interpolator. Replaces '{key}' with actual data values.
+ * Keeps JS logic completely decoupled from localization strings, maintaining i18n SSoT.
+ * @public
+ */
+export function interpolate(template, data) {
+    if (!template) return '';
+    return template.replace(/{(\w+)}/g, (match, key) => {
+        return data[key] !== undefined ? data[key] : match;
+    });
+}
+
 // Procedurally render lightweight, hardware-optimal SVG progress chart without any external dependencies
 export function renderProgressChart(sessions, translations) {
     const container = document.getElementById('progress-chart-container');
@@ -83,6 +95,62 @@ export function renderProgressChart(sessions, translations) {
             <polyline points="${points.join(' ')}" fill="none" stroke="url(#chart-grad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
             
             <!-- Visual milestone nodes -->
+            ${circles.join('')}
+        </svg>
+    `;
+}
+
+// Procedurally render lightweight SVG stereopsis progress chart
+export function renderRdsProgressChart(sessions, translations) {
+    const container = document.getElementById('rds-chart-container');
+    if (!container) return;
+
+    if (!sessions || sessions.length < 2) {
+        container.innerHTML = `<span style="font-size: 11px; color: #8e8e93; text-align: center; padding: 0 10px; font-weight: 300; line-height: 1.45;">${translations.chartPlaceholder}</span>`;
+        return;
+    }
+
+    const chartSessions = sessions.slice(0, 10).reverse();
+    const width = 320;
+    const height = 120;
+    const leftMargin = 32;
+    const rightMargin = 15;
+    const topMargin = 15;
+    const bottomMargin = 15;
+
+    const W = width - leftMargin - rightMargin;
+    const H = height - topMargin - bottomMargin;
+    const stepX = W / (chartSessions.length - 1);
+
+    const points = [];
+    const circles = [];
+
+    chartSessions.forEach((s, idx) => {
+        const d = s.rdsDisparity !== undefined ? s.rdsDisparity : 4;
+        const x = leftMargin + idx * stepX;
+        
+        // Symmetrical progress trajectory: 1px (best resolution) is at topMargin, 8px is at bottom
+        const y = topMargin + ((d - 1) / 7.0) * H;
+        points.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+        circles.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="#eab308" stroke="#1c2331" stroke-width="1.5" />`);
+    });
+
+    container.innerHTML = `
+        <svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" style="overflow: visible; display: block;">
+            <defs>
+                <linearGradient id="rds-grad" x1="${leftMargin}" y1="0" x2="${width - rightMargin}" y2="0" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="#3b90ff" />
+                    <stop offset="100%" stop-color="#eab308" />
+                </linearGradient>
+            </defs>
+            
+            <line x1="${leftMargin}" y1="${topMargin}" x2="${width - rightMargin}" y2="${topMargin}" stroke="rgba(255,255,255,0.04)" stroke-dasharray="2,2" />
+            <line x1="${leftMargin}" y1="${topMargin + H}" x2="${width - rightMargin}" y2="${topMargin + H}" stroke="rgba(255,255,255,0.04)" stroke-dasharray="2,2" />
+            
+            <text x="${leftMargin - 6}" y="${topMargin + 4}" fill="rgba(255,255,255,0.3)" font-size="9px" text-anchor="end" font-weight="bold">1px</text>
+            <text x="${leftMargin - 6}" y="${topMargin + H + 3}" fill="rgba(255,255,255,0.3)" font-size="9px" text-anchor="end" font-weight="bold">8px</text>
+            
+            <polyline points="${points.join(' ')}" fill="none" stroke="url(#rds-grad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
             ${circles.join('')}
         </svg>
     `;
@@ -196,6 +264,7 @@ export function updateScoreboard(state, translations) {
     const scoreTextEl = document.getElementById('score-text');
     const indicatorsEl = document.getElementById('indicators');
     const synopIndicatorsEl = document.getElementById('synop-indicators');
+    const rdsIndicatorsEl = document.getElementById('rds-indicators');
     const progressContainer = document.getElementById('synop-progress-container');
     const progressBar = document.getElementById('synop-progress-bar');
 
@@ -207,6 +276,7 @@ export function updateScoreboard(state, translations) {
         
         // 2. Hide Gabor status badges, reveal Synoptophore prism diopter widgets
         if (indicatorsEl) indicatorsEl.style.display = 'none';
+        if (rdsIndicatorsEl) rdsIndicatorsEl.style.display = 'none';
         if (synopIndicatorsEl) {
             synopIndicatorsEl.style.display = 'flex';
             
@@ -240,6 +310,25 @@ export function updateScoreboard(state, translations) {
                 progressBar.style.width = '0%';
             }
         }
+    } else if (state.appMode === 'rds') {
+        // RDS Mode: Symmetrically restore stereoscopic scoreboard panel states
+        if (scoreTextEl) {
+            scoreTextEl.innerHTML = `${t.correctLabel}: <strong>${state.rdsScore}</strong> / ${t.totalLabel}: <strong>${state.rdsTotal}</strong>`;
+        }
+        if (indicatorsEl) indicatorsEl.style.display = 'none';
+        if (synopIndicatorsEl) synopIndicatorsEl.style.display = 'none';
+        if (progressContainer) progressContainer.style.display = 'none';
+        if (rdsIndicatorsEl) {
+            rdsIndicatorsEl.style.display = 'flex';
+            
+            const badgeDisparity = document.getElementById('badge-rds-disparity');
+            const badgeLevel = document.getElementById('badge-rds-level');
+            const badgeStreak = document.getElementById('badge-rds-streak');
+            
+            if (badgeDisparity) badgeDisparity.innerHTML = `${t.lblActiveDepth || 'Depth'}: <strong>${state.rdsDisparity}px</strong>`;
+            if (badgeLevel) badgeLevel.innerHTML = `${t.stage || 'Stage'}: <strong>${state.rdsLevel}/5</strong>`;
+            if (badgeStreak) badgeStreak.innerHTML = `🔥 <strong>${state.rdsStreak}</strong>`;
+        }
     } else {
         // Gabor Mode: Symmetrically restore classic scoreboard panel states
         if (scoreTextEl) {
@@ -247,65 +336,55 @@ export function updateScoreboard(state, translations) {
         }
         if (indicatorsEl) indicatorsEl.style.display = 'flex';
         if (synopIndicatorsEl) synopIndicatorsEl.style.display = 'none';
+        if (rdsIndicatorsEl) rdsIndicatorsEl.style.display = 'none';
         if (progressContainer) progressContainer.style.display = 'none';
     }
     
     // Select indicators elements (maintained in DOM to prevent Gabor logic null-reference exceptions)
     const contrastEl = document.getElementById('current-contrast');
     const levelEl = document.getElementById('current-level');
-    const streakEl = document.getElementById('current-streak');
+    const gaborStreakEl = document.getElementById('badge-gabor-streak');
     
     // Feed Gabor badges with actual parameters cleanly
     if (contrastEl) contrastEl.innerText = Math.round(state.autoContrast * 100);
     if (levelEl) levelEl.innerText = state.currentLevel;
-    if (streakEl) streakEl.innerText = state.correctStreak;
+    if (gaborStreakEl) gaborStreakEl.innerHTML = `🔥 <strong>${state.correctStreak}</strong>`;
 
     // Resolve Pomodoro active timer state display mapping
     const timerGabor = document.getElementById('badge-timer-gabor');
     const timerSynop = document.getElementById('badge-timer-synop');
+    const timerRds = document.getElementById('badge-timer-rds');
     
     if (state.timerLimitMinutes > 0) {
         const timeStr = formatTimerDisplay(state.timerRemainingSeconds);
         if (timerGabor) { timerGabor.style.display = 'inline-block'; timerGabor.innerHTML = `🍅 ${timeStr}`; }
         if (timerSynop) { timerSynop.style.display = 'inline-block'; timerSynop.innerHTML = `🍅 ${timeStr}`; }
+        if (timerRds) { timerRds.style.display = 'inline-block'; timerRds.innerHTML = `🍅 ${timeStr}`; }
         if (window.twemoji) {
             if (timerGabor) twemoji.parse(timerGabor);
             if (timerSynop) twemoji.parse(timerSynop);
+            if (timerRds) twemoji.parse(timerRds);
         }
     } else {
         if (timerGabor) timerGabor.style.display = 'none';
         if (timerSynop) timerSynop.style.display = 'none';
+        if (timerRds) timerRds.style.display = 'none';
     }
 }
 
 // Helper to resolve compact mode tags for the leaderboard view
-export function getCompactPresetLabel(mode, lang) {
-    if (lang === 'ru') {
-        if (mode === 'occlusion') return '🩹 Повязка';
-        if (mode === 'binocular') return '🕶️ 3D Баланс';
-        if (mode === 'peripheral') return '🎯 3D Перифер.';
-        if (mode === 'blitz') return '⚡ Блиц';
-        if (mode === 'flicker') return '🌀 3D Фликкер';
-        if (mode === 'synoptophore') return '🧲 Вергенция';
-        return '⚙️ Ручной';
-    } else {
-        if (mode === 'occlusion') return '🩹 Patching';
-        if (mode === 'binocular') return '🕶️ 3D Balance';
-        if (mode === 'peripheral') return '🎯 3D Capture';
-        if (mode === 'blitz') return '⚡ Speed Blitz';
-        if (mode === 'flicker') return '🌀 3D Flicker';
-        if (mode === 'synoptophore') return '🧲 Vergence';
-        return '⚙️ Custom';
-    }
+export function getCompactPresetLabel(mode, translations) {
+    const key = 'lblCompactPreset' + mode.charAt(0).toUpperCase() + mode.slice(1);
+    return translations[key] || mode;
 }
 
 // Helper to localize flash speed settings symmetrically
-function getSpeedName(speedMode, lang) {
-    if (speedMode === '100') return '100мс';
-    if (speedMode === '180') return '180мс';
-    if (speedMode === '200') return '200мс';
-    if (speedMode === '350') return '350мс';
-    return lang === 'ru' ? 'Адапт.' : 'Adapt.';
+function getSpeedName(speedMode, translations) {
+    if (speedMode === 'adaptive') {
+        return translations.unitMsAdaptive || 'Adapt.';
+    }
+    const unit = translations.unitMs || 'ms';
+    return `${speedMode}${unit}`;
 }
 
 // Populate the local highscores leaderboard table with historical session metrics
@@ -342,16 +421,21 @@ export function updateLeaderboard(historyList, translations, currentLang) {
         const eyeLabel = item.lazyEyeSide === 'right' ? (currentLang === 'ru' ? 'П' : 'R') : (currentLang === 'ru' ? 'Л' : 'L');
 
         // Row 2: Core Game Results (Score, Level, Contrast)
-        const line2Text = currentLang === 'ru' 
-            ? `Счет: <strong>${item.score}/${item.total}</strong> | Этап: ${item.level} | Контраст: ${item.contrast}% | Глаз: ${eyeLabel}`
-            : `Score: <strong>${item.score}/${item.total}</strong> | Stage: ${item.level} | Contrast: ${item.contrast}% | Eye: ${eyeLabel}`;
+        const line2Text = interpolate(t.gaborLeaderboardStats, {
+            score: item.score,
+            total: item.total,
+            level: item.level,
+            contrast: item.contrast,
+            eye: eyeLabel
+        });
         
         // Row 3: Technical clinical settings (Speed, Attenuation balancer)
-        const line3Text = currentLang === 'ru'
-            ? `Экспозиция: ${getSpeedName(speed, 'ru')} | Контраст здорового глаза: ${isAnaglyph ? balance + '%' : 'Выкл'}`
-            : `Exposure: ${getSpeedName(speed, 'en')} | Strong Eye Contrast: ${isAnaglyph ? balance + '%' : 'Off'}`;
+        const line3Text = interpolate(t.gaborLeaderboardDetails, {
+            speed: getSpeedName(speed, t),
+            balance: isAnaglyph ? balance + '%' : (t.optAutonextOff ? t.optAutonextOff.split(' ')[0] : 'Off')
+        });
 
-        const localizedMode = getCompactPresetLabel(protocol, currentLang);
+        const localizedMode = getCompactPresetLabel(protocol, t);
 
         return `
             <li class="leaderboard-item" style="flex-direction: column; align-items: flex-start; gap: 4px; padding-bottom: 8px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05);">
@@ -373,7 +457,7 @@ export function updateLeaderboard(historyList, translations, currentLang) {
     }).join('');
 }
 
-// Populate local highscores table for motor vergence history (Итерация 4)
+// Populate local highscores table for motor vergence history
 export function updateSynopLeaderboard(historyList, translations, currentLang) {
     const leaderboardList = document.getElementById('leaderboard-list-synop');
     if (!leaderboardList) return;
@@ -409,14 +493,23 @@ export function updateSynopLeaderboard(historyList, translations, currentLang) {
         const percent = Math.max(0, Math.min(100, Math.round(100 * (1 - currentDist / startDist))));
 
         const outcomeText = outcome === 'success'
-            ? (currentLang === 'ru' ? `<span style="color: #22c55e; font-weight: bold;">Идеальное слияние 100%! 🏆</span>` : `<span style="color: #22c55e; font-weight: bold;">Perfect Fusion 100%! 🏆</span>`)
-            : (currentLang === 'ru' ? `Срыв на ${Math.round(currentDist)}px (${percent}% удержания)` : `Slipped at ${Math.round(currentDist)}px (${percent}% hold, started at ${Math.round(startDist)}px)`);
+            ? (t.synopSuccessOutcome || "Perfect Fusion 100%! 🏆")
+            : interpolate(t.synopSlipOutcome || "Slipped at {current}px ({percent}% hold)", {
+                current: Math.round(currentDist),
+                percent: percent,
+                start: Math.round(startDist)
+              });
 
-        const line2Text = currentLang === 'ru'
-            ? `Угол: X: ${signX}${Math.abs(targetX)}px (${signX}${pdX}Δ) | Y: ${signY}${Math.abs(targetY)}px (${signY}${pdY}Δ)`
-            : `Angle: X: ${signX}${Math.abs(targetX)}px (${signX}${pdX}Δ) | Y: ${signY}${Math.abs(targetY)}px (${signY}${pdY}Δ)`;
+        const line2Text = interpolate(t.synopLeaderboardStats, {
+            signX: signX,
+            x: Math.abs(targetX),
+            pdX: pdX,
+            signY: signY,
+            y: Math.abs(targetY),
+            pdY: pdY
+        });
 
-        const modeLabel = getCompactPresetLabel('synoptophore', currentLang);
+        const modeLabel = getCompactPresetLabel('synoptophore', t);
 
         return `
             <li class="leaderboard-item" style="flex-direction: column; align-items: flex-start; gap: 4px; padding-bottom: 8px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05);">
@@ -435,14 +528,73 @@ export function updateSynopLeaderboard(historyList, translations, currentLang) {
     }).join('');
 }
 
+// Populate local highscores table for stereoscopic history
+export function updateRdsLeaderboard(historyList, translations, currentLang) {
+    const leaderboardList = document.getElementById('leaderboard-list-rds');
+    if (!leaderboardList) return;
+    const t = translations;
+
+    if (historyList.length === 0) {
+        leaderboardList.innerHTML = `<li class="leaderboard-item" style="justify-content: center; color: #cbd5e1; text-align: center; padding: 14px 0;">${t.noHistory}</li>`;
+        return;
+    }
+
+    leaderboardList.innerHTML = historyList.map((item, idx) => {
+        const rdsDotSize = item.rdsDotSize || 4;
+        const rdsDensity = item.rdsDensity ? Math.round(item.rdsDensity * 100) : 50;
+        const rdsDisparity = item.rdsDisparity || 4;
+        const rdsLevel = item.level || 1;
+
+        const dateStr = item.timestamp 
+            ? new Date(item.timestamp).toLocaleDateString(currentLang === 'ru' ? 'ru-RU' : 'en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })
+            : '00:00';
+
+        const line2Text = interpolate(t.rdsLeaderboardStats, {
+            score: item.score,
+            total: item.total,
+            level: rdsLevel,
+            disparity: rdsDisparity
+        });
+
+        const line3Text = interpolate(t.rdsLeaderboardDetails, {
+            size: rdsDotSize,
+            density: rdsDensity
+        });
+
+        const modeLabel = getCompactPresetLabel('rds', t);
+
+        return `
+            <li class="leaderboard-item" style="flex-direction: column; align-items: flex-start; gap: 4px; padding-bottom: 8px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <div style="width: 100%; display: flex; justify-content: space-between; font-weight: bold; color: rgba(255,255,255,0.4); font-size: 11px;">
+                    <span>#${idx + 1} (${dateStr})</span>
+                    <span>${modeLabel}</span>
+                </div>
+                <div style="font-size: 13px; color: #f1f3f9; font-weight: 500; line-height: 1.35; word-wrap: break-word;">
+                    ${line2Text}
+                </div>
+                <div style="font-size: 11px; color: #a1a1aa; line-height: 1.35; word-wrap: break-word; width: 100%;">
+                    ${line3Text}
+                </div>
+            </li>
+        `;
+    }).join('');
+}
+
 // Update the bottom-bar presets guide and active flash speed duration indicators
 export function updateStatusBar(state, translations) {
     const t = translations;
     let modeStr = t.optPresetOcclusion;
-    let speedStr = "Adaptive";
+    let speedStr = t.statusBarAdaptive || "Adaptive";
 
     // Map active protocol localized string
-    if (state.presetMode === 'synoptophore' || state.appMode === 'synoptophore') {
+    if (state.appMode === 'rds') {
+        modeStr = t.optPresetRDS || "🧊 Stereogram";
+    } else if (state.presetMode === 'synoptophore' || state.appMode === 'synoptophore') {
         modeStr = t.optPresetSynoptophore || "🧲 Synoptophore";
     } else if (state.presetMode === 'occlusion') {
         modeStr = t.optPresetOcclusion;
@@ -462,22 +614,27 @@ export function updateStatusBar(state, translations) {
     if (state.appMode === 'synoptophore') {
         // Translate motor pull delay smoothly to readable physical units
         const seconds = (state.synopPullSpeed / 1000).toFixed(1);
-        speedStr = state.currentLang === 'ru' ? `1 пикс / ${seconds}с` : `1 px / ${seconds}s`;
+        speedStr = interpolate(t.statusBarSynopSpeed || "1 px / {seconds}s", { seconds: seconds });
+    } else if (state.appMode === 'rds') {
+        // Symmetrically format the active RDS speed in terms of dot size and density
+        const densityPercent = Math.round(state.rdsDensity * 100);
+        speedStr = interpolate(t.statusBarRdsSpeed || "Dot: {size}px | Noise: {density}%", { size: state.rdsDotSize, density: densityPercent });
     } else if (state.flashDurationMode === '100') {
-        speedStr = "100 ms";
+        speedStr = interpolate(t.statusBarUnitSeconds || "{seconds} ms", { seconds: 100 });
     } else if (state.flashDurationMode === '180') {
-        speedStr = "180 ms";
+        speedStr = interpolate(t.statusBarUnitSeconds || "{seconds} ms", { seconds: 180 });
     } else if (state.flashDurationMode === '200') {
-        speedStr = "200 ms";
+        speedStr = interpolate(t.statusBarUnitSeconds || "{seconds} ms", { seconds: 200 });
     } else if (state.flashDurationMode === '350') {
-        speedStr = "350 ms";
+        speedStr = interpolate(t.statusBarUnitSeconds || "{seconds} ms", { seconds: 350 });
     } else {
         // Adaptive temporal pacing scaling down to prevent saccadic ocular cheats at high stages
-        if (state.currentLevel === 1) speedStr = "240 ms";
-        else if (state.currentLevel === 2) speedStr = "200 ms";
-        else if (state.currentLevel === 3) speedStr = "170 ms";
-        else if (state.currentLevel === 4) speedStr = "140 ms";
-        else if (state.currentLevel === 5) speedStr = "110 ms";
+        let adaptiveMs = 110;
+        if (state.currentLevel === 1) adaptiveMs = 240;
+        else if (state.currentLevel === 2) adaptiveMs = 200;
+        else if (state.currentLevel === 3) adaptiveMs = 170;
+        else if (state.currentLevel === 4) adaptiveMs = 140;
+        speedStr = interpolate(t.statusBarUnitSeconds || "{seconds} ms", { seconds: adaptiveMs });
     }
 
     const valActiveMode = document.getElementById('val-active-mode');

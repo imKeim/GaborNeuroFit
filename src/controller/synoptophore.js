@@ -54,7 +54,9 @@ export class SynoptophoreController {
             this.tracker.animationFrames.delete(this.flickerFrameId);
             this.flickerFrameId = null;
         }
-        drawSynoptophoreTargets(this.overlayCanvas, this.overlayCtx, Store.state, 1.0);
+        if (Store.state.appMode === 'synoptophore') {
+            drawSynoptophoreTargets(this.overlayCanvas, this.overlayCtx, Store.state, 1.0);
+        }
     }
 
     syncFlickerState() {
@@ -68,7 +70,7 @@ export class SynoptophoreController {
     abort() {
         this.stopFlickerLoop();
         this.tracker.clearAll();
-        Store.updateState('synopState', 'align');
+        Store.updateState('synopState', 'idle');
     }
 
     handlePrimaryAction() {
@@ -105,6 +107,9 @@ export class SynoptophoreController {
 
         this.tracker.clearAll();
         this.syncFlickerState();
+
+        // Start global Pomodoro tracking as soon as Synoptophore vergence starts pulling
+        Store.startTimerIfNeeded();
 
         Store.updateState('synopStartDistance', dist);
         Store.updateState('synopState', 'pulling');
@@ -205,8 +210,12 @@ export class SynoptophoreController {
         Store.updateState('synopTargetX', this.startX);
         Store.updateState('synopTargetY', this.startY);
 
-        Store.updateState('synopState', 'align');
-        this.btnStart.innerText = t.btnSynopLock;
+        Store.updateState('synopState', 'idle');
+        this.btnStart.innerText = t.synopStartBtn || "START";
+
+        // Bring back the protective gray rest curtain
+        const curtain = document.getElementById('calibration-curtain');
+        if (curtain) curtain.classList.add('active');
 
         // Synchronize view layers safely
         if (!this.isFlickering) {
@@ -239,8 +248,12 @@ export class SynoptophoreController {
         Store.updateState('synopTargetX', 0);
         Store.updateState('synopTargetY', 0);
 
-        Store.updateState('synopState', 'align');
-        this.btnStart.innerText = t.btnSynopLock;
+        Store.updateState('synopState', 'idle');
+        this.btnStart.innerText = t.synopStartBtn || "START";
+
+        // Bring back the protective gray rest curtain
+        const curtain = document.getElementById('calibration-curtain');
+        if (curtain) curtain.classList.add('active');
 
         drawSynoptophoreTargets(this.overlayCanvas, this.overlayCtx, s);
         updateScoreboard(s, t); // Hide progress bar on success
