@@ -2,762 +2,664 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <!--
+      @clinical Viewport Lock. Prevents accidental pinch-to-zoom which would fundamentally
+      destroy the calibrated spatial frequency (cycles per degree) of the Gabor targets.
+    -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
     <title>🧿 GaborNeuroFit</title>
+
     <link rel="icon" type="image/svg+xml" href="./assets/favicon-DSgW1i4M.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- PWA & Mobile Install Manifests -->
     <link rel="manifest" href="./manifest.webmanifest">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="GaborNeuroFit">
     <link class="apple-touch-icon" href="icon-192-maskable.png">
     <meta name="theme-color" content="#131a26">
-  <script type="module" crossorigin src="./assets/index-BhG3LI5a.js"></script>
+  <script type="module" crossorigin src="./assets/index-ClB-rBsN.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-DXkDXB0S.css">
 <link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:inline-sw">if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('./sw.js', { scope: './' })})}</script></head>
 <body>
-    <!-- CRITICAL: Fullscreen hardware-accelerated overlay for success/error flash feedback -->
-    <div id="flash-overlay"></div>
+    <!--
+      @clinical FULLSCREEN CONSOLIDATION LAYER
+      Placed at the root body level to guarantee absolute 100% viewport coverage.
+      Delivers instantaneous positive/negative visual reinforcement safely via color
+      temperature, avoiding startle reflexes associated with sudden brightness changes.
+    -->
+    <div id="flash-overlay" aria-hidden="true"></div>
 
-    <!-- CRITICAL: Prevents mobile landscape layout breaks. Forced via CSS media queries -->
-    <div id="rotation-blocker">
+    <!--
+      @clinical POSTURE & ORIENTATION SHIELD
+      Forces portrait mode anatomically. Landscape viewing dramatically distorts
+      the 1:1 foveal isolation square and breaks comfortable 50-70cm ergonomic working distance.
+    -->
+    <div id="rotation-blocker" aria-hidden="true">
         <div id="rotation-text" data-i18n="lblRotationBlock"></div>
     </div>
 
+    <!-- =========================================================
+         APP SHELL (MAIN APPLICATION UI)
+         ========================================================= -->
     <div id="app-wrapper">
-        <!-- TOP HUD: Holds main settings and diagnostic triggers -->
-        <div id="top-bar">
-            <div id="app-title">🧿 GaborNeuroFit</div>
-            <div id="top-controls">
-                <div id="btn-mute" class="control-btn">🔊</div>
-                <div id="btn-pause" class="control-btn">⏸️</div>
-                <div id="btn-info" class="control-btn">ℹ️</div>
-                <div id="btn-stats" class="control-btn">📊</div>
-                <div id="btn-settings" class="control-btn">🛠️</div>
-            </div>
-        </div>
 
-        <!-- WORKSPACE: Aspect-ratio locked (1:1) training area. 
-             CRITICAL: gaborCanvas (WebGL/CPU) and overlayCanvas (2D Transparent HUD) 
-             MUST sit absolutely stacked over each other at 100% width/height. -->
-        <div id="workspace">
+        <!-- TOP HUD: System Navigation & Trigger Panel -->
+        <header id="top-bar" role="banner">
+            <h1 id="app-title" aria-label="Gabor Neuro Fit">🧿 GaborNeuroFit</h1>
+
+            <nav id="top-controls" aria-label="Application Tools">
+                <!-- Semantic buttons with explicit ARIA descriptions for clinical accessibility -->
+                <button id="btn-mute" class="control-btn" aria-label="Toggle Sound">🔊</button>
+                <button id="btn-pause" class="control-btn" aria-label="Pause Session">⏸️</button>
+                <button id="btn-info" class="control-btn" aria-label="Clinical Handbook">ℹ️</button>
+                <button id="btn-stats" class="control-btn" aria-label="Patient Dashboard">📊</button>
+                <button id="btn-settings" class="control-btn" aria-label="Therapy Settings">🛠️</button>
+            </nav>
+        </header>
+
+        <!-- MAIN: The Clinical Foveation Workspace -->
+        <main id="workspace" role="main" aria-label="Visual Stimulation Arena">
+            <!--
+              @clinical ASPECT-RATIO 1:1 CONTAINER
+              Strictly locked to a perfect square. Ensures mathematical circularity of the Gabor
+              Gaussian envelope. Deformation here would ruin the spatial frequency calculations.
+            -->
             <div id="container">
-                <canvas id="gaborCanvas" width="256" height="256"></canvas>
-                <canvas id="overlayCanvas" width="256" height="256"></canvas>
-                <div id="calibration-curtain" class="active"></div> <!-- Local curtain to mask canvas snaps dynamically -->
-                <div id="pause-watermark" data-i18n="pauseWatermark" style="display: none; position: absolute; z-index: 17; color: white; font-weight: bold; font-size: 22px; text-transform: uppercase; letter-spacing: 3px; font-family: 'Overpass', sans-serif; pointer-events: none; text-shadow: 0 2px 10px rgba(0,0,0,0.5); top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
-                <div id="cross" class="cross-dimmed">
+                <!-- GPU Hardware-Accelerated Bottom Layer (WebGL) -->
+                <canvas id="gaborCanvas" width="256" height="256" aria-hidden="true"></canvas>
+                <!-- HUD Transparent Top Layer (Canvas 2D) -->
+                <canvas id="overlayCanvas" width="256" height="256" aria-hidden="true"></canvas>
+
+                <!-- Protective Rest Shutter (Melts dynamically to avoid visual shock) -->
+                <div id="calibration-curtain" class="active" aria-hidden="true"></div>
+
+                <!-- Pause State Indicator -->
+                <div id="pause-watermark" data-i18n="pauseWatermark" style="display: none; position: absolute; z-index: 17; color: white; font-weight: bold; font-size: 22px; text-transform: uppercase; letter-spacing: 3px; font-family: 'Overpass', sans-serif; pointer-events: none; text-shadow: 0 2px 10px rgba(0,0,0,0.5); top: 50%; left: 50%; transform: translate(-50%, -50%);" aria-hidden="true"></div>
+
+                <!--
+                  @clinical FOVEAL ANCHOR (FIXATION CROSS)
+                  Crucial for controlling eccentric fixation. Patients must look strictly here
+                  and resolve targets in their para-fovea to trigger true neurological plasticity.
+                -->
+                <div id="cross" class="cross-dimmed" aria-hidden="true">
                     <div class="cross-line-h"></div>
                     <div class="cross-line-v"></div>
                 </div>
             </div>
-        </div>
+        </main>
 
-        <!-- BOTTOM HUD: Session scoreboard, status descriptors, and user tactile inputs -->
-        <div id="bottom-dock">
-            <div id="score-board">
+        <!-- FOOTER: Telemetry, Biofeedback & Input Deck -->
+        <footer id="bottom-dock">
+
+            <!--
+              @clinical LIVE TELEMETRY BOARD
+              Uses aria-live="polite" to gently announce score changes to visually impaired
+              patients via VoiceOver / TalkBack without interrupting the flow.
+            -->
+            <section id="score-board" aria-live="polite" aria-atomic="true">
                 <div id="score-text"></div>
+
+                <!-- Gabor Badges -->
                 <div id="indicators">
-                    <!-- i18n Engine: Uses data-i18n for secure plain-text content injection (textContent) -->
                     <span class="badge" style="color: #22c55e; border-color: rgba(34, 197, 94, 0.3); background: rgba(34, 197, 94, 0.12);"><span data-i18n="stage"></span>: <span id="current-level">1</span>/5</span>
                     <span class="badge" style="color: #3b90ff; border-color: rgba(59, 144, 255, 0.3); background: rgba(59, 144, 255, 0.12);"><span data-i18n="contrast"></span>: <span id="current-contrast">50</span>%</span>
                     <span id="badge-gabor-streak" class="badge" style="color: #eab308; border-color: rgba(234, 179, 8, 0.3); background: rgba(234, 179, 8, 0.12); font-weight: bold;">🔥 0</span>
                     <span id="badge-timer-gabor" class="badge" style="display: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.12);">🍅 00:00</span>
                 </div>
-                <!-- Dual Synoptophore Stats Badges (Eliminates layout vibrations) -->
+
+                <!-- Synoptophore Badges -->
                 <div id="synop-indicators" style="display: none; justify-content: center; gap: 6px;">
                     <span id="badge-prism-x" class="badge" style="color: #3b90ff; border-color: rgba(59, 144, 255, 0.3); background: rgba(59, 144, 255, 0.12);">X: 0px (0.00Δ)</span>
                     <span id="badge-prism-y" class="badge" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.12);">Y: 0px (0.00Δ)</span>
                     <span id="badge-synop-score" class="badge" style="color: #eab308; border-color: rgba(234, 179, 8, 0.3); background: rgba(234, 179, 8, 0.12); font-weight: bold;">🏆 0</span>
                     <span id="badge-timer-synop" class="badge" style="display: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.12);">🍅 00:00</span>
                 </div>
-                <!-- Dual RDS Stats Badges (Eliminates layout vibrations) -->
+
+                <!-- RDS Badges -->
                 <div id="rds-indicators" style="display: none; justify-content: center; gap: 6px;">
                     <span id="badge-rds-level" class="badge" style="color: #22c55e; border-color: rgba(34, 197, 94, 0.3); background: rgba(34, 197, 94, 0.12);">Stage: 1/5</span>
                     <span id="badge-rds-disparity" class="badge" style="color: #3b90ff; border-color: rgba(59, 144, 255, 0.3); background: rgba(59, 144, 255, 0.12);">Depth: 4px</span>
                     <span id="badge-rds-streak" class="badge" style="color: #eab308; border-color: rgba(234, 179, 8, 0.3); background: rgba(234, 179, 8, 0.12); font-weight: bold;">🔥 0</span>
                     <span id="badge-timer-rds" class="badge" style="display: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.12);">🍅 00:00</span>
                 </div>
-                <!-- Dynamic Ocular Vergence Progress Bar (Smooth hardware-accelerated transitions) -->
-                <div id="synop-progress-container" style="display: none; width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 4px; margin-top: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.02);">
+
+                <!-- Dynamic Ocular Vergence Progress Bar (Hardware Accelerated) -->
+                <div id="synop-progress-container" style="display: none; width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 4px; margin-top: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.02);" aria-hidden="true">
                     <div id="synop-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #007aff, #22c55e); transition: width 0.25s cubic-bezier(0.25, 1, 0.5, 1);"></div>
                 </div>
-            </div>
+            </section>
 
-            <div id="controls-layout">
-                <div id="mode-status-bar">
+            <!-- TACTILE INPUT DECK -->
+            <section id="controls-layout" aria-label="Therapy Controls">
+                <!-- Active Template & Temporal Constraints -->
+                <div id="mode-status-bar" aria-hidden="true">
                     <span><span data-i18n="lblActiveMode">Mode</span>: <strong id="val-active-mode" style="color: #007aff;">Classic</strong></span>
                     <span><span data-i18n="lblActiveSpeed">Speed</span>: <strong id="val-active-speed">Adaptive</strong></span>
                 </div>
-                <!-- CRITICAL: btn-start is dynamically populated procedurally in app.js on load/state change. No static i18n. -->
-                <button id="btn-start"></button>
+
+                <!-- PRIMARY TRIGGER (Operated strictly by State Machines via Typescript Injection) -->
+                <button type="button" id="btn-start" aria-label="Execute Primary Action"></button>
+
+                <!-- MOTOR/SENSORY SWITCHAROOS -->
                 <div id="action-buttons">
-                    <button class="action-btn" id="btn-left">
+                    <button type="button" class="action-btn" id="btn-left" aria-label="Choose Left">
                         <span>◀</span>
                         <div class="btn-label" data-i18n="leftBtn"></div>
                     </button>
-                    <button class="action-btn" id="btn-reset" style="display: none;">
+                    <button type="button" class="action-btn" id="btn-reset" aria-label="Reset Coordinates" style="display: none;">
                         <span>🔄</span>
                         <div class="btn-label" data-i18n="resetBtn"></div>
                     </button>
-                    <button class="action-btn" id="btn-right">
+                    <button type="button" class="action-btn" id="btn-right" aria-label="Choose Right">
                         <span>▶</span>
                         <div class="btn-label" data-i18n="rightBtn"></div>
                     </button>
                 </div>
-            </div>
-        </div>
-    </div>
+            </section>
 
-    <!-- CONFIGURATION PANEL MODAL: Scrollable settings cards -->
-    <div id="settings-modal" class="modal">
-        <div class="modal-content">
-            <h2 data-i18n="settingsTitle"></h2>
-            
-            <!-- Symmetrical Settings Mode Switcher (3-Tab config) -->
-            <div id="settings-mode-bar" style="display: flex; background: #131a26; padding: 4px; border-radius: 10px; border: 1px solid #2b354a; margin-bottom: 14px; margin-left: auto; margin-right: auto; width: 100%;">
-                <button id="settings-tab-gabor" class="tab-btn active" data-i18n="tabGabor"></button>
-                <button id="settings-tab-synop" class="tab-btn" data-i18n="tabSynop"></button>
-                <button id="settings-tab-rds" class="tab-btn" data-i18n="tabRDS"></button>
-            </div>
-            
-            <div class="modal-scroll-body">
-                
-                <!-- GROUP 1: Core clinical setup (Default expanded) -->
-                <div class="accordion-header" id="accordion-header-1">
-                    <span data-i18n="lblSettingGroup1"></span>
-                    <span class="accordion-arrow active" id="accordion-arrow-1">›</span>
-                </div>
-                <div class="accordion-content open" id="accordion-content-1">
-                    <div class="settings-row">
-                        <label data-i18n="lblSettingLang"></label>
-                        <select id="select-lang">
-                            <option value="en">🇬🇧 English</option>
-                            <option value="ru">🇷🇺 Русский</option>
-                        </select>
-                    </div>
-                    <div class="settings-row" id="row-preset-mode" data-visible-in="gabor" style="flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 5px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingPreset"></label>
-                            <!-- CRITICAL: Always preserve complete closing select tags. Do not truncate brackets. 
-                                 Option tags utilize data-i18n for dynamic language injection. -->
-                            <select id="select-preset-mode">
-                                <option value="occlusion" data-i18n="optPresetOcclusion"></option>
-                                <option value="blitz" data-i18n="optPresetBlitz"></option>
-                                <option value="binocular" data-i18n="optPresetBinocular"></option>
-                                <option value="flicker" data-i18n="optPresetFlicker"></option>
-                                <option value="peripheral" data-i18n="optPresetPeripheral"></option>
-                                <option value="custom" data-i18n="optPresetCustom"></option>
-                            </select>
-                        </div>
-                        <span class="settings-help" data-i18n="helpPresetMode" id="help-preset-mode"></span>
-                    </div>
-                    <!-- Gabor Level Selector Row -->
-                    <div class="settings-row" id="row-start-level" data-visible-in="gabor" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingStartLevel"></label>
-                            <select id="select-start-level">
-                                <option value="1" id="opt-stage-1"></option>
-                                <option value="2" id="opt-stage-2"></option>
-                                <option value="3" id="opt-stage-3"></option>
-                                <option value="4" id="opt-stage-4"></option>
-                                <option value="5" id="opt-stage-5"></option>
-                            </select>
-                        </div>
-                        <span class="settings-help" data-i18n="helpStartLevel" id="help-start-level"></span>
-                    </div>
-                    <div class="settings-row" id="row-autonext" data-visible-in="gabor" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingAutonext"></label>
-                            <select id="select-autonext">
-                                <option value="true" data-i18n="optAutonextOn"></option>
-                                <option value="false" data-i18n="optAutonextOff"></option>
-                            </select>
-                        </div>
-                        <span class="settings-help" data-i18n="helpAutonext"></span>
-                    </div>
-                    <!-- RDS Dedicated Auto-Next Selector Row -->
-                    <div class="settings-row" id="row-rds-autonext" data-visible-in="rds" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingRdsAutonext"></label>
-                            <select id="select-rds-autonext">
-                                <option value="true" data-i18n="optAutonextOn"></option>
-                                <option value="false" data-i18n="optAutonextOff"></option>
-                            </select>
-                        </div>
-                        <span class="settings-help" data-i18n="helpRdsAutonext"></span>
-                    </div>
-                    <!-- Unified Session Limit Row (Positioned dynamically under levels/autonext) -->
-                    <div class="settings-row" id="row-session-limit" data-visible-in="gabor,rds" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingLimit"></label>
-                            <select id="select-session-limit">
-                                <!-- Dynamic options generated by settings.js -->
-                            </select>
-                        </div>
-                        <span class="settings-help" data-i18n="helpSessionLimit"></span>
-                    </div>
-                    <div class="settings-row" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0; flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingTimerLimit"></label>
-                            <select id="select-timer-limit">
-                                <option value="0" data-i18n="optTimerOff"></option>
-                                <option value="5" data-i18n="optTimer5"></option>
-                                <option value="10" data-i18n="optTimer10"></option>
-                                <option value="15" data-i18n="optTimer15"></option>
-                                <option value="20" data-i18n="optTimer20"></option>
-                            </select>
-                        </div>
-                        <span class="settings-help" data-i18n="helpTimerLimit"></span>
-                    </div>
-                </div>
+        </footer>
 
-                <!-- GROUP 2: Temporal stimulation pacing (Default collapsed) -->
-                <div class="accordion-header" id="accordion-header-2" data-visible-in="gabor">
-                    <span data-i18n="lblSettingGroup2"></span>
-                    <span class="accordion-arrow" id="accordion-arrow-2">›</span>
-                </div>
-                <div class="accordion-content" id="accordion-content-2" data-visible-in="gabor">
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingFlash"></label>
-                            <select id="select-flash-duration">
-                                <option value="adaptive" data-i18n="optFlashAdaptive"></option>
-                                <option value="100" data-i18n="optFlash100"></option>
-                                <option value="180" data-i18n="optFlash180"></option>
-                                <option value="200" data-i18n="optFlash200"></option>
-                                <option value="350" data-i18n="optFlash350"></option>
-                            </select>
-                        </div>
-                        <span class="settings-help" data-i18n="helpFlashDuration" id="help-flash-duration"></span>
-                    </div>
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingStageAdvance"></label>
-                            <input type="checkbox" id="chk-stage-advance">
-                        </div>
-                        <span class="settings-help" data-i18n="helpStageAdvance" id="help-stage-advance"></span>
-                    </div>
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingStatic"></label>
-                            <input type="checkbox" id="chk-static">
-                        </div>
-                        <span class="settings-help" data-i18n="helpStatic" id="help-static"></span>
-                    </div>
-                    <!-- CRITICAL: row-flicker visibility is tied re-actively to chk-static in settings.js -->
-                    <div class="settings-row" id="row-flicker" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingFlicker"></label>
-                            <input type="checkbox" id="chk-flicker">
-                        </div>
-                        <span class="settings-help" data-i18n="helpFlicker" id="help-flicker"></span>
-                    </div>
-                </div>
+    </div> <!-- Close #app-wrapper -->
 
-                <!-- GROUP 3: Spatial configuration & anti-crowding (Default collapsed) -->
-                <div class="accordion-header" id="accordion-header-3" data-visible-in="gabor">
-                    <span data-i18n="lblSettingGroup3"></span>
-                    <span class="accordion-arrow" id="accordion-arrow-3">›</span>
-                </div>
-                <div class="accordion-content" id="accordion-content-3" data-visible-in="gabor">
-                    <!-- Permanent Cross Anchor -->
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingPermanentCross" for="chk-permanent-cross"></label>
-                            <input type="checkbox" id="chk-permanent-cross">
-                        </div>
-                        <span class="settings-help" data-i18n="helpPermanentCross" id="help-permanent-cross"></span>
-                    </div>
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingLowContrast"></label>
-                            <input type="checkbox" id="chk-low-contrast">
-                        </div>
-                        <span class="settings-help" data-i18n="helpLowContrast" id="help-low-contrast"></span>
-                    </div>
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingWideVariance"></label>
-                            <input type="checkbox" id="chk-wide-variance">
-                        </div>
-                        <span class="settings-help" data-i18n="helpWideVariance" id="help-wide-variance"></span>
-                    </div>
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingShapeVariance"></label>
-                            <input type="checkbox" id="chk-shape-variance">
-                        </div>
-                        <span class="settings-help" data-i18n="helpShapeVariance" id="help-shape-variance"></span>
-                    </div>
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingPeripheral"></label>
-                            <input type="checkbox" id="chk-peripheral">
-                        </div>
-                        <span class="settings-help" data-i18n="helpPeripheral" id="help-peripheral"></span>
-                    </div>
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingCrowding"></label>
-                            <input type="checkbox" id="chk-crowding">
-                        </div>
-                        <span class="settings-help" data-i18n="helpCrowding" id="help-crowding"></span>
-                    </div>
-                    <div class="settings-row" id="row-crowding-mode" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingCrowdingMode"></label>
-                            <select id="select-crowding-mode">
-                                <option value="vertical" data-i18n="optCrowdingVertical"></option>
-                                <option value="horizontal" data-i18n="optCrowdingHorizontal"></option>
-                                <option value="all" data-i18n="optCrowdingAll"></option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="settings-row" id="row-flanker-distance" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingFlankerDistance"></label>
-                            <select id="select-flanker-distance">
-                                <option value="2" data-i18n="optFlankerDistanceClose"></option>
-                                <option value="4" data-i18n="optFlankerDistanceFar"></option>
-                            </select>
-                        </div>
-                        <span class="settings-help" data-i18n="helpFlankerDistance"></span>
-                    </div>
-                    <!-- CRITICAL: row-orthogonal and row-dynamic visibility/opacities are tied re-actively to chk-crowding in settings.js -->
-                    <div class="settings-row" id="row-orthogonal" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingOrthogonal"></label>
-                            <input type="checkbox" id="chk-orthogonal-flankers">
-                        </div>
-                        <span class="settings-help" data-i18n="helpOrthogonal" id="help-orthogonal"></span>
-                    </div>
-                    <div class="settings-row" id="row-dynamic" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingDynamic"></label>
-                            <input type="checkbox" id="chk-dynamic-flankers">
-                        </div>
-                        <span class="settings-help" data-i18n="helpDynamic" id="help-dynamic"></span>
-                    </div>
-                </div>
+    <!-- =========================================================
+         MODALS, DIALOGS & OVERLAYS (PORTAL LAYER)
+         ========================================================= -->
+    <!--
+      @clinical PORTAL PATTERN ARCHITECTURE
+      All dialogs are hoisted completely out of the App Shell DOM flow.
+      This prevents Cumulative Layout Shifts (CLS) upon dialog rendering and
+      guarantees absolute Z-Index supremacy over the WebGL Canvas context.
+    -->
+    <aside id="modal-layer">
 
-                <!-- GROUP 4: Binocular 3D Setup & sub-pixel RGB sliders -->
-                <div class="accordion-header" id="accordion-header-4">
-                    <span data-i18n="lblSettingGroup4"></span>
-                    <span class="accordion-arrow" id="accordion-arrow-4">›</span>
-                </div>
-                <div class="accordion-content" id="accordion-content-4">
-                    <div class="settings-row" id="row-anaglyph-toggle" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingAnaglyph"></label>
-                            <input type="checkbox" id="chk-anaglyph">
-                        </div>
-                        <span class="settings-help" data-i18n="helpAnaglyph" id="help-anaglyph"></span>
-                    </div>
+        <!-- CONFIGURATION PANEL MODAL: Scrollable settings cards -->
+        <div id="settings-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+            <div class="modal-content">
+                <h2 id="settingsTitle" data-i18n="settingsTitle"></h2>
 
-                    <!-- CRITICAL: anaglyph-settings-panel opacity and disabled states are controlled re-actively by chk-anaglyph in settings.js -->
-                    <div id="anaglyph-settings-panel" style="border-top: 1px dashed #2b354a; padding-top: 12px; margin-top: 10px; margin-bottom: 0;">
+                <!-- Symmetrical Settings Mode Switcher (3-Tab config) -->
+                <nav id="settings-mode-bar" aria-label="Settings Categories" style="display: flex; background: #131a26; padding: 4px; border-radius: 10px; border: 1px solid #2b354a; margin-bottom: 14px; margin-left: auto; margin-right: auto; width: 100%;">
+                    <button type="button" id="settings-tab-gabor" class="tab-btn active" data-i18n="tabGabor"></button>
+                    <button type="button" id="settings-tab-synop" class="tab-btn" data-i18n="tabSynop"></button>
+                    <button type="button" id="settings-tab-rds" class="tab-btn" data-i18n="tabRDS"></button>
+                </nav>
+
+                <div class="modal-scroll-body" tabindex="0">
+
+                    <!-- GROUP 1: Core clinical setup (Default expanded) -->
+                    <div class="accordion-header" id="accordion-header-1" role="button" aria-expanded="true" aria-controls="accordion-content-1">
+                        <span data-i18n="lblSettingGroup1"></span>
+                        <span class="accordion-arrow active" id="accordion-arrow-1" aria-hidden="true">›</span>
+                    </div>
+                    <div class="accordion-content open" id="accordion-content-1" role="region" aria-labelledby="accordion-header-1">
                         <div class="settings-row">
-                            <label data-i18n="lblSettingRedSide"></label>
-                            <select id="select-red-side">
-                                <option value="left" data-i18n="optSideLeft"></option>
-                                <option value="right" data-i18n="optSideRight"></option>
+                            <label data-i18n="lblSettingLang" for="select-lang"></label>
+                            <select id="select-lang">
+                                <option value="en">🇬🇧 English</option>
+                                <option value="ru">🇷🇺 Русский</option>
                             </select>
                         </div>
-                        <div class="settings-row">
-                            <label data-i18n="lblSettingLazySide"></label>
-                            <select id="select-lazy-side">
-                                <option value="left" data-i18n="optSideLeft"></option>
-                                <option value="right" data-i18n="optSideRight"></option>
-                            </select>
-                        </div>
-                        <div class="settings-row" id="row-strong-attenuation" data-visible-in="gabor,synoptophore" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%;">
-                                <label data-i18n="lblSettingStrongAttenuation"></label>
-                                <span id="val-strong-attenuation" style="color: #3b90ff; font-weight: bold;">30%</span>
-                            </div>
-                            <div class="slider-row" style="display: flex; align-items: center; width: 100%; gap: 8px;">
-                                <button class="nudge-btn" data-nudge-target="range-strong-attenuation" data-nudge-step="5" data-nudge-dir="-1">−</button>
-                                <input type="range" id="range-strong-attenuation" min="10" max="100" step="5" value="30" style="flex: 1; accent-color: #007aff; cursor: pointer; margin-top: 6px;">
-                                <button class="nudge-btn" data-nudge-target="range-strong-attenuation" data-nudge-step="5" data-nudge-dir="1">+</button>
-                            </div>
-                        </div>
-                        <div class="settings-row" id="row-fusion-lock" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                        <div class="settings-row" id="row-preset-mode" data-visible-in="gabor" style="flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 5px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingFusionLock"></label>
-                                <input type="checkbox" id="chk-fusion-lock">
+                                <label data-i18n="lblSettingPreset" for="select-preset-mode"></label>
+                                <select id="select-preset-mode">
+                                    <option value="occlusion" data-i18n="optPresetOcclusion"></option>
+                                    <option value="blitz" data-i18n="optPresetBlitz"></option>
+                                    <option value="binocular" data-i18n="optPresetBinocular"></option>
+                                    <option value="flicker" data-i18n="optPresetFlicker"></option>
+                                    <option value="peripheral" data-i18n="optPresetPeripheral"></option>
+                                    <option value="custom" data-i18n="optPresetCustom"></option>
+                                </select>
                             </div>
-                            <span class="settings-help" data-i18n="helpFusionLock" id="help-fusion-lock"></span>
+                            <span class="settings-help" data-i18n="helpPresetMode" id="help-preset-mode"></span>
                         </div>
-                        <!-- Left Lens Calibration (Subpixel Red balance) -->
-                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                        <!-- Gabor Level Selector -->
+                        <div class="settings-row" id="row-start-level" data-visible-in="gabor" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <!-- i18n-html: Used for rendering translated nodes that contain embedded rich html tags (like <br>) -->
-                                <span data-i18n-html="lblSettingLeftColor" style="font-size: 13px; font-weight: 500;"></span>
-                                <span id="val-calib-r" style="color: #ef4444; font-weight: bold; font-size: 13px;">255</span>
+                                <label data-i18n="lblSettingStartLevel" for="select-start-level"></label>
+                                <select id="select-start-level">
+                                    <option value="1" id="opt-stage-1"></option>
+                                    <option value="2" id="opt-stage-2"></option>
+                                    <option value="3" id="opt-stage-3"></option>
+                                    <option value="4" id="opt-stage-4"></option>
+                                    <option value="5" id="opt-stage-5"></option>
+                                </select>
                             </div>
-                            <div class="slider-row">
-                                    <span style="width: 12px; font-size: 11px; font-weight: bold; color: #ef4444;">R</span>
-                                    <button class="nudge-btn" data-nudge-target="slider-left-r" data-nudge-step="1" data-nudge-dir="-1">−</button>
-                                    <input type="range" id="slider-left-r" min="0" max="255" value="255" style="--slider-thumb-color: #ef4444; flex: 1; height: 4px; cursor: pointer;">
-                                    <button class="nudge-btn" data-nudge-target="slider-left-r" data-nudge-step="1" data-nudge-dir="1">+</button>
+                            <span class="settings-help" data-i18n="helpStartLevel" id="help-start-level"></span>
+                        </div>
+                        <div class="settings-row" id="row-autonext" data-visible-in="gabor" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingAutonext" for="select-autonext"></label>
+                                <select id="select-autonext">
+                                    <option value="true" data-i18n="optAutonextOn"></option>
+                                    <option value="false" data-i18n="optAutonextOff"></option>
+                                </select>
+                            </div>
+                            <span class="settings-help" data-i18n="helpAutonext"></span>
+                        </div>
+                        <!-- RDS Dedicated Auto-Next Selector -->
+                        <div class="settings-row" id="row-rds-autonext" data-visible-in="rds" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingRdsAutonext" for="select-rds-autonext"></label>
+                                <select id="select-rds-autonext">
+                                    <option value="true" data-i18n="optAutonextOn"></option>
+                                    <option value="false" data-i18n="optAutonextOff"></option>
+                                </select>
+                            </div>
+                            <span class="settings-help" data-i18n="helpRdsAutonext"></span>
+                        </div>
+                        <!-- Unified Session Limit -->
+                        <div class="settings-row" id="row-session-limit" data-visible-in="gabor,rds" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingLimit" for="select-session-limit"></label>
+                                <select id="select-session-limit">
+                                    <!-- Dynamic options injected strongly by TS -->
+                                </select>
+                            </div>
+                            <span class="settings-help" data-i18n="helpSessionLimit"></span>
+                        </div>
+                        <!-- Pomodoro Limit -->
+                        <div class="settings-row" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0; flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingTimerLimit" for="select-timer-limit"></label>
+                                <select id="select-timer-limit">
+                                    <option value="0" data-i18n="optTimerOff"></option>
+                                    <option value="5" data-i18n="optTimer5"></option>
+                                    <option value="10" data-i18n="optTimer10"></option>
+                                    <option value="15" data-i18n="optTimer15"></option>
+                                    <option value="20" data-i18n="optTimer20"></option>
+                                </select>
+                            </div>
+                            <span class="settings-help" data-i18n="helpTimerLimit"></span>
+                        </div>
+                    </div>
+
+                    <!-- GROUP 2: Temporal stimulation pacing -->
+                    <div class="accordion-header" id="accordion-header-2" data-visible-in="gabor" role="button" aria-expanded="false" aria-controls="accordion-content-2">
+                        <span data-i18n="lblSettingGroup2"></span>
+                        <span class="accordion-arrow" id="accordion-arrow-2" aria-hidden="true">›</span>
+                    </div>
+                    <div class="accordion-content" id="accordion-content-2" data-visible-in="gabor" role="region" aria-labelledby="accordion-header-2">
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingFlash" for="select-flash-duration"></label>
+                                <select id="select-flash-duration">
+                                    <option value="adaptive" data-i18n="optFlashAdaptive"></option>
+                                    <option value="100" data-i18n="optFlash100"></option>
+                                    <option value="180" data-i18n="optFlash180"></option>
+                                    <option value="200" data-i18n="optFlash200"></option>
+                                    <option value="350" data-i18n="optFlash350"></option>
+                                </select>
+                            </div>
+                            <span class="settings-help" data-i18n="helpFlashDuration" id="help-flash-duration"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingStageAdvance" for="chk-stage-advance"></label>
+                                <input type="checkbox" id="chk-stage-advance">
+                            </div>
+                            <span class="settings-help" data-i18n="helpStageAdvance" id="help-stage-advance"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingStatic" for="chk-static"></label>
+                                <input type="checkbox" id="chk-static">
+                            </div>
+                            <span class="settings-help" data-i18n="helpStatic" id="help-static"></span>
+                        </div>
+                        <!-- TS Reactivity Link: row-flicker visibility is tied to chk-static -->
+                        <div class="settings-row" id="row-flicker" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingFlicker" for="chk-flicker"></label>
+                                <input type="checkbox" id="chk-flicker">
+                            </div>
+                            <span class="settings-help" data-i18n="helpFlicker" id="help-flicker"></span>
+                        </div>
+                    </div>
+
+                    <!-- GROUP 3: Spatial configuration & anti-crowding -->
+                    <div class="accordion-header" id="accordion-header-3" data-visible-in="gabor" role="button" aria-expanded="false" aria-controls="accordion-content-3">
+                        <span data-i18n="lblSettingGroup3"></span>
+                        <span class="accordion-arrow" id="accordion-arrow-3" aria-hidden="true">›</span>
+                    </div>
+                    <div class="accordion-content" id="accordion-content-3" data-visible-in="gabor" role="region" aria-labelledby="accordion-header-3">
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingPermanentCross" for="chk-permanent-cross"></label>
+                                <input type="checkbox" id="chk-permanent-cross">
+                            </div>
+                            <span class="settings-help" data-i18n="helpPermanentCross" id="help-permanent-cross"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingLowContrast" for="chk-low-contrast"></label>
+                                <input type="checkbox" id="chk-low-contrast">
+                            </div>
+                            <span class="settings-help" data-i18n="helpLowContrast" id="help-low-contrast"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingWideVariance" for="chk-wide-variance"></label>
+                                <input type="checkbox" id="chk-wide-variance">
+                            </div>
+                            <span class="settings-help" data-i18n="helpWideVariance" id="help-wide-variance"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingShapeVariance" for="chk-shape-variance"></label>
+                                <input type="checkbox" id="chk-shape-variance">
+                            </div>
+                            <span class="settings-help" data-i18n="helpShapeVariance" id="help-shape-variance"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingPeripheral" for="chk-peripheral"></label>
+                                <input type="checkbox" id="chk-peripheral">
+                            </div>
+                            <span class="settings-help" data-i18n="helpPeripheral" id="help-peripheral"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingCrowding" for="chk-crowding"></label>
+                                <input type="checkbox" id="chk-crowding">
+                            </div>
+                            <span class="settings-help" data-i18n="helpCrowding" id="help-crowding"></span>
+                        </div>
+                        <div class="settings-row" id="row-crowding-mode" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingCrowdingMode" for="select-crowding-mode"></label>
+                                <select id="select-crowding-mode">
+                                    <option value="vertical" data-i18n="optCrowdingVertical"></option>
+                                    <option value="horizontal" data-i18n="optCrowdingHorizontal"></option>
+                                    <option value="all" data-i18n="optCrowdingAll"></option>
+                                </select>
                             </div>
                         </div>
-                        <!-- Right Lens Calibration (Subpixel Green/Blue balance) -->
-                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 8px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                        <div class="settings-row" id="row-flanker-distance" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <span data-i18n-html="lblSettingRightColor" style="font-size: 13px; font-weight: 500;"></span>
-                                <div style="display: flex; gap: 8px; font-size: 13px; font-weight: bold;">
-                                    <span style="color: #22c55e;">G: <span id="val-calib-g">255</span></span>
-                                    <span style="color: #3b82f6;">B: <span id="val-calib-b">255</span></span>
+                                <label data-i18n="lblSettingFlankerDistance" for="select-flanker-distance"></label>
+                                <select id="select-flanker-distance">
+                                    <option value="2" data-i18n="optFlankerDistanceClose"></option>
+                                    <option value="4" data-i18n="optFlankerDistanceFar"></option>
+                                </select>
+                            </div>
+                            <span class="settings-help" data-i18n="helpFlankerDistance"></span>
+                        </div>
+                        <!-- TS Reactivity Link: row-orthogonal and row-dynamic opacities are tied to chk-crowding -->
+                        <div class="settings-row" id="row-orthogonal" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingOrthogonal" for="chk-orthogonal-flankers"></label>
+                                <input type="checkbox" id="chk-orthogonal-flankers">
+                            </div>
+                            <span class="settings-help" data-i18n="helpOrthogonal" id="help-orthogonal"></span>
+                        </div>
+                        <div class="settings-row" id="row-dynamic" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingDynamic" for="chk-dynamic-flankers"></label>
+                                <input type="checkbox" id="chk-dynamic-flankers">
+                            </div>
+                            <span class="settings-help" data-i18n="helpDynamic" id="help-dynamic"></span>
+                        </div>
+                    </div>
+
+                    <!-- GROUP 4: Binocular 3D Setup & sub-pixel RGB sliders -->
+                    <div class="accordion-header" id="accordion-header-4" role="button" aria-expanded="false" aria-controls="accordion-content-4">
+                        <span data-i18n="lblSettingGroup4"></span>
+                        <span class="accordion-arrow" id="accordion-arrow-4" aria-hidden="true">›</span>
+                    </div>
+                    <div class="accordion-content" id="accordion-content-4" role="region" aria-labelledby="accordion-header-4">
+                        <div class="settings-row" id="row-anaglyph-toggle" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingAnaglyph" for="chk-anaglyph"></label>
+                                <input type="checkbox" id="chk-anaglyph">
+                            </div>
+                            <span class="settings-help" data-i18n="helpAnaglyph" id="help-anaglyph"></span>
+                        </div>
+
+                        <!-- TS Reactivity Link: anaglyph-settings-panel state is controlled by SettingsController -->
+                        <div id="anaglyph-settings-panel" style="border-top: 1px dashed #2b354a; padding-top: 12px; margin-top: 10px; margin-bottom: 0;">
+                            <div class="settings-row">
+                                <label data-i18n="lblSettingRedSide" for="select-red-side"></label>
+                                <select id="select-red-side">
+                                    <option value="left" data-i18n="optSideLeft"></option>
+                                    <option value="right" data-i18n="optSideRight"></option>
+                                </select>
+                            </div>
+                            <div class="settings-row">
+                                <label data-i18n="lblSettingLazySide" for="select-lazy-side"></label>
+                                <select id="select-lazy-side">
+                                    <option value="left" data-i18n="optSideLeft"></option>
+                                    <option value="right" data-i18n="optSideRight"></option>
+                                </select>
+                            </div>
+                            <div class="settings-row" id="row-strong-attenuation" data-visible-in="gabor,synoptophore" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                                <div style="display: flex; justify-content: space-between; width: 100%;">
+                                    <label data-i18n="lblSettingStrongAttenuation" for="range-strong-attenuation"></label>
+                                    <span id="val-strong-attenuation" style="color: #3b90ff; font-weight: bold;" aria-hidden="true">30%</span>
+                                </div>
+                                <div class="slider-row" style="display: flex; align-items: center; width: 100%; gap: 8px;">
+                                    <button type="button" class="nudge-btn" data-nudge-target="range-strong-attenuation" data-nudge-step="5" data-nudge-dir="-1" aria-label="Decrease attenuation">−</button>
+                                    <input type="range" id="range-strong-attenuation" min="10" max="100" step="5" value="30" style="flex: 1; accent-color: #007aff; cursor: pointer; margin-top: 6px;">
+                                    <button type="button" class="nudge-btn" data-nudge-target="range-strong-attenuation" data-nudge-step="5" data-nudge-dir="1" aria-label="Increase attenuation">+</button>
                                 </div>
                             </div>
-                            <div style="width: 100%; display: flex; flex-direction: column; gap: 6px;">
-                                <div class="slider-row">
-                                    <span style="width: 12px; font-size: 11px; font-weight: bold; color: #22c55e;">G</span>
-                                    <button class="nudge-btn" data-nudge-target="slider-right-g" data-nudge-step="1" data-nudge-dir="-1">−</button>
-                                    <input type="range" id="slider-right-g" min="0" max="255" value="255" style="--slider-thumb-color: #22c55e; flex: 1; height: 4px; cursor: pointer;">
-                                    <button class="nudge-btn" data-nudge-target="slider-right-g" data-nudge-step="1" data-nudge-dir="1">+</button>
+                            <div class="settings-row" id="row-fusion-lock" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                    <label data-i18n="lblSettingFusionLock" for="chk-fusion-lock"></label>
+                                    <input type="checkbox" id="chk-fusion-lock">
+                                </div>
+                                <span class="settings-help" data-i18n="helpFusionLock" id="help-fusion-lock"></span>
+                            </div>
+                            <!-- Left Lens Calibration (Subpixel Red balance) -->
+                            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                    <span data-i18n-html="lblSettingLeftColor" style="font-size: 13px; font-weight: 500;"></span>
+                                    <span id="val-calib-r" style="color: #ef4444; font-weight: bold; font-size: 13px;" aria-hidden="true">255</span>
                                 </div>
                                 <div class="slider-row">
-                                    <span style="width: 12px; font-size: 11px; font-weight: bold; color: #3b82f6;">B</span>
-                                    <button class="nudge-btn" data-nudge-target="slider-right-b" data-nudge-step="1" data-nudge-dir="-1">−</button>
-                                    <input type="range" id="slider-right-b" min="0" max="255" value="255" style="--slider-thumb-color: #3b82f6; flex: 1; height: 4px; cursor: pointer;">
-                                    <button class="nudge-btn" data-nudge-target="slider-right-b" data-nudge-step="1" data-nudge-dir="1">+</button>
+                                        <span style="width: 12px; font-size: 11px; font-weight: bold; color: #ef4444;" aria-hidden="true">R</span>
+                                        <button type="button" class="nudge-btn" data-nudge-target="slider-left-r" data-nudge-step="1" data-nudge-dir="-1" aria-label="Decrease Red Amplitude">−</button>
+                                        <input type="range" id="slider-left-r" min="0" max="255" value="255" style="--slider-thumb-color: #ef4444; flex: 1; height: 4px; cursor: pointer;">
+                                        <button type="button" class="nudge-btn" data-nudge-target="slider-left-r" data-nudge-step="1" data-nudge-dir="1" aria-label="Increase Red Amplitude">+</button>
                                 </div>
                             </div>
+                            <!-- Right Lens Calibration (Subpixel Green/Blue balance) -->
+                            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 8px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                    <span data-i18n-html="lblSettingRightColor" style="font-size: 13px; font-weight: 500;"></span>
+                                    <div style="display: flex; gap: 8px; font-size: 13px; font-weight: bold;" aria-hidden="true">
+                                        <span style="color: #22c55e;">G: <span id="val-calib-g">255</span></span>
+                                        <span style="color: #3b82f6;">B: <span id="val-calib-b">255</span></span>
+                                    </div>
+                                </div>
+                                <div style="width: 100%; display: flex; flex-direction: column; gap: 6px;">
+                                    <div class="slider-row">
+                                        <span style="width: 12px; font-size: 11px; font-weight: bold; color: #22c55e;" aria-hidden="true">G</span>
+                                        <button type="button" class="nudge-btn" data-nudge-target="slider-right-g" data-nudge-step="1" data-nudge-dir="-1" aria-label="Decrease Green Amplitude">−</button>
+                                        <input type="range" id="slider-right-g" min="0" max="255" value="255" style="--slider-thumb-color: #22c55e; flex: 1; height: 4px; cursor: pointer;">
+                                        <button type="button" class="nudge-btn" data-nudge-target="slider-right-g" data-nudge-step="1" data-nudge-dir="1" aria-label="Increase Green Amplitude">+</button>
+                                    </div>
+                                    <div class="slider-row">
+                                        <span style="width: 12px; font-size: 11px; font-weight: bold; color: #3b82f6;" aria-hidden="true">B</span>
+                                        <button type="button" class="nudge-btn" data-nudge-target="slider-right-b" data-nudge-step="1" data-nudge-dir="-1" aria-label="Decrease Blue Amplitude">−</button>
+                                        <input type="range" id="slider-right-b" min="0" max="255" value="255" style="--slider-thumb-color: #3b82f6; flex: 1; height: 4px; cursor: pointer;">
+                                        <button type="button" class="nudge-btn" data-nudge-target="slider-right-b" data-nudge-step="1" data-nudge-dir="1" aria-label="Increase Blue Amplitude">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" id="btn-fusion-test" class="close-btn" data-i18n="btnFusionTestLabel"></button>
                         </div>
-                        <button id="btn-fusion-test" class="close-btn" data-i18n="btnFusionTestLabel"></button>
                     </div>
-                </div>
 
-                <!-- GROUP 5: Synoptophore Settings (Default collapsed) -->
-                <div class="accordion-header" id="accordion-header-5" data-visible-in="synoptophore">
-                    <span data-i18n="lblSettingGroup5"></span>
-                    <span class="accordion-arrow" id="accordion-arrow-5">›</span>
-                </div>
-                <div class="accordion-content" id="accordion-content-5" data-visible-in="synoptophore">
-                    <!-- Ocular Pulling Speed Row -->
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingPullSpeed"></label>
-                            <select id="select-pull-speed">
-                                <option value="3500">1 px / 3.5s</option>
-                                <option value="2500" selected>1 px / 2.5s</option>
-                                <option value="1500">1 px / 1.5s</option>
-                            </select>
-                        </div>
-                        <span class="settings-help" data-i18n="helpSynopPullSpeed"></span>
-                    </div>
-                    <!-- Ophthalmic Target Size Selector Row -->
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingTargetSize"></label>
-                            <select id="select-target-size">
-                                <option value="65" data-i18n="optSizeMacular"></option>
-                                <option value="45" data-i18n="optSizeParamacular"></option>
-                                <option value="30" data-i18n="optSizeFoveal"></option>
-                            </select>
-                        </div>
-                        <span class="settings-help" data-i18n="helpTargetSize"></span>
-                    </div>
-                    <!-- Synoptophore Resonant 10 Hz Flicker Row -->
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingSynopFlicker" for="chk-synop-flicker"></label>
-                            <input type="checkbox" id="chk-synop-flicker">
-                        </div>
-                        <span class="settings-help" data-i18n="helpSynopFlicker"></span>
-                    </div>
-                    <!-- Target Geometry Type Row -->
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingTargetType"></label>
-                            <select id="select-target-type">
-                                <option value="ring-dot" data-i18n="optTargetRing"></option>
-                                <option value="cross-square" data-i18n="optTargetSquare"></option>
-                            </select>
-                        </div>
-                        <span class="settings-help" data-i18n="helpTargetType"></span>
-                    </div>
-                    <!-- Horizontal Strict Lock Row -->
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingSynopLockY" for="chk-synop-lock-y"></label>
-                            <input type="checkbox" id="chk-synop-lock-y">
-                        </div>
-                        <span class="settings-help" data-i18n="helpSynopLockY"></span>
-                    </div>
-                    <!-- Vertical Strict Lock Row -->
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingSynopLockX" for="chk-synop-lock-x"></label>
-                            <input type="checkbox" id="chk-synop-lock-x">
-                        </div>
-                        <span class="settings-help" data-i18n="helpSynopLockX"></span>
-                    </div>
-                    <!-- Lazy Eye Target Alignment Grid (Dashed Visir) Row -->
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingSynopLazyGrid" for="chk-synop-lazy-grid"></label>
-                            <input type="checkbox" id="chk-synop-lazy-grid">
-                        </div>
-                        <span class="settings-help" data-i18n="helpSynopLazyGrid"></span>
-                    </div>
-                    <!-- Strong Eye Target Alignment Grid (Dashed Visir) Row -->
-                    <div class="settings-row" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0; flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingSynopStrongGrid" for="chk-synop-strong-grid"></label>
-                            <input type="checkbox" id="chk-synop-strong-grid">
-                        </div>
-                        <span class="settings-help" data-i18n="helpSynopStrongGrid"></span>
-                    </div>
-                </div>
+                    <!-- Explanation Footer -->
+                    <p style="font-size: 11px; color: #8e8e93; line-height: 1.3; margin-top: 15px;" data-i18n="descModeExplanation" id="desc-mode-explanation"></p>
+                </div> <!-- End modal-scroll-body -->
 
-                <!-- GROUP 6: Stereogram & Depth (Default collapsed) -->
-                <div class="accordion-header" id="accordion-header-6" data-visible-in="rds">
-                    <span data-i18n="lblSettingGroup6"></span>
-                    <span class="accordion-arrow" id="accordion-arrow-6">›</span>
-                </div>
-                <div class="accordion-content" id="accordion-content-6" data-visible-in="rds">
-                    <!-- RDS Dot Size Row -->
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingRdsDotSize"></label>
-                            <select id="select-rds-dot-size">
-                                <option value="2" data-i18n="optRdsSizeSmall"></option>
-                                <option value="4" data-i18n="optRdsSizeMedium"></option>
-                                <option value="6" data-i18n="optRdsSizeLarge"></option>
-                            </select>
-                        </div>
-                        <span class="settings-help" data-i18n="helpRdsDotSize"></span>
-                    </div>
-                    <!-- RDS Density Row -->
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingRdsDensity"></label>
-                            <select id="select-rds-density">
-                                <option value="0.35" data-i18n="optRdsDensityLow"></option>
-                                <option value="0.5" data-i18n="optRdsDensityStandard"></option>
-                                <option value="0.65" data-i18n="optRdsDensityHigh"></option>
-                            </select>
-                        </div>
-                        <span class="settings-help" data-i18n="helpRdsDensity"></span>
-                    </div>
-                    <!-- RDS Start Disparity Row -->
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingRdsStartDisparity"></label>
-                            <select id="select-rds-start-disparity">
-                                <option value="1">1px</option>
-                                <option value="2">2px</option>
-                                <option value="3">3px</option>
-                                <option value="4" selected>4px</option>
-                                <option value="5">5px</option>
-                                <option value="6">6px</option>
-                                <option value="7">7px</option>
-                                <option value="8">8px</option>
-                            </select>
-                        </div>
-                        <span class="settings-help" data-i18n="helpRdsStartDisparity"></span>
-                    </div>
-                    <!-- RDS Dynamic Mode Toggle Row -->
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingRdsDynamic" for="chk-rds-dynamic"></label>
-                            <input type="checkbox" id="chk-rds-dynamic" checked>
-                        </div>
-                        <span class="settings-help" data-i18n="helpRdsDynamic"></span>
-                    </div>
-                    <!-- RDS Randomize Vertical Position Row -->
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingRdsRandomizeVertical" for="chk-rds-randomize-vertical"></label>
-                            <input type="checkbox" id="chk-rds-randomize-vertical">
-                        </div>
-                        <span class="settings-help" data-i18n="helpRdsRandomizeVertical"></span>
-                    </div>
-                    <!-- RDS Floating Target Toggle Row -->
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingRdsFloating" for="chk-rds-floating"></label>
-                            <input type="checkbox" id="chk-rds-floating">
-                        </div>
-                        <span class="settings-help" data-i18n="helpRdsFloating"></span>
-                    </div>
-                    <!-- RDS Floating Speed Row (Contextual) -->
-                    <div class="settings-row" id="row-rds-floating-speed" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingRdsFloatSpeed"></label>
-                            <select id="select-rds-float-speed">
-                                <option value="slow" data-i18n="optRdsSpeedSlow"></option>
-                                <option value="medium" data-i18n="optRdsSpeedMedium" selected></option>
-                                <option value="fast" data-i18n="optRdsSpeedFast"></option>
-                            </select>
-                        </div>
-                    </div>
-                    <!-- RDS Permanent Cross Toggle Row -->
-                    <div class="settings-row" id="row-rds-permanent-cross" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0; flex-direction: column; align-items: flex-start; gap: 4px;">
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                            <label data-i18n="lblSettingRdsPermanentCross" for="chk-rds-permanent-cross"></label>
-                            <input type="checkbox" id="chk-rds-permanent-cross">
-                        </div>
-                        <span class="settings-help" data-i18n="helpRdsPermanentCross"></span>
-                    </div>
-                </div>
-
-                <p style="font-size: 11px; color: #8e8e93; line-height: 1.3; margin-top: 15px;" data-i18n="descModeExplanation" id="desc-mode-explanation"></p>
-            </div>
-
-            <button id="btn-close-settings" class="close-btn">OK</button>
-        </div>
-    </div>
-
-    <!-- CUSTOM NON-BLOCKING ALERT DIALOG -->
-    <div id="custom-alert-modal" class="modal" style="z-index: 3000;">
-        <div class="modal-content" style="height: auto; max-height: 320px; width: 88%; max-width: 420px; text-align: center; border-radius: var(--border-radius-elements); padding: 20px;">
-            <h2 id="custom-alert-title" style="margin-top: 0; margin-bottom: 12px; font-size: 16px; color: #eab308; font-weight: 700;">GaborNeuroFit</h2>
-            <div class="modal-scroll-body" style="font-size: 12px; color: #cbd5e1; line-height: 1.45; text-align: center; margin-bottom: 12px; padding: 0 4px;">
-                <p id="custom-alert-text" style="margin: 0;"></p>
-            </div>
-            <button id="btn-close-custom-alert" class="close-btn" style="margin-top: 0; padding: 8px;">OK</button>
-        </div>
-    </div>
-
-    <!-- CUSTOM NON-BLOCKING CONFIRMATION DIALOG -->
-    <div id="custom-confirm-modal" class="modal" style="z-index: 3010;">
-        <div class="modal-content" style="height: auto; max-height: 320px; width: 88%; max-width: 420px; text-align: center; border-radius: var(--border-radius-elements); padding: 20px;">
-            <h2 id="custom-confirm-title" style="margin-top: 0; margin-bottom: 12px; font-size: 16px; color: #ef4444; font-weight: 700;">GaborNeuroFit</h2>
-            <div class="modal-scroll-body" style="font-size: 12px; color: #cbd5e1; line-height: 1.45; text-align: center; margin-bottom: 12px; padding: 0 4px;">
-                <p id="custom-confirm-text" style="margin: 0;"></p>
-            </div>
-            <div style="display: flex; gap: 10px; width: 100%;">
-                <button id="btn-confirm-yes" class="close-btn" style="flex: 1; margin-top: 0; padding: 8px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; font-weight: bold;">Yes</button>
-                <button id="btn-confirm-no" class="close-btn" style="flex: 1; margin-top: 0; padding: 8px; background: #2b354a; font-weight: bold;">Cancel</button>
+                <button type="button" id="btn-close-settings" class="close-btn" aria-label="Save and Close Settings">OK</button>
             </div>
         </div>
-    </div>
 
-    <!-- INFO HANDBOOK MODAL -->
-    <div id="info-modal" class="modal">
-        <div class="modal-content">
-            <h2 data-i18n="modalTitle"></h2>
-            <div class="modal-scroll-body">
-                <h4 data-i18n="infoAboutTitle"></h4>
-                <p data-i18n-html="infoAboutText"></p>
-                <h4 data-i18n="infoGaborTitle"></h4>
-                <ul data-i18n-html="infoGaborText" id="info-gabor-list"></ul>
-                <h4 data-i18n="infoSynopTitle"></h4>
-                <ul data-i18n-html="infoSynopText" id="info-synop-list"></ul>
-                <h4 data-i18n="infoRdsTitle"></h4>
-                <ul data-i18n-html="infoRdsText" id="info-rds-list"></ul>
-                <h4 data-i18n="infoSafetyTitle"></h4>
-                <ul data-i18n-html="infoSafetyText" id="info-safety-list"></ul>
+        <!-- CUSTOM NON-BLOCKING ALERT DIALOG -->
+        <div id="custom-alert-modal" class="modal" role="alertdialog" aria-modal="true" aria-labelledby="custom-alert-title" aria-describedby="custom-alert-text" style="z-index: 3000;">
+            <div class="modal-content" style="height: auto; max-height: 320px; width: 88%; max-width: 420px; text-align: center; border-radius: var(--border-radius-elements); padding: 20px;">
+                <h2 id="custom-alert-title" style="margin-top: 0; margin-bottom: 12px; font-size: 16px; color: #eab308; font-weight: 700;">GaborNeuroFit</h2>
+                <div class="modal-scroll-body" style="font-size: 12px; color: #cbd5e1; line-height: 1.45; text-align: center; margin-bottom: 12px; padding: 0 4px;">
+                    <p id="custom-alert-text" style="margin: 0;"></p>
+                </div>
+                <button type="button" id="btn-close-custom-alert" class="close-btn" style="margin-top: 0; padding: 8px;">OK</button>
             </div>
-            <button id="btn-close-modal" class="close-btn">OK</button>
         </div>
-    </div>
 
-    <!-- HISTORICAL LEADERBOARD MODAL (Relational Multi-User Clinical Dashboard v2.5.0) -->
-    <div id="stats-modal" class="modal">
-        <div class="modal-content">
-            <h2 data-i18n="statsTitle"></h2>
-            <div class="modal-scroll-body">
-                <!-- Profile Selector Row -->
-                <div class="settings-row" style="margin-top: 5px;">
-                    <label data-i18n="lblActiveProfile" for="select-active-profile"></label>
-                    <select id="select-active-profile" style="max-width: 60%; min-width: 140px;"></select>
+        <!-- CUSTOM NON-BLOCKING CONFIRMATION DIALOG -->
+        <div id="custom-confirm-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="custom-confirm-title" aria-describedby="custom-confirm-text" style="z-index: 3010;">
+            <div class="modal-content" style="height: auto; max-height: 320px; width: 88%; max-width: 420px; text-align: center; border-radius: var(--border-radius-elements); padding: 20px;">
+                <h2 id="custom-confirm-title" style="margin-top: 0; margin-bottom: 12px; font-size: 16px; color: #ef4444; font-weight: 700;">GaborNeuroFit</h2>
+                <div class="modal-scroll-body" style="font-size: 12px; color: #cbd5e1; line-height: 1.45; text-align: center; margin-bottom: 12px; padding: 0 4px;">
+                    <p id="custom-confirm-text" style="margin: 0;"></p>
                 </div>
-
-                <!-- New Profile Input Row -->
-                <div class="settings-row" style="border-bottom: none; margin-bottom: 4px; padding-bottom: 0;">
-                    <input type="text" id="input-new-profile" data-i18n-placeholder="placeholderNewProfile" style="width: 100%; background: #131a26; color: #fff; border: 1px solid #2b354a; border-radius: 8px; padding: 10px; font-size: 13px; outline: none;" placeholder="Enter Name...">
-                </div>
-
-                <!-- Profile Management Buttons Grid -->
-                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                    <button id="btn-add-profile" class="close-btn" data-i18n="btnAddProfile" style="flex: 1; margin-top: 0; background: rgba(0, 122, 255, 0.12); border: 1px solid rgba(0, 122, 255, 0.25); color: #3b90ff; padding: 10px; font-size: 12px; font-weight: bold;"></button>
-                    <button id="btn-delete-profile" class="close-btn" data-i18n="btnDeleteProfile" style="flex: 1; margin-top: 0; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; padding: 10px; font-size: 12px; font-weight: bold;"></button>
-                </div>
-
-                <!-- Global Database Backup/Restore & Wipe Grid (Profile Level Actions) -->
-                <div style="display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;">
-                    <button id="btn-export-csv" class="close-btn" data-i18n="btnExportCSV" style="flex: 1; min-width: 110px; margin-top: 0; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.25); color: #22c55e; padding: 10px; font-size: 12px; font-weight: bold;"></button>
-                    <button id="btn-import-csv" class="close-btn" data-i18n="btnImportCSV" style="flex: 1; min-width: 110px; margin-top: 0; background: rgba(59, 144, 255, 0.12); border: 1px solid rgba(59, 144, 255, 0.25); color: #3b90ff; padding: 10px; font-size: 12px; font-weight: bold;"></button>
-                    <input type="file" id="input-import-csv" accept=".csv" style="display: none;">
-                    <button id="btn-clear-history" class="close-btn" data-i18n="btnClearHistory" style="flex: 1; min-width: 110px; margin-top: 0; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; padding: 10px; font-size: 12px; font-weight: bold;"></button>
-                </div>
-
-                <!-- Symmetrical Divider separating Global Profile Actions from Analytics -->
-                <hr style="border: none; border-top: 1px dashed rgba(255, 255, 255, 0.08); margin: 18px 0;">
-
-                <!-- Symmetrical Tab Segmented Pill Control (3-Tab config) -->
-                <div id="stats-tab-bar" style="display: flex; background: #131a26; padding: 4px; border-radius: 10px; border: 1px solid #2b354a; margin-bottom: 14px;">
-                    <button id="tab-gabor" class="tab-btn active" data-i18n="tabGabor"></button>
-                    <button id="tab-synop" class="tab-btn" data-i18n="tabSynop"></button>
-                    <button id="tab-rds" class="tab-btn" data-i18n="tabRDS"></button>
-                </div>
-
-                <!-- GABOR SENSORY TRAINING VIEWPORT -->
-                <div id="tab-gabor-content" style="display: block;">
-                    <!-- Procedural SVG Progress Chart -->
-                    <div id="progress-chart-container" style="width: 100%; height: 130px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.04); display: flex; align-items: center; justify-content: center; padding: 10px; margin-bottom: 6px; box-sizing: border-box;">
-                        <!-- SVG Gabor chart dynamically injected by screen.js -->
-                    </div>
-
-                    <!-- Progress Chart Descriptive Legend Info -->
-                    <div style="margin-top: 0; margin-bottom: 14px; text-align: center; line-height: 1.15; padding: 0 10px;">
-                        <span data-i18n-html="chartLegend" style="font-size: 11px; color: #8e8e93; font-weight: 300; letter-spacing: 0.2px;"></span>
-                    </div>
-
-                    <!-- Chronological Sessions List -->
-                    <div id="leaderboard" style="width: 100%; margin-top: 0; margin-bottom: 14px;">
-                        <ul id="leaderboard-list"></ul>
-                    </div>
-                </div>
-
-                <!-- SYNOPTOPHORE MOTOR VERGENCE VIEWPORT -->
-                <div id="tab-tab-synop-content" style="display: none;">
-                    <!-- Procedural SVG Synop Deviation Chart -->
-                    <div id="synop-chart-container" style="width: 100%; height: 130px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.04); display: flex; align-items: center; justify-content: center; padding: 10px; margin-bottom: 6px; box-sizing: border-box;">
-                        <!-- SVG Synop chart dynamically injected by screen.js -->
-                    </div>
-
-                    <!-- Progress Chart Descriptive Legend Info for Synoptophore -->
-                    <div style="margin-top: 0; margin-bottom: 14px; text-align: center; line-height: 1.15; padding: 0 10px;">
-                        <span data-i18n-html="synopChartLegend" style="font-size: 11px; color: #8e8e93; font-weight: 300; letter-spacing: 0.2px;"></span>
-                    </div>
-
-                    <!-- Chronological Synoptophore Sessions List -->
-                    <div id="synop-leaderboard" style="width: 100%; margin-top: 0; margin-bottom: 14px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; padding: 10px 14px; font-size: 13px; color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.04);">
-                        <ul id="leaderboard-list-synop" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; height: 100%; overflow-y: auto; scrollbar-width: none;"></ul>
-                    </div>
-                </div>
-
-                <!-- STEREOPСIS TRAINING VIEWPORT -->
-                <div id="tab-rds-content" style="display: none;">
-                    <!-- Procedural SVG Stereopsis Progress Chart -->
-                    <div id="rds-chart-container" style="width: 100%; height: 130px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.04); display: flex; align-items: center; justify-content: center; padding: 10px; margin-bottom: 6px; box-sizing: border-box;">
-                        <!-- SVG RDS chart dynamically injected by screen.js -->
-                    </div>
-
-                    <!-- Progress Chart Descriptive Legend Info for RDS -->
-                    <div style="margin-top: 0; margin-bottom: 14px; text-align: center; line-height: 1.15; padding: 0 10px;">
-                        <span data-i18n-html="rdsChartLegend" style="font-size: 11px; color: #8e8e93; font-weight: 300; letter-spacing: 0.2px;"></span>
-                    </div>
-
-                    <!-- Chronological RDS Sessions List -->
-                    <div id="rds-leaderboard" style="width: 100%; margin-top: 0; margin-bottom: 14px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; padding: 10px 14px; font-size: 13px; color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.04);">
-                        <ul id="leaderboard-list-rds" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; height: 100%; overflow-y: auto; scrollbar-width: none;"></ul>
-                    </div>
+                <div style="display: flex; gap: 10px; width: 100%;">
+                    <button type="button" id="btn-confirm-yes" class="close-btn" style="flex: 1; margin-top: 0; padding: 8px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; font-weight: bold;">Yes</button>
+                    <button type="button" id="btn-confirm-no" class="close-btn" style="flex: 1; margin-top: 0; padding: 8px; background: #2b354a; font-weight: bold;">Cancel</button>
                 </div>
             </div>
-            <button id="btn-close-stats" class="close-btn">OK</button>
         </div>
-    </div>
 
+        <!-- INFO HANDBOOK MODAL -->
+        <div id="info-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <div class="modal-content">
+                <h2 id="modalTitle" data-i18n="modalTitle"></h2>
+                <div class="modal-scroll-body" tabindex="0">
+                    <h4 data-i18n="infoAboutTitle"></h4>
+                    <p data-i18n-html="infoAboutText"></p>
+
+                    <h4 data-i18n="infoGaborTitle"></h4>
+                    <ul data-i18n-html="infoGaborText" id="info-gabor-list"></ul>
+
+                    <h4 data-i18n="infoSynopTitle"></h4>
+                    <ul data-i18n-html="infoSynopText" id="info-synop-list"></ul>
+
+                    <h4 data-i18n="infoRdsTitle"></h4>
+                    <ul data-i18n-html="infoRdsText" id="info-rds-list"></ul>
+
+                    <h4 data-i18n="infoSafetyTitle"></h4>
+                    <ul data-i18n-html="infoSafetyText" id="info-safety-list"></ul>
+                </div>
+                <button type="button" id="btn-close-modal" class="close-btn">OK</button>
+            </div>
+        </div>
+
+        <!-- HISTORICAL LEADERBOARD MODAL (Relational Multi-User Clinical Dashboard v2.5.0) -->
+        <div id="stats-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="statsTitle">
+            <div class="modal-content">
+                <h2 id="statsTitle" data-i18n="statsTitle"></h2>
+                <div class="modal-scroll-body" tabindex="0">
+
+                    <!-- Profile Selector Row -->
+                    <div class="settings-row" style="margin-top: 5px;">
+                        <label data-i18n="lblActiveProfile" for="select-active-profile"></label>
+                        <select id="select-active-profile" style="max-width: 60%; min-width: 140px;"></select>
+                    </div>
+
+                    <!-- New Profile Input Row -->
+                    <div class="settings-row" style="border-bottom: none; margin-bottom: 4px; padding-bottom: 0;">
+                        <input type="text" id="input-new-profile" data-i18n-placeholder="placeholderNewProfile" aria-label="New Patient Profile Name" style="width: 100%; background: #131a26; color: #fff; border: 1px solid #2b354a; border-radius: 8px; padding: 10px; font-size: 13px; outline: none;">
+                    </div>
+
+                    <!-- Profile Management Buttons Grid -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <button type="button" id="btn-add-profile" class="close-btn" data-i18n="btnAddProfile" style="flex: 1; margin-top: 0; background: rgba(0, 122, 255, 0.12); border: 1px solid rgba(0, 122, 255, 0.25); color: #3b90ff; padding: 10px; font-size: 12px; font-weight: bold;"></button>
+                        <button type="button" id="btn-delete-profile" class="close-btn" data-i18n="btnDeleteProfile" style="flex: 1; margin-top: 0; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; padding: 10px; font-size: 12px; font-weight: bold;"></button>
+                    </div>
+
+                    <!-- Global Database Backup/Restore & Wipe Grid (Profile Level Actions) -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;">
+                        <button type="button" id="btn-export-csv" class="close-btn" data-i18n="btnExportCSV" style="flex: 1; min-width: 110px; margin-top: 0; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.25); color: #22c55e; padding: 10px; font-size: 12px; font-weight: bold;"></button>
+                        <button type="button" id="btn-import-csv" class="close-btn" data-i18n="btnImportCSV" style="flex: 1; min-width: 110px; margin-top: 0; background: rgba(59, 144, 255, 0.12); border: 1px solid rgba(59, 144, 255, 0.25); color: #3b90ff; padding: 10px; font-size: 12px; font-weight: bold;"></button>
+                        <input type="file" id="input-import-csv" accept=".csv" aria-label="Import CSV" style="display: none;">
+                        <button type="button" id="btn-clear-history" class="close-btn" data-i18n="btnClearHistory" style="flex: 1; min-width: 110px; margin-top: 0; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; padding: 10px; font-size: 12px; font-weight: bold;"></button>
+                    </div>
+
+                    <!-- Symmetrical Divider separating Global Profile Actions from Analytics -->
+                    <hr style="border: none; border-top: 1px dashed rgba(255, 255, 255, 0.08); margin: 18px 0;" aria-hidden="true">
+
+                    <!-- Symmetrical Tab Segmented Pill Control (3-Tab config) -->
+                    <nav id="stats-tab-bar" aria-label="Statistics Categories" style="display: flex; background: #131a26; padding: 4px; border-radius: 10px; border: 1px solid #2b354a; margin-bottom: 14px;">
+                        <button type="button" id="tab-gabor" class="tab-btn active" data-i18n="tabGabor"></button>
+                        <button type="button" id="tab-synop" class="tab-btn" data-i18n="tabSynop"></button>
+                        <button type="button" id="tab-rds" class="tab-btn" data-i18n="tabRDS"></button>
+                    </nav>
+
+                    <!-- GABOR SENSORY TRAINING VIEWPORT -->
+                    <div id="tab-gabor-content" role="region" aria-label="Gabor Training History" style="display: block;">
+                        <!-- Procedural SVG Progress Chart -->
+                        <div id="progress-chart-container" aria-hidden="true" style="width: 100%; height: 130px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.04); display: flex; align-items: center; justify-content: center; padding: 10px; margin-bottom: 6px; box-sizing: border-box;">
+                            <!-- SVG injected by screen.ts -->
+                        </div>
+
+                        <!-- Progress Chart Descriptive Legend Info -->
+                        <div style="margin-top: 0; margin-bottom: 14px; text-align: center; line-height: 1.15; padding: 0 10px;">
+                            <span data-i18n-html="chartLegend" style="font-size: 11px; color: #8e8e93; font-weight: 300; letter-spacing: 0.2px;"></span>
+                        </div>
+
+                        <!-- Chronological Sessions List -->
+                        <div id="leaderboard" style="width: 100%; margin-top: 0; margin-bottom: 14px;" tabindex="0">
+                            <ul id="leaderboard-list" aria-label="Gabor Sessions List"></ul>
+                        </div>
+                    </div>
+
+                    <!-- SYNOPTOPHORE MOTOR VERGENCE VIEWPORT -->
+                    <div id="tab-tab-synop-content" role="region" aria-label="Synoptophore Training History" style="display: none;">
+                        <!-- Procedural SVG Synop Deviation Chart -->
+                        <div id="synop-chart-container" aria-hidden="true" style="width: 100%; height: 130px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.04); display: flex; align-items: center; justify-content: center; padding: 10px; margin-bottom: 6px; box-sizing: border-box;">
+                            <!-- SVG injected by screen.ts -->
+                        </div>
+
+                        <!-- Progress Chart Descriptive Legend Info for Synoptophore -->
+                        <div style="margin-top: 0; margin-bottom: 14px; text-align: center; line-height: 1.15; padding: 0 10px;">
+                            <span data-i18n-html="synopChartLegend" style="font-size: 11px; color: #8e8e93; font-weight: 300; letter-spacing: 0.2px;"></span>
+                        </div>
+
+                        <!-- Chronological Synoptophore Sessions List -->
+                        <div id="synop-leaderboard" style="width: 100%; margin-top: 0; margin-bottom: 14px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; padding: 10px 14px; font-size: 13px; color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.04);" tabindex="0">
+                            <ul id="leaderboard-list-synop" aria-label="Synoptophore Sessions List" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; height: 100%; overflow-y: auto; scrollbar-width: none;"></ul>
+                        </div>
+                    </div>
+
+                    <!-- STEREOPSIS TRAINING VIEWPORT -->
+                    <div id="tab-rds-content" role="region" aria-label="Stereogram Training History" style="display: none;">
+                        <!-- Procedural SVG Stereopsis Progress Chart -->
+                        <div id="rds-chart-container" aria-hidden="true" style="width: 100%; height: 130px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.04); display: flex; align-items: center; justify-content: center; padding: 10px; margin-bottom: 6px; box-sizing: border-box;">
+                            <!-- SVG injected by screen.ts -->
+                        </div>
+
+                        <!-- Progress Chart Descriptive Legend Info for RDS -->
+                        <div style="margin-top: 0; margin-bottom: 14px; text-align: center; line-height: 1.15; padding: 0 10px;">
+                            <span data-i18n-html="rdsChartLegend" style="font-size: 11px; color: #8e8e93; font-weight: 300; letter-spacing: 0.2px;"></span>
+                        </div>
+
+                        <!-- Chronological RDS Sessions List -->
+                        <div id="rds-leaderboard" style="width: 100%; margin-top: 0; margin-bottom: 14px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; padding: 10px 14px; font-size: 13px; color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.04);" tabindex="0">
+                            <ul id="leaderboard-list-rds" aria-label="Stereogram Sessions List" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; height: 100%; overflow-y: auto; scrollbar-width: none;"></ul>
+                        </div>
+                    </div>
+
+                </div> <!-- End modal-scroll-body -->
+
+                <button type="button" id="btn-close-stats" class="close-btn" aria-label="Close Dashboard">OK</button>
+            </div>
+        </div>
+    </aside>
+
+    <!--
+      @clinical OFFLINE TWEMOJI & TS CORE
+      PWA offline-first architecture requires the orchestrator to load purely from
+      the transpiled TS bundle after compilation.
+    -->
     <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
 </body>
 </html>
