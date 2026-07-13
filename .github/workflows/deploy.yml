@@ -24,6 +24,12 @@ jobs:
       - name: Install Project Dependencies
         run: npm install
 
+      - name: Static Analysis (Type Check)
+        run: npm run type-check
+
+      - name: Clinical Mathematics Assurance (Unit Tests)
+        run: npm run test
+
       - name: Compile Production Bundle
         run: npm run build
 
