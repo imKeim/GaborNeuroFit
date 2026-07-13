@@ -159,6 +159,7 @@ export class DataRepository {
     /**
      * Appends a newly acquired training session to the active patient context.
      * Implements a robust UPSERT engine based on the active session ID to prevent duplicate entry spam.
+     * Clinically splits serialization into polymorphic flat entities to prevent LocalStorage bloat.
      */
     static saveSession({
         sessionId, score, total, level, contrast, protocol, speed, isAnaglyph, balance,
@@ -171,38 +172,63 @@ export class DataRepository {
             if (!activeUid) return;
 
             const sessions = this.getAllSessions();
-            const currentSession = {
+            
+            // Core metadata shared across all modalities
+            const core = {
                 id: sessionId,
                 userId: activeUid,
                 timestamp: Date.now(),
-                score: parseInt(score) || 0,
-                total: parseInt(total) || 0,
-                level: parseInt(level) || 1,
-                contrast: Math.round(contrast * 100),
-                protocol: protocol,
-                speed: speed,
-                isAnaglyph: !!isAnaglyph,
-                balance: Math.round(balance * 100),
-                
-                // Added Sensory Laterality & Active Clinical Stimulation Flags
-                lazyEyeSide: lazyEyeSide,
-                isFlickerEnabled: !!isFlicker,
-                isCrowdingEnabled: !!isCrowding,
-                isPeripheralEnabled: !!isPeripheral,
-                isPermanentCrossEnabled: !!isPermanentCross,
-                flankerDistanceCoeff: parseFloat(flankerDistanceCoeff) || 2.0,
-                
-                // Polymorphic Random Dot Stereogram (RDS) Parameters
-                rdsDotSize: rdsDotSize !== null ? parseInt(rdsDotSize) : null,
-                rdsDensity: rdsDensity !== null ? parseFloat(rdsDensity) : null,
-                rdsDisparity: rdsDisparity !== null ? parseInt(rdsDisparity) : null,
-                
-                // Polymorphic Synoptophore Kinematics (strictly nullified for Gabor sensory sessions)
-                synopTargetX: targetX !== null ? parseInt(targetX) : null,
-                synopTargetY: targetY !== null ? parseInt(targetY) : null,
-                synopStartDistance: startDistance !== null ? parseFloat(startDistance) : null,
-                synopOutcome: outcome || null
+                protocol: protocol
             };
+
+            let currentSession = {};
+
+            // Polymorphic Factory Routing based on the active protocol
+            if (protocol === 'synoptophore') {
+                currentSession = {
+                    ...core,
+                    synopTargetX: targetX !== null ? parseInt(targetX) : 0,
+                    synopTargetY: targetY !== null ? parseInt(targetY) : 0,
+                    synopStartDistance: startDistance !== null ? parseFloat(startDistance) : 0,
+                    synopOutcome: outcome || 'slip',
+                    speed: parseInt(speed) || 2500,
+                    isAnaglyph: !!isAnaglyph,
+                    balance: Math.round(balance * 100),
+                    lazyEyeSide: lazyEyeSide,
+                    synopFlickerActive: !!isFlicker // Map flicker setting cleanly for Synoptophore
+                };
+            } else if (protocol === 'rds') {
+                currentSession = {
+                    ...core,
+                    score: parseInt(score) || 0,
+                    total: parseInt(total) || 0,
+                    level: parseInt(level) || 1,
+                    isAnaglyph: !!isAnaglyph,
+                    balance: Math.round(balance * 100),
+                    lazyEyeSide: lazyEyeSide,
+                    rdsDotSize: rdsDotSize !== null ? parseInt(rdsDotSize) : 4,
+                    rdsDensity: rdsDensity !== null ? parseFloat(rdsDensity) : 0.50,
+                    rdsDisparity: rdsDisparity !== null ? parseInt(rdsDisparity) : 4
+                };
+            } else {
+                // Sensory Gabor Modalities (occlusion, binocular, flicker, peripheral, blitz, custom)
+                currentSession = {
+                    ...core,
+                    score: parseInt(score) || 0,
+                    total: parseInt(total) || 0,
+                    level: parseInt(level) || 1,
+                    contrast: Math.round(contrast * 100),
+                    speed: speed,
+                    isAnaglyph: !!isAnaglyph,
+                    balance: Math.round(balance * 100),
+                    lazyEyeSide: lazyEyeSide,
+                    isFlickerEnabled: !!isFlicker,
+                    isCrowdingEnabled: !!isCrowding,
+                    isPeripheralEnabled: !!isPeripheral,
+                    isPermanentCrossEnabled: !!isPermanentCross,
+                    flankerDistanceCoeff: parseFloat(flankerDistanceCoeff) || 2.0
+                };
+            }
 
             const existingIdx = sessions.findIndex(s => s.id === sessionId);
             if (existingIdx > -1) {

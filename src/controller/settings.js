@@ -312,76 +312,20 @@ export class SettingsController {
         const isSynop = (s.appMode === 'synoptophore');
         const isRds = (s.appMode === 'rds');
 
-        const groups = [
-            { num: 1, visible: true },    // Base Protocol (Symmetrically always visible for Language & Pomodoro)
-            { num: 2, visible: isGabor }, // Temporal Pacing
-            { num: 3, visible: isGabor }, // Spatial Config
-            { num: 4, visible: isGabor || isSynop || isRds }, // 3D Calibration (Always open in stereoscopic runs)
-            { num: 5, visible: isSynop }, // Synoptophore & Vergence
-            { num: 6, visible: isRds }    // Stereogram & Depth (Group 6)
-        ];
-
-        groups.forEach(g => {
-            const header = document.getElementById(`accordion-header-${g.num}`);
-            const content = document.getElementById(`accordion-content-${g.num}`);
-            if (header && content) {
-                if (g.visible) {
-                    header.style.display = ''; 
-                    content.style.display = ''; 
-                } else {
-                    header.style.display = 'none';
-                    content.style.display = 'none';
-                }
-            }
+        // 1. Declaratively toggle visibility of all elements tagged with data-visible-in
+        const currentMode = s.appMode;
+        document.querySelectorAll('[data-visible-in]').forEach(el => {
+            const allowedModes = el.dataset.visibleIn.split(',');
+            const isVisible = allowedModes.includes(currentMode);
+            el.style.display = isVisible ? '' : 'none';
         });
 
-        const gaborRows = [
-            'row-preset-mode', 'row-start-level', 'row-autonext',
-            'row-anaglyph-toggle', 'row-fusion-lock'
-        ];
-        const showGaborRow = (s.appMode === 'gabor');
-        gaborRows.forEach(id => {
-            const row = document.getElementById(id);
-            if (row) {
-                row.style.display = showGaborRow ? '' : 'none';
-            }
-        });
-
-        const rdsRows = [
-            'row-rds-autonext'
-        ];
-        const showRdsRow = (s.appMode === 'rds');
-        rdsRows.forEach(id => {
-            const row = document.getElementById(id);
-            if (row) {
-                row.style.display = showRdsRow ? '' : 'none';
-            }
-        });
-
-        const rowRdsFloatSpeed = document.getElementById('row-rds-floating-speed');
-        if (rowRdsFloatSpeed) {
-            rowRdsFloatSpeed.style.display = showRdsRow ? 'flex' : 'none';
-            rowRdsFloatSpeed.style.opacity = s.rdsIsFloating ? '1' : '0.5';
-            const selectEl = rowRdsFloatSpeed.querySelector('select');
-            if (selectEl) selectEl.disabled = !s.rdsIsFloating;
-        }
-
-        const rowRdsPermanentCross = document.getElementById('row-rds-permanent-cross');
-        if (rowRdsPermanentCross) {
-            rowRdsPermanentCross.style.display = showRdsRow ? 'flex' : 'none';
-        }
-
-        const rowSessionLimit = document.getElementById('row-session-limit');
-        if (rowSessionLimit) {
-            rowSessionLimit.style.display = (isGabor || isRds) ? '' : 'none';
-        }
-
+        // 2. Manage sub-dependencies inside active modalities (Enabling/dimming sub-options)
         if (!isSynop) {
             const chkFlicker = document.getElementById('chk-flicker');
             const rowFlicker = document.getElementById('row-flicker');
             if (chkFlicker) chkFlicker.disabled = !s.isStaticEnabled;
             if (rowFlicker) {
-                rowFlicker.style.display = 'flex';
                 rowFlicker.style.opacity = s.isStaticEnabled ? '1' : '0.5';
             }
 
@@ -397,32 +341,29 @@ export class SettingsController {
             const crowdingOpacity = s.isCrowdingEnabled ? '1' : '0.5';
 
             if (rowCrowdingMode) {
-                rowCrowdingMode.style.display = 'flex';
                 rowCrowdingMode.style.opacity = crowdingOpacity;
                 const selectElement = rowCrowdingMode.querySelector('select');
                 if (selectElement) selectElement.disabled = !s.isCrowdingEnabled;
             }
             if (rowFlankerDistance) {
-                rowFlankerDistance.style.display = 'flex';
                 rowFlankerDistance.style.opacity = crowdingOpacity;
                 const selectElement = rowFlankerDistance.querySelector('select');
                 if (selectElement) selectElement.disabled = !s.isCrowdingEnabled;
             }
             if (rowOrthogonal) {
-                rowOrthogonal.style.display = 'flex';
                 rowOrthogonal.style.opacity = crowdingOpacity;
             }
             if (rowDynamic) {
-                rowDynamic.style.display = 'flex';
                 rowDynamic.style.opacity = crowdingOpacity;
             }
         }
 
-        const rowStrongAttenuation = document.getElementById('row-strong-attenuation');
-        if (rowStrongAttenuation) {
-            // Symmetrically hide the attenuation slider during RDS to avoid UI confusion,
-            // since spatial disparity rendering requires strict unattenuated 100% boundary contrast.
-            rowStrongAttenuation.style.display = isRds ? 'none' : 'flex';
+        // Sync dynamic float speed input lock inside RDS Group 6
+        const rowRdsFloatSpeed = document.getElementById('row-rds-floating-speed');
+        if (rowRdsFloatSpeed) {
+            rowRdsFloatSpeed.style.opacity = s.rdsIsFloating ? '1' : '0.5';
+            const selectEl = rowRdsFloatSpeed.querySelector('select');
+            if (selectEl) selectEl.disabled = !s.rdsIsFloating;
         }
 
         if (this.anaglyphPanel) {

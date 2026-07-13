@@ -7,6 +7,7 @@ import { Store } from '../store.js';
 import { DataRepository } from '../store/repository.js';
 import { renderProgressChart, renderSynopProgressChart, renderRdsProgressChart, updateLeaderboard, updateSynopLeaderboard, updateRdsLeaderboard, getCompactPresetLabel, updateScoreboard } from '../ui/screen.js';
 import { showCustomAlert, showCustomConfirm } from '../ui/modal.js';
+import { parseCSV, serializeCSV } from '../utils/csv.js';
 
 export class DashboardController {
     constructor(getTranslationsCallback) {
@@ -191,7 +192,7 @@ export class DashboardController {
 
                 const headers = (t.csvHeaders || "Date,Mode,Lazy Eye Side,Score/Total,Accuracy %,Gabor Stage,Contrast Threshold %,Contrast Balancer %,10Hz Flicker,Visual Crowding,Peripheral Shift,Permanent Cross,Synop Deviation X (px),Synop Deviation Y (px),Synop Start Distance (px),Outcome,RDS Dot Size (px),RDS Dot Density %,RDS Disparity Threshold (px)").split(',');
                         
-                const rows = sessions.map(s => {
+                const rawRows = sessions.map(s => {
                     const dateStr = new Date(s.timestamp).toISOString().replace(/T/, ' ').replace(/\..+/, '');
                     const accuracy = s.total > 0 ? ((s.score / s.total) * 100).toFixed(1) : '0';
                             
@@ -206,28 +207,28 @@ export class DashboardController {
                     const isCrossOn = isSynop || isRds ? "OFF" : (s.isPermanentCrossEnabled ? "ON" : "OFF");
 
                     return [
-                        `"${dateStr}"`, `"${modeLabel}"`, `"${eyeSide}"`,
-                        isSynop ? `""` : `"${s.score}/${s.total}"`,
-                        isSynop ? `""` : `"${accuracy}%"`,
-                        isSynop ? `""` : s.level,
-                        isSynop || isRds ? `""` : `"${s.contrast}%"`,
-                        isSynop || isRds ? `""` : `"${s.balance}%"`, 
-                        `"${isFlickerOn}"`, `"${isCrowdingOn}"`,
-                        `"${isPeripheralOn}"`, `"${isCrossOn}"`,
-                        isSynop ? (s.synopTargetX || 0) : `""`,
-                        isSynop ? (s.synopTargetY || 0) : `""`,
-                        isSynop ? (s.synopStartDistance || 0).toFixed(0) : `""`,
-                        isSynop ? `"${(s.synopOutcome || 'slip').toUpperCase()}"` : (isRds ? `"FUSED"` : `""`),
-                        isRds ? s.rdsDotSize : `""`,
-                        isRds ? (s.rdsDensity ? Math.round(s.rdsDensity * 100) + "%" : `""`) : `""`,
-                        isRds ? s.rdsDisparity : `""`
-                    ].join(',');
+                        dateStr, modeLabel, eyeSide,
+                        isSynop ? "" : `${s.score}/${s.total}`,
+                        isSynop ? "" : `${accuracy}%`,
+                        isSynop ? "" : s.level,
+                        isSynop || isRds ? "" : `${s.contrast}%`,
+                        isSynop || isRds ? "" : `${s.balance}%`, 
+                        isFlickerOn, isCrowdingOn,
+                        isPeripheralOn, isCrossOn,
+                        isSynop ? (s.synopTargetX || 0) : "",
+                        isSynop ? (s.synopTargetY || 0) : "",
+                        isSynop ? (s.synopStartDistance || 0).toFixed(0) : "",
+                        isSynop ? (s.synopOutcome || 'slip').toUpperCase() : (isRds ? "FUSED" : ""),
+                        isRds ? s.rdsDotSize : "",
+                        isRds ? (s.rdsDensity ? Math.round(s.rdsDensity * 100) + "%" : "") : "",
+                        isRds ? s.rdsDisparity : ""
+                    ];
                 });
 
-                const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(','), ...rows].join('\n');
-                const encodedUri = encodeURI(csvContent);
+                const csvContent = serializeCSV(headers, rawRows);
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement("a");
-                link.setAttribute("href", encodedUri);
+                link.setAttribute("href", URL.createObjectURL(blob));
                 
                 const activeUid = DataRepository.getActiveProfileId();
                 const activeProf = DataRepository.getProfiles().find(p => p.id === activeUid);
@@ -262,37 +263,17 @@ export class DashboardController {
         }
     }
 
-    // Zero-library high-performance CSV Relational Parser
+    // Zero-library HTML-performance CSV parser
     parseAndImportCSV(text) {
         const t = this.getTranslations();
         try {
-            const lines = text.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
-            if (lines.length < 2) {
+            const parsedLines = parseCSV(text);
+            if (parsedLines.length < 2) {
                 showCustomAlert(t.titleWarning || "Warning", t.msgImportError);
                 return;
             }
 
-            // Zero-library po-symbol-by-symbol CSV line parser (handles quotes and emojis)
-            const parseLine = (line) => {
-                const result = [];
-                let current = '';
-                let inQuotes = false;
-                for (let i = 0; i < line.length; i++) {
-                    const char = line[i];
-                    if (char === '"') {
-                        inQuotes = !inQuotes;
-                    } else if (char === ',' && !inQuotes) {
-                        result.push(current.trim());
-                        current = '';
-                    } else {
-                        current += char;
-                    }
-                }
-                result.push(current.trim());
-                return result;
-            };
-
-            const headers = parseLine(lines[0]).map(h => h.replace(/^"|"$/g, '').trim());
+            const headers = parsedLines[0];
             const headerMap = {};
             headers.forEach((h, idx) => {
                 headerMap[h] = idx;
@@ -301,13 +282,13 @@ export class DashboardController {
             const getCol = (row, colName, defaultVal = '') => {
                 const idx = headerMap[colName];
                 if (idx === undefined || idx >= row.length) return defaultVal;
-                return row[idx].replace(/^"|"$/g, '').trim();
+                return row[idx];
             };
 
             const parsedSessions = [];
 
-            for (let i = 1; i < lines.length; i++) {
-                const row = parseLine(lines[i]);
+            for (let i = 1; i < parsedLines.length; i++) {
+                const row = parsedLines[i];
                 if (row.length < 3) continue;
 
                 const dateStr = getCol(row, "Date");

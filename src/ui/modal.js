@@ -78,23 +78,33 @@ export function showCustomConfirm(title, text, yesLabel, noLabel, callback) {
         cleanup();
         callback(true);
     };
-    
+            
     const onNo = () => {
         closeModal(modal);
         cleanup();
         callback(false);
     };
-    
+            
+    const handleKeyDown = (event) => {
+        const key = event.key.toLowerCase();
+        if (key === 'enter' || key === ' ') {
+            event.preventDefault();
+            onYes();
+        } else if (key === 'escape' || key === 'esc') {
+            event.preventDefault();
+            onNo();
+        }
+    };
+            
     const cleanup = () => {
         btnYes.removeEventListener('click', onYes);
         btnNo.removeEventListener('click', onNo);
+        window.removeEventListener('keydown', handleKeyDown);
     };
-    
+            
     btnYes.addEventListener('click', onYes);
     btnNo.addEventListener('click', onNo);
-
-    // Global keyboard bridge to allow controls.js to trigger these actions
-    window._gnfConfirmActions = { yes: onYes, no: onNo };
+    window.addEventListener('keydown', handleKeyDown);
 }
 
 // Initialize click listeners for settings and manual popup modals

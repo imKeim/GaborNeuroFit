@@ -253,16 +253,9 @@ export function bindInputControls(handlers) {
         const isSettingsOpen = settingsModal && settingsModal.classList.contains('modal-open');
         const isInfoOpen = infoModal && infoModal.classList.contains('modal-open');
         const isStatsOpen = statsModal && statsModal.classList.contains('modal-open');
-        
-        // PRIORITY 1: Custom Confirmation Dialog (Yes/No)
+            
+        // PRIORITY 1: Custom Confirmation Dialog (Bypass and let the active modal handle itself)
         if (isConfirmOpen) {
-            if (key === 'enter' || key === ' ') {
-                event.preventDefault();
-                if (window._gnfConfirmActions) window._gnfConfirmActions.yes();
-            } else if (key === 'escape' || key === 'esc') {
-                event.preventDefault();
-                if (window._gnfConfirmActions) window._gnfConfirmActions.no();
-            }
             return; 
         }
 
