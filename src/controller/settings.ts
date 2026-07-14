@@ -355,26 +355,21 @@ export class SettingsController {
         }
 
         if (this.anaglyphPanel) {
+            const isAnaglyphActive = s.isAnaglyphEnabled || isSynop || isRds;
+
             this.anaglyphPanel.style.display = 'block';
-            this.anaglyphPanel.style.opacity = (s.isAnaglyphEnabled || isSynop || isRds) ? '1' : '0.4';
+            this.anaglyphPanel.style.opacity = isAnaglyphActive ? '1' : '0.4';
             
-            // Disable input elements inside anaglyph panel if anaglyph is off
+            // Disable/enable all input elements and buttons inside the calibration panel based on 3D state
             this.anaglyphPanel.querySelectorAll<HTMLInputElement | HTMLButtonElement>('input, button').forEach(input => {
-                if (input.id !== 'chk-fusion-lock' && input.id !== 'chk-anaglyph') {
-                    if (input.id === 'slider-left-r' || input.id === 'slider-right-g' || input.id === 'slider-right-b' || input.id === 'range-strong-attenuation') {
-                        input.disabled = false;
-                    } else if (input.classList.contains('pill-btn')) {
-                        // Pill buttons rely on pointer-events from their parent container
-                        // Do nothing here directly to the buttons
-                    } else {
-                        input.disabled = (isSynop || isRds) ? false : !s.isAnaglyphEnabled;
-                    }
+                if (input.id !== 'chk-anaglyph') {
+                    input.disabled = !isAnaglyphActive;
                 }
             });
 
-            // Disable Pill Groups pointer events
+            // Disable/enable touch interactions for all horizontal Pill-groups
             this.anaglyphPanel.querySelectorAll<HTMLElement>('.pill-group').forEach(group => {
-                group.style.pointerEvents = (s.isAnaglyphEnabled || isSynop || isRds) ? 'auto' : 'none';
+                group.style.pointerEvents = isAnaglyphActive ? 'auto' : 'none';
             });
         }
 
@@ -447,7 +442,6 @@ export class SettingsController {
                 if (typeof this.onSyncCallback === 'function') this.onSyncCallback();
             });
         });
-
         const headers = document.querySelectorAll('.accordion-header');
         headers.forEach(header => {
             header.addEventListener('click', () => {
@@ -464,6 +458,15 @@ export class SettingsController {
                     content.classList.add('open');
                     const arrow = header.querySelector('.accordion-arrow');
                     if (arrow) arrow.classList.add('active');
+
+                    // Responsive Scroll: Smoothly bring the first interactive field of the opened accordion
+                    // into the visible viewport area, eliminating manual scrolling friction on small mobile viewports.
+                    setTimeout(() => {
+                        const firstInput = content.querySelector('input, .pill-group, .nudge-btn');
+                        if (firstInput) {
+                            firstInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }
+                    }, 220); // Small 220ms timeout lets the CSS height expansion transition complete before calculating scroll positions
                 }
             });
         });
