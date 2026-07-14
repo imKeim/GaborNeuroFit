@@ -60,17 +60,8 @@ export async function loadLanguage(lang: Language): Promise<Record<string, strin
         }
     });
 
-    // Symmetrically handle procedural stage selector options
-    for (let i = 1; i <= 5; i++) {
-        const el = document.getElementById('opt-stage-' + i) as HTMLOptionElement | null;
-        if (el) {
-            el.textContent = i === 5 ? t.optStage5 : (lang === 'ru' ? `Этап ${i}` : `Stage ${i}`);
-        }
-    }
-
-    // Synchronize the language selection dropdown value
-    const selectLang = document.getElementById('select-lang') as HTMLSelectElement | null;
-    if (selectLang) selectLang.value = lang;
+    // Synchronize the language selection (Pill Tabs logic is handled reactively by SettingsController)
+    // Legacy <select> code is completely removed, ensuring SSoT.
 
     return activeTranslations;
 }

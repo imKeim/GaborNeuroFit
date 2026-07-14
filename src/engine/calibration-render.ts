@@ -65,9 +65,9 @@ export function drawFusionTestPattern(canvas: HTMLCanvasElement | null, ctx: Can
     ctx.fillStyle = `rgb(127, ${rightG_calibrated}, ${rightB_calibrated})`;
     ctx.fillText('R', cx + 55, cy + 4);
 
-    if (isSynop || state.isFusionLockEnabled) {
-        drawFusionLockFrame(canvas, ctx, scale);
-    }
+    // Symmetrical Clinical Lock: Always render the zero-disparity fusion lock frame 
+    // during active L/R calibration across ALL three modalities to assist foveal eye orientation.
+    drawFusionLockFrame(canvas, ctx, scale);
 
     ctx.restore();
 }

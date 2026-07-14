@@ -115,6 +115,10 @@ export class GaborController {
     }
 
     reFlashCurrentGabor(): void {
+        // If the Gabor is permanently lit (static/flicker),
+        // we strictly block re-flashing to prevent visual phase-resets and acoustic spam.
+        if (Store.state.isStaticEnabled) return;
+
         if (!this.transitionTo(TrialState.PRE_CUE)) return;
 
         this.btnStart.disabled = true;

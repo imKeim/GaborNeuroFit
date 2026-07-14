@@ -150,6 +150,11 @@ export class DataRepository {
             if (!sanitizedName) return null;
 
             const profiles = this.getProfiles();
+
+            // Prevent programmatic duplicates (case-insensitive)
+            const exists = profiles.some(p => p.name.toLowerCase() === sanitizedName.toLowerCase());
+            if (exists) return null;
+
             const newProfile: PatientProfile = {
                 // Injecting cryptographic entropy to guarantee absolute UUID uniqueness against double-clicks
                 id: 'usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),

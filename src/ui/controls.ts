@@ -199,6 +199,13 @@ export function bindInputControls(handlers: InputHandlers): void {
                 handlers.onDragEnd(deltaTime, deltaXTotal, deltaYTotal, touch.clientX, touch.clientY);
             }
         }, { passive: true });
+
+        // Touch Cancel Handler: Safeguards against layout freeze if OS gestures or notification alerts interrupt dragging
+        workspace.addEventListener('touchcancel', () => {
+            if (typeof handlers.onDragEnd === 'function') {
+                handlers.onDragEnd(0, 0, 0, 0, 0); // Gracefully terminate dragging coordinates and reset .dragging state
+            }
+        }, { passive: true });
     }
 
     if (btnLeft) {
