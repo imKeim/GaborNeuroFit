@@ -99,16 +99,30 @@ export class DashboardController {
             });
         }
 
-        const btnAddProfile = document.getElementById('btn-add-profile');
+        const formAddProfile = document.getElementById('form-add-profile');
         const inputNewProfile = document.getElementById('input-new-profile') as HTMLInputElement | null;
-        if (btnAddProfile && inputNewProfile) {
-            btnAddProfile.addEventListener('click', () => {
+        if (formAddProfile && inputNewProfile) {
+            // SSoT Form Submission: Handles both tactile clicks on "Add" button and system "Enter" keyboard events symmetrically
+            formAddProfile.addEventListener('submit', (event) => {
+                event.preventDefault(); // Protect against browser-default destructive page reloads on submit
+                
                 const t = this.getTranslations();
                 const name = inputNewProfile.value.trim();
                 if (!name) {
                     showCustomAlert(t.titleWarning || "Warning", t.msgEmptyName || "Profile name cannot be empty!");
                     return;
                 }
+
+                // Prevent duplicate patient profiles (case-insensitive and trimmed)
+                const profiles = DataRepository.getProfiles();
+                const exists = profiles.some(p => p.name.toLowerCase() === name.toLowerCase());
+                if (exists) {
+                    const rawMsg = t.msgProfileExists || "A patient profile with the name \"{name}\" already exists!";
+                    const errorText = rawMsg.replace('{name}', name);
+                    showCustomAlert(t.titleWarning || "Warning", errorText);
+                    return;
+                }
+
                 const newProf = DataRepository.createProfile(name);
                 if (newProf) {
                     DataRepository.setActiveProfileId(newProf.id);
@@ -361,7 +375,9 @@ export class DashboardController {
                 const rdsDisparity = rdsDisparityRaw ? parseInt(rdsDisparityRaw, 10) || null : null;
 
                 parsedSessions.push({
-                    id: 'imported_session_' + timestamp + '_' + Math.random().toString(36).substr(2, 5),
+                    // Generate a deterministic ID based on exact unique parameters of the session
+                    // to prevent creating double-clones in the relational DB upon repeating imports.
+                    id: 'imported_' + timestamp + '_' + protocol + '_' + score + '_' + total + '_' + (rdsDisparity || 0),
                     timestamp: timestamp,
                     score: score,
                     total: total,

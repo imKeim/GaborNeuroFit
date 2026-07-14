@@ -10,7 +10,7 @@
    ========================================================================== */
 :root {
     /* Fluid scale anchored to viewport dimensions to eliminate snapping */
-    --fluid-scale: clamp(0.85, 1vh + 0.5vw, 1.3);
+    --fluid-scale: clamp(0.85, calc(1vh + 0.5vw), 1.3); /* Wrapped in calc() to prevent browser rendering engine syntax rejection */
 
     /* Biomorphic radii avoiding jagged edges for neurological safety */
     --radius-premium: calc(32px * var(--fluid-scale));
@@ -28,8 +28,8 @@
     --z-canvas-gpu: 10;
     --z-canvas-hud: 20;
     --z-foveal-cross: 30;
-    --z-watermark: 50;
-    --z-curtain: 60;
+    --z-curtain: 40; /* Sits directly over canvases to hide renderers during transition phases */
+    --z-watermark: 50; /* Sits on top of canvases and curtain so "PAUSED" remains visible */
     --z-topbar: 100;
     --z-dock: 100;
     --z-modal-backdrop: 2000;
@@ -555,7 +555,7 @@ canvas {
     position: absolute;
     top: 50%;
     left: 50%;
-    color: rgba(255, 255, 255);
+    color: #ffffff; /* Corrected CSS syntax to restore solid white fill */
     -webkit-text-stroke: 1.5px #1a222f; /* Dark gray clean outline stroke */
     font-weight: 800;
     font-size: clamp(24px, 5vw, 32px);
@@ -690,7 +690,7 @@ button:focus, input:focus, select:focus {
 }
 
 /* W3C Accessibility: Safe, perfectly rounded neon halos strictly for keyboard navigation */
-.control-btn:focus-visible, .tab-btn:focus-visible, .dash-btn:focus-visible, .dash-input:focus-visible {
+.control-btn:focus-visible, .tab-btn:focus-visible, .dash-btn:focus-visible, .dash-input:focus-visible, .pill-btn:focus-visible, .preset-card:focus-visible {
     box-shadow: 0 0 0 3px rgba(59, 144, 255, 0.45) !important;
 }
 
@@ -885,14 +885,30 @@ button:focus, input:focus, select:focus {
     appearance: none;
     flex: 1;
     border: none;
-    padding: 8px 12px;
-    border-radius: 6px; /* Concentric radius (Outer 10px - padding 4px) to round the active highlight */
-    font-size: clamp(11px, 2.5vw, 13px);
+    padding: 6px 4px; /* Tighter horizontal padding to fit beautifully on any screen */
+    border-radius: 6px !important; /* Concentric radius (Outer 10px - padding 4px) to force rounded active highlights */
+    font-size: clamp(9.5px, 2.4vw, 11px); /* Slightly more compact font size for stacked layout */
     font-weight: 700;
     background: transparent;
     color: #8e8e93;
     cursor: pointer;
     transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column; /* Shift from inline-flow to vertical Stack */
+    align-items: center;
+    justify-content: center;
+    gap: 3px; /* Air gap between active 3D Emoji and the label text below */
+}
+
+.tab-btn-icon {
+    font-size: clamp(14px, 3.8vw, 16px); /* Elevate icon scale slightly to catch peripheral focus */
+    line-height: 1;
+    display: inline-block;
+}
+
+.tab-btn-text {
+    line-height: 1.1;
+    white-space: nowrap;
 }
 
 .tab-btn.active { background: #2b354a !important; color: #3b90ff !important; }
@@ -1116,9 +1132,24 @@ input[type="range"]::-moz-range-thumb {
 
 /* Strict DOM stripping specifically during calibration focus mode */
 #settings-modal.calibration-mode .settings-row { margin-bottom: 6px; padding-bottom: 6px; gap: 4px; }
-#settings-modal.calibration-mode #settings-mode-bar,
-#settings-modal.calibration-mode .modal-scroll-body > .accordion-header,
-#settings-modal.calibration-mode .modal-scroll-body > .accordion-content:not(#accordion-content-4),
+
+/* 
+ * Bulletproof structural silencer: Hides EVERYTHING inside the scroll body by default 
+ * during calibration, preventing global headers or open accordions from overlapping the canvas.
+ */
+#settings-modal.calibration-mode .modal-scroll-body > * {
+    display: none !important;
+}
+
+/* Selectively un-hide ONLY the calibration panel container */
+#settings-modal.calibration-mode .modal-scroll-body > #accordion-content-4 { 
+    display: block !important; 
+    border: none; 
+    padding: 0; 
+    background: transparent; 
+}
+
+/* Micro-manage internal visibility inside the isolated calibration panel */
 #settings-modal.calibration-mode #row-anaglyph-toggle,
 #settings-modal.calibration-mode #anaglyph-settings-panel > .settings-row:nth-child(1),
 #settings-modal.calibration-mode #anaglyph-settings-panel > .settings-row:nth-child(2),
@@ -1129,7 +1160,6 @@ input[type="range"]::-moz-range-thumb {
     display: none !important;
 }
 
-#settings-modal.calibration-mode #accordion-content-4 { display: block !important; border: none; padding: 0; background: transparent; }
 #settings-modal.calibration-mode #anaglyph-settings-panel { display: flex !important; flex-direction: column !important; padding-top: 0; border-top: none; margin-top: 0; }
 #settings-modal.calibration-mode #btn-fusion-test { order: -1 !important; margin: 0 0 12px 0 !important; padding: 10px !important; }
 
@@ -1201,3 +1231,166 @@ input[type="range"]::-moz-range-thumb {
 .btn-ghost-blue { background: rgba(59, 144, 255, 0.12); border: 1px solid rgba(59, 144, 255, 0.25); color: #3b90ff; }
 .btn-ghost-red { background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; }
 .btn-ghost-green { background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.25); color: #22c55e; }
+
+/* ==========================================================================
+   14. COMPLEMENTARY PILL TABS & PRESET GRIDS
+   ========================================================================== */
+
+/* 14A. Horizontal Segmented Pill Controls */
+.pill-group {
+    display: flex;
+    background: #131a26;
+    padding: 3px; /* Tighter padding for elite compactness */
+    border-radius: var(--radius-elements);
+    border: 1px solid #2b354a;
+    width: fit-content; /* Strictly wrap the content to be narrow */
+    max-width: 48%; /* Prevent stretching, giving text labels more breathing room */
+    justify-content: flex-end;
+    box-sizing: border-box;
+    gap: 2px; /* Minimal gap between segmented options */
+}
+
+.pill-btn {
+    appearance: none;
+    flex: 0 1 auto;
+    min-width: 30px; /* Slimmer base target for numbers */
+    border: none;
+    background: transparent;
+    color: #8e8e93;
+    font-size: clamp(9.5px, 2.4vw, 11.5px); /* More compact font size to avoid visual overflow */
+    font-weight: 700;
+    padding: 5px 8px; /* Tighter vertical and horizontal padding to make pills narrow and sleek */
+    cursor: pointer;
+    border-radius: calc(var(--radius-elements) - 4px); /* Concentric visual rounding */
+    transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+/* 14C. Symmetrical Layout Spacing Rows */
+.pill-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03); /* Elegant horizontal dividing line */
+}
+
+.pill-row:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/* 
+ * Mobile Premium Stacking (Variant B)
+ * Automatically transitions settings rows to vertical columns on small screens (< 480px).
+ * This prevents horizontal text clipping while allowing pills to be wide, legible, and easy to tap.
+ */
+@media (max-width: 480px) {
+    .pill-row {
+        flex-direction: column;
+        align-items: flex-start; /* Place descriptive labels on top */
+        gap: 6px;
+        padding-bottom: 10px;
+        margin-bottom: 10px;
+    }
+
+    .pill-group {
+        width: 100% !important; /* Allow the pill group to expand across the full card width */
+        max-width: 100% !important;
+        justify-content: space-between; /* Distribute buttons evenly across the line */
+    }
+
+    .pill-btn {
+        flex: 1 1 auto; /* Let buttons stretch gracefully to take equal shares of the screen width */
+        padding: 6px 10px; /* Breathe slightly more on mobile touch screens */
+    }
+}
+
+.pill-btn.active {
+    background: #2b354a !important;
+    color: #3b90ff !important;
+}
+
+.pill-btn:active:not(.active) {
+    transform: scale(0.96);
+    background: rgba(43, 53, 74, 0.3);
+}
+
+/* 14B. Preset Grid Selector Cards */
+.preset-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    width: 100%;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    box-sizing: border-box;
+}
+
+.preset-card {
+    background: rgba(19, 26, 38, 0.4);
+    border: 1px solid #2b354a;
+    border-radius: var(--radius-elements);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease, transform 0.1s ease;
+    min-height: 74px;
+    box-sizing: border-box;
+}
+
+.preset-card-title {
+    font-size: clamp(11px, 2.8vw, 13px);
+    font-weight: 700;
+    color: #f1f3f9;
+    margin: 0;
+    line-height: 1.25;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.preset-card-desc {
+    font-size: 10px;
+    font-weight: 300;
+    color: #8e8e93;
+    margin: 0;
+    line-height: 1.3;
+    max-width: 100%;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.preset-card.active {
+    border-color: #3b90ff !important;
+    background: rgba(43, 53, 74, 0.25) !important;
+    box-shadow: 0 0 16px rgba(59, 144, 255, 0.22);
+}
+
+.preset-card.active .preset-card-title {
+    color: #3b90ff;
+}
+
+.preset-card:active:not(.active) {
+    transform: scale(0.97);
+    background: rgba(19, 26, 38, 0.6);
+}

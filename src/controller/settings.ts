@@ -13,16 +13,16 @@ import type { AppState } from '../types/clinical';
 interface ConfigField {
     id: string;
     key: keyof AppState;
-    type: 'checkbox' | 'value' | 'int' | 'float' | 'boolean' | 'percent';
+    type: 'checkbox' | 'value' | 'int' | 'float' | 'boolean' | 'percent' | 'pill' | 'grid';
 }
 
 const CONFIG_SCHEMA: ConfigField[] = [
     { id: 'chk-stage-advance', key: 'allowStageAdvance', type: 'checkbox' },
-    { id: 'select-flash-duration', key: 'flashDurationMode', type: 'value' },
+    { id: 'select-flash-duration', key: 'flashDurationMode', type: 'pill' },
     { id: 'chk-peripheral', key: 'isPeripheralEnabled', type: 'checkbox' },
     { id: 'chk-crowding', key: 'isCrowdingEnabled', type: 'checkbox' },
-    { id: 'select-crowding-mode', key: 'crowdingMode', type: 'value' },
-    { id: 'select-flanker-distance', key: 'flankerDistanceCoeff', type: 'float' },
+    { id: 'select-crowding-mode', key: 'crowdingMode', type: 'pill' },
+    { id: 'select-flanker-distance', key: 'flankerDistanceCoeff', type: 'pill' },
     { id: 'chk-orthogonal-flankers', key: 'isOrthogonalFlankersEnabled', type: 'checkbox' },
     { id: 'chk-dynamic-flankers', key: 'isDynamicFlankersEnabled', type: 'checkbox' },
     { id: 'chk-low-contrast', key: 'allowLowContrast', type: 'checkbox' },
@@ -32,49 +32,48 @@ const CONFIG_SCHEMA: ConfigField[] = [
     { id: 'chk-anaglyph', key: 'isAnaglyphEnabled', type: 'checkbox' },
     { id: 'chk-flicker', key: 'isFlickerEnabled', type: 'checkbox' },
     { id: 'chk-fusion-lock', key: 'isFusionLockEnabled', type: 'checkbox' },
-    { id: 'select-red-side', key: 'redEyeSide', type: 'value' },
-    { id: 'select-lazy-side', key: 'lazyEyeSide', type: 'value' },
+    { id: 'select-red-side', key: 'redEyeSide', type: 'pill' },
+    { id: 'select-lazy-side', key: 'lazyEyeSide', type: 'pill' },
     { id: 'range-strong-attenuation', key: 'strongEyeContrastFactor', type: 'percent' },
-    { id: 'select-start-level', key: 'currentLevel', type: 'int' },
-    { id: 'select-autonext', key: 'autoAdvance', type: 'boolean' },
-    { id: 'select-session-limit', key: 'sessionLimit', type: 'int' },
-    { id: 'select-timer-limit', key: 'timerLimitMinutes', type: 'int' },
+    { id: 'select-start-level', key: 'currentLevel', type: 'pill' },
+    { id: 'select-autonext', key: 'autoAdvance', type: 'pill' },
+    { id: 'select-session-limit', key: 'sessionLimit', type: 'pill' },
+    { id: 'select-timer-limit', key: 'timerLimitMinutes', type: 'pill' },
     { id: 'slider-left-r', key: 'calibratorLeftR', type: 'int' },
     { id: 'slider-right-g', key: 'calibratorRightG', type: 'int' },
     { id: 'slider-right-b', key: 'calibratorRightB', type: 'int' },
-    { id: 'select-pull-speed', key: 'synopPullSpeed', type: 'int' },
-    { id: 'select-target-type', key: 'synopTargetType', type: 'value' },
+    { id: 'select-pull-speed', key: 'synopPullSpeed', type: 'pill' },
+    { id: 'select-target-type', key: 'synopTargetType', type: 'pill' },
     { id: 'chk-synop-lazy-grid', key: 'synopShowLazyGrid', type: 'checkbox' },
     { id: 'chk-synop-strong-grid', key: 'synopShowStrongGrid', type: 'checkbox' },
-    { id: 'select-target-size', key: 'synopTargetSize', type: 'int' },
+    { id: 'select-target-size', key: 'synopTargetSize', type: 'pill' },
     { id: 'chk-synop-flicker', key: 'synopFlickerActive', type: 'checkbox' },
     { id: 'chk-synop-lock-y', key: 'synopLockVertical', type: 'checkbox' },
     { id: 'chk-synop-lock-x', key: 'synopLockHorizontal', type: 'checkbox' },
     { id: 'chk-permanent-cross', key: 'isPermanentCrossEnabled', type: 'checkbox' },
-    { id: 'select-rds-dot-size', key: 'rdsDotSize', type: 'int' },
-    { id: 'select-rds-density', key: 'rdsDensity', type: 'float' },
-    { id: 'select-rds-start-disparity', key: 'rdsStartDisparity', type: 'int' },
-    { id: 'select-rds-autonext', key: 'rdsAutoAdvance', type: 'boolean' },
+    { id: 'select-rds-dot-size', key: 'rdsDotSize', type: 'pill' },
+    { id: 'select-rds-density', key: 'rdsDensity', type: 'pill' },
+    { id: 'select-rds-start-disparity', key: 'rdsStartDisparity', type: 'pill' },
+    { id: 'select-rds-autonext', key: 'rdsAutoAdvance', type: 'pill' },
     { id: 'chk-rds-dynamic', key: 'rdsIsDynamic', type: 'checkbox' },
     { id: 'chk-rds-randomize-vertical', key: 'rdsRandomizeVertical', type: 'checkbox' },
     { id: 'chk-rds-floating', key: 'rdsIsFloating', type: 'checkbox' },
-    { id: 'select-rds-float-speed', key: 'rdsFloatSpeed', type: 'value' },
-    { id: 'chk-rds-permanent-cross', key: 'rdsIsPermanentCrossEnabled', type: 'checkbox' }
+    { id: 'select-rds-float-speed', key: 'rdsFloatSpeed', type: 'pill' },
+    { id: 'chk-rds-permanent-cross', key: 'rdsIsPermanentCrossEnabled', type: 'checkbox' },
+    { id: 'select-lang', key: 'currentLang', type: 'pill' },
+    { id: 'select-preset-mode', key: 'presetMode', type: 'grid' }
 ];
 
 export class SettingsController {
     private anaglyphPanel: HTMLElement | null;
     private valStrongAttenuation: HTMLElement | null;
-    private selectPresetMode: HTMLSelectElement | null;
     private rangeStrongAttenuation: HTMLInputElement | null;
 
     constructor(
-        private onSyncCallback: () => void,
-        private getTranslations: () => Record<string, string>
+        private onSyncCallback: () => void
     ) {
         this.anaglyphPanel = document.getElementById('anaglyph-settings-panel');
         this.valStrongAttenuation = document.getElementById('val-strong-attenuation');
-        this.selectPresetMode = document.getElementById('select-preset-mode') as HTMLSelectElement | null;
         this.rangeStrongAttenuation = document.getElementById('range-strong-attenuation') as HTMLInputElement | null;
     }
 
@@ -108,6 +107,20 @@ export class SettingsController {
                     if (field.key === 'isFlickerEnabled') lastActiveTrigger = 'flicker';
                     if (field.key === 'rdsRandomizeVertical') lastActiveTrigger = 'rdsRandomizeVertical';
                     if (field.key === 'rdsIsFloating') lastActiveTrigger = 'rdsIsFloating';
+                }
+            } else if (field.type === 'pill' || field.type === 'grid') {
+                // Extract data-value of the currently active child inside our custom segmented controls
+                const activeChild = el.querySelector('.active') as HTMLElement | null;
+                const rawVal = activeChild ? activeChild.getAttribute('data-value') || '' : '';
+                
+                // Parse values cleanly to prevent type mismatch inside State machine
+                if (field.key === 'autoAdvance' || field.key === 'rdsAutoAdvance') {
+                    val = (rawVal === 'true');
+                } else if (typeof s[field.key] === 'number') {
+                    val = rawVal.includes('.') ? parseFloat(rawVal) : parseInt(rawVal, 10);
+                    if (isNaN(val)) val = 0;
+                } else {
+                    val = rawVal;
                 }
             } else {
                 const inputEl = el as HTMLInputElement | HTMLSelectElement;
@@ -148,10 +161,11 @@ export class SettingsController {
         Store.resolveConflicts(lastActiveTrigger);
 
         if (s.appMode === 'gabor') {
-            const detectedPreset = Store.detectMatchingPreset();
-            Store.updateState('presetMode', detectedPreset);
-            if (this.selectPresetMode) {
-                this.selectPresetMode.value = detectedPreset;
+            // Only auto-detect presets if the user is not actively in custom manual mode.
+            // This allows the "Custom" card to act as an explicit unlock trigger for locked sliders.
+            if (s.presetMode !== 'custom') {
+                const detectedPreset = Store.detectMatchingPreset();
+                Store.updateState('presetMode', detectedPreset);
             }
         }
 
@@ -165,36 +179,6 @@ export class SettingsController {
     updatePresetUI(): void {
         const s = Store.state;
         const isSynop = s.appMode === 'synoptophore';
-        const t = this.getTranslations ? this.getTranslations() : {};
-
-        const selectLimit = document.getElementById('select-session-limit') as HTMLSelectElement | null;
-        if (selectLimit) {
-            const curVal = s.sessionLimit;
-            const noLimitTxt = t.optLimitNo || "No Limit";
-            if (s.appMode === 'rds') {
-                const labelSprint = t.optLimitRdsSprint || "Sprint";
-                const labelStandard = t.optLimitRdsStandard || "Standard";
-                const labelMax = t.optLimitRdsMax || "Max";
-                selectLimit.innerHTML = `
-                    <option value="0" ${curVal === 0 ? 'selected' : ''}>${noLimitTxt}</option>
-                    <option value="15" ${curVal === 15 ? 'selected' : ''}>15 (${labelSprint})</option>
-                    <option value="25" ${curVal === 25 ? 'selected' : ''}>25 (${labelStandard})</option>
-                    <option value="40" ${curVal === 40 ? 'selected' : ''}>40 (${labelMax})</option>
-                `;
-            } else {
-                const labelBlitz = t.optLimitGaborBlitz || "Blitz";
-                const labelStandard = t.optLimitGaborStandard || "Standard";
-                const labelIntense = t.optLimitGaborIntense || "Intense";
-                const labelMax = t.optLimitGaborMax || "Max";
-                selectLimit.innerHTML = `
-                    <option value="0" ${curVal === 0 ? 'selected' : ''}>${noLimitTxt}</option>
-                    <option value="40" ${curVal === 40 ? 'selected' : ''}>40 (${labelBlitz})</option>
-                    <option value="80" ${curVal === 80 ? 'selected' : ''}>80 (${labelStandard})</option>
-                    <option value="120" ${curVal === 120 ? 'selected' : ''}>120 (${labelIntense})</option>
-                    <option value="160" ${curVal === 160 ? 'selected' : ''}>160 (${labelMax})</option>
-                `;
-            }
-        }
 
         if (!isSynop) {
             // Safeguard: Automatically clamp Gabor subpixel calibrations to prevent negative phase underflow.
@@ -237,9 +221,16 @@ export class SettingsController {
             if (!el) return;
 
             if (field.id === 'select-session-limit') {
-                const selectEl = el as HTMLSelectElement;
-                selectEl.value = (s.appMode === 'rds' ? s.rdsSessionLimit : s.sessionLimit).toString();
-                this.updateSliderTrackGradient(selectEl as any);
+                const targetLimit = s.appMode === 'rds' ? s.rdsSessionLimit : s.sessionLimit;
+                const children = el.querySelectorAll('.pill-btn');
+                children.forEach(child => {
+                    const childVal = parseInt(child.getAttribute('data-value') || '0', 10);
+                    if (childVal === targetLimit) {
+                        child.classList.add('active');
+                    } else {
+                        child.classList.remove('active');
+                    }
+                });
                 return;
             }
 
@@ -255,6 +246,17 @@ export class SettingsController {
             if (field.type === 'checkbox') {
                 const inputEl = el as HTMLInputElement;
                 inputEl.checked = s[field.key] as boolean;
+            } else if (field.type === 'pill' || field.type === 'grid') {
+                // Symmetrical hydration: Toggle .active on the child that matches the Store value
+                const currentValue = String(s[field.key]);
+                const children = el.querySelectorAll('.pill-btn, .preset-card');
+                children.forEach(child => {
+                    if (child.getAttribute('data-value') === currentValue) {
+                        child.classList.add('active');
+                    } else {
+                        child.classList.remove('active');
+                    }
+                });
             } else {
                 const inputEl = el as HTMLSelectElement | HTMLInputElement;
                 if (field.type === 'value') inputEl.value = s[field.key] as string;
@@ -271,7 +273,7 @@ export class SettingsController {
                 (el as HTMLInputElement).value = (s.appMode === 'synoptophore' ? s.synopCalibratorRightB : s.calibratorRightB).toString();
             }
 
-            if (field.type === 'checkbox' || el.tagName === 'SELECT') {
+            if (field.type === 'checkbox' || el.tagName === 'SELECT' || field.type === 'pill' || field.type === 'grid') {
                 // Do nothing for gradients
             } else {
                 this.updateSliderTrackGradient(el as HTMLInputElement);
@@ -281,8 +283,6 @@ export class SettingsController {
         if (sliderR) this.updateSliderTrackGradient(sliderR);
         if (sliderG) this.updateSliderTrackGradient(sliderG);
         if (sliderB) this.updateSliderTrackGradient(sliderB);
-
-        if (this.selectPresetMode) this.selectPresetMode.value = s.presetMode;
 
         this.updateCalibrationLabels(s);
         this.updateVisibilityPanels();
@@ -335,13 +335,13 @@ export class SettingsController {
 
             if (rowCrowdingMode) {
                 rowCrowdingMode.style.opacity = crowdingOpacity;
-                const selectElement = rowCrowdingMode.querySelector('select');
-                if (selectElement) selectElement.disabled = !s.isCrowdingEnabled;
+                const pillGroup = rowCrowdingMode.querySelector('.pill-group') as HTMLElement | null;
+                if (pillGroup) pillGroup.style.pointerEvents = s.isCrowdingEnabled ? 'auto' : 'none';
             }
             if (rowFlankerDistance) {
                 rowFlankerDistance.style.opacity = crowdingOpacity;
-                const selectElement = rowFlankerDistance.querySelector('select');
-                if (selectElement) selectElement.disabled = !s.isCrowdingEnabled;
+                const pillGroup = rowFlankerDistance.querySelector('.pill-group') as HTMLElement | null;
+                if (pillGroup) pillGroup.style.pointerEvents = s.isCrowdingEnabled ? 'auto' : 'none';
             }
             if (rowOrthogonal) rowOrthogonal.style.opacity = crowdingOpacity;
             if (rowDynamic) rowDynamic.style.opacity = crowdingOpacity;
@@ -350,21 +350,31 @@ export class SettingsController {
         const rowRdsFloatSpeed = document.getElementById('row-rds-floating-speed');
         if (rowRdsFloatSpeed) {
             rowRdsFloatSpeed.style.opacity = s.rdsIsFloating ? '1' : '0.5';
-            const selectEl = rowRdsFloatSpeed.querySelector('select');
-            if (selectEl) selectEl.disabled = !s.rdsIsFloating;
+            const pillGroup = rowRdsFloatSpeed.querySelector('.pill-group') as HTMLElement | null;
+            if (pillGroup) pillGroup.style.pointerEvents = s.rdsIsFloating ? 'auto' : 'none';
         }
 
         if (this.anaglyphPanel) {
             this.anaglyphPanel.style.display = 'block';
             this.anaglyphPanel.style.opacity = (s.isAnaglyphEnabled || isSynop || isRds) ? '1' : '0.4';
-            this.anaglyphPanel.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLButtonElement>('input, select, button').forEach(input => {
+            
+            // Disable input elements inside anaglyph panel if anaglyph is off
+            this.anaglyphPanel.querySelectorAll<HTMLInputElement | HTMLButtonElement>('input, button').forEach(input => {
                 if (input.id !== 'chk-fusion-lock' && input.id !== 'chk-anaglyph') {
                     if (input.id === 'slider-left-r' || input.id === 'slider-right-g' || input.id === 'slider-right-b' || input.id === 'range-strong-attenuation') {
                         input.disabled = false;
+                    } else if (input.classList.contains('pill-btn')) {
+                        // Pill buttons rely on pointer-events from their parent container
+                        // Do nothing here directly to the buttons
                     } else {
                         input.disabled = (isSynop || isRds) ? false : !s.isAnaglyphEnabled;
                     }
                 }
+            });
+
+            // Disable Pill Groups pointer events
+            this.anaglyphPanel.querySelectorAll<HTMLElement>('.pill-group').forEach(group => {
+                group.style.pointerEvents = (s.isAnaglyphEnabled || isSynop || isRds) ? 'auto' : 'none';
             });
         }
 
@@ -420,14 +430,23 @@ export class SettingsController {
             });
         }
 
-        if (this.selectPresetMode) {
-            this.selectPresetMode.addEventListener('change', () => {
-                if (!this.selectPresetMode) return;
-                Store.updateState('presetMode', this.selectPresetMode.value as any);
+        // High-Performance Event Delegation: Bind click events to all horizontal Pill-groups and Preset-grids
+        document.querySelectorAll('.pill-group, .preset-grid').forEach(parent => {
+            parent.addEventListener('click', (event) => {
+                const target = event.target as HTMLElement;
+                const button = target.closest('.pill-btn, .preset-card') as HTMLElement | null;
+                if (!button || button.classList.contains('active')) return;
+
+                // Move active class instantly for premium tactical feedback
+                parent.querySelectorAll('.pill-btn, .preset-card').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                // Synchronize state with store, apply preset rules and trigger UI updates
+                this.syncStateFromUI();
                 this.updatePresetUI();
                 if (typeof this.onSyncCallback === 'function') this.onSyncCallback();
             });
-        }
+        });
 
         const headers = document.querySelectorAll('.accordion-header');
         headers.forEach(header => {
@@ -465,7 +484,7 @@ export class SettingsController {
             const el = document.getElementById(field.id);
             if (!el) return;
             const skipIds = ['select-preset-mode', 'range-strong-attenuation', 'slider-left-r', 'slider-right-g', 'slider-right-b'];
-            if (skipIds.includes(field.id)) return;
+            if (skipIds.includes(field.id) || field.type === 'pill' || field.type === 'grid') return;
 
             el.addEventListener('change', () => {
                 this.syncStateFromUI();

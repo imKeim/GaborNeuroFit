@@ -164,13 +164,17 @@ export async function setLanguage(lang: Language): Promise<void> {
     updateScoreboard(Store.state, t);
     updateStatusBar(Store.state, t);
 
-    // Provide soft degradation for global Twemoji parsing
+    // Provide soft degradation for global Twemoji parsing across the active HUD and modals
     // @ts-ignore
     if (typeof window !== 'undefined' && window.twemoji) {
         // @ts-ignore
         window.twemoji.parse(document.getElementById('top-bar'));
         // @ts-ignore
         window.twemoji.parse(document.getElementById('bottom-dock'));
+        // @ts-ignore
+        window.twemoji.parse(document.getElementById('settings-modal'));
+        // @ts-ignore
+        window.twemoji.parse(document.getElementById('stats-modal'));
     }
 }
 
@@ -345,7 +349,16 @@ window.addEventListener('load', async () => {
         if (gaborController && gaborController.isAnaglyphTestActive) {
             drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
         }
-    }, () => activeTranslations);
+        
+        // If Pill Tabs change the language, immediately react and reload i18n
+        if (Store.state.currentLang !== activeTranslations._currentLangMetadata) {
+            activeTranslations._currentLangMetadata = Store.state.currentLang;
+            setLanguage(Store.state.currentLang);
+        }
+    });
+    
+    // Stamp initial language to metadata for comparison tracking
+    activeTranslations._currentLangMetadata = Store.state.currentLang;
 
     // Architectural Interceptor: Safeguards resources and clinical timers when view is obstructed
     function enforceSystemPause(): void {
@@ -799,41 +812,42 @@ window.addEventListener('load', async () => {
                 if (!gaborController) return;
                 gaborController.isAnaglyphTestActive = !gaborController.isAnaglyphTestActive;
 
-                if (gaborController.isAnaglyphTestActive) {
-                    btnFusionTest.classList.add('active');
-                    container.classList.add('calibration-active');
+                    if (gaborController.isAnaglyphTestActive) {
+                        btnFusionTest.classList.add('active');
+                        container.classList.add('calibration-active');
 
-                    if (scrollBody && settingsModal) {
-                        // Safe persistent state anchoring
-                        (settingsModal as any)._savedScrollTop = scrollBody.scrollTop;
-                    }
+                        if (scrollBody && settingsModal) {
+                            // Safe persistent state anchoring
+                            (settingsModal as any)._savedScrollTop = scrollBody.scrollTop;
+                        }
 
-                    if (settingsModal) {
-                        settingsModal.classList.add('calibration-mode');
-                        if (scrollBody) scrollBody.scrollTop = 0;
-                    }
+                        if (settingsModal) {
+                            settingsModal.classList.add('calibration-mode');
+                            if (scrollBody) scrollBody.scrollTop = 0;
+                        }
 
-                    // Architectural delegation: Suspend watermark rendering to clear center field for calibration
-                    if (pauseController) pauseController.overrideWatermarkVisibility(true);
+                        // Architectural delegation: Suspend watermark rendering to clear center field for calibration
+                        if (pauseController) pauseController.overrideWatermarkVisibility(true);
 
-                    const selectRedSide = document.getElementById('select-red-side') as HTMLSelectElement | null;
-                    const selectLazySide = document.getElementById('select-lazy-side') as HTMLSelectElement | null;
-                    // Generic state mutation
-                    if (selectRedSide) Store.updateState('redEyeSide', selectRedSide.value as EyeSide);
-                    if (selectLazySide) Store.updateState('lazyEyeSide', selectLazySide.value as EyeSide);
+                        const selectRedSide = document.getElementById('select-red-side') as HTMLSelectElement | null;
+                        const selectLazySide = document.getElementById('select-lazy-side') as HTMLSelectElement | null;
+                        // Generic state mutation
+                        if (selectRedSide) Store.updateState('redEyeSide', selectRedSide.value as EyeSide);
+                        if (selectLazySide) Store.updateState('lazyEyeSide', selectLazySide.value as EyeSide);
 
-                    resizeCanvasesToDPR();
+                        resizeCanvasesToDPR();
 
-                    if (synoptophoreController) synoptophoreController.stopFlickerLoop();
+                        if (synoptophoreController) synoptophoreController.stopFlickerLoop();
 
-                    drawIdleState(canvas, null, overlayCanvas, overlayCtx, false);
-                    drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
-                    canvas.style.display = 'block';
-                    overlayCanvas.style.display = 'block';
-                    cross.style.display = 'block'; // Keep the crisp native CSS cross visible during calibration
-
-                    if (modalContent) modalContent.classList.remove('modal-transitioning');
-                    if (calibrationCurtain) calibrationCurtain.classList.remove('active');
+                        // Symmetrical Calibration Lock: Force draw the spatial reference frame during active calibration for ALL modes (including RDS)
+                        drawIdleState(canvas, null, overlayCanvas, overlayCtx, true);
+                        drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
+                        canvas.style.display = 'block';
+                        overlayCanvas.style.display = 'block';
+                        cross.style.display = 'block'; // Keep the crisp native CSS cross visible during calibration
+                                
+                        if (modalContent) modalContent.classList.remove('modal-transitioning');
+                        if (calibrationCurtain) calibrationCurtain.classList.remove('active');
                 } else {
                     btnFusionTest.classList.remove('active');
                     container.classList.remove('calibration-active');
