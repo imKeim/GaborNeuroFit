@@ -28,8 +28,8 @@
     --z-canvas-gpu: 10;
     --z-canvas-hud: 20;
     --z-foveal-cross: 30;
-    --z-curtain: 40;
     --z-watermark: 50;
+    --z-curtain: 60;
     --z-topbar: 100;
     --z-dock: 100;
     --z-modal-backdrop: 2000;
@@ -171,7 +171,7 @@ img.emoji {
     background-color: #1a222f;
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: var(--radius-elements);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
 }
 
 #app-title {
@@ -219,8 +219,8 @@ img.emoji {
 
 /* W3C Accessibility: Reveals focus outline ONLY for keyboard navigation (Tab), remaining hidden for mouse/touch */
 .control-btn:focus-visible, .action-btn:focus-visible, #btn-start:focus-visible, .tab-btn:focus-visible {
-    outline: 2px solid #3b90ff;
-    outline-offset: 4px;
+    outline: 2px solid transparent; /* Keeps outline detectable for High Contrast Mode without rendering square artifacts */
+    outline-offset: 0;
 }
 
 @media (hover: hover) {
@@ -246,10 +246,10 @@ img.emoji {
 #score-board {
     width: 100%;
     background: rgba(44, 52, 64, 0.85);
-    padding: clamp(6px, 1vh, 10px) clamp(10px, 2vw, 14px); /* Slimmer boundaries */
+    padding: clamp(6px, 1vh, 10px) clamp(10px, 2vw, 14px);
     border-radius: var(--radius-elements);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 #score-text {
@@ -285,7 +285,7 @@ img.emoji {
     gap: clamp(6px, 1.2vh, 12px);
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: var(--radius-elements);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.26);
     transition: opacity 0.3s ease, filter 0.3s ease;
 }
 
@@ -293,8 +293,45 @@ img.emoji {
 #controls-layout.paused-state,
 #container.paused-state > canvas {
     /* Surgically dims ONLY the optical layers, protecting the watermark and curtain from inheriting transparency */
-    opacity: 0.66;
-    filter: grayscale(33%);
+    opacity: 0.45;
+    filter: grayscale(65%);
+}
+
+/* 
+ * Bypass visual pause dimming during active dichoptic lens calibration.
+ * Restores 100% sRGB luminosity to prevent chromatic crosstalk in red-cyan 3D glasses.
+ */
+#container.paused-state.calibration-active > canvas {
+    opacity: 1 !important;
+    filter: none !important;
+}
+
+/* 
+ * Completely hide the central fixation cross during active pauses.
+ * Prevents overlapping artifacts under the text watermark and encourages ciliary muscle relaxation.
+ */
+#container.paused-state #cross {
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+/* 
+ * Force override: Ensure the central CSS cross remains beautifully visible and crisp 
+ * during active dichoptic lens calibration, bypassing the global pause hiding.
+ */
+#container.paused-state.calibration-active #cross {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/*
+ * Force hide the pause text watermark during active calibration to avoid visual clutter and 
+ * prevent patient distraction from the foveation central anchor.
+ */
+#container.calibration-active #pause-watermark {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    display: none !important;
 }
 
 #controls-layout.paused-state,
@@ -438,8 +475,12 @@ img.emoji {
     will-change: transform, box-shadow;
     backface-visibility: hidden;
     transform: translateZ(0);
-    /* Fusing tactile snap animations with smooth pause dimming */
-    transition: box-shadow 0.15s ease-out, opacity 0.3s ease, filter 0.3s ease;
+    
+    /* 
+     * Decoupled dual-transition timings. 
+     * When touch is released, the glow fades out smoothly and organically over 280ms.
+     */
+    transition: box-shadow 0.28s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease, filter 0.3s ease;
 }
 
 /*
@@ -450,11 +491,15 @@ img.emoji {
  *    during Synoptophore vergence training (Spatiomotor integration).
  * Designed with a cold, low-opacity clinical glow to prevent pupillary light reflex.
  */
-#container:active {
+#container:active,
+#container.dragging {
     /* Mathematically merges the static volumetric drop-shadow with the procedural neon glow */
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3),
                 0 0 0 2px rgba(255, 255, 255, 0.25),
                 0 0 24px rgba(59, 144, 255, 0.25);
+    
+    /* Ultra-fast responsive transition on press for immediate tactile confirmation (100ms) */
+    transition: box-shadow 0.1s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 /* Syntactically disable pointer cursor in RDS to prevent tracking distractions */
@@ -510,13 +555,14 @@ canvas {
     position: absolute;
     top: 50%;
     left: 50%;
-    color: #ffffff; /* Absolute solid white for maximum clinical contrast */
+    color: rgba(255, 255, 255);
+    -webkit-text-stroke: 1.5px #1a222f; /* Dark gray clean outline stroke */
     font-weight: 800;
-    font-size: clamp(20px, 5vw, 28px);
+    font-size: clamp(24px, 5vw, 32px);
     text-transform: uppercase;
     letter-spacing: 4px;
     pointer-events: none;
-    text-shadow: 0 6px 24px rgba(0, 0, 0, 0.95); /* Deepened shadow pushes the text sharply above the dim canvas */
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); /* Lightweight drop-shadow for depth */
 
     /* Hardware Accelerated Premium Entrance */
     opacity: 0;
@@ -724,19 +770,20 @@ button:focus, input:focus, select:focus {
 }
 
 /*
- * Holy Grail Modal Content Array
+ * Modal Content Array
  * Constrained mathematically to viewport limits
  */
 .modal-content {
     background: #1c2331;
     border: 1px solid #2b354a;
     border-radius: var(--radius-premium);
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45); /* Unified deepest premium depth shadow (Level 3) */
     width: 100%;
     max-width: 640px;
     max-height: min(85dvh, 800px); /* Strict height containment */
     display: flex;
     flex-direction: column; /* Flex rules keep Header/Footer pinned */
+    overflow: hidden; /* Locks card boundaries to prevent mobile Flexbox height bloating and layout leakage */
 
     /* Spring physics entrance */
     transform: scale(0.92);
@@ -799,9 +846,10 @@ button:focus, input:focus, select:focus {
 /* Internal Scroll Body */
 .modal-scroll-body {
     flex: 1 1 auto;
+    min-height: 0; /* Overrides default min-height: auto, forcing mobile flex containers to scroll internally */
     overflow-y: auto;
     overscroll-behavior: contain; /* Prevents iOS rubber-banding pulling the document body */
-    padding-right: 4px;
+    padding-right: 8px;
 
     /* Permanently reserves scrollbar track space to prevent horizontal jumping during accordion reflows */
     scrollbar-gutter: stable;
@@ -817,6 +865,19 @@ button:focus, input:focus, select:focus {
     border-radius: 6px;
 }
 
+/* 
+ * Mobile scrolling bottom spacer.
+ * Creates a physical whitespace boundary that WebKit cannot ignore during momentum scrolling,
+ * preventing scrolled content from overlapping the absolute-positioned OK button on touch screens.
+ */
+.modal-scroll-body::after {
+    content: '';
+    display: block;
+    height: 20px;
+    width: 100%;
+    flex-shrink: 0;
+}
+
 /* ==========================================================================
    10. SETTINGS FORMS & ACCORDIONS (INTERACTIVE DATA LAYER)
    ========================================================================== */
@@ -825,7 +886,7 @@ button:focus, input:focus, select:focus {
     flex: 1;
     border: none;
     padding: 8px 12px;
-    border-radius: var(--radius-elements);
+    border-radius: 6px; /* Concentric radius (Outer 10px - padding 4px) to round the active highlight */
     font-size: clamp(11px, 2.5vw, 13px);
     font-weight: 700;
     background: transparent;
@@ -1086,7 +1147,7 @@ input[type="range"]::-moz-range-thumb {
 
 .leaderboard-list {
     list-style: none;
-    padding: 0;
+    padding: 0 !important; /* Neutralizes .modal-content ul padding-left leakage */
     margin: 0;
     display: flex;
     flex-direction: column;

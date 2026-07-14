@@ -19,12 +19,91 @@ function resolveHeaderColor(title: string): string {
     return '#3b90ff'; // Standard Clinical Blue fallback
 }
 
+const FOCUSABLE_SELECTORS = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+let previousActiveElement: HTMLElement | null = null;
+
 export function openModal(modal: HTMLElement | null): void {
-    if (modal) modal.classList.add('modal-open');
+    if (!modal) return;
+    
+    // 1. Memorize previously focused trigger element to preserve visual focus history
+    previousActiveElement = document.activeElement as HTMLElement;
+
+    modal.classList.add('modal-open');
+
+    // 2. Hide background layout from screen readers and DOM tab order
+    const appWrapper = document.getElementById('app-wrapper');
+    if (appWrapper) appWrapper.setAttribute('aria-hidden', 'true');
+
+    // 3. Setup and bind focus trap loop
+    setupFocusTrap(modal);
+
+    // 4. Focus first interactive element inside the modal to orient the user instantly
+    const focusable = Array.from(modal.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS))
+        .filter(el => el.offsetWidth > 0 && el.offsetHeight > 0);
+    if (focusable.length > 0) {
+        focusable[0].focus();
+    }
 }
 
 export function closeModal(modal: HTMLElement | null): void {
-    if (modal) modal.classList.remove('modal-open');
+    if (!modal) return;
+
+    modal.classList.remove('modal-open');
+
+    // 1. Un-mute background layout
+    const appWrapper = document.getElementById('app-wrapper');
+    if (appWrapper) appWrapper.removeAttribute('aria-hidden');
+
+    // 2. Remove focus trap listeners
+    destroyFocusTrap(modal);
+
+    // 3. Return focus precisely back to the parent trigger button
+    if (previousActiveElement) {
+        previousActiveElement.focus();
+        previousActiveElement = null;
+    }
+}
+
+function setupFocusTrap(modal: HTMLElement): void {
+    destroyFocusTrap(modal);
+
+    const handler = (event: KeyboardEvent) => {
+        if (event.key !== 'Tab') return;
+
+        const focusable = Array.from(modal.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS))
+            .filter(el => el.offsetWidth > 0 && el.offsetHeight > 0);
+
+        if (focusable.length === 0) {
+            event.preventDefault();
+            return;
+        }
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (event.shiftKey) {
+            if (document.activeElement === first) {
+                last.focus();
+                event.preventDefault();
+            }
+        } else {
+            if (document.activeElement === last) {
+                first.focus();
+                event.preventDefault();
+            }
+        }
+    };
+
+    (modal as any)._focusTrapHandler = handler;
+    modal.addEventListener('keydown', handler);
+}
+
+function destroyFocusTrap(modal: HTMLElement): void {
+    const handler = (modal as any)._focusTrapHandler;
+    if (handler) {
+        modal.removeEventListener('keydown', handler);
+        delete (modal as any)._focusTrapHandler;
+    }
 }
 
 /**

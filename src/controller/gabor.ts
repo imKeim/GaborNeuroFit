@@ -245,9 +245,12 @@ export class GaborController {
                 this.transitionTo(TrialState.AWAITING_INPUT);
             }, flashDuration);
         } else {
-            this.btnStart.disabled = false;
-            this.btnStart.style.opacity = "1";
-            this.btnStart.innerText = t.reflashBtn || "RE-FLASH";
+            // In static or flicker modes, the Gabor patch remains permanently illuminated.
+            // We keep the central trigger button strictly disabled to prevent visually jarring phase-resets,
+            // focusing the patient's cognitive resources solely on resolving and submitting the L/R answer.
+            this.btnStart.disabled = true;
+            this.btnStart.style.opacity = "0.4";
+            this.btnStart.innerText = "...";
             this.transitionTo(TrialState.AWAITING_INPUT);
         }
     }
@@ -417,6 +420,7 @@ export class GaborController {
 
     stopUnifiedRenderingLoop(): void {
         this.flankerPhaseOffset = 0;
+        this.tracker.clearAll();
     }
 
     triggerMilestoneFlash(callback?: () => void): void {

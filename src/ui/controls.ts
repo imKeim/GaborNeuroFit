@@ -6,8 +6,6 @@
  * Strictly asserts Touch, Mouse, and Keyboard events to prevent event propagation crashes.
  */
 
-import { closeCustomAlert } from './modal';
-
 export interface InputHandlers {
     onActionLeft?: () => void;
     onActionRight?: () => void;
@@ -108,6 +106,7 @@ export function bindInputControls(handlers: InputHandlers): void {
             isMouseDragging = true;
             swipeStartX = event.clientX;
             swipeStartY = event.clientY;
+            swipeStartTime = Date.now(); // Record start time for unified mouse-drag velocity calculations
         });
 
         window.addEventListener('mousemove', (event: MouseEvent) => {
@@ -120,6 +119,20 @@ export function bindInputControls(handlers: InputHandlers): void {
 
                 if (typeof handlers.onDragUpdate === 'function') {
                     handlers.onDragUpdate(logicalDeltaX, logicalDeltaY);
+                }
+            }
+        });
+
+        window.addEventListener('mouseup', (event: MouseEvent) => {
+            if (isMouseDragging) {
+                isMouseDragging = false;
+                const deltaXTotal = event.clientX - swipeStartX;
+                const deltaYTotal = event.clientY - swipeStartY;
+                const deltaTime = Date.now() - swipeStartTime;
+
+                // Symmetrically trigger onDragEnd for mouse events to cleanly strip the .dragging class
+                if (typeof handlers.onDragEnd === 'function') {
+                    handlers.onDragEnd(deltaTime, deltaXTotal, deltaYTotal, event.clientX, event.clientY);
                 }
             }
         });
@@ -219,45 +232,53 @@ export function bindInputControls(handlers: InputHandlers): void {
         const key = event.key.toLowerCase();
         const isTuningKey = ['arrowup', 'arrowdown', 'w', 's', 'ц', 'ы'].includes(key);
 
-        if (event.repeat && !isTuningKey) return;
+    if (event.repeat && !isTuningKey) return;
 
-        const confirmModal = document.getElementById('custom-confirm-modal');
-        const alertModal = document.getElementById('custom-alert-modal');
-        const settingsModal = document.getElementById('settings-modal');
-        const infoModal = document.getElementById('info-modal');
-        const statsModal = document.getElementById('stats-modal');
-
-        const isConfirmOpen = confirmModal?.classList.contains('modal-open') ?? false;
-        const isAlertOpen = alertModal?.classList.contains('modal-open') ?? false;
-        const isSettingsOpen = settingsModal?.classList.contains('modal-open') ?? false;
-        const isInfoOpen = infoModal?.classList.contains('modal-open') ?? false;
-        const isStatsOpen = statsModal?.classList.contains('modal-open') ?? false;
-
-        if (isConfirmOpen) return;
-
-        if (isAlertOpen) {
-            if (key === ' ' || key === 'enter' || key === 'escape' || key === 'esc') {
-                event.preventDefault();
-                closeCustomAlert();
-            }
-            return;
+    // Contextual Modal Guard: If any modal is active, isolate input contexts entirely
+    const activeModal = document.querySelector('.modal.modal-open') as HTMLElement | null;
+    if (activeModal) {
+        // System Bypass: Never block browser functional hotkeys (F1-F12) or OS modifiers (Ctrl, Cmd, Alt)
+        const isSystemFKey = key.startsWith('f') && key.length > 1 && !isNaN(Number(key.slice(1)));
+        if (isSystemFKey || event.ctrlKey || event.metaKey || event.altKey) {
+            return; // Let the browser handle system commands natively
         }
 
+        // Let escape close the topmost active modal
         if (key === 'escape' || key === 'esc') {
+            event.preventDefault();
             if (typeof handlers.onEscape === 'function') handlers.onEscape();
             return;
         }
+                
+        const isFormInput = document.activeElement && 
+            (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT');
+                
+        // Clinical Calibration Bypass: Allow tuning keys (W, S, Up, Down) if we are in calibration mode
+        const isCalibrationMode = activeModal.classList.contains('calibration-mode');
+        const isCalibrationKey = isCalibrationMode && ['w', 's', 'arrowup', 'arrowdown', 'ц', 'ы'].includes(key);
 
-        const isCalibrationMode = settingsModal?.classList.contains('calibration-mode') ?? false;
-
-        if (isInfoOpen || isStatsOpen || (isSettingsOpen && !isCalibrationMode)) return;
+        if (isCalibrationKey) {
+            // Let these keys pass through the modal guard so the directional handler below can process them
+        } else if (key === 'tab' || key === ' ' || key === 'enter' || isFormInput) {
+            return;
+        } else {
+            // Block all other game keys during active modals to prevent background manipulation leaks
+            event.preventDefault();
+            return;
+        }
+    }
 
         if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) return;
+
+        if (key === 'escape' || key === 'esc') {
+            if (typeof handlers.onEscape === 'function') handlers.onEscape();
+                return;
+        }
 
         if (key === 'p' || key === 'з') {
             event.preventDefault();
             if (typeof handlers.onActionPauseToggle === 'function') handlers.onActionPauseToggle();
-            return;
+                return;
         }
 
         if (typeof handlers.onDirectionalShift === 'function' &&

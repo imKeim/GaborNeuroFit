@@ -33,7 +33,8 @@ export class PomodoroTimer {
 
         this.intervalId = window.setInterval(() => {
             const s = Store.state;
-            if (!s.timerIsRunning || s.timerLimitMinutes === 0) return;
+            // Freeze timer instantly on global pause or inactive states
+            if (s.isPaused || !s.timerIsRunning || s.timerLimitMinutes === 0) return;
 
             // Smart Pause: Halts physiological countdown if any overlay modal is blocking the screen
             const settingsModal = document.getElementById('settings-modal');

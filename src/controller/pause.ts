@@ -82,7 +82,7 @@ export class PauseController {
             // 3. Delegate cross synchronization on resume
             if (this.syncCross) this.syncCross();
 
-            // 4. Symmetrically resume loops only if Gabor or RDS was actively running
+            // 4. Symmetrically resume loops depending on the active modality
             if (s.appMode === 'gabor' && s.isWaitingForAnswer) {
                 if (this.gaborCtrl) this.gaborCtrl.startUnifiedRenderingLoop(Store.state);
             } else if (s.appMode === 'rds' && this.rdsCtrl) {
@@ -91,6 +91,9 @@ export class PauseController {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     (this.rdsCtrl as any).startDynamicRdsLoop();
                 }
+            } else if (s.appMode === 'synoptophore' && this.synoptophoreCtrl) {
+                // Restore 10Hz Alpha-resonance flicker on resume
+                this.synoptophoreCtrl.syncFlickerState();
             }
         }
     }

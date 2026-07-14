@@ -10,7 +10,7 @@
 // Import core dependencies
 import { Store } from './store';
 import { DataRepository } from './store/repository';
-import { drawFusionTestPattern } from './engine/gabor-render';
+import { drawFusionTestPattern } from './engine/calibration-render';
 import { playCue, playError, playSuccess } from './engine/audio';
 import { updateScoreboard, drawIdleState, updateStatusBar } from './ui/screen';
 import { initModals, showCustomAlert, closeCustomAlert } from './ui/modal';
@@ -498,6 +498,9 @@ window.addEventListener('load', async () => {
 
             Store.startTimerIfNeeded();
 
+            // Set active tactile feedback class to preserve neon glow during active drags
+            if (container) container.classList.add('dragging');
+
             dragStartX = Store.state.synopTargetX;
             dragStartY = Store.state.synopTargetY;
             dragStartStrongFactor = Store.state.appMode === 'synoptophore'
@@ -533,6 +536,10 @@ window.addEventListener('load', async () => {
         },
         onDragEnd: (deltaTime: number, deltaXTotal: number, deltaYTotal: number, clientX: number, clientY: number) => {
             const s = Store.state;
+
+            // Remove active tactile feedback class on drag completion
+            if (container) container.classList.remove('dragging');
+
             if (s.appMode === 'synoptophore') {
                 if (s.synopState === 'align') {
                     const isTapGesture = deltaTime < 250 && Math.abs(deltaXTotal) < 8 && Math.abs(deltaYTotal) < 8;
@@ -607,6 +614,9 @@ window.addEventListener('load', async () => {
             }
         },
         onActionPauseToggle: () => {
+            // Block manual pause toggling via keyboard/shortcuts if any modal is active
+            if (document.querySelector('.modal.modal-open')) return;
+
             if (pauseController) pauseController.togglePause();
         },
         onEscape: () => {
@@ -791,6 +801,7 @@ window.addEventListener('load', async () => {
 
                 if (gaborController.isAnaglyphTestActive) {
                     btnFusionTest.classList.add('active');
+                    container.classList.add('calibration-active');
 
                     if (scrollBody && settingsModal) {
                         // Safe persistent state anchoring
@@ -819,12 +830,13 @@ window.addEventListener('load', async () => {
                     drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
                     canvas.style.display = 'block';
                     overlayCanvas.style.display = 'block';
-                    cross.style.display = 'none';
+                    cross.style.display = 'block'; // Keep the crisp native CSS cross visible during calibration
 
                     if (modalContent) modalContent.classList.remove('modal-transitioning');
                     if (calibrationCurtain) calibrationCurtain.classList.remove('active');
                 } else {
                     btnFusionTest.classList.remove('active');
+                    container.classList.remove('calibration-active');
 
                     if (settingsModal) {
                         settingsModal.classList.remove('calibration-mode');
