@@ -806,6 +806,10 @@ window.addEventListener('load', async () => {
 
             if (gaborController && !gaborController.isAnaglyphTestActive && settingsModal) {
                 settingsModal.classList.add('modal-clear-backdrop');
+                
+                // Instantly hide the PAUSED watermark on the exact millisecond of click, 
+                // preventing it from flashing on top of the gray transition curtain.
+                if (pauseController) pauseController.overrideWatermarkVisibility(true);
             }
 
             setTimeout(() => {
@@ -825,9 +829,6 @@ window.addEventListener('load', async () => {
                             settingsModal.classList.add('calibration-mode');
                             if (scrollBody) scrollBody.scrollTop = 0;
                         }
-
-                        // Architectural delegation: Suspend watermark rendering to clear center field for calibration
-                        if (pauseController) pauseController.overrideWatermarkVisibility(true);
 
                         const selectRedSide = document.getElementById('select-red-side') as HTMLSelectElement | null;
                         const selectLazySide = document.getElementById('select-lazy-side') as HTMLSelectElement | null;

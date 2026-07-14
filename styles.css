@@ -1153,6 +1153,11 @@ input[type="range"]::-moz-range-thumb {
     display: none !important;
 }
 
+/* Force hide the main top tab bar switcher during calibration to free up vertical space */
+#settings-modal.calibration-mode #settings-mode-bar {
+    display: none !important;
+}
+
 /* Selectively un-hide ONLY the calibration panel container */
 #settings-modal.calibration-mode .modal-scroll-body > #accordion-content-4 { 
     display: block !important; 

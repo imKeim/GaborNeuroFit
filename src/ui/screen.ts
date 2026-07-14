@@ -587,26 +587,13 @@ export function updateRdsLeaderboard(historyList: RdsSession[], translations: Re
  */
 export function updateStatusBar(state: AppState, translations: Record<string, string>): void {
     const t = translations;
-    let modeStr = t.optPresetOcclusion || "Occlusion";
     let speedStr = t.statusBarAdaptive || "Adaptive";
 
-    if (state.appMode === 'rds') {
-        modeStr = t.optPresetRDS || "🧊 Stereogram";
-    } else if (state.appMode === 'synoptophore') {
-        modeStr = t.optPresetSynoptophore || "🧲 Synoptophore";
-    } else if (state.presetMode === 'occlusion') {
-        modeStr = t.optPresetOcclusion || "Occlusion";
-    } else if (state.presetMode === 'binocular') {
-        modeStr = t.optPresetBinocular || "Binocular";
-    } else if (state.presetMode === 'peripheral') {
-        modeStr = t.optPresetPeripheral || "Peripheral";
-    } else if (state.presetMode === 'blitz') {
-        modeStr = t.optPresetBlitz || "Blitz";
-    } else if (state.presetMode === 'flicker') {
-        modeStr = t.optPresetFlicker || "Flicker";
-    } else if (state.presetMode === 'custom') {
-        modeStr = t.optPresetCustom || "Custom";
-    }
+    // High-Performance Declarative Key Mapping
+    // Dynamically resolves localization keys (e.g., 'lblCompactPresetOcclusion') without if-else cascades.
+    const activePresetKey = state.appMode === 'gabor' ? state.presetMode : state.appMode;
+    const capitalizedKey = 'lblCompactPreset' + activePresetKey.charAt(0).toUpperCase() + activePresetKey.slice(1);
+    let modeStr = t[capitalizedKey] || activePresetKey;
 
     if (state.appMode === 'synoptophore') {
         const seconds = (state.synopPullSpeed / 1000).toFixed(1);

@@ -46,14 +46,9 @@ export function drawFusionTestPattern(canvas: HTMLCanvasElement | null, ctx: Can
     const isLeftStrong = state.lazyEyeSide === 'right';
     const isRightStrong = state.lazyEyeSide === 'left';
 
-    // Apply contrast balancer in Gabor and Synoptophore modes so the user can calibrate it,
-    // but keep pure 100% contrast (1.0) in RDS mode to prevent crosstalk.
-    let strongFactor = 1.0;
-    if (state.appMode === 'synoptophore') {
-        strongFactor = state.synopStrongEyeContrastFactor;
-    } else if (state.appMode === 'gabor') {
-        strongFactor = state.strongEyeContrastFactor;
-    }
+    // Symmetrical Calibration Contrast: Always apply the appropriate clinical contrast balancer 
+    // during the active alignment test so the user can visually calibrate their eye balance.
+    const strongFactor = state.appMode === 'synoptophore' ? state.synopStrongEyeContrastFactor : state.strongEyeContrastFactor;
 
     const leftR_calibrated = Math.round(127 + (leftR - 127) * (isLeftStrong ? strongFactor : 1.0));
     const rightG_calibrated = Math.round(127 + (rightG - 127) * (isRightStrong ? strongFactor : 1.0));

@@ -78,7 +78,7 @@ export function bindInputControls(handlers: InputHandlers): void {
 
         if (!keyIntervalId && !keyDelayId) {
             keyDelayId = window.setTimeout(() => {
-                keyIntervalId = window.setInterval(handleHeldKeys, 40);
+                keyIntervalId = window.setInterval(handleHeldKeys, 50);
             }, 250);
         }
     }
@@ -242,8 +242,8 @@ export function bindInputControls(handlers: InputHandlers): void {
     if (event.repeat && !isTuningKey) return;
 
     // Contextual Modal Guard: If any modal is active, isolate input contexts entirely
-    const activeModal = document.querySelector('.modal.modal-open') as HTMLElement | null;
-    if (activeModal) {
+        const activeModal = document.querySelector('.modal.modal-open') as HTMLElement | null;
+        if (activeModal) {
         // System Bypass: Never block browser functional hotkeys (F1-F12) or OS modifiers (Ctrl, Cmd, Alt)
         const isSystemFKey = key.startsWith('f') && key.length > 1 && !isNaN(Number(key.slice(1)));
         if (isSystemFKey || event.ctrlKey || event.metaKey || event.altKey) {
@@ -256,10 +256,13 @@ export function bindInputControls(handlers: InputHandlers): void {
             if (typeof handlers.onEscape === 'function') handlers.onEscape();
             return;
         }
-                
-        const isFormInput = document.activeElement && 
-            (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT');
-                
+            
+        // Precise A11y Guard: Only block keys if the user is typing text (e.g. Patient Name), allowing sliders to remain fully responsive
+        const isFormInput = document.activeElement && (
+            (document.activeElement instanceof HTMLInputElement && (document.activeElement.type === 'text' || document.activeElement.type === 'search')) ||
+            document.activeElement.tagName === 'TEXTAREA'
+        );
+            
         // Clinical Calibration Bypass: Allow tuning keys (W, S, Up, Down) if we are in calibration mode
         const isCalibrationMode = activeModal.classList.contains('calibration-mode');
         const isCalibrationKey = isCalibrationMode && ['w', 's', 'arrowup', 'arrowdown', 'ц', 'ы'].includes(key);
@@ -275,7 +278,12 @@ export function bindInputControls(handlers: InputHandlers): void {
         }
     }
 
-        if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) return;
+    // Precise A11y Guard for global scope: Only block hotkeys if the user is typing text, strictly ignoring sliders (type="range")
+    const isGlobalTextInput = document.activeElement && (
+        (document.activeElement instanceof HTMLInputElement && (document.activeElement.type === 'text' || document.activeElement.type === 'search')) ||
+        document.activeElement.tagName === 'TEXTAREA'
+    );
+    if (isGlobalTextInput) return;
 
         if (key === 'escape' || key === 'esc') {
             if (typeof handlers.onEscape === 'function') handlers.onEscape();
