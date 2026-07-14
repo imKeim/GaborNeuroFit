@@ -9,7 +9,6 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { DataRepository } from '../store/repository';
-import type { GaborPreset } from '../types/clinical';
 
 // Provide a mock LocalStorage architecture for the Node.js test runner
 const localStorageMock = (() => {
