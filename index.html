@@ -22,8 +22,8 @@
     <meta name="apple-mobile-web-app-title" content="GaborNeuroFit">
     <link class="apple-touch-icon" href="icon-192-maskable.png">
     <meta name="theme-color" content="#131a26">
-  <script type="module" crossorigin src="./assets/index-ClB-rBsN.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-DXkDXB0S.css">
+  <script type="module" crossorigin src="./assets/index-B526kGKr.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-D3vDdAi4.css">
 <link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:inline-sw">if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('./sw.js', { scope: './' })})}</script></head>
 <body>
     <!--
@@ -79,7 +79,7 @@
                 <div id="calibration-curtain" class="active" aria-hidden="true"></div>
 
                 <!-- Pause State Indicator -->
-                <div id="pause-watermark" data-i18n="pauseWatermark" style="display: none; position: absolute; z-index: 17; color: white; font-weight: bold; font-size: 22px; text-transform: uppercase; letter-spacing: 3px; font-family: 'Overpass', sans-serif; pointer-events: none; text-shadow: 0 2px 10px rgba(0,0,0,0.5); top: 50%; left: 50%; transform: translate(-50%, -50%);" aria-hidden="true"></div>
+                <div id="pause-watermark" data-i18n="pauseWatermark" aria-hidden="true"></div>
 
                 <!--
                   @clinical FOVEAL ANCHOR (FIXATION CROSS)
@@ -496,6 +496,162 @@
                         </div>
                     </div>
 
+                    <!-- GROUP 5: Synoptophore & Vergence -->
+                    <div class="accordion-header" id="accordion-header-5" data-visible-in="synoptophore" role="button" aria-expanded="false" aria-controls="accordion-content-5">
+                        <span data-i18n="lblSettingGroup5"></span>
+                        <span class="accordion-arrow" id="accordion-arrow-5" aria-hidden="true">›</span>
+                    </div>
+                    <div class="accordion-content" id="accordion-content-5" data-visible-in="synoptophore" role="region" aria-labelledby="accordion-header-5">
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingPullSpeed" for="select-pull-speed"></label>
+                                <select id="select-pull-speed">
+                                    <option value="1500">1.5s</option>
+                                    <option value="2500" selected>2.5s</option>
+                                    <option value="4000">4.0s</option>
+                                </select>
+                            </div>
+                            <span class="settings-help" data-i18n="helpSynopPullSpeed"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingTargetType" for="select-target-type"></label>
+                                <select id="select-target-type">
+                                    <option value="ring-dot" data-i18n="optTargetRing"></option>
+                                    <option value="cross-square" data-i18n="optTargetSquare"></option>
+                                </select>
+                            </div>
+                            <span class="settings-help" data-i18n="helpTargetType"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingTargetSize" for="select-target-size"></label>
+                                <select id="select-target-size">
+                                    <option value="65" data-i18n="optSizeMacular"></option>
+                                    <option value="45" data-i18n="optSizeParamacular"></option>
+                                    <option value="30" data-i18n="optSizeFoveal"></option>
+                                </select>
+                            </div>
+                            <span class="settings-help" data-i18n="helpTargetSize"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingSynopLazyGrid" for="chk-synop-lazy-grid"></label>
+                                <input type="checkbox" id="chk-synop-lazy-grid">
+                            </div>
+                            <span class="settings-help" data-i18n="helpSynopLazyGrid"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingSynopStrongGrid" for="chk-synop-strong-grid"></label>
+                                <input type="checkbox" id="chk-synop-strong-grid">
+                            </div>
+                            <span class="settings-help" data-i18n="helpSynopStrongGrid"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingSynopFlicker" for="chk-synop-flicker"></label>
+                                <input type="checkbox" id="chk-synop-flicker">
+                            </div>
+                            <span class="settings-help" data-i18n="helpSynopFlicker"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingSynopLockY" for="chk-synop-lock-y"></label>
+                                <input type="checkbox" id="chk-synop-lock-y">
+                            </div>
+                            <span class="settings-help" data-i18n="helpSynopLockY"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingSynopLockX" for="chk-synop-lock-x"></label>
+                                <input type="checkbox" id="chk-synop-lock-x">
+                            </div>
+                            <span class="settings-help" data-i18n="helpSynopLockX"></span>
+                        </div>
+                    </div>
+
+                    <!-- GROUP 6: Stereogram & Depth -->
+                    <div class="accordion-header" id="accordion-header-6" data-visible-in="rds" role="button" aria-expanded="false" aria-controls="accordion-content-6">
+                        <span data-i18n="lblSettingGroup6"></span>
+                        <span class="accordion-arrow" id="accordion-arrow-6" aria-hidden="true">›</span>
+                    </div>
+                    <div class="accordion-content" id="accordion-content-6" data-visible-in="rds" role="region" aria-labelledby="accordion-header-6">
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingRdsDotSize" for="select-rds-dot-size"></label>
+                                <select id="select-rds-dot-size">
+                                    <option value="2" data-i18n="optRdsSizeSmall"></option>
+                                    <option value="4" data-i18n="optRdsSizeMedium"></option>
+                                    <option value="6" data-i18n="optRdsSizeLarge"></option>
+                                </select>
+                            </div>
+                            <span class="settings-help" data-i18n="helpRdsDotSize"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingRdsDensity" for="select-rds-density"></label>
+                                <select id="select-rds-density">
+                                    <option value="0.35" data-i18n="optRdsDensityLow"></option>
+                                    <option value="0.5" data-i18n="optRdsDensityStandard"></option>
+                                    <option value="0.65" data-i18n="optRdsDensityHigh"></option>
+                                </select>
+                            </div>
+                            <span class="settings-help" data-i18n="helpRdsDensity"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingRdsStartDisparity" for="select-rds-start-disparity"></label>
+                                <select id="select-rds-start-disparity">
+                                    <option value="8">8px</option>
+                                    <option value="6">6px</option>
+                                    <option value="4">4px</option>
+                                    <option value="2">2px</option>
+                                    <option value="1">1px</option>
+                                </select>
+                            </div>
+                            <span class="settings-help" data-i18n="helpRdsStartDisparity"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingRdsPermanentCross" for="chk-rds-permanent-cross"></label>
+                                <input type="checkbox" id="chk-rds-permanent-cross">
+                            </div>
+                            <span class="settings-help" data-i18n="helpRdsPermanentCross"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingRdsDynamic" for="chk-rds-dynamic"></label>
+                                <input type="checkbox" id="chk-rds-dynamic">
+                            </div>
+                            <span class="settings-help" data-i18n="helpRdsDynamic"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingRdsRandomizeVertical" for="chk-rds-randomize-vertical"></label>
+                                <input type="checkbox" id="chk-rds-randomize-vertical">
+                            </div>
+                            <span class="settings-help" data-i18n="helpRdsRandomizeVertical"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingRdsFloating" for="chk-rds-floating"></label>
+                                <input type="checkbox" id="chk-rds-floating">
+                            </div>
+                            <span class="settings-help" data-i18n="helpRdsFloating"></span>
+                        </div>
+                        <div class="settings-row" id="row-rds-floating-speed" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingRdsFloatSpeed" for="select-rds-float-speed"></label>
+                                <select id="select-rds-float-speed">
+                                    <option value="slow" data-i18n="optRdsSpeedSlow"></option>
+                                    <option value="medium" data-i18n="optRdsSpeedMedium"></option>
+                                    <option value="fast" data-i18n="optRdsSpeedFast"></option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Explanation Footer -->
                     <p style="font-size: 11px; color: #8e8e93; line-height: 1.3; margin-top: 15px;" data-i18n="descModeExplanation" id="desc-mode-explanation"></p>
                 </div> <!-- End modal-scroll-body -->
@@ -566,22 +722,22 @@
                     </div>
 
                     <!-- New Profile Input Row -->
-                    <div class="settings-row" style="border-bottom: none; margin-bottom: 4px; padding-bottom: 0;">
-                        <input type="text" id="input-new-profile" data-i18n-placeholder="placeholderNewProfile" aria-label="New Patient Profile Name" style="width: 100%; background: #131a26; color: #fff; border: 1px solid #2b354a; border-radius: 8px; padding: 10px; font-size: 13px; outline: none;">
+                    <div class="settings-row" style="border-bottom: none; margin-bottom: 6px; padding-bottom: 0;">
+                        <input type="text" id="input-new-profile" class="dash-input" data-i18n-placeholder="placeholderNewProfile" aria-label="New Patient Profile Name">
                     </div>
 
                     <!-- Profile Management Buttons Grid -->
                     <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <button type="button" id="btn-add-profile" class="close-btn" data-i18n="btnAddProfile" style="flex: 1; margin-top: 0; background: rgba(0, 122, 255, 0.12); border: 1px solid rgba(0, 122, 255, 0.25); color: #3b90ff; padding: 10px; font-size: 12px; font-weight: bold;"></button>
-                        <button type="button" id="btn-delete-profile" class="close-btn" data-i18n="btnDeleteProfile" style="flex: 1; margin-top: 0; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; padding: 10px; font-size: 12px; font-weight: bold;"></button>
+                        <button type="button" id="btn-add-profile" class="dash-btn btn-ghost-blue" data-i18n="btnAddProfile"></button>
+                        <button type="button" id="btn-delete-profile" class="dash-btn btn-ghost-red" data-i18n="btnDeleteProfile"></button>
                     </div>
 
                     <!-- Global Database Backup/Restore & Wipe Grid (Profile Level Actions) -->
                     <div style="display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;">
-                        <button type="button" id="btn-export-csv" class="close-btn" data-i18n="btnExportCSV" style="flex: 1; min-width: 110px; margin-top: 0; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.25); color: #22c55e; padding: 10px; font-size: 12px; font-weight: bold;"></button>
-                        <button type="button" id="btn-import-csv" class="close-btn" data-i18n="btnImportCSV" style="flex: 1; min-width: 110px; margin-top: 0; background: rgba(59, 144, 255, 0.12); border: 1px solid rgba(59, 144, 255, 0.25); color: #3b90ff; padding: 10px; font-size: 12px; font-weight: bold;"></button>
+                        <button type="button" id="btn-export-csv" class="dash-btn btn-ghost-green" data-i18n="btnExportCSV"></button>
+                        <button type="button" id="btn-import-csv" class="dash-btn btn-ghost-blue" data-i18n="btnImportCSV"></button>
                         <input type="file" id="input-import-csv" accept=".csv" aria-label="Import CSV" style="display: none;">
-                        <button type="button" id="btn-clear-history" class="close-btn" data-i18n="btnClearHistory" style="flex: 1; min-width: 110px; margin-top: 0; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; padding: 10px; font-size: 12px; font-weight: bold;"></button>
+                        <button type="button" id="btn-clear-history" class="dash-btn btn-ghost-red" data-i18n="btnClearHistory"></button>
                     </div>
 
                     <!-- Symmetrical Divider separating Global Profile Actions from Analytics -->
@@ -607,8 +763,8 @@
                         </div>
 
                         <!-- Chronological Sessions List -->
-                        <div id="leaderboard" style="width: 100%; margin-top: 0; margin-bottom: 14px;" tabindex="0">
-                            <ul id="leaderboard-list" aria-label="Gabor Sessions List"></ul>
+                        <div class="leaderboard-container" tabindex="0">
+                            <ul id="leaderboard-list" class="leaderboard-list" aria-label="Gabor Sessions List"></ul>
                         </div>
                     </div>
 
@@ -625,8 +781,8 @@
                         </div>
 
                         <!-- Chronological Synoptophore Sessions List -->
-                        <div id="synop-leaderboard" style="width: 100%; margin-top: 0; margin-bottom: 14px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; padding: 10px 14px; font-size: 13px; color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.04);" tabindex="0">
-                            <ul id="leaderboard-list-synop" aria-label="Synoptophore Sessions List" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; height: 100%; overflow-y: auto; scrollbar-width: none;"></ul>
+                        <div class="leaderboard-container" tabindex="0">
+                            <ul id="leaderboard-list-synop" class="leaderboard-list" aria-label="Synoptophore Sessions List"></ul>
                         </div>
                     </div>
 
@@ -643,8 +799,8 @@
                         </div>
 
                         <!-- Chronological RDS Sessions List -->
-                        <div id="rds-leaderboard" style="width: 100%; margin-top: 0; margin-bottom: 14px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; padding: 10px 14px; font-size: 13px; color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.04);" tabindex="0">
-                            <ul id="leaderboard-list-rds" aria-label="Stereogram Sessions List" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; height: 100%; overflow-y: auto; scrollbar-width: none;"></ul>
+                        <div class="leaderboard-container" tabindex="0">
+                            <ul id="leaderboard-list-rds" class="leaderboard-list" aria-label="Stereogram Sessions List"></ul>
                         </div>
                     </div>
 
