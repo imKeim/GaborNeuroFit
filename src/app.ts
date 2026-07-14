@@ -29,7 +29,7 @@ import { resizeCanvasesToDPR } from './utils/bootstrap';
 import { loadLanguage } from './utils/i18n';
 
 // Import strict types
-import type { Language, AppMode, GaborPreset, EyeSide } from './types/clinical';
+import type { Language, AppMode, GaborPreset } from './types/clinical';
 import type { InputHandlers } from './ui/controls';
 
 // Global cache for the active localization dictionary
@@ -223,16 +223,6 @@ function runFlash(): void {
         if (gaborController) gaborController.reFlashCurrentGabor();
     } else {
         if (gaborController) gaborController.triggerTrial();
-    }
-}
-
-/**
- * @description Connects language dropdown selectors inside the settings panel
- */
-function bindLangSelectors(): void {
-    const selectLang = document.getElementById('select-lang') as HTMLSelectElement | null;
-    if (selectLang) {
-        selectLang.addEventListener('change', () => setLanguage(selectLang.value as Language));
     }
 }
 
@@ -524,21 +514,13 @@ window.addEventListener('load', async () => {
             const s = Store.state;
             if (s.isPaused) return;
             if (gaborController && gaborController.isAnaglyphTestActive) {
-                const isSynop = s.appMode === 'synoptophore';
-                const key = isSynop ? 'synopStrongEyeContrastFactor' : 'strongEyeContrastFactor';
-                const delta = -deltaY * 0.004;
-                const newFactor = Math.max(0.1, Math.min(1.0, dragStartStrongFactor + delta));
-
-                Store.updateState(key, newFactor);
-
                 const slider = document.getElementById('range-strong-attenuation') as HTMLInputElement | null;
-                const label = document.getElementById('val-strong-attenuation');
                 if (slider) {
-                    slider.value = Math.round(newFactor * 100).toString();
-                    if (label) label.innerText = slider.value + '%';
-                    if (settingsController) settingsController.updateSliderTrackGradient(slider);
+                    const delta = -deltaY * 0.4;
+                    const startVal = dragStartStrongFactor * 100;
+                    slider.value = Math.max(10, Math.min(100, Math.round(startVal + delta))).toString();
+                    slider.dispatchEvent(new Event('input', { bubbles: true }));
                 }
-                drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
                 return;
             }
             if (s.appMode === 'synoptophore' && s.synopState === 'align') {
@@ -602,21 +584,14 @@ window.addEventListener('load', async () => {
             const s = Store.state;
             if (gaborController && gaborController.isAnaglyphTestActive) {
                 if (dy !== 0) {
-                    const isSynop = s.appMode === 'synoptophore';
-                    const key = isSynop ? 'synopStrongEyeContrastFactor' : 'strongEyeContrastFactor';
-                    const delta = -dy * 0.05;
-                    const newFactor = Math.max(0.1, Math.min(1.0, (s[key] as number) + delta));
-
-                    Store.updateState(key, newFactor);
-
                     const slider = document.getElementById('range-strong-attenuation') as HTMLInputElement | null;
-                    const label = document.getElementById('val-strong-attenuation');
                     if (slider) {
-                        slider.value = Math.round(newFactor * 100).toString();
-                        if (label) label.innerText = slider.value + '%';
-                        if (settingsController) settingsController.updateSliderTrackGradient(slider);
+                        const step = parseInt(slider.step, 10) || 5;
+                        const current = parseInt(slider.value, 10) || 30;
+                        const dir = -dy;
+                        slider.value = Math.max(10, Math.min(100, current + dir * step)).toString();
+                        slider.dispatchEvent(new Event('input', { bubbles: true }));
                     }
-                    drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
                 }
                 return;
             }
@@ -830,12 +805,6 @@ window.addEventListener('load', async () => {
                             if (scrollBody) scrollBody.scrollTop = 0;
                         }
 
-                        const selectRedSide = document.getElementById('select-red-side') as HTMLSelectElement | null;
-                        const selectLazySide = document.getElementById('select-lazy-side') as HTMLSelectElement | null;
-                        // Generic state mutation
-                        if (selectRedSide) Store.updateState('redEyeSide', selectRedSide.value as EyeSide);
-                        if (selectLazySide) Store.updateState('lazyEyeSide', selectLazySide.value as EyeSide);
-
                         resizeCanvasesToDPR();
 
                         if (synoptophoreController) synoptophoreController.stopFlickerLoop();
@@ -888,7 +857,6 @@ window.addEventListener('load', async () => {
 
     updateMuteBtnUI();
     if (settingsController) settingsController.bindSettingsInteractions();
-    bindLangSelectors();
 
     syncCrossVisualState();
 
