@@ -8,7 +8,7 @@
     -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
-    <title>GaborNeuroFit</title>
+    <title>🧿 GaborNeuroFit</title>
 
     <link rel="icon" type="image/svg+xml" href="./assets/favicon-DSgW1i4M.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,8 +22,8 @@
     <meta name="apple-mobile-web-app-title" content="GaborNeuroFit">
     <link class="apple-touch-icon" href="icon-192-maskable.png">
     <meta name="theme-color" content="#131a26">
-  <script type="module" crossorigin src="./assets/index-D7RWhv6j.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-D5Txmc4l.css">
+  <script type="module" crossorigin src="./assets/index-HXMQgbrq.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-FoMHDiUL.css">
 <link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:inline-sw">if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('./sw.js', { scope: './' })})}</script></head>
 <body>
     <!--
@@ -184,117 +184,126 @@
 
                 <!-- Symmetrical Settings Mode Switcher (3-Tab config) -->
                 <nav id="settings-mode-bar" aria-label="Settings Categories" style="display: flex; background: #131a26; padding: 4px; border-radius: 10px; border: 1px solid #2b354a; margin-bottom: 14px; margin-left: auto; margin-right: auto; width: 100%;">
-                    <button type="button" id="settings-tab-gabor" class="tab-btn active" data-i18n="tabGabor"></button>
-                    <button type="button" id="settings-tab-synop" class="tab-btn" data-i18n="tabSynop"></button>
-                    <button type="button" id="settings-tab-rds" class="tab-btn" data-i18n="tabRDS"></button>
+                    <button type="button" id="settings-tab-gabor" class="tab-btn active">
+                        <span class="tab-btn-icon">🧿</span>
+                        <span class="tab-btn-text" data-i18n="tabGabor"></span>
+                    </button>
+                    <button type="button" id="settings-tab-synop" class="tab-btn">
+                        <span class="tab-btn-icon">🧲</span>
+                        <span class="tab-btn-text" data-i18n="tabSynop"></span>
+                    </button>
+                    <button type="button" id="settings-tab-rds" class="tab-btn">
+                        <span class="tab-btn-icon">🧊</span>
+                        <span class="tab-btn-text" data-i18n="tabRDS"></span>
+                    </button>
                 </nav>
 
                 <div class="modal-scroll-body" tabindex="0">
 
-                    <!-- GROUP 1: Core clinical setup (Default expanded) -->
-                    <div class="accordion-header" id="accordion-header-1" role="button" aria-expanded="true" aria-controls="accordion-content-1">
-                        <span data-i18n="lblSettingGroup1"></span>
-                        <span class="accordion-arrow active" id="accordion-arrow-1" aria-hidden="true">›</span>
-                    </div>
-                    <div class="accordion-content open" id="accordion-content-1" role="region" aria-labelledby="accordion-header-1">
-                        <div class="settings-row">
-                            <label data-i18n="lblSettingLang" for="select-lang"></label>
-                            <select id="select-lang">
-                                <option value="en">🇬🇧 English</option>
-                                <option value="ru">🇷🇺 Русский</option>
-                            </select>
-                        </div>
-                        <div class="settings-row" id="row-preset-mode" data-visible-in="gabor" style="flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 5px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingPreset" for="select-preset-mode"></label>
-                                <select id="select-preset-mode">
-                                    <option value="occlusion" data-i18n="optPresetOcclusion"></option>
-                                    <option value="blitz" data-i18n="optPresetBlitz"></option>
-                                    <option value="binocular" data-i18n="optPresetBinocular"></option>
-                                    <option value="flicker" data-i18n="optPresetFlicker"></option>
-                                    <option value="peripheral" data-i18n="optPresetPeripheral"></option>
-                                    <option value="custom" data-i18n="optPresetCustom"></option>
-                                </select>
+                    <!-- GLOBAL ERGONOMIC HEADER (Always visible across all games) -->
+                    <div style="background: rgba(11, 15, 24, 0.3); padding: 12px; border-radius: var(--radius-elements); border: 1px solid rgba(255, 255, 255, 0.03); display: flex; flex-direction: column; margin-bottom: 14px;">
+                        <!-- Language Segment -->
+                        <div class="pill-row">
+                            <span data-i18n="lblSettingLang" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
+                            <div id="select-lang" class="pill-group">
+                                <button type="button" class="pill-btn" data-value="en">🇬🇧 EN</button>
+                                <button type="button" class="pill-btn" data-value="ru">🇷🇺 RU</button>
                             </div>
-                            <span class="settings-help" data-i18n="helpPresetMode" id="help-preset-mode"></span>
                         </div>
-                        <!-- Gabor Level Selector -->
-                        <div class="settings-row" id="row-start-level" data-visible-in="gabor" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingStartLevel" for="select-start-level"></label>
-                                <select id="select-start-level">
-                                    <option value="1" id="opt-stage-1"></option>
-                                    <option value="2" id="opt-stage-2"></option>
-                                    <option value="3" id="opt-stage-3"></option>
-                                    <option value="4" id="opt-stage-4"></option>
-                                    <option value="5" id="opt-stage-5"></option>
-                                </select>
+                        <!-- Session Limit Segment (Replaced Selects dynamically with Pill Tabs) -->
+                        <div class="pill-row" id="row-session-limit-container">
+                            <span data-i18n="lblSettingLimit" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
+                            <div id="select-session-limit" class="pill-group">
+                                <!-- Pill buttons are mapped dynamically to keep Gabor and RDS limits completely distinct -->
+                                <button type="button" class="pill-btn" data-value="0" data-i18n="optLimitOff"></button>
+                                <button type="button" class="pill-btn" data-value="40">40</button>
+                                <button type="button" class="pill-btn" data-value="80">80</button>
+                                <button type="button" class="pill-btn" data-value="120">120</button>
                             </div>
-                            <span class="settings-help" data-i18n="helpStartLevel" id="help-start-level"></span>
                         </div>
-                        <div class="settings-row" id="row-autonext" data-visible-in="gabor" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingAutonext" for="select-autonext"></label>
-                                <select id="select-autonext">
-                                    <option value="true" data-i18n="optAutonextOn"></option>
-                                    <option value="false" data-i18n="optAutonextOff"></option>
-                                </select>
+                        <!-- Pomodoro Rest Timer Segment -->
+                        <div class="pill-row">
+                            <span data-i18n="lblSettingTimerLimit" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
+                            <div id="select-timer-limit" class="pill-group">
+                                <button type="button" class="pill-btn" data-value="0" data-i18n="optTimerOff"></button>
+                                <button type="button" class="pill-btn" data-value="5">5m</button>
+                                <button type="button" class="pill-btn" data-value="10">10m</button>
+                                <button type="button" class="pill-btn" data-value="15">15m</button>
                             </div>
-                            <span class="settings-help" data-i18n="helpAutonext"></span>
-                        </div>
-                        <!-- RDS Dedicated Auto-Next Selector -->
-                        <div class="settings-row" id="row-rds-autonext" data-visible-in="rds" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingRdsAutonext" for="select-rds-autonext"></label>
-                                <select id="select-rds-autonext">
-                                    <option value="true" data-i18n="optAutonextOn"></option>
-                                    <option value="false" data-i18n="optAutonextOff"></option>
-                                </select>
-                            </div>
-                            <span class="settings-help" data-i18n="helpRdsAutonext"></span>
-                        </div>
-                        <!-- Unified Session Limit -->
-                        <div class="settings-row" id="row-session-limit" data-visible-in="gabor,rds" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingLimit" for="select-session-limit"></label>
-                                <select id="select-session-limit">
-                                    <!-- Dynamic options injected strongly by TS -->
-                                </select>
-                            </div>
-                            <span class="settings-help" data-i18n="helpSessionLimit"></span>
-                        </div>
-                        <!-- Pomodoro Limit -->
-                        <div class="settings-row" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0; flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingTimerLimit" for="select-timer-limit"></label>
-                                <select id="select-timer-limit">
-                                    <option value="0" data-i18n="optTimerOff"></option>
-                                    <option value="5" data-i18n="optTimer5"></option>
-                                    <option value="10" data-i18n="optTimer10"></option>
-                                    <option value="15" data-i18n="optTimer15"></option>
-                                    <option value="20" data-i18n="optTimer20"></option>
-                                </select>
-                            </div>
-                            <span class="settings-help" data-i18n="helpTimerLimit"></span>
                         </div>
                     </div>
 
-                    <!-- GROUP 2: Temporal stimulation pacing -->
+                    <!-- GABOR THERAPUTIC AREA (🧿) -->
+                    
+                    <!-- Gabor Block 1: Macro-Preset Selectors (Elite Glassmorphic Grid Cards) -->
+                    <div id="row-preset-mode" data-visible-in="gabor" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;">
+                        <span data-i18n="lblSettingPreset" style="font-size: 13px; font-weight: 700; color: #3b90ff; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;"></span>
+                        <div id="select-preset-mode" class="preset-grid">
+                            <div class="preset-card active" data-value="occlusion" tabindex="0" role="button" aria-pressed="true">
+                                <span class="preset-card-title" data-i18n="lblCompactPresetOcclusion"></span>
+                                <span class="preset-card-desc" data-i18n="optPresetOcclusion"></span>
+                            </div>
+                            <div class="preset-card" data-value="blitz" tabindex="0" role="button" aria-pressed="false">
+                                <span class="preset-card-title" data-i18n="lblCompactPresetBlitz"></span>
+                                <span class="preset-card-desc" data-i18n="optPresetBlitz"></span>
+                            </div>
+                            <div class="preset-card" data-value="binocular" tabindex="0" role="button" aria-pressed="false">
+                                <span class="preset-card-title" data-i18n="lblCompactPresetBinocular"></span>
+                                <span class="preset-card-desc" data-i18n="optPresetBinocular"></span>
+                            </div>
+                            <div class="preset-card" data-value="flicker" tabindex="0" role="button" aria-pressed="false">
+                                <span class="preset-card-title" data-i18n="lblCompactPresetFlicker"></span>
+                                <span class="preset-card-desc" data-i18n="optPresetFlicker"></span>
+                            </div>
+                            <div class="preset-card" data-value="peripheral" tabindex="0" role="button" aria-pressed="false">
+                                <span class="preset-card-title" data-i18n="lblCompactPresetPeripheral"></span>
+                                <span class="preset-card-desc" data-i18n="optPresetPeripheral"></span>
+                            </div>
+                            <div class="preset-card" data-value="custom" tabindex="0" role="button" aria-pressed="false">
+                                <span class="preset-card-title" data-i18n="lblCompactPresetCustom"></span>
+                                <span class="preset-card-desc" data-i18n="optPresetCustom"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gabor Block 2: Core parameters (Level, Auto-Next) -->
+                    <div data-visible-in="gabor" style="background: rgba(19, 26, 38, 0.2); padding: 10px; border-radius: var(--radius-elements); border: 1px dashed rgba(255,255,255,0.04); display: flex; flex-direction: column; margin-bottom: 14px;">
+                        <!-- Stage Selection -->
+                        <div class="pill-row">
+                            <span data-i18n="lblSettingStartLevel" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
+                            <div id="select-start-level" class="pill-group" style="max-width: 50%;">
+                                <button type="button" class="pill-btn" data-value="1">1</button>
+                                <button type="button" class="pill-btn" data-value="2">2</button>
+                                <button type="button" class="pill-btn" data-value="3">3</button>
+                                <button type="button" class="pill-btn" data-value="4">4</button>
+                                <button type="button" class="pill-btn" data-value="5">5</button>
+                            </div>
+                        </div>
+                        <!-- Auto Next -->
+                        <div class="pill-row">
+                            <span data-i18n="lblSettingAutonext" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
+                            <div id="select-autonext" class="pill-group" style="max-width: 45%;">
+                                <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn"></button>
+                                <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff"></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gabor Block 3: Stimulation Parameters (Muted Accordion) -->
                     <div class="accordion-header" id="accordion-header-2" data-visible-in="gabor" role="button" aria-expanded="false" aria-controls="accordion-content-2">
                         <span data-i18n="lblSettingGroup2"></span>
                         <span class="accordion-arrow" id="accordion-arrow-2" aria-hidden="true">›</span>
                     </div>
                     <div class="accordion-content" id="accordion-content-2" data-visible-in="gabor" role="region" aria-labelledby="accordion-header-2">
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingFlash" for="select-flash-duration"></label>
-                                <select id="select-flash-duration">
-                                    <option value="adaptive" data-i18n="optFlashAdaptive"></option>
-                                    <option value="100" data-i18n="optFlash100"></option>
-                                    <option value="180" data-i18n="optFlash180"></option>
-                                    <option value="200" data-i18n="optFlash200"></option>
-                                    <option value="350" data-i18n="optFlash350"></option>
-                                </select>
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span data-i18n="lblSettingFlash" style="font-size: 12px; font-weight: 600;"></span>
+                                <div id="select-flash-duration" class="pill-group" style="max-width: 65%;">
+                                    <button type="button" class="pill-btn" data-value="adaptive" data-i18n="unitMsAdaptive"></button>
+                                    <button type="button" class="pill-btn" data-value="100">100</button>
+                                    <button type="button" class="pill-btn" data-value="180">180</button>
+                                    <button type="button" class="pill-btn" data-value="350">350</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n="helpFlashDuration" id="help-flash-duration"></span>
                         </div>
@@ -312,8 +321,7 @@
                             </div>
                             <span class="settings-help" data-i18n="helpStatic" id="help-static"></span>
                         </div>
-                        <!-- TS Reactivity Link: row-flicker visibility is tied to chk-static -->
-                        <div class="settings-row" id="row-flicker" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                        <div class="settings-row" id="row-flicker" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                                 <label data-i18n="lblSettingFlicker" for="chk-flicker"></label>
                                 <input type="checkbox" id="chk-flicker">
@@ -322,7 +330,7 @@
                         </div>
                     </div>
 
-                    <!-- GROUP 3: Spatial configuration & anti-crowding -->
+                    <!-- Gabor Block 4: Spatial Configuration & Crowding (Symmetric Accordion) -->
                     <div class="accordion-header" id="accordion-header-3" data-visible-in="gabor" role="button" aria-expanded="false" aria-controls="accordion-content-3">
                         <span data-i18n="lblSettingGroup3"></span>
                         <span class="accordion-arrow" id="accordion-arrow-3" aria-hidden="true">›</span>
@@ -371,26 +379,25 @@
                             <span class="settings-help" data-i18n="helpCrowding" id="help-crowding"></span>
                         </div>
                         <div class="settings-row" id="row-crowding-mode" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingCrowdingMode" for="select-crowding-mode"></label>
-                                <select id="select-crowding-mode">
-                                    <option value="vertical" data-i18n="optCrowdingVertical"></option>
-                                    <option value="horizontal" data-i18n="optCrowdingHorizontal"></option>
-                                    <option value="all" data-i18n="optCrowdingAll"></option>
-                                </select>
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span data-i18n="lblSettingCrowdingMode" style="font-size: 12px; font-weight: 600;"></span>
+                                <div id="select-crowding-mode" class="pill-group" style="max-width: 65%;">
+                                    <button type="button" class="pill-btn" data-value="vertical" data-i18n="optCrowdingVertical"></button>
+                                    <button type="button" class="pill-btn" data-value="horizontal" data-i18n="optCrowdingHorizontal"></button>
+                                    <button type="button" class="pill-btn" data-value="all" data-i18n="optCrowdingAll"></button>
+                                </div>
                             </div>
                         </div>
                         <div class="settings-row" id="row-flanker-distance" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingFlankerDistance" for="select-flanker-distance"></label>
-                                <select id="select-flanker-distance">
-                                    <option value="2" data-i18n="optFlankerDistanceClose"></option>
-                                    <option value="4" data-i18n="optFlankerDistanceFar"></option>
-                                </select>
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span data-i18n="lblSettingFlankerDistance" style="font-size: 12px; font-weight: 600;"></span>
+                                <div id="select-flanker-distance" class="pill-group" style="max-width: 55%;">
+                                    <button type="button" class="pill-btn" data-value="2" data-i18n="optFlankerDistanceClose"></button>
+                                    <button type="button" class="pill-btn" data-value="4" data-i18n="optFlankerDistanceFar"></button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n="helpFlankerDistance"></span>
                         </div>
-                        <!-- TS Reactivity Link: row-orthogonal and row-dynamic opacities are tied to chk-crowding -->
                         <div class="settings-row" id="row-orthogonal" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                                 <label data-i18n="lblSettingOrthogonal" for="chk-orthogonal-flankers"></label>
@@ -407,7 +414,174 @@
                         </div>
                     </div>
 
-                    <!-- GROUP 4: Binocular 3D Setup & sub-pixel RGB sliders -->
+                    <!-- SYNOPTOPHORE THERAPUTIC AREA (🧲) -->
+
+                    <!-- Synoptophore Block 1: Oculomotor Physics (Opened by default) -->
+                    <div data-visible-in="synoptophore" style="background: rgba(19, 26, 38, 0.2); padding: 10px; border-radius: var(--radius-elements); border: 1px dashed rgba(255,255,255,0.04); display: flex; flex-direction: column; margin-bottom: 14px;">
+                        <!-- Pulling Speed -->
+                        <div class="pill-row">
+                            <span data-i18n="lblSettingPullSpeed" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
+                            <div id="select-pull-speed" class="pill-group" style="max-width: 45%;">
+                                <button type="button" class="pill-btn" data-value="1500">1.5s</button>
+                                <button type="button" class="pill-btn" data-value="2500">2.5s</button>
+                                <button type="button" class="pill-btn" data-value="4000">4.0s</button>
+                            </div>
+                        </div>
+                        <!-- Target Type -->
+                        <div class="pill-row">
+                            <span data-i18n="lblSettingTargetType" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
+                            <div id="select-target-type" class="pill-group" style="max-width: 50%;">
+                                <button type="button" class="pill-btn" data-value="ring-dot" data-i18n="optTargetRing"></button>
+                                <button type="button" class="pill-btn" data-value="cross-square" data-i18n="optTargetSquare"></button>
+                            </div>
+                        </div>
+                        <!-- Target Size -->
+                        <div class="pill-row">
+                            <span data-i18n="lblSettingTargetSize" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
+                            <div id="select-target-size" class="pill-group" style="max-width: 45%;">
+                                <button type="button" class="pill-btn" data-value="65" data-i18n="optSizeMacular"></button>
+                                <button type="button" class="pill-btn" data-value="45" data-i18n="optSizeParamacular"></button>
+                                <button type="button" class="pill-btn" data-value="30" data-i18n="optSizeFoveal"></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Synoptophore Block 2: Sensory Support (Muted Accordion) -->
+                    <div class="accordion-header" id="accordion-header-5" data-visible-in="synoptophore" role="button" aria-expanded="false" aria-controls="accordion-content-5">
+                        <span data-i18n="lblSettingGroup5"></span>
+                        <span class="accordion-arrow" id="accordion-arrow-5" aria-hidden="true">›</span>
+                    </div>
+                    <div class="accordion-content" id="accordion-content-5" data-visible-in="synoptophore" role="region" aria-labelledby="accordion-header-5">
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingSynopLazyGrid" for="chk-synop-lazy-grid"></label>
+                                <input type="checkbox" id="chk-synop-lazy-grid">
+                            </div>
+                            <span class="settings-help" data-i18n="helpSynopLazyGrid"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingSynopStrongGrid" for="chk-synop-strong-grid"></label>
+                                <input type="checkbox" id="chk-synop-strong-grid">
+                            </div>
+                            <span class="settings-help" data-i18n="helpSynopStrongGrid"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingSynopFlicker" for="chk-synop-flicker"></label>
+                                <input type="checkbox" id="chk-synop-flicker">
+                            </div>
+                            <span class="settings-help" data-i18n="helpSynopFlicker"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingSynopLockY" for="chk-synop-lock-y"></label>
+                                <input type="checkbox" id="chk-synop-lock-y">
+                            </div>
+                            <span class="settings-help" data-i18n="helpSynopLockY"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingSynopLockX" for="chk-synop-lock-x"></label>
+                                <input type="checkbox" id="chk-synop-lock-x">
+                            </div>
+                            <span class="settings-help" data-i18n="helpSynopLockX"></span>
+                        </div>
+                    </div>
+
+
+                    <!-- STEREOGRAM THERAPUTIC AREA (🧊) -->
+
+                    <!-- Stereogram Block 1: Stereopsis Depth parameters (Opened by default) -->
+                    <div data-visible-in="rds" style="background: rgba(19, 26, 38, 0.2); padding: 10px; border-radius: var(--radius-elements); border: 1px dashed rgba(255,255,255,0.04); display: flex; flex-direction: column; margin-bottom: 14px;">
+                        <!-- Starting Disparity Depth -->
+                        <div class="pill-row">
+                            <span data-i18n="lblSettingRdsStartDisparity" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
+                            <div id="select-rds-start-disparity" class="pill-group" style="max-width: 45%;">
+                                <button type="button" class="pill-btn" data-value="8">8px</button>
+                                <button type="button" class="pill-btn" data-value="6">6px</button>
+                                <button type="button" class="pill-btn" data-value="4">4px</button>
+                                <button type="button" class="pill-btn" data-value="2">2px</button>
+                                <button type="button" class="pill-btn" data-value="1">1px</button>
+                            </div>
+                        </div>
+                        <!-- Dot Size -->
+                        <div class="pill-row">
+                            <span data-i18n="lblSettingRdsDotSize" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
+                            <div id="select-rds-dot-size" class="pill-group" style="max-width: 35%;">
+                                <button type="button" class="pill-btn" data-value="2" data-i18n="optRdsSizeSmall"></button>
+                                <button type="button" class="pill-btn" data-value="4" data-i18n="optRdsSizeMedium"></button>
+                                <button type="button" class="pill-btn" data-value="6" data-i18n="optRdsSizeLarge"></button>
+                            </div>
+                        </div>
+                        <!-- Density -->
+                        <div class="pill-row">
+                            <span data-i18n="lblSettingRdsDensity" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
+                            <div id="select-rds-density" class="pill-group" style="max-width: 40%;">
+                                <button type="button" class="pill-btn" data-value="0.35" data-i18n="optRdsDensityLow"></button>
+                                <button type="button" class="pill-btn" data-value="0.5" data-i18n="optRdsDensityStandard"></button>
+                                <button type="button" class="pill-btn" data-value="0.65" data-i18n="optRdsDensityHigh"></button>
+                            </div>
+                        </div>
+                        <!-- Auto-Next -->
+                        <div class="pill-row">
+                            <span data-i18n="lblSettingRdsAutonext" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
+                            <div id="select-rds-autonext" class="pill-group" style="max-width: 45%;">
+                                <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn"></button>
+                                <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff"></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stereogram Block 2: Dynamics & Pursuit (Muted Accordion) -->
+                    <div class="accordion-header" id="accordion-header-6" data-visible-in="rds" role="button" aria-expanded="false" aria-controls="accordion-content-6">
+                        <span data-i18n="lblSettingGroup6"></span>
+                        <span class="accordion-arrow" id="accordion-arrow-6" aria-hidden="true">›</span>
+                    </div>
+                    <div class="accordion-content" id="accordion-content-6" data-visible-in="rds" role="region" aria-labelledby="accordion-header-6">
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingRdsPermanentCross" for="chk-rds-permanent-cross"></label>
+                                <input type="checkbox" id="chk-rds-permanent-cross">
+                            </div>
+                            <span class="settings-help" data-i18n="helpRdsPermanentCross"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingRdsDynamic" for="chk-rds-dynamic"></label>
+                                <input type="checkbox" id="chk-rds-dynamic">
+                            </div>
+                            <span class="settings-help" data-i18n="helpRdsDynamic"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingRdsRandomizeVertical" for="chk-rds-randomize-vertical"></label>
+                                <input type="checkbox" id="chk-rds-randomize-vertical">
+                            </div>
+                            <span class="settings-help" data-i18n="helpRdsRandomizeVertical"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                <label data-i18n="lblSettingRdsFloating" for="chk-rds-floating"></label>
+                                <input type="checkbox" id="chk-rds-floating">
+                            </div>
+                            <span class="settings-help" data-i18n="helpRdsFloating"></span>
+                        </div>
+                        <!-- Float Speed -->
+                        <div class="settings-row" id="row-rds-floating-speed" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span data-i18n="lblSettingRdsFloatSpeed" style="font-size: 12px; font-weight: 600;"></span>
+                                <div id="select-rds-float-speed" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="slow" data-i18n="optRdsSpeedSlow"></button>
+                                    <button type="button" class="pill-btn" data-value="medium" data-i18n="optRdsSpeedMedium"></button>
+                                    <button type="button" class="pill-btn" data-value="fast" data-i18n="optRdsSpeedFast"></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- HARDWARE AREA: 3D ANAGLYPH & LENS CALIBRATION -->
                     <div class="accordion-header" id="accordion-header-4" role="button" aria-expanded="false" aria-controls="accordion-content-4">
                         <span data-i18n="lblSettingGroup4"></span>
                         <span class="accordion-arrow" id="accordion-arrow-4" aria-hidden="true">›</span>
@@ -423,19 +597,25 @@
 
                         <!-- TS Reactivity Link: anaglyph-settings-panel state is controlled by SettingsController -->
                         <div id="anaglyph-settings-panel" style="border-top: 1px dashed #2b354a; padding-top: 12px; margin-top: 10px; margin-bottom: 0;">
-                            <div class="settings-row">
-                                <label data-i18n="lblSettingRedSide" for="select-red-side"></label>
-                                <select id="select-red-side">
-                                    <option value="left" data-i18n="optSideLeft"></option>
-                                    <option value="right" data-i18n="optSideRight"></option>
-                                </select>
+                            <!-- Red Side selection -->
+                            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                    <span data-i18n="lblSettingRedSide" style="font-size: 12px; font-weight: 600;"></span>
+                                    <div id="select-red-side" class="pill-group" style="max-width: 55%;">
+                                        <button type="button" class="pill-btn" data-value="left" data-i18n="optSideLeft"></button>
+                                        <button type="button" class="pill-btn" data-value="right" data-i18n="optSideRight"></button>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="settings-row">
-                                <label data-i18n="lblSettingLazySide" for="select-lazy-side"></label>
-                                <select id="select-lazy-side">
-                                    <option value="left" data-i18n="optSideLeft"></option>
-                                    <option value="right" data-i18n="optSideRight"></option>
-                                </select>
+                            <!-- Lazy eye side selection -->
+                            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                    <span data-i18n="lblSettingLazySide" style="font-size: 12px; font-weight: 600;"></span>
+                                    <div id="select-lazy-side" class="pill-group" style="max-width: 55%;">
+                                        <button type="button" class="pill-btn" data-value="left" data-i18n="optSideLeft"></button>
+                                        <button type="button" class="pill-btn" data-value="right" data-i18n="optSideRight"></button>
+                                    </div>
+                                </div>
                             </div>
                             <div class="settings-row" id="row-strong-attenuation" data-visible-in="gabor,synoptophore" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                                 <div style="display: flex; justify-content: space-between; width: 100%;">
@@ -493,162 +673,6 @@
                                 </div>
                             </div>
                             <button type="button" id="btn-fusion-test" class="close-btn" data-i18n="btnFusionTestLabel"></button>
-                        </div>
-                    </div>
-
-                    <!-- GROUP 5: Synoptophore & Vergence -->
-                    <div class="accordion-header" id="accordion-header-5" data-visible-in="synoptophore" role="button" aria-expanded="false" aria-controls="accordion-content-5">
-                        <span data-i18n="lblSettingGroup5"></span>
-                        <span class="accordion-arrow" id="accordion-arrow-5" aria-hidden="true">›</span>
-                    </div>
-                    <div class="accordion-content" id="accordion-content-5" data-visible-in="synoptophore" role="region" aria-labelledby="accordion-header-5">
-                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingPullSpeed" for="select-pull-speed"></label>
-                                <select id="select-pull-speed">
-                                    <option value="1500">1.5s</option>
-                                    <option value="2500" selected>2.5s</option>
-                                    <option value="4000">4.0s</option>
-                                </select>
-                            </div>
-                            <span class="settings-help" data-i18n="helpSynopPullSpeed"></span>
-                        </div>
-                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingTargetType" for="select-target-type"></label>
-                                <select id="select-target-type">
-                                    <option value="ring-dot" data-i18n="optTargetRing"></option>
-                                    <option value="cross-square" data-i18n="optTargetSquare"></option>
-                                </select>
-                            </div>
-                            <span class="settings-help" data-i18n="helpTargetType"></span>
-                        </div>
-                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingTargetSize" for="select-target-size"></label>
-                                <select id="select-target-size">
-                                    <option value="65" data-i18n="optSizeMacular"></option>
-                                    <option value="45" data-i18n="optSizeParamacular"></option>
-                                    <option value="30" data-i18n="optSizeFoveal"></option>
-                                </select>
-                            </div>
-                            <span class="settings-help" data-i18n="helpTargetSize"></span>
-                        </div>
-                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingSynopLazyGrid" for="chk-synop-lazy-grid"></label>
-                                <input type="checkbox" id="chk-synop-lazy-grid">
-                            </div>
-                            <span class="settings-help" data-i18n="helpSynopLazyGrid"></span>
-                        </div>
-                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingSynopStrongGrid" for="chk-synop-strong-grid"></label>
-                                <input type="checkbox" id="chk-synop-strong-grid">
-                            </div>
-                            <span class="settings-help" data-i18n="helpSynopStrongGrid"></span>
-                        </div>
-                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingSynopFlicker" for="chk-synop-flicker"></label>
-                                <input type="checkbox" id="chk-synop-flicker">
-                            </div>
-                            <span class="settings-help" data-i18n="helpSynopFlicker"></span>
-                        </div>
-                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingSynopLockY" for="chk-synop-lock-y"></label>
-                                <input type="checkbox" id="chk-synop-lock-y">
-                            </div>
-                            <span class="settings-help" data-i18n="helpSynopLockY"></span>
-                        </div>
-                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingSynopLockX" for="chk-synop-lock-x"></label>
-                                <input type="checkbox" id="chk-synop-lock-x">
-                            </div>
-                            <span class="settings-help" data-i18n="helpSynopLockX"></span>
-                        </div>
-                    </div>
-
-                    <!-- GROUP 6: Stereogram & Depth -->
-                    <div class="accordion-header" id="accordion-header-6" data-visible-in="rds" role="button" aria-expanded="false" aria-controls="accordion-content-6">
-                        <span data-i18n="lblSettingGroup6"></span>
-                        <span class="accordion-arrow" id="accordion-arrow-6" aria-hidden="true">›</span>
-                    </div>
-                    <div class="accordion-content" id="accordion-content-6" data-visible-in="rds" role="region" aria-labelledby="accordion-header-6">
-                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingRdsDotSize" for="select-rds-dot-size"></label>
-                                <select id="select-rds-dot-size">
-                                    <option value="2" data-i18n="optRdsSizeSmall"></option>
-                                    <option value="4" data-i18n="optRdsSizeMedium"></option>
-                                    <option value="6" data-i18n="optRdsSizeLarge"></option>
-                                </select>
-                            </div>
-                            <span class="settings-help" data-i18n="helpRdsDotSize"></span>
-                        </div>
-                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingRdsDensity" for="select-rds-density"></label>
-                                <select id="select-rds-density">
-                                    <option value="0.35" data-i18n="optRdsDensityLow"></option>
-                                    <option value="0.5" data-i18n="optRdsDensityStandard"></option>
-                                    <option value="0.65" data-i18n="optRdsDensityHigh"></option>
-                                </select>
-                            </div>
-                            <span class="settings-help" data-i18n="helpRdsDensity"></span>
-                        </div>
-                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingRdsStartDisparity" for="select-rds-start-disparity"></label>
-                                <select id="select-rds-start-disparity">
-                                    <option value="8">8px</option>
-                                    <option value="6">6px</option>
-                                    <option value="4">4px</option>
-                                    <option value="2">2px</option>
-                                    <option value="1">1px</option>
-                                </select>
-                            </div>
-                            <span class="settings-help" data-i18n="helpRdsStartDisparity"></span>
-                        </div>
-                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingRdsPermanentCross" for="chk-rds-permanent-cross"></label>
-                                <input type="checkbox" id="chk-rds-permanent-cross">
-                            </div>
-                            <span class="settings-help" data-i18n="helpRdsPermanentCross"></span>
-                        </div>
-                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingRdsDynamic" for="chk-rds-dynamic"></label>
-                                <input type="checkbox" id="chk-rds-dynamic">
-                            </div>
-                            <span class="settings-help" data-i18n="helpRdsDynamic"></span>
-                        </div>
-                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingRdsRandomizeVertical" for="chk-rds-randomize-vertical"></label>
-                                <input type="checkbox" id="chk-rds-randomize-vertical">
-                            </div>
-                            <span class="settings-help" data-i18n="helpRdsRandomizeVertical"></span>
-                        </div>
-                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingRdsFloating" for="chk-rds-floating"></label>
-                                <input type="checkbox" id="chk-rds-floating">
-                            </div>
-                            <span class="settings-help" data-i18n="helpRdsFloating"></span>
-                        </div>
-                        <div class="settings-row" id="row-rds-floating-speed" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingRdsFloatSpeed" for="select-rds-float-speed"></label>
-                                <select id="select-rds-float-speed">
-                                    <option value="slow" data-i18n="optRdsSpeedSlow"></option>
-                                    <option value="medium" data-i18n="optRdsSpeedMedium"></option>
-                                    <option value="fast" data-i18n="optRdsSpeedFast"></option>
-                                </select>
-                            </div>
                         </div>
                     </div>
 
@@ -721,16 +745,19 @@
                         <select id="select-active-profile" style="max-width: 60%; min-width: 140px;"></select>
                     </div>
 
-                    <!-- New Profile Input Row -->
-                    <div class="settings-row" style="border-bottom: none; margin-bottom: 6px; padding-bottom: 0;">
-                        <input type="text" id="input-new-profile" class="dash-input" data-i18n-placeholder="placeholderNewProfile" aria-label="New Patient Profile Name">
-                    </div>
+                    <!-- New Profile Input & Add Form (Systemic HTML5 keypress submission) -->
+                    <form id="form-add-profile" style="display: flex; flex-direction: column; width: 100%;">
+                        <!-- New Profile Input Row -->
+                        <div class="settings-row" style="border-bottom: none; margin-bottom: 6px; padding-bottom: 0; width: 100%;">
+                            <input type="text" id="input-new-profile" class="dash-input" data-i18n-placeholder="placeholderNewProfile" aria-label="New Patient Profile Name">
+                        </div>
 
-                    <!-- Profile Management Buttons Grid -->
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <button type="button" id="btn-add-profile" class="dash-btn btn-ghost-blue" data-i18n="btnAddProfile"></button>
-                        <button type="button" id="btn-delete-profile" class="dash-btn btn-ghost-red" data-i18n="btnDeleteProfile"></button>
-                    </div>
+                        <!-- Profile Management Buttons Grid -->
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px; width: 100%;">
+                            <button type="submit" id="btn-add-profile" class="dash-btn btn-ghost-blue" data-i18n="btnAddProfile"></button>
+                            <button type="button" id="btn-delete-profile" class="dash-btn btn-ghost-red" data-i18n="btnDeleteProfile"></button>
+                        </div>
+                    </form>
 
                     <!-- Global Database Backup/Restore & Wipe Grid (Profile Level Actions) -->
                     <div style="display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;">
@@ -745,9 +772,18 @@
 
                     <!-- Symmetrical Tab Segmented Pill Control (3-Tab config) -->
                     <nav id="stats-tab-bar" aria-label="Statistics Categories" style="display: flex; background: #131a26; padding: 4px; border-radius: 10px; border: 1px solid #2b354a; margin-bottom: 14px;">
-                        <button type="button" id="tab-gabor" class="tab-btn active" data-i18n="tabGabor"></button>
-                        <button type="button" id="tab-synop" class="tab-btn" data-i18n="tabSynop"></button>
-                        <button type="button" id="tab-rds" class="tab-btn" data-i18n="tabRDS"></button>
+                        <button type="button" id="tab-gabor" class="tab-btn active">
+                            <span class="tab-btn-icon">🧿</span>
+                            <span class="tab-btn-text" data-i18n="tabGabor"></span>
+                        </button>
+                        <button type="button" id="tab-synop" class="tab-btn">
+                            <span class="tab-btn-icon">🧲</span>
+                            <span class="tab-btn-text" data-i18n="tabSynop"></span>
+                        </button>
+                        <button type="button" id="tab-rds" class="tab-btn">
+                            <span class="tab-btn-icon">🧊</span>
+                            <span class="tab-btn-text" data-i18n="tabRDS"></span>
+                        </button>
                     </nav>
 
                     <!-- GABOR SENSORY TRAINING VIEWPORT -->
