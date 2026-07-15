@@ -451,7 +451,10 @@ window.addEventListener('load', async () => {
         },
         onActionCanvasClick: () => {
             const s = Store.state;
-            if (s.isPaused) return;
+            if (s.isPaused) {
+                if (pauseController) pauseController.togglePause();
+                return;
+            }
             const curtain = document.getElementById('calibration-curtain');
             const isInitialStart = curtain && curtain.classList.contains('active');
 

@@ -28,6 +28,8 @@ const CLINICAL_EMOJIS: string[] = [
   '👤', '📈', '🧹', '🍅', '🔥',
   // Milestones & Trophies
   '🏆', '🥇', '🥈',
+  // System Help & Tooltips
+  '🏥', '🎮', '🧭',
   // System Warnings & Validations
   '⚠️', '❌'
 ];
