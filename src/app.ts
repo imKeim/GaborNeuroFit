@@ -182,6 +182,7 @@ export async function setLanguage(lang: Language): Promise<void> {
  * @description Intercepts and routes visual exposure or vergence tracking locks
  */
 function runFlash(): void {
+    if (btnStart.disabled) return;
     const s = Store.state;
 
     // Smoothly melt the initial calibration gray curtain on the very first active therapy launch
@@ -232,6 +233,23 @@ function runFlash(): void {
 window.addEventListener('load', async () => {
     // Instantly scale the canvas backing stores to prevent initial-load blurry upscaling
     resizeCanvasesToDPR();
+    
+    // Handle viewport resizing and orientation changes to maintain crisp, dpr-scaled visual targets
+    window.addEventListener('resize', () => {
+        resizeCanvasesToDPR();
+        if (Store.state.appMode === 'synoptophore') {
+            if (synoptophoreController && !Store.state.synopFlickerActive) {
+                drawSynoptophoreTargets(overlayCanvas, overlayCtx, Store.state);
+            }
+        } else if (Store.state.appMode === 'rds') {
+            if (rdsController) {
+                const isIdle = rdsController.currentState === 'IDLE' || rdsController.currentState === 'FEEDBACK';
+                drawRandomDotStereogram(overlayCanvas, overlayCtx, Store.state, false, isIdle);
+            }
+        } else {
+            drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
+        }
+    });
 
     Store.loadSettings();
 
@@ -281,7 +299,10 @@ window.addEventListener('load', async () => {
         gaborController,
         synoptophoreController,
         rdsController,
-        () => syncCrossVisualState()
+        () => {
+            syncCrossVisualState();
+            setLanguage(Store.state.currentLang);
+        }
     );
 
     // Symmetrical Safe Monkey-Patching (Decorator Pattern)
@@ -450,6 +471,7 @@ window.addEventListener('load', async () => {
             updateMuteBtnUI();
         },
         onActionCanvasClick: () => {
+            if (btnStart.disabled) return;
             const s = Store.state;
             if (s.isPaused) {
                 if (pauseController) pauseController.togglePause();
@@ -688,6 +710,9 @@ window.addEventListener('load', async () => {
         if (isCriticalChange) {
             Store.resetSessionProgress();
 
+            btnStart.disabled = false;
+            btnStart.style.opacity = "1";
+
             if (gaborController) gaborController.stopUnifiedRenderingLoop();
             if (synoptophoreController) synoptophoreController.stopFlickerLoop();
 
@@ -894,6 +919,9 @@ window.addEventListener('load', async () => {
             if (gaborController) gaborController.abort();
             if (synoptophoreController) synoptophoreController.abort();
             if (rdsController) rdsController.abort();
+
+            btnStart.disabled = false;
+            btnStart.style.opacity = "1";
 
             drawIdleState(canvas, null, overlayCanvas, overlayCtx, state.appMode === 'synoptophore' || state.isFusionLockEnabled);
 

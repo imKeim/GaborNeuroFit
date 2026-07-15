@@ -253,9 +253,11 @@ export class RdsController {
             if (this.currentState === RdsState.FEEDBACK) {
                 this.currentState = RdsState.IDLE;
                 if (this.syncCross) this.syncCross();
-                this.btnStart.disabled = false;
-                this.btnStart.style.opacity = "1";
-                this.btnStart.innerText = t.rdsNextBtn || "NEXT";
+                if (!s.rdsAutoAdvance) {
+                    this.btnStart.disabled = false;
+                    this.btnStart.style.opacity = "1";
+                    this.btnStart.innerText = t.rdsNextBtn || "NEXT";
+                }
             }
         }, 300);
 
@@ -266,6 +268,8 @@ export class RdsController {
                 this.triggerMilestoneFlash(() => {
                     const title = t.titleGoldRDS || "🥇 Stereopsis Mastered!";
                     const text = t.sessionMasteredRDS || "Excellent progress!";
+                    this.btnStart.disabled = false;
+                    this.btnStart.style.opacity = "1";
                     this.showCustomModal(title, text);
                     this.transitionTo(RdsState.IDLE);
                     if (this.syncCross) this.syncCross();
@@ -279,6 +283,8 @@ export class RdsController {
                 this.triggerMilestoneFlash(() => {
                     const title = t.titleSilverRDS || "🥈 RDS Session Complete!";
                     const text = (t.sessionCompletedRDS || "Session complete!").replace("{limit}", s.rdsSessionLimit.toString());
+                    this.btnStart.disabled = false;
+                    this.btnStart.style.opacity = "1";
                     this.showCustomModal(title, text);
                     this.transitionTo(RdsState.IDLE);
                     if (this.syncCross) this.syncCross();
@@ -291,7 +297,7 @@ export class RdsController {
             this.autoNextTimeoutId = this.tracker.setTimeout(() => {
                 this.autoNextTimeoutId = null;
                 this.triggerTrial();
-            }, 1200);
+            }, 900);
         }
     }
 

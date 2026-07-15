@@ -44,6 +44,24 @@ export class PauseController {
         Store.updateState('isPaused', nextPausedState);
 
         if (nextPausedState) {
+            // Abort any pending trials in PRE_CUE state to prevent them from rendering under the paused mask
+            if (this.gaborCtrl && this.gaborCtrl.currentState === 'PRE_CUE') {
+                this.gaborCtrl.abort();
+                const btnStart = document.getElementById('btn-start') as HTMLButtonElement | null;
+                if (btnStart) {
+                    btnStart.disabled = false;
+                    btnStart.style.opacity = "1";
+                }
+            }
+            if (this.rdsCtrl && this.rdsCtrl.currentState === 'PRE_CUE') {
+                this.rdsCtrl.abort();
+                const btnStart = document.getElementById('btn-start') as HTMLButtonElement | null;
+                if (btnStart) {
+                    btnStart.disabled = false;
+                    btnStart.style.opacity = "1";
+                }
+            }
+
             // 1. Freeze Pomodoro countdown timer
             Store.updateState('savedTimerRunningState', s.timerIsRunning);
             Store.updateState('timerIsRunning', false);

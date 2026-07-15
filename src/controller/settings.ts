@@ -459,13 +459,10 @@ export class SettingsController {
                     const arrow = header.querySelector('.accordion-arrow');
                     if (arrow) arrow.classList.add('active');
 
-                    // Responsive Scroll: Smoothly bring the first interactive field of the opened accordion
-                    // into the visible viewport area, eliminating manual scrolling friction on small mobile viewports.
+                    // Responsive Scroll: Smoothly bring the header of the opened accordion
+                    // into the visible viewport area, keeping both the section title and its first interactive field visible.
                     setTimeout(() => {
-                        const firstInput = content.querySelector('input, .pill-group, .nudge-btn');
-                        if (firstInput) {
-                            firstInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                        }
+                        header.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }, 220); // Small 220ms timeout lets the CSS height expansion transition complete before calculating scroll positions
                 }
             });

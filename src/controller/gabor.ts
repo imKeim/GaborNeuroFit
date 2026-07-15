@@ -96,7 +96,6 @@ export class GaborController {
     triggerTrial(): void {
         if (this.autoNextTimeoutId) {
             clearTimeout(this.autoNextTimeoutId);
-            this.tracker.clearAll();
             this.autoNextTimeoutId = null;
         }
 
@@ -307,9 +306,11 @@ export class GaborController {
 
             if (this.currentState === TrialState.FEEDBACK) {
                 this.currentState = TrialState.IDLE;
-                this.btnStart.disabled = false;
-                this.btnStart.style.opacity = "1";
-                this.btnStart.innerText = this.getTranslations().nextBtn || "NEXT";
+                if (!s.autoAdvance) {
+                    this.btnStart.disabled = false;
+                    this.btnStart.style.opacity = "1";
+                    this.btnStart.innerText = this.getTranslations().nextBtn || "NEXT";
+                }
             }
         }, 300);
 
@@ -321,6 +322,8 @@ export class GaborController {
             this.tracker.setTimeout(() => {
                 this.triggerMilestoneFlash(() => {
                     const t = this.getTranslations();
+                    this.btnStart.disabled = false;
+                    this.btnStart.style.opacity = "1";
                     this.showCustomModal(t.titleGold || "🥇 GaborNeuroFit", t.sessionMastered || "Mastered!");
                     this.transitionTo(TrialState.IDLE);
                 });
@@ -332,6 +335,8 @@ export class GaborController {
             this.tracker.setTimeout(() => {
                 this.triggerMilestoneFlash(() => {
                     const t = this.getTranslations();
+                    this.btnStart.disabled = false;
+                    this.btnStart.style.opacity = "1";
                     const text = (t.sessionCompleted || "Completed").replace("{limit}", s.sessionLimit.toString());
                     this.showCustomModal(t.titleSilver || "🥈 GaborNeuroFit", text);
                     this.transitionTo(TrialState.IDLE);
@@ -344,11 +349,8 @@ export class GaborController {
             this.autoNextTimeoutId = this.tracker.setTimeout(() => {
                 this.autoNextTimeoutId = null;
                 this.triggerTrial();
-            }, 1200);
+            }, 900);
         } else {
-            this.btnStart.disabled = false;
-            this.btnStart.style.opacity = "1";
-            this.btnStart.innerText = this.getTranslations().nextBtn || "NEXT";
             this.currentState = TrialState.IDLE;
         }
     }
