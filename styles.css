@@ -93,6 +93,7 @@ img.emoji {
 #app-wrapper {
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
 
     /* Maximum expansion bounds for mobile baseline */
     width: 100%;
@@ -334,8 +335,7 @@ img.emoji {
     display: none !important;
 }
 
-#controls-layout.paused-state,
-#container.paused-state {
+#controls-layout.paused-state {
     pointer-events: none; /* Physically severs touch/mouse tracking during the pause */
 }
 
@@ -457,9 +457,9 @@ img.emoji {
     position: relative;
 
     /* Safe buffer calc ensures the canvas never touches the adjoining UI layouts physically */
-    height: calc(100% - 24px);
-    max-height: 420px; /* Reduced from 480px to provide visual 'breathing room' on Full HD displays */
-    max-width: calc(100% - 24px);
+    width: calc(100% - 24px);
+    max-width: 420px;
+    max-height: calc(100% - 24px);
     aspect-ratio: 1 / 1;
 
     display: flex;
@@ -1174,6 +1174,11 @@ input[type="range"]::-moz-range-thumb {
 #settings-modal.calibration-mode #accordion-content-4 > p,
 #settings-modal.calibration-mode h2,
 #settings-modal.calibration-mode #btn-close-settings {
+    display: none !important;
+}
+
+/* Hide the detailed strong attenuation help block exclusively during active L/R calibration */
+#settings-modal.calibration-mode #row-strong-attenuation .settings-help {
     display: none !important;
 }
 

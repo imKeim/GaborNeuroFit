@@ -39,7 +39,7 @@
       the 1:1 foveal isolation square and breaks comfortable 50-70cm ergonomic working distance.
     -->
     <div id="rotation-blocker" aria-hidden="true">
-        <div id="rotation-text" data-i18n="lblRotationBlock"></div>
+        <div id="rotation-text" data-i18n="lblRotationBlock">📱 Please rotate your device to portrait mode</div>
     </div>
 
     <!-- =========================================================
@@ -78,7 +78,7 @@
                 <div id="calibration-curtain" class="active" aria-hidden="true"></div>
 
                 <!-- Pause State Indicator -->
-                <div id="pause-watermark" data-i18n="pauseWatermark" aria-hidden="true"></div>
+                <div id="pause-watermark" data-i18n="pauseWatermark" aria-hidden="true">Paused</div>
 
                 <!--
                   @clinical FOVEAL ANCHOR (FIXATION CROSS)
@@ -105,8 +105,8 @@
 
                 <!-- Gabor Badges -->
                 <div id="indicators">
-                    <span class="badge" style="color: #22c55e; border-color: rgba(34, 197, 94, 0.3); background: rgba(34, 197, 94, 0.12);"><span data-i18n="stage"></span>: <span id="current-level">1</span>/5</span>
-                    <span class="badge" style="color: #3b90ff; border-color: rgba(59, 144, 255, 0.3); background: rgba(59, 144, 255, 0.12);"><span data-i18n="contrast"></span>: <span id="current-contrast">50</span>%</span>
+                    <span class="badge" style="color: #22c55e; border-color: rgba(34, 197, 94, 0.3); background: rgba(34, 197, 94, 0.12);"><span data-i18n="stage">Stage</span>: <span id="current-level">1</span>/5</span>
+                    <span class="badge" style="color: #3b90ff; border-color: rgba(59, 144, 255, 0.3); background: rgba(59, 144, 255, 0.12);"><span data-i18n="contrast">Contrast</span>: <span id="current-contrast">50</span>%</span>
                     <span id="badge-gabor-streak" class="badge" style="color: #eab308; border-color: rgba(234, 179, 8, 0.3); background: rgba(234, 179, 8, 0.12); font-weight: bold;">🔥 0</span>
                     <span id="badge-timer-gabor" class="badge" style="display: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.12);">🍅 00:00</span>
                 </div>
@@ -148,15 +148,15 @@
                 <div id="action-buttons">
                     <button type="button" class="action-btn" id="btn-left" aria-label="Choose Left">
                         <span>◀</span>
-                        <div class="btn-label" data-i18n="leftBtn"></div>
+                        <div class="btn-label" data-i18n="leftBtn">Left</div>
                     </button>
                     <button type="button" class="action-btn" id="btn-reset" aria-label="Reset Coordinates" style="display: none;">
                         <span>🔄</span>
-                        <div class="btn-label" data-i18n="resetBtn"></div>
+                        <div class="btn-label" data-i18n="resetBtn">Reset</div>
                     </button>
                     <button type="button" class="action-btn" id="btn-right" aria-label="Choose Right">
                         <span>▶</span>
-                        <div class="btn-label" data-i18n="rightBtn"></div>
+                        <div class="btn-label" data-i18n="rightBtn">Right</div>
                     </button>
                 </div>
             </section>
@@ -179,446 +179,485 @@
         <!-- CONFIGURATION PANEL MODAL: Scrollable settings cards -->
         <div id="settings-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
             <div class="modal-content">
-                <h2 id="settingsTitle" data-i18n="settingsTitle"></h2>
+                <h2 id="settingsTitle" data-i18n="settingsTitle">Configuration Panel</h2>
 
                 <!-- Symmetrical Settings Mode Switcher (3-Tab config) -->
                 <nav id="settings-mode-bar" aria-label="Settings Categories" style="display: flex; background: #131a26; padding: 4px; border-radius: 10px; border: 1px solid #2b354a; margin-bottom: 14px; margin-left: auto; margin-right: auto; width: 100%;">
                     <button type="button" id="settings-tab-gabor" class="tab-btn active">
                         <span class="tab-btn-icon">🧿</span>
-                        <span class="tab-btn-text" data-i18n="tabGabor"></span>
+                        <span class="tab-btn-text" data-i18n="tabGabor">Gabor</span>
                     </button>
                     <button type="button" id="settings-tab-synop" class="tab-btn">
                         <span class="tab-btn-icon">🧲</span>
-                        <span class="tab-btn-text" data-i18n="tabSynop"></span>
+                        <span class="tab-btn-text" data-i18n="tabSynop">Synoptophore</span>
                     </button>
                     <button type="button" id="settings-tab-rds" class="tab-btn">
                         <span class="tab-btn-icon">🧊</span>
-                        <span class="tab-btn-text" data-i18n="tabRDS"></span>
+                        <span class="tab-btn-text" data-i18n="tabRDS">Stereogram</span>
                     </button>
                 </nav>
 
                 <div class="modal-scroll-body" tabindex="0">
 
-                    <!-- GLOBAL ERGONOMIC HEADER (Always visible across all games) -->
+                    <!-- GLOBAL ERGONOMIC HEADER (Language, Limit, Pomodoro) -->
                     <div style="background: rgba(11, 15, 24, 0.3); padding: 12px; border-radius: var(--radius-elements); border: 1px solid rgba(255, 255, 255, 0.03); display: flex; flex-direction: column; margin-bottom: 14px;">
                         <!-- Language Segment -->
-                        <div class="pill-row">
-                            <span data-i18n="lblSettingLang" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
-                            <div id="select-lang" class="pill-group">
-                                <button type="button" class="pill-btn" data-value="en">🇬🇧 EN</button>
-                                <button type="button" class="pill-btn" data-value="ru">🇷🇺 RU</button>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span data-i18n="lblSettingLang" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Application Language:</span>
+                                <div id="select-lang" class="pill-group">
+                                    <button type="button" class="pill-btn" data-value="en">🇬🇧 EN</button>
+                                    <button type="button" class="pill-btn" data-value="ru">🇷🇺 RU</button>
+                                </div>
                             </div>
+                            <span class="settings-help" data-i18n-html="helpLang">🏥 <strong>Purpose:</strong> Configures interface language and optimizes typographical layouts for native readability.<br>🎮 <strong>Difficulty:</strong> Does not affect exercises.<br>🧭 <strong>Recommendation:</strong> Set your preferred language for the most intuitive guidance.</span>
                         </div>
-                        <!-- Session Limit Segment (Replaced Selects dynamically with Pill Tabs) -->
-                        <div class="pill-row" id="row-session-limit-container">
-                            <span data-i18n="lblSettingLimit" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
-                            <div id="select-session-limit" class="pill-group">
-                                <!-- Pill buttons are mapped dynamically to keep Gabor and RDS limits completely distinct -->
-                                <button type="button" class="pill-btn" data-value="0" data-i18n="optLimitOff"></button>
-                                <button type="button" class="pill-btn" data-value="40">40</button>
-                                <button type="button" class="pill-btn" data-value="80">80</button>
-                                <button type="button" class="pill-btn" data-value="120">120</button>
+                        <!-- Session Limit Segment -->
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
+                            <div class="pill-row" id="row-session-limit-container" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span data-i18n="lblSettingLimit" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Session Limit:</span>
+                                <div id="select-session-limit" class="pill-group">
+                                    <button type="button" class="pill-btn" data-value="0" data-i18n="optLimitOff">Off</button>
+                                    <button type="button" class="pill-btn" data-value="40">40</button>
+                                    <button type="button" class="pill-btn" data-value="80">80</button>
+                                    <button type="button" class="pill-btn" data-value="120">120</button>
+                                </div>
                             </div>
+                            <span class="settings-help" data-i18n-html="helpSessionLimit">🏥 <strong>Purpose:</strong> Strictly limits daily visual workload, preventing cortical fatigue.<br>🎮 <strong>Difficulty:</strong> Depends on the selected trial limit (more trials = higher strain).<br>🧭 <strong>Recommendation:</strong> Standard limit: 80 trials for Gabor and 25 for stereograms.</span>
                         </div>
                         <!-- Pomodoro Rest Timer Segment -->
-                        <div class="pill-row">
-                            <span data-i18n="lblSettingTimerLimit" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
-                            <div id="select-timer-limit" class="pill-group">
-                                <button type="button" class="pill-btn" data-value="0" data-i18n="optTimerOff"></button>
-                                <button type="button" class="pill-btn" data-value="5">5m</button>
-                                <button type="button" class="pill-btn" data-value="10">10m</button>
-                                <button type="button" class="pill-btn" data-value="15">15m</button>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span data-i18n="lblSettingTimerLimit" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Pomodoro Timer (Minutes):</span>
+                                <div id="select-timer-limit" class="pill-group">
+                                    <button type="button" class="pill-btn" data-value="0" data-i18n="optTimerOff">Off</button>
+                                    <button type="button" class="pill-btn" data-value="5">5m</button>
+                                    <button type="button" class="pill-btn" data-value="10">10m</button>
+                                    <button type="button" class="pill-btn" data-value="15">15m</button>
+                                </div>
                             </div>
+                            <span class="settings-help" data-i18n-html="helpTimerLimit">🏥 <strong>Purpose:</strong> Automatically halts the session, prompting a rest break to prevent ocular muscle fatigue and accommodative spasm.<br>🎮 <strong>Difficulty:</strong> Helps control eye strain and continuous focus endurance.<br>🧭 <strong>Recommendation:</strong> Ophthalmologists recommend 10–15 minute sessions (the 20-20-20 rule).</span>
                         </div>
                     </div>
 
                     <!-- GABOR THERAPUTIC AREA (🧿) -->
                     
-                    <!-- Gabor Block 1: Macro-Preset Selectors (Elite Glassmorphic Grid Cards) -->
+                    <!-- Gabor Block 1: Macro-Preset Selectors -->
                     <div id="row-preset-mode" data-visible-in="gabor" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;">
-                        <span data-i18n="lblSettingPreset" style="font-size: 13px; font-weight: 700; color: #3b90ff; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;"></span>
+                        <span data-i18n="lblSettingPreset" style="font-size: 13px; font-weight: 700; color: #3b90ff; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">Training Protocol:</span>
                         <div id="select-preset-mode" class="preset-grid">
                             <div class="preset-card active" data-value="occlusion" tabindex="0" role="button" aria-pressed="true">
-                                <span class="preset-card-title" data-i18n="lblCompactPresetOcclusion"></span>
-                                <span class="preset-card-desc" data-i18n="optPresetOcclusion"></span>
+                                <span class="preset-card-title" data-i18n="lblCompactPresetOcclusion">🩹 Patching</span>
+                                <span class="preset-card-desc" data-i18n="optPresetOcclusion">Classic monochrome patching.</span>
                             </div>
                             <div class="preset-card" data-value="blitz" tabindex="0" role="button" aria-pressed="false">
-                                <span class="preset-card-title" data-i18n="lblCompactPresetBlitz"></span>
-                                <span class="preset-card-desc" data-i18n="optPresetBlitz"></span>
+                                <span class="preset-card-title" data-i18n="lblCompactPresetBlitz">⚡ Blitz</span>
+                                <span class="preset-card-desc" data-i18n="optPresetBlitz">High-speed 100ms processing.</span>
                             </div>
                             <div class="preset-card" data-value="binocular" tabindex="0" role="button" aria-pressed="false">
-                                <span class="preset-card-title" data-i18n="lblCompactPresetBinocular"></span>
-                                <span class="preset-card-desc" data-i18n="optPresetBinocular"></span>
+                                <span class="preset-card-title" data-i18n="lblCompactPresetBinocular">🕶️ 3D Balance</span>
+                                <span class="preset-card-desc" data-i18n="optPresetBinocular">Dichoptic noise masking.</span>
                             </div>
                             <div class="preset-card" data-value="flicker" tabindex="0" role="button" aria-pressed="false">
-                                <span class="preset-card-title" data-i18n="lblCompactPresetFlicker"></span>
-                                <span class="preset-card-desc" data-i18n="optPresetFlicker"></span>
+                                <span class="preset-card-title" data-i18n="lblCompactPresetFlicker">🌀 3D Flicker</span>
+                                <span class="preset-card-desc" data-i18n="optPresetFlicker">Alpha-resonance SSVEP.</span>
                             </div>
                             <div class="preset-card" data-value="peripheral" tabindex="0" role="button" aria-pressed="false">
-                                <span class="preset-card-title" data-i18n="lblCompactPresetPeripheral"></span>
-                                <span class="preset-card-desc" data-i18n="optPresetPeripheral"></span>
+                                <span class="preset-card-title" data-i18n="lblCompactPresetPeripheral">🎯 3D Capture</span>
+                                <span class="preset-card-desc" data-i18n="optPresetPeripheral">Eccentric field capture.</span>
                             </div>
                             <div class="preset-card" data-value="custom" tabindex="0" role="button" aria-pressed="false">
-                                <span class="preset-card-title" data-i18n="lblCompactPresetCustom"></span>
-                                <span class="preset-card-desc" data-i18n="optPresetCustom"></span>
+                                <span class="preset-card-title" data-i18n="lblCompactPresetCustom">⚙️ Custom</span>
+                                <span class="preset-card-desc" data-i18n="optPresetCustom">Manual parameter control.</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Gabor Block 2: Core parameters (Level, Auto-Next) -->
+                    <!-- Gabor Block 2: Core parameters -->
                     <div data-visible-in="gabor" style="background: rgba(19, 26, 38, 0.2); padding: 10px; border-radius: var(--radius-elements); border: 1px dashed rgba(255,255,255,0.04); display: flex; flex-direction: column; margin-bottom: 14px;">
                         <!-- Stage Selection -->
-                        <div class="pill-row">
-                            <span data-i18n="lblSettingStartLevel" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
-                            <div id="select-start-level" class="pill-group" style="max-width: 50%;">
-                                <button type="button" class="pill-btn" data-value="1">1</button>
-                                <button type="button" class="pill-btn" data-value="2">2</button>
-                                <button type="button" class="pill-btn" data-value="3">3</button>
-                                <button type="button" class="pill-btn" data-value="4">4</button>
-                                <button type="button" class="pill-btn" data-value="5">5</button>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span data-i18n="lblSettingStartLevel" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Starting Stage:</span>
+                                <div id="select-start-level" class="pill-group" style="max-width: 50%;">
+                                    <button type="button" class="pill-btn" data-value="1">1</button>
+                                    <button type="button" class="pill-btn" data-value="2">2</button>
+                                    <button type="button" class="pill-btn" data-value="3">3</button>
+                                    <button type="button" class="pill-btn" data-value="4">4</button>
+                                    <button type="button" class="pill-btn" data-value="5">5</button>
+                                </div>
                             </div>
+                            <span class="settings-help" data-i18n-html="helpStartLevel">🏥 <strong>Purpose:</strong> Sets starting spatial frequency. Higher stages have ultra-fine lines, challenging foveal photoreceptors and primary visual cortex (V1) networks.<br>🎮 <strong>Difficulty:</strong> Stage 1 — easiest (thick lines); Stage 5 — extreme (micro-acuity lines).<br>🧭 <strong>Recommendation:</strong> Start at Stage 1. Advance only when maintaining sustained accuracy >85%.</span>
                         </div>
                         <!-- Auto Next -->
-                        <div class="pill-row">
-                            <span data-i18n="lblSettingAutonext" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
-                            <div id="select-autonext" class="pill-group" style="max-width: 45%;">
-                                <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn"></button>
-                                <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff"></button>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span data-i18n="lblSettingAutonext" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Auto-Next Flash:</span>
+                                <div id="select-autonext" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
+                            <span class="settings-help" data-i18n-html="helpAutonext">🏥 <strong>Purpose:</strong> Automatically triggers the next flash 1 second after your answer, maintaining continuous cortical rhythm and central fixation lock.<br>🎮 <strong>Difficulty:</strong> Streamlines rhythmic progression.<br>🧭 <strong>Recommendation:</strong> Keep ON to avoid extra clicks and maintain eye focus on the central cross.</span>
                         </div>
                     </div>
 
                     <!-- Gabor Block 3: Stimulation Parameters (Muted Accordion) -->
                     <div class="accordion-header" id="accordion-header-2" data-visible-in="gabor" role="button" aria-expanded="false" aria-controls="accordion-content-2">
-                        <span data-i18n="lblSettingGroup2"></span>
+                        <span data-i18n="lblSettingGroup2">⚡ Gabor & Speed</span>
                         <span class="accordion-arrow" id="accordion-arrow-2" aria-hidden="true">›</span>
                     </div>
                     <div class="accordion-content" id="accordion-content-2" data-visible-in="gabor" role="region" aria-labelledby="accordion-header-2">
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                                <span data-i18n="lblSettingFlash" style="font-size: 12px; font-weight: 600;"></span>
+                                <span data-i18n="lblSettingFlash" style="font-size: 12px; font-weight: 600;">Flash Exposure Speed:</span>
                                 <div id="select-flash-duration" class="pill-group" style="max-width: 65%;">
-                                    <button type="button" class="pill-btn" data-value="adaptive" data-i18n="unitMsAdaptive"></button>
+                                    <button type="button" class="pill-btn" data-value="adaptive" data-i18n="optFlashAdaptive">Adapt.</button>
                                     <button type="button" class="pill-btn" data-value="100">100</button>
                                     <button type="button" class="pill-btn" data-value="180">180</button>
                                     <button type="button" class="pill-btn" data-value="350">350</button>
                                 </div>
                             </div>
-                            <span class="settings-help" data-i18n="helpFlashDuration" id="help-flash-duration"></span>
+                            <span class="settings-help" data-i18n-html="helpFlashDuration">🏥 <strong>Purpose:</strong> Blocks compensatory eye movements (saccades). Ultra-short flashes force instant processing, preventing the strong eye from 'cheating' by shifting its gaze.<br>🎮 <strong>Difficulty:</strong> 350ms — easy; 100ms — extremely fast (blitz mode).<br>🧭 <strong>Recommendation:</strong> Use 'Adaptive' (duration automatically tightens as accuracy increases).</span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingStageAdvance" for="chk-stage-advance"></label>
+                                <label data-i18n="lblSettingStageAdvance" for="chk-stage-advance">Auto Stage Progression:</label>
                                 <input type="checkbox" id="chk-stage-advance">
                             </div>
-                            <span class="settings-help" data-i18n="helpStageAdvance" id="help-stage-advance"></span>
+                            <span class="settings-help" data-i18n-html="helpStageAdvance">🏥 <strong>Purpose:</strong> Allows the algorithm to automatically raise or lower stages based on a rolling accuracy window of the last 15–20 trials.<br>🎮 <strong>Difficulty:</strong> Keeps the exercise on the edge of your active sensory capabilities.<br>🧭 <strong>Recommendation:</strong> Keep ON to maintain an optimal neuroplastic load.</span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingStatic" for="chk-static"></label>
+                                <label data-i18n="lblSettingStatic" for="chk-static">Static Stimulus (No Hide):</label>
                                 <input type="checkbox" id="chk-static">
                             </div>
-                            <span class="settings-help" data-i18n="helpStatic" id="help-static"></span>
+                            <span class="settings-help" data-i18n-html="helpStatic">🏥 <strong>Purpose:</strong> The Gabor patch stays visible indefinitely until an answer is selected.<br>🎮 <strong>Difficulty:</strong> Easiest mode (no temporal limit or speed pressure).<br>🧭 <strong>Recommendation:</strong> Use for initial training, familiarization, or when teaching small children.</span>
                         </div>
                         <div class="settings-row" id="row-flicker" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingFlicker" for="chk-flicker"></label>
+                                <label data-i18n="lblSettingFlicker" for="chk-flicker">Flicker Stimulation (10 Hz):</label>
                                 <input type="checkbox" id="chk-flicker">
                             </div>
-                            <span class="settings-help" data-i18n="helpFlicker" id="help-flicker"></span>
+                            <span class="settings-help" data-i18n-html="helpFlicker">🏥 <strong>Purpose:</strong> Pulsates the target Gabor at 10 Hz (Alpha-resonance), overriding top-down cortical suppression and preventing Troxler's fading.<br>🎮 <strong>Difficulty:</strong> Requires high focus but significantly aids low-contrast detection.<br>🧭 <strong>Recommendation:</strong> Highly effective for stubborn, deep binocular suppression.</span>
                         </div>
                     </div>
 
-                    <!-- Gabor Block 4: Spatial Configuration & Crowding (Symmetric Accordion) -->
+                    <!-- Gabor Block 4: Spatial Configuration & Crowding -->
                     <div class="accordion-header" id="accordion-header-3" data-visible-in="gabor" role="button" aria-expanded="false" aria-controls="accordion-content-3">
-                        <span data-i18n="lblSettingGroup3"></span>
+                        <span data-i18n="lblSettingGroup3">🩹 Gabor & Complexity</span>
                         <span class="accordion-arrow" id="accordion-arrow-3" aria-hidden="true">›</span>
                     </div>
                     <div class="accordion-content" id="accordion-content-3" data-visible-in="gabor" role="region" aria-labelledby="accordion-header-3">
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingPermanentCross" for="chk-permanent-cross"></label>
+                                <label data-i18n="lblSettingPermanentCross" for="chk-permanent-cross">Permanent Fixation Cross:</label>
                                 <input type="checkbox" id="chk-permanent-cross">
                             </div>
-                            <span class="settings-help" data-i18n="helpPermanentCross" id="help-permanent-cross"></span>
+                            <span class="settings-help" data-i18n-html="helpPermanentCross">🏥 <strong>Purpose:</strong> Retains a faded central cross during the flash, assisting in central fixation and countering eccentric gaze drift.<br>🎮 <strong>Difficulty:</strong> Makes central fixation significantly easier.<br>🧭 <strong>Recommendation:</strong> Recommended for patients with strabismus or nystagmus.</span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingLowContrast" for="chk-low-contrast"></label>
+                                <label data-i18n="lblSettingLowContrast" for="chk-low-contrast">Ultra-Low Contrast (to 1%):</label>
                                 <input type="checkbox" id="chk-low-contrast">
                             </div>
-                            <span class="settings-help" data-i18n="helpLowContrast" id="help-low-contrast"></span>
+                            <span class="settings-help" data-i18n-html="helpLowContrast">🏥 <strong>Purpose:</strong> Allows the contrast staircase to descend down to the extreme 1% threshold instead of stopping at the standard 5%.<br>🎮 <strong>Difficulty:</strong> Extremely high. Lines become almost invisible to an untrained eye.<br>🧭 <strong>Recommendation:</strong> Enable only after mastering Stage 5 at standard contrast.</span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingWideVariance" for="chk-wide-variance"></label>
+                                <label data-i18n="lblSettingWideVariance" for="chk-wide-variance">Randomize Size & Density:</label>
                                 <input type="checkbox" id="chk-wide-variance">
                             </div>
-                            <span class="settings-help" data-i18n="helpWideVariance" id="help-wide-variance"></span>
+                            <span class="settings-help" data-i18n-html="helpWideVariance">🏥 <strong>Purpose:</strong> Randomizes line density and size with every flash, preventing neural frequency adaptation in the visual cortex.<br>🎮 <strong>Difficulty:</strong> Slightly increases task diversity.<br>🧭 <strong>Recommendation:</strong> Keep ON to stimulate a broader population of V1 cortical receptive fields.</span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingShapeVariance" for="chk-shape-variance"></label>
+                                <label data-i18n="lblSettingShapeVariance" for="chk-shape-variance">Vary Shape (Aspect Ratio):</label>
                                 <input type="checkbox" id="chk-shape-variance">
                             </div>
-                            <span class="settings-help" data-i18n="helpShapeVariance" id="help-shape-variance"></span>
+                            <span class="settings-help" data-i18n-html="helpShapeVariance">🏥 <strong>Purpose:</strong> Randomly squashes the Gabor patch into an ellipse, challenging orientation selectivity and countering retinal astigmatism.<br>🎮 <strong>Difficulty:</strong> Increases orientation ambiguity on the edge of detection.<br>🧭 <strong>Recommendation:</strong> Recommended for patients with complex astigmatism.</span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingPeripheral" for="chk-peripheral"></label>
+                                <label data-i18n="lblSettingPeripheral" for="chk-peripheral">Peripheral Eccentricity:</label>
                                 <input type="checkbox" id="chk-peripheral">
                             </div>
-                            <span class="settings-help" data-i18n="helpPeripheral" id="help-peripheral"></span>
+                            <span class="settings-help" data-i18n-html="helpPeripheral">🏥 <strong>Purpose:</strong> Randomly shifts the Gabor patch, training parafoveal awareness, spatial coordination, and peripheral attention.<br>🎮 <strong>Difficulty:</strong> High. Requires resolving line tilts using peripheral vision without looking away from the center cross.<br>🧭 <strong>Recommendation:</strong> Enable in later stages of rehabilitation to restore spatial localization.</span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingCrowding" for="chk-crowding"></label>
+                                <label data-i18n="lblSettingCrowding" for="chk-crowding">Visual Crowding (Flankers):</label>
                                 <input type="checkbox" id="chk-crowding">
                             </div>
-                            <span class="settings-help" data-i18n="helpCrowding" id="help-crowding"></span>
+                            <span class="settings-help" data-i18n-html="helpCrowding">🏥 <strong>Purpose:</strong> Surrounds the target Gabor with flanking distractors, training the brain to separate detail under active binocular noise and countering visual crowding.<br>🎮 <strong>Difficulty:</strong> High. Central and flanking lines tend to blur together.<br>🧭 <strong>Recommendation:</strong> Highly recommended for school-age children struggling with crowded text while reading.</span>
                         </div>
                         <div class="settings-row" id="row-crowding-mode" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                                <span data-i18n="lblSettingCrowdingMode" style="font-size: 12px; font-weight: 600;"></span>
+                                <span data-i18n="lblSettingCrowdingMode" style="font-size: 12px; font-weight: 600;">Crowding Axis:</span>
                                 <div id="select-crowding-mode" class="pill-group" style="max-width: 65%;">
-                                    <button type="button" class="pill-btn" data-value="vertical" data-i18n="optCrowdingVertical"></button>
-                                    <button type="button" class="pill-btn" data-value="horizontal" data-i18n="optCrowdingHorizontal"></button>
-                                    <button type="button" class="pill-btn" data-value="all" data-i18n="optCrowdingAll"></button>
+                                    <button type="button" class="pill-btn" data-value="vertical" data-i18n="optCrowdingVertical">Vert.</button>
+                                    <button type="button" class="pill-btn" data-value="horizontal" data-i18n="optCrowdingHorizontal">Horiz.</button>
+                                    <button type="button" class="pill-btn" data-value="all" data-i18n="optCrowdingAll">All</button>
                                 </div>
                             </div>
+                            <span class="settings-help" data-i18n-html="helpCrowdingMode">🏥 <strong>Purpose:</strong> Directs lateral inhibition across specific retinal meridians.<br>🎮 <strong>Difficulty:</strong> Vertical — standard; All sides — maximum spatial noise density.<br>🧭 <strong>Recommendation:</strong> Use vertical axis to train vertical paragraph-tracking for reading.</span>
                         </div>
                         <div class="settings-row" id="row-flanker-distance" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                                <span data-i18n="lblSettingFlankerDistance" style="font-size: 12px; font-weight: 600;"></span>
+                                <span data-i18n="lblSettingFlankerDistance" style="font-size: 12px; font-weight: 600;">Flanker Spacing:</span>
                                 <div id="select-flanker-distance" class="pill-group" style="max-width: 55%;">
-                                    <button type="button" class="pill-btn" data-value="2" data-i18n="optFlankerDistanceClose"></button>
-                                    <button type="button" class="pill-btn" data-value="4" data-i18n="optFlankerDistanceFar"></button>
+                                    <button type="button" class="pill-btn" data-value="2" data-i18n="optFlankerDistanceClose">Close (2x)</button>
+                                    <button type="button" class="pill-btn" data-value="4" data-i18n="optFlankerDistanceFar">Far (4x)</button>
                                 </div>
                             </div>
-                            <span class="settings-help" data-i18n="helpFlankerDistance"></span>
+                            <span class="settings-help" data-i18n-html="helpFlankerDistance">🏥 <strong>Purpose:</strong> Spacing at 2x sigma challenges spatial crowding. Spacing at 4x sigma acts as a collinear neural amplifier, helping to resolve line tilt at ultra-low contrast thresholds.<br>🎮 <strong>Difficulty:</strong> 2x spacing — hard; 4x spacing — easier (assists with low-contrast recognition).<br>🧭 <strong>Recommendation:</strong> Use 4x spacing for ultra-low contrast training.</span>
                         </div>
                         <div class="settings-row" id="row-orthogonal" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingOrthogonal" for="chk-orthogonal-flankers"></label>
+                                <label data-i18n="lblSettingOrthogonal" for="chk-orthogonal-flankers">Orthogonal Distractor Orientation:</label>
                                 <input type="checkbox" id="chk-orthogonal-flankers">
                             </div>
-                            <span class="settings-help" data-i18n="helpOrthogonal" id="help-orthogonal"></span>
+                            <span class="settings-help" data-i18n-html="helpOrthogonal">🏥 <strong>Purpose:</strong> Rotates flanking bars perpendicular to the target, creating distinct orientation boundaries.<br>🎮 <strong>Difficulty:</strong> Eases target localization due to the contrasting angle differences.<br>🧭 <strong>Recommendation:</strong> Use in early stages of lateral crowding training.</span>
                         </div>
                         <div class="settings-row" id="row-dynamic" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingDynamic" for="chk-dynamic-flankers"></label>
+                                <label data-i18n="lblSettingDynamic" for="chk-dynamic-flankers">Dynamic Distractor Phase Shift:</label>
                                 <input type="checkbox" id="chk-dynamic-flankers">
                             </div>
-                            <span class="settings-help" data-i18n="helpDynamic" id="help-dynamic"></span>
+                            <span class="settings-help" data-i18n-html="helpDynamic">🏥 <strong>Purpose:</strong> Runs a continuous phase wave inside the flankers, saturating the strong eye's motion channels to help the weak eye isolate the target.<br>🎮 <strong>Difficulty:</strong> Temporarily reduces dominant eye suppression.<br>🧭 <strong>Recommendation:</strong> Recommended for patients with strong visual suppression.</span>
                         </div>
                     </div>
 
                     <!-- SYNOPTOPHORE THERAPUTIC AREA (🧲) -->
 
-                    <!-- Synoptophore Block 1: Oculomotor Physics (Opened by default) -->
+                    <!-- Synoptophore Block 1: Oculomotor Physics -->
                     <div data-visible-in="synoptophore" style="background: rgba(19, 26, 38, 0.2); padding: 10px; border-radius: var(--radius-elements); border: 1px dashed rgba(255,255,255,0.04); display: flex; flex-direction: column; margin-bottom: 14px;">
                         <!-- Pulling Speed -->
-                        <div class="pill-row">
-                            <span data-i18n="lblSettingPullSpeed" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
-                            <div id="select-pull-speed" class="pill-group" style="max-width: 45%;">
-                                <button type="button" class="pill-btn" data-value="1500">1.5s</button>
-                                <button type="button" class="pill-btn" data-value="2500">2.5s</button>
-                                <button type="button" class="pill-btn" data-value="4000">4.0s</button>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span data-i18n="lblSettingPullSpeed" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Ocular Pulling Rate:</span>
+                                <div id="select-pull-speed" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="1500">1.5s</button>
+                                    <button type="button" class="pill-btn" data-value="2500">2.5s</button>
+                                    <button type="button" class="pill-btn" data-value="4000">4.0s</button>
+                                </div>
                             </div>
+                            <span class="settings-help" data-i18n-html="helpSynopPullSpeed">🏥 <strong>Purpose:</strong> Determines the automatic target pulling speed, exercising vergence reserves.<br>🎮 <strong>Difficulty:</strong> Slower (4.0s) — easy; Faster (1.5s) — high muscle load.<br>🧭 <strong>Recommendation:</strong> Start at 4.0s or 2.5s to allow gentle muscle adaptation.</span>
                         </div>
                         <!-- Target Type -->
-                        <div class="pill-row">
-                            <span data-i18n="lblSettingTargetType" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
-                            <div id="select-target-type" class="pill-group" style="max-width: 50%;">
-                                <button type="button" class="pill-btn" data-value="ring-dot" data-i18n="optTargetRing"></button>
-                                <button type="button" class="pill-btn" data-value="cross-square" data-i18n="optTargetSquare"></button>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span data-i18n="lblSettingTargetType" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Target Geometry:</span>
+                                <div id="select-target-type" class="pill-group" style="max-width: 50%;">
+                                    <button type="button" class="pill-btn" data-value="ring-dot" data-i18n="optTargetRing">Ring</button>
+                                    <button type="button" class="pill-btn" data-value="cross-square" data-i18n="optTargetSquare">Cross</button>
+                                </div>
                             </div>
+                            <span class="settings-help" data-i18n-html="helpTargetType">🏥 <strong>Purpose:</strong> Selects the central sensory anchors for binocular fusion.<br>🎮 <strong>Difficulty:</strong> 'Ring & Dot' — easy (forgiving); 'Cross & Square' — hard (requires strict X/Y alignment).<br>🧭 <strong>Recommendation:</strong> Start with Ring, advance to Cross as deviation angles reduce.</span>
                         </div>
                         <!-- Target Size -->
-                        <div class="pill-row">
-                            <span data-i18n="lblSettingTargetSize" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
-                            <div id="select-target-size" class="pill-group" style="max-width: 45%;">
-                                <button type="button" class="pill-btn" data-value="65" data-i18n="optSizeMacular"></button>
-                                <button type="button" class="pill-btn" data-value="45" data-i18n="optSizeParamacular"></button>
-                                <button type="button" class="pill-btn" data-value="30" data-i18n="optSizeFoveal"></button>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span data-i18n="lblSettingTargetSize" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Ophthalmic Target Size:</span>
+                                <div id="select-target-size" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="65" data-i18n="optSizeMacular">65px (Mac.)</button>
+                                    <button type="button" class="pill-btn" data-value="45" data-i18n="optSizeParamacular">45px (Param.)</button>
+                                    <button type="button" class="pill-btn" data-value="30" data-i18n="optSizeFoveal">30px (Fov.)</button>
+                                </div>
                             </div>
+                            <span class="settings-help" data-i18n-html="helpTargetSize">🏥 <strong>Purpose:</strong> Determines the retinal stimulation area. Foveal sizes require microscopic fusion precision.<br>🎮 <strong>Difficulty:</strong> Macular (65px) — easy; Foveal (30px) — requires extreme gaze stability.<br>🧭 <strong>Recommendation:</strong> Advance to Foveal size to secure lasting orthoptic alignment on micro-deviations.</span>
                         </div>
                     </div>
 
-                    <!-- Synoptophore Block 2: Sensory Support (Muted Accordion) -->
+                    <!-- Synoptophore Block 2: Sensory Support -->
                     <div class="accordion-header" id="accordion-header-5" data-visible-in="synoptophore" role="button" aria-expanded="false" aria-controls="accordion-content-5">
-                        <span data-i18n="lblSettingGroup5"></span>
+                        <span data-i18n="lblSettingGroup5">🧲 Synoptophore & Support</span>
                         <span class="accordion-arrow" id="accordion-arrow-5" aria-hidden="true">›</span>
                     </div>
                     <div class="accordion-content" id="accordion-content-5" data-visible-in="synoptophore" role="region" aria-labelledby="accordion-header-5">
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingSynopLazyGrid" for="chk-synop-lazy-grid"></label>
+                                <label data-i18n="lblSettingSynopLazyGrid" for="chk-synop-lazy-grid">Lazy Eye Grid (Ring/Square):</label>
                                 <input type="checkbox" id="chk-synop-lazy-grid">
                             </div>
-                            <span class="settings-help" data-i18n="helpSynopLazyGrid"></span>
+                            <span class="settings-help" data-i18n-html="helpSynopLazyGrid">🏥 <strong>Purpose:</strong> Projects dashed guidelines to the weak eye's target, helping the brain locate its spatial position.<br>🎮 <strong>Difficulty:</strong> Substantially eases initial target capture.<br>🧭 <strong>Recommendation:</strong> Enable for larger squint angles to speed up fusion.</span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingSynopStrongGrid" for="chk-synop-strong-grid"></label>
+                                <label data-i18n="lblSettingSynopStrongGrid" for="chk-synop-strong-grid">Strong Eye Grid (Dot/Cross):</label>
                                 <input type="checkbox" id="chk-synop-strong-grid">
                             </div>
-                            <span class="settings-help" data-i18n="helpSynopStrongGrid"></span>
+                            <span class="settings-help" data-i18n-html="helpSynopStrongGrid">🏥 <strong>Purpose:</strong> Projects dashed guidelines to the strong eye's static center, stabilizing central gaze.<br>🎮 <strong>Difficulty:</strong> Aids in locking the dominant eye's fixation.<br>🧭 <strong>Recommendation:</strong> Best used in combination with the Lazy Eye Grid.</span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingSynopFlicker" for="chk-synop-flicker"></label>
+                                <label data-i18n="lblSettingSynopFlicker" for="chk-synop-flicker">Flicker Stimulation (10 Hz):</label>
                                 <input type="checkbox" id="chk-synop-flicker">
                             </div>
-                            <span class="settings-help" data-i18n="helpSynopFlicker"></span>
+                            <span class="settings-help" data-i18n-html="helpSynopFlicker">🏥 <strong>Purpose:</strong> Pulsates the weak eye's target at 10 Hz, suppressing binocular suppression and aiding fusion.<br>🎮 <strong>Difficulty:</strong> Assists in holding fusion locks when the weak eye tends to fade.<br>🧭 <strong>Recommendation:</strong> Highly recommended if the target regularly disappears in glasses.</span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingSynopLockY" for="chk-synop-lock-y"></label>
+                                <label data-i18n="lblSettingSynopLockY" for="chk-synop-lock-y">Strict Horizontal Mode (Lock Y):</label>
                                 <input type="checkbox" id="chk-synop-lock-y">
                             </div>
-                            <span class="settings-help" data-i18n="helpSynopLockY"></span>
+                            <span class="settings-help" data-i18n-html="helpSynopLockY">🏥 <strong>Purpose:</strong> Locks vertical deviation to zero (Y=0), isolating horizontal training.<br>🎮 <strong>Difficulty:</strong> Prevents vertical finger drag errors.<br>🧭 <strong>Recommendation:</strong> Ideal for standard horizontal esotropia/exotropia.</span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingSynopLockX" for="chk-synop-lock-x"></label>
+                                <label data-i18n="lblSettingSynopLockX" for="chk-synop-lock-x">Strict Vertical Mode (Lock X):</label>
                                 <input type="checkbox" id="chk-synop-lock-x">
                             </div>
-                            <span class="settings-help" data-i18n="helpSynopLockX"></span>
+                            <span class="settings-help" data-i18n-html="helpSynopLockX">🏥 <strong>Purpose:</strong> Locks horizontal deviation to zero (X=0), isolating vertical training.<br>🎮 <strong>Difficulty:</strong> Prevents horizontal finger drag errors.<br>🧭 <strong>Recommendation:</strong> Ideal for standard vertical hypertropia/hypotropia.</span>
                         </div>
                     </div>
 
 
                     <!-- STEREOGRAM THERAPUTIC AREA (🧊) -->
 
-                    <!-- Stereogram Block 1: Stereopsis Depth parameters (Opened by default) -->
+                    <!-- Stereogram Block 1: Stereopsis Depth parameters -->
                     <div data-visible-in="rds" style="background: rgba(19, 26, 38, 0.2); padding: 10px; border-radius: var(--radius-elements); border: 1px dashed rgba(255,255,255,0.04); display: flex; flex-direction: column; margin-bottom: 14px;">
                         <!-- Starting Disparity Depth -->
-                        <div class="pill-row">
-                            <span data-i18n="lblSettingRdsStartDisparity" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
-                            <div id="select-rds-start-disparity" class="pill-group" style="max-width: 45%;">
-                                <button type="button" class="pill-btn" data-value="8">8px</button>
-                                <button type="button" class="pill-btn" data-value="6">6px</button>
-                                <button type="button" class="pill-btn" data-value="4">4px</button>
-                                <button type="button" class="pill-btn" data-value="2">2px</button>
-                                <button type="button" class="pill-btn" data-value="1">1px</button>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span data-i18n="lblSettingRdsStartDisparity" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Starting Disparity Shift:</span>
+                                <div id="select-rds-start-disparity" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="8">8px</button>
+                                    <button type="button" class="pill-btn" data-value="6">6px</button>
+                                    <button type="button" class="pill-btn" data-value="4">4px</button>
+                                    <button type="button" class="pill-btn" data-value="2">2px</button>
+                                    <button type="button" class="pill-btn" data-value="1">1px</button>
+                                </div>
                             </div>
+                            <span class="settings-help" data-i18n-html="helpRdsStartDisparity">🏥 <strong>Purpose:</strong> Sets initial target shift. Lower values train fine sensory connections in V2 (micro-stereopsis).<br>🎮 <strong>Difficulty:</strong> 8px — easy, thick relief; 1px — fine micro-3D on the edge of depth perception.<br>🧭 <strong>Recommendation:</strong> Start at 6-8px. Aim to master figure recognition at 1px.</span>
                         </div>
                         <!-- Dot Size -->
-                        <div class="pill-row">
-                            <span data-i18n="lblSettingRdsDotSize" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
-                            <div id="select-rds-dot-size" class="pill-group" style="max-width: 35%;">
-                                <button type="button" class="pill-btn" data-value="2" data-i18n="optRdsSizeSmall"></button>
-                                <button type="button" class="pill-btn" data-value="4" data-i18n="optRdsSizeMedium"></button>
-                                <button type="button" class="pill-btn" data-value="6" data-i18n="optRdsSizeLarge"></button>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span data-i18n="lblSettingRdsDotSize" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Stereoscopic Dot Size:</span>
+                                <div id="select-rds-dot-size" class="pill-group" style="max-width: 35%;">
+                                    <button type="button" class="pill-btn" data-value="2" data-i18n="optRdsSizeSmall">2px</button>
+                                    <button type="button" class="pill-btn" data-value="4" data-i18n="optRdsSizeMedium">4px</button>
+                                    <button type="button" class="pill-btn" data-value="6" data-i18n="optRdsSizeLarge">6px</button>
+                                </div>
                             </div>
+                            <span class="settings-help" data-i18n-html="helpRdsDotSize">🏥 <strong>Purpose:</strong> Adjusts individual dot scale. Smaller dots yield denser correlation grids, aiding 3D depth pop-out.<br>🎮 <strong>Difficulty:</strong> 2px — easy to fuse but requires high optical clarity; 6px — requires greater fusion effort.<br>🧭 <strong>Recommendation:</strong> Use 4px or 2px dot scale for optimal balance.</span>
                         </div>
                         <!-- Density -->
-                        <div class="pill-row">
-                            <span data-i18n="lblSettingRdsDensity" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
-                            <div id="select-rds-density" class="pill-group" style="max-width: 40%;">
-                                <button type="button" class="pill-btn" data-value="0.35" data-i18n="optRdsDensityLow"></button>
-                                <button type="button" class="pill-btn" data-value="0.5" data-i18n="optRdsDensityStandard"></button>
-                                <button type="button" class="pill-btn" data-value="0.65" data-i18n="optRdsDensityHigh"></button>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span data-i18n="lblSettingRdsDensity" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Random Dot Density:</span>
+                                <div id="select-rds-density" class="pill-group" style="max-width: 40%;">
+                                    <button type="button" class="pill-btn" data-value="0.35" data-i18n="optRdsDensityLow">35%</button>
+                                    <button type="button" class="pill-btn" data-value="0.5" data-i18n="optRdsDensityStandard">50%</button>
+                                    <button type="button" class="pill-btn" data-value="0.65" data-i18n="optRdsDensityHigh">65%</button>
+                                </div>
                             </div>
+                            <span class="settings-help" data-i18n-html="helpRdsDensity">🏥 <strong>Purpose:</strong> Adjusts filled dot percentages. 50% density provides optimal binocular contrast matching.<br>🎮 <strong>Difficulty:</strong> 50% is easiest; deviations in either direction increase fusion difficulty.<br>🧭 <strong>Recommendation:</strong> Keep ON standard 50%.</span>
                         </div>
                         <!-- Auto-Next -->
-                        <div class="pill-row">
-                            <span data-i18n="lblSettingRdsAutonext" style="font-size: 12px; font-weight: 600; color: #cbd5e1;"></span>
-                            <div id="select-rds-autonext" class="pill-group" style="max-width: 45%;">
-                                <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn"></button>
-                                <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff"></button>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span data-i18n="lblSettingRdsAutonext" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Auto-Next Stereogram:</span>
+                                <div id="select-rds-autonext" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
+                            <span class="settings-help" data-i18n-html="helpRdsAutonext">🏥 <strong>Purpose:</strong> Automatically triggers next trial 1 second after answer, keeping active cortical pace.<br>🎮 <strong>Difficulty:</strong> Streamlines continuous 3D training.<br>🧭 <strong>Recommendation:</strong> Keep ON to increase density and focus.</span>
                         </div>
                     </div>
 
-                    <!-- Stereogram Block 2: Dynamics & Pursuit (Muted Accordion) -->
+                    <!-- Stereogram Block 2: Dynamics & Pursuit -->
                     <div class="accordion-header" id="accordion-header-6" data-visible-in="rds" role="button" aria-expanded="false" aria-controls="accordion-content-6">
-                        <span data-i18n="lblSettingGroup6"></span>
+                        <span data-i18n="lblSettingGroup6">🧊 Stereogram & Dynamics</span>
                         <span class="accordion-arrow" id="accordion-arrow-6" aria-hidden="true">›</span>
                     </div>
                     <div class="accordion-content" id="accordion-content-6" data-visible-in="rds" role="region" aria-labelledby="accordion-header-6">
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingRdsPermanentCross" for="chk-rds-permanent-cross"></label>
+                                <label data-i18n="lblSettingRdsPermanentCross" for="chk-rds-permanent-cross">Permanent Fixation Cross:</label>
                                 <input type="checkbox" id="chk-rds-permanent-cross">
                             </div>
-                            <span class="settings-help" data-i18n="helpRdsPermanentCross"></span>
+                            <span class="settings-help" data-i18n-html="helpRdsPermanentCross">🏥 <strong>Purpose:</strong> Projects a central zero-disparity cross to stabilize gaze and assist initial stereoscopic fusion.<br>🎮 <strong>Difficulty:</strong> Eases visual focus alignment.<br>🧭 <strong>Recommendation:</strong> Keep ON to assist initial 3D pop-out.</span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingRdsDynamic" for="chk-rds-dynamic"></label>
+                                <label data-i18n="lblSettingRdsDynamic" for="chk-rds-dynamic">Dynamic Stereogram (Boiling Noise):</label>
                                 <input type="checkbox" id="chk-rds-dynamic">
                             </div>
-                            <span class="settings-help" data-i18n="helpRdsDynamic"></span>
+                            <span class="settings-help" data-i18n-html="helpRdsDynamic">🏥 <strong>Purpose:</strong> Shuffles random noise at 18Hz to completely block monocular blinking cheats.<br>🎮 <strong>Difficulty:</strong> Eliminates monocular cues, forcing stereoscopic integration.<br>🧭 <strong>Recommendation:</strong> Keep ON to guarantee authentic binocular training.</span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingRdsRandomizeVertical" for="chk-rds-randomize-vertical"></label>
+                                <label data-i18n="lblSettingRdsRandomizeVertical" for="chk-rds-randomize-vertical">Randomize Vertical Position:</label>
                                 <input type="checkbox" id="chk-rds-randomize-vertical">
                             </div>
-                            <span class="settings-help" data-i18n="helpRdsRandomizeVertical"></span>
+                            <span class="settings-help" data-i18n-html="helpRdsRandomizeVertical">🏥 <strong>Purpose:</strong> Randomizes the vertical offset of the target, expanding spatial localization training.<br>🎮 <strong>Difficulty:</strong> Moderately increases scanning difficulty.<br>🧭 <strong>Recommendation:</strong> Enable once foveal stereo-acuity stabilizes.</span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingRdsFloating" for="chk-rds-floating"></label>
+                                <label data-i18n="lblSettingRdsFloating" for="chk-rds-floating">Floating Target (Dynamic Pursuit):</label>
                                 <input type="checkbox" id="chk-rds-floating">
                             </div>
-                            <span class="settings-help" data-i18n="helpRdsFloating"></span>
+                            <span class="settings-help" data-i18n-html="helpRdsFloating">🏥 <strong>Purpose:</strong> Adds a slow, smooth drifting motion to the hidden square, forcing dynamic vergence tracking to build extraocular muscle stamina.<br>🎮 <strong>Difficulty:</strong> Highly challenging; requires continuous muscle tracking.<br>🧭 <strong>Recommendation:</strong> Enable for dynamic muscle training.</span>
                         </div>
                         <!-- Float Speed -->
                         <div class="settings-row" id="row-rds-floating-speed" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                                <span data-i18n="lblSettingRdsFloatSpeed" style="font-size: 12px; font-weight: 600;"></span>
+                                <span data-i18n="lblSettingRdsFloatSpeed" style="font-size: 12px; font-weight: 600;">Floating Drift Rate:</span>
                                 <div id="select-rds-float-speed" class="pill-group" style="max-width: 45%;">
-                                    <button type="button" class="pill-btn" data-value="slow" data-i18n="optRdsSpeedSlow"></button>
-                                    <button type="button" class="pill-btn" data-value="medium" data-i18n="optRdsSpeedMedium"></button>
-                                    <button type="button" class="pill-btn" data-value="fast" data-i18n="optRdsSpeedFast"></button>
+                                    <button type="button" class="pill-btn" data-value="slow" data-i18n="optRdsSpeedSlow">Slow</button>
+                                    <button type="button" class="pill-btn" data-value="medium" data-i18n="optRdsSpeedMedium">Norm</button>
+                                    <button type="button" class="pill-btn" data-value="fast" data-i18n="optRdsSpeedFast">Fast</button>
                                 </div>
                             </div>
+                            <span class="settings-help" data-i18n-html="helpRdsFloatSpeed">🏥 <strong>Purpose:</strong> Adjusts the drifting speed of the floating 3D square.<br>🎮 <strong>Difficulty:</strong> Slow — gentle drift; Fast — intensive vergence chase.<br>🧭 <strong>Recommendation:</strong> Start on Slow speed to build tracking stamina.</span>
                         </div>
                     </div>
 
 
                     <!-- HARDWARE AREA: 3D ANAGLYPH & LENS CALIBRATION -->
                     <div class="accordion-header" id="accordion-header-4" role="button" aria-expanded="false" aria-controls="accordion-content-4">
-                        <span data-i18n="lblSettingGroup4"></span>
+                        <span data-i18n="lblSettingGroup4">🕶️ Binocular 3D Setup</span>
                         <span class="accordion-arrow" id="accordion-arrow-4" aria-hidden="true">›</span>
                     </div>
                     <div class="accordion-content" id="accordion-content-4" role="region" aria-labelledby="accordion-header-4">
                         <div class="settings-row" id="row-anaglyph-toggle" data-visible-in="gabor" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingAnaglyph" for="chk-anaglyph"></label>
+                                <label data-i18n="lblSettingAnaglyph" for="chk-anaglyph">3D Anaglyph Mode (Red-Cyan):</label>
                                 <input type="checkbox" id="chk-anaglyph">
                             </div>
-                            <span class="settings-help" data-i18n="helpAnaglyph" id="help-anaglyph"></span>
+                            <span class="settings-help" data-i18n-html="helpAnaglyph" id="help-anaglyph">🏥 <strong>Purpose:</strong> Splits color channels for dichoptic training, routing separate imagery to each eye simultaneously.<br>🎮 <strong>Difficulty:</strong> Requires Red-Cyan 3D glasses and balanced calibration.<br>🧭 <strong>Recommendation:</strong> Core protocol for active binocular suppression training.</span>
                         </div>
 
                         <!-- TS Reactivity Link: anaglyph-settings-panel state is controlled by SettingsController -->
+                        <!-- CSS :nth-child references: (1)=Red Side, (2)=Lazy Side, (3)=Attenuation, (4)=Fusion Lock, (5)=L-Calib, (6)=R-Calib -->
                         <div id="anaglyph-settings-panel" style="border-top: 1px dashed #2b354a; padding-top: 12px; margin-top: 10px; margin-bottom: 0;">
-                            <!-- Red Side selection -->
-                            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
-                                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                    <span data-i18n="lblSettingRedSide" style="font-size: 12px; font-weight: 600;"></span>
-                                    <div id="select-red-side" class="pill-group" style="max-width: 55%;">
-                                        <button type="button" class="pill-btn" data-value="left" data-i18n="optSideLeft"></button>
-                                        <button type="button" class="pill-btn" data-value="right" data-i18n="optSideRight"></button>
+                            <!-- Child 1: Red Side selection -->
+                            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
+                                <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                    <span data-i18n="lblSettingRedSide" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Red Filter Lens Position:</span>
+                                    <div id="select-red-side" class="pill-group">
+                                        <button type="button" class="pill-btn" data-value="left" data-i18n="optSideLeft">Left</button>
+                                        <button type="button" class="pill-btn" data-value="right" data-i18n="optSideRight">Right</button>
                                     </div>
                                 </div>
                             </div>
-                            <!-- Lazy eye side selection -->
-                            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
-                                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                    <span data-i18n="lblSettingLazySide" style="font-size: 12px; font-weight: 600;"></span>
-                                    <div id="select-lazy-side" class="pill-group" style="max-width: 55%;">
-                                        <button type="button" class="pill-btn" data-value="left" data-i18n="optSideLeft"></button>
-                                        <button type="button" class="pill-btn" data-value="right" data-i18n="optSideRight"></button>
+                            <!-- Child 2: Lazy eye side selection -->
+                            <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
+                                <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                    <span data-i18n="lblSettingLazySide" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Lazy (Amblyopic) Eye:</span>
+                                    <div id="select-lazy-side" class="pill-group">
+                                        <button type="button" class="pill-btn" data-value="left" data-i18n="optSideLeft">Left</button>
+                                        <button type="button" class="pill-btn" data-value="right" data-i18n="optSideRight">Right</button>
                                     </div>
                                 </div>
                             </div>
+                            <!-- Child 3: Attenuation -->
                             <div class="settings-row" id="row-strong-attenuation" data-visible-in="gabor,synoptophore" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                                 <div style="display: flex; justify-content: space-between; width: 100%;">
-                                    <label data-i18n="lblSettingStrongAttenuation" for="range-strong-attenuation"></label>
+                                    <label data-i18n="lblSettingStrongAttenuation" for="range-strong-attenuation">Strong Eye Contrast Balancer:</label>
                                     <span id="val-strong-attenuation" style="color: #3b90ff; font-weight: bold;" aria-hidden="true">30%</span>
                                 </div>
                                 <div class="slider-row" style="display: flex; align-items: center; width: 100%; gap: 8px;">
@@ -626,18 +665,20 @@
                                     <input type="range" id="range-strong-attenuation" min="10" max="100" step="5" value="30" style="flex: 1; accent-color: #007aff; cursor: pointer; margin-top: 6px;">
                                     <button type="button" class="nudge-btn" data-nudge-target="range-strong-attenuation" data-nudge-step="5" data-nudge-dir="1" aria-label="Increase attenuation">+</button>
                                 </div>
+                                <span class="settings-help" data-i18n-html="helpStrongAttenuation">🏥 <strong>Purpose:</strong> Attenuates contrast for the dominant eye, countering active visual suppression of the weaker eye.<br>🎮 <strong>Difficulty:</strong> 10% — easiest (strong eye heavily dimmed); 100% — hardest (equal contest).<br>🧭 <strong>Recommendation:</strong> Start at 20-30%, gradually advancing to 100% as the weak eye recovers.</span>
                             </div>
+                            <!-- Child 4: Fusion Lock -->
                             <div class="settings-row" id="row-fusion-lock" data-visible-in="gabor" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                    <label data-i18n="lblSettingFusionLock" for="chk-fusion-lock"></label>
+                                    <label data-i18n="lblSettingFusionLock" for="chk-fusion-lock">Binocular Fusion Lock:</label>
                                     <input type="checkbox" id="chk-fusion-lock">
                                 </div>
-                                <span class="settings-help" data-i18n="helpFusionLock" id="help-fusion-lock"></span>
+                                <span class="settings-help" data-i18n-html="helpFusionLock" id="help-fusion-lock">🏥 <strong>Purpose:</strong> Renders visual stabilization frames visible to both eyes to prevent ocular drift during rapid exposures.<br>🎮 <strong>Difficulty:</strong> Greatly stabilizes binocular focus.<br>🧭 <strong>Recommendation:</strong> Keep ON across all dichoptic (3D) exercises.</span>
                             </div>
-                            <!-- Left Lens Calibration (Subpixel Red balance) -->
+                            <!-- Child 5: Left Lens Calibration (Subpixel Red balance) -->
                             <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
                                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                    <span data-i18n-html="lblSettingLeftColor" style="font-size: 13px; font-weight: 500;"></span>
+                                    <span data-i18n-html="lblSettingLeftColor" style="font-size: 13px; font-weight: 500;">Left Lens Calibration (Red eye):</span>
                                     <span id="val-calib-r" style="color: #ef4444; font-weight: bold; font-size: 13px;" aria-hidden="true">255</span>
                                 </div>
                                 <div class="slider-row">
@@ -647,10 +688,10 @@
                                         <button type="button" class="nudge-btn" data-nudge-target="slider-left-r" data-nudge-step="1" data-nudge-dir="1" aria-label="Increase Red Amplitude">+</button>
                                 </div>
                             </div>
-                            <!-- Right Lens Calibration (Subpixel Green/Blue balance) -->
+                            <!-- Child 6: Right Lens Calibration (Subpixel Green/Blue balance) -->
                             <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 8px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                    <span data-i18n-html="lblSettingRightColor" style="font-size: 13px; font-weight: 500;"></span>
+                                    <span data-i18n-html="lblSettingRightColor" style="font-size: 13px; font-weight: 500;">Right Lens Calibration (Cyan eye):</span>
                                     <div style="display: flex; gap: 8px; font-size: 13px; font-weight: bold;" aria-hidden="true">
                                         <span style="color: #22c55e;">G: <span id="val-calib-g">255</span></span>
                                         <span style="color: #3b82f6;">B: <span id="val-calib-b">255</span></span>
@@ -671,12 +712,12 @@
                                     </div>
                                 </div>
                             </div>
-                            <button type="button" id="btn-fusion-test" class="close-btn" data-i18n="btnFusionTestLabel"></button>
+                            <button type="button" id="btn-fusion-test" class="close-btn" data-i18n="btnFusionTestLabel">L/R Alignment Test</button>
                         </div>
                     </div>
 
                     <!-- Explanation Footer -->
-                    <p style="font-size: 11px; color: #8e8e93; line-height: 1.3; margin-top: 15px;" data-i18n="descModeExplanation" id="desc-mode-explanation"></p>
+                    <p style="font-size: 11px; color: #8e8e93; line-height: 1.3; margin-top: 15px;" data-i18n="descModeExplanation" id="desc-mode-explanation">Preset guidelines: Select an active protocol as a starting template. Modify any checkbox below to seamlessly transition into 'Custom' configuration mode.</p>
                 </div> <!-- End modal-scroll-body -->
 
                 <button type="button" id="btn-close-settings" class="close-btn" aria-label="Save and Close Settings">OK</button>
@@ -702,8 +743,8 @@
                     <p id="custom-confirm-text" style="margin: 0;"></p>
                 </div>
                 <div style="display: flex; gap: 10px; width: 100%;">
-                    <button type="button" id="btn-confirm-yes" class="close-btn" style="flex: 1; margin-top: 0; padding: 8px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; font-weight: bold;">Yes</button>
-                    <button type="button" id="btn-confirm-no" class="close-btn" style="flex: 1; margin-top: 0; padding: 8px; background: #2b354a; font-weight: bold;">Cancel</button>
+                    <button type="button" id="btn-confirm-yes" class="close-btn" style="flex: 1; margin-top: 0; padding: 8px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; font-weight: bold;" data-i18n="confirmYes">Yes</button>
+                    <button type="button" id="btn-confirm-no" class="close-btn" style="flex: 1; margin-top: 0; padding: 8px; background: #2b354a; font-weight: bold;" data-i18n="confirmNo">Cancel</button>
                 </div>
             </div>
         </div>
@@ -711,21 +752,21 @@
         <!-- INFO HANDBOOK MODAL -->
         <div id="info-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
             <div class="modal-content">
-                <h2 id="modalTitle" data-i18n="modalTitle"></h2>
+                <h2 id="modalTitle" data-i18n="modalTitle">GaborNeuroFit Clinical Manual</h2>
                 <div class="modal-scroll-body" tabindex="0">
-                    <h4 data-i18n="infoAboutTitle"></h4>
+                    <h4 data-i18n="infoAboutTitle">🧠 The Science: Training the Brain</h4>
                     <p data-i18n-html="infoAboutText"></p>
 
-                    <h4 data-i18n="infoGaborTitle"></h4>
+                    <h4 data-i18n="infoGaborTitle">🩹 Gabor Mode: Training Visual Acuity</h4>
                     <ul data-i18n-html="infoGaborText" id="info-gabor-list"></ul>
 
-                    <h4 data-i18n="infoSynopTitle"></h4>
+                    <h4 data-i18n="infoSynopTitle">🧲 Synoptophore Mode: Oculomotor Vergence</h4>
                     <ul data-i18n-html="infoSynopText" id="info-synop-list"></ul>
 
-                    <h4 data-i18n="infoRdsTitle"></h4>
+                    <h4 data-i18n="infoRdsTitle">🧊 Stereogram Mode: Training Visual Depth (RDS)</h4>
                     <ul data-i18n-html="infoRdsText" id="info-rds-list"></ul>
 
-                    <h4 data-i18n="infoSafetyTitle"></h4>
+                    <h4 data-i18n="infoSafetyTitle">🧭 Essential Safety & Gamification Rules</h4>
                     <ul data-i18n-html="infoSafetyText" id="info-safety-list"></ul>
                 </div>
                 <button type="button" id="btn-close-modal" class="close-btn">OK</button>
@@ -735,12 +776,12 @@
         <!-- HISTORICAL LEADERBOARD MODAL (Relational Multi-User Clinical Dashboard v2.5.0) -->
         <div id="stats-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="statsTitle">
             <div class="modal-content">
-                <h2 id="statsTitle" data-i18n="statsTitle"></h2>
+                <h2 id="statsTitle" data-i18n="statsTitle">Personal Progress & History</h2>
                 <div class="modal-scroll-body" tabindex="0">
 
                     <!-- Profile Selector Row -->
                     <div class="settings-row" style="margin-top: 5px;">
-                        <label data-i18n="lblActiveProfile" for="select-active-profile"></label>
+                        <label data-i18n="lblActiveProfile" for="select-active-profile">👤 Active Patient:</label>
                         <select id="select-active-profile" style="max-width: 60%; min-width: 140px;"></select>
                     </div>
 
@@ -748,22 +789,22 @@
                     <form id="form-add-profile" style="display: flex; flex-direction: column; width: 100%;">
                         <!-- New Profile Input Row -->
                         <div class="settings-row" style="border-bottom: none; margin-bottom: 6px; padding-bottom: 0; width: 100%;">
-                            <input type="text" id="input-new-profile" class="dash-input" data-i18n-placeholder="placeholderNewProfile" aria-label="New Patient Profile Name">
+                            <input type="text" id="input-new-profile" class="dash-input" data-i18n-placeholder="placeholderNewProfile" aria-label="New Patient Profile Name" placeholder="Enter Patient Name...">
                         </div>
 
                         <!-- Profile Management Buttons Grid -->
                         <div style="display: flex; gap: 10px; margin-bottom: 10px; width: 100%;">
-                            <button type="submit" id="btn-add-profile" class="dash-btn btn-ghost-blue" data-i18n="btnAddProfile"></button>
-                            <button type="button" id="btn-delete-profile" class="dash-btn btn-ghost-red" data-i18n="btnDeleteProfile"></button>
+                            <button type="submit" id="btn-add-profile" class="dash-btn btn-ghost-blue" data-i18n="btnAddProfile">Add</button>
+                            <button type="button" id="btn-delete-profile" class="dash-btn btn-ghost-red" data-i18n="btnDeleteProfile">Delete Profile</button>
                         </div>
                     </form>
 
                     <!-- Global Database Backup/Restore & Wipe Grid (Profile Level Actions) -->
                     <div style="display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;">
-                        <button type="button" id="btn-export-csv" class="dash-btn btn-ghost-green" data-i18n="btnExportCSV"></button>
-                        <button type="button" id="btn-import-csv" class="dash-btn btn-ghost-blue" data-i18n="btnImportCSV"></button>
+                        <button type="button" id="btn-export-csv" class="dash-btn btn-ghost-green" data-i18n="btnExportCSV">📊 Export CSV Report</button>
+                        <button type="button" id="btn-import-csv" class="dash-btn btn-ghost-blue" data-i18n="btnImportCSV">📥 Import CSV</button>
                         <input type="file" id="input-import-csv" accept=".csv" aria-label="Import CSV" style="display: none;">
-                        <button type="button" id="btn-clear-history" class="dash-btn btn-ghost-red" data-i18n="btnClearHistory"></button>
+                        <button type="button" id="btn-clear-history" class="dash-btn btn-ghost-red" data-i18n="btnClearHistory">🧹 Clear History</button>
                     </div>
 
                     <!-- Symmetrical Divider separating Global Profile Actions from Analytics -->
@@ -773,15 +814,15 @@
                     <nav id="stats-tab-bar" aria-label="Statistics Categories" style="display: flex; background: #131a26; padding: 4px; border-radius: 10px; border: 1px solid #2b354a; margin-bottom: 14px;">
                         <button type="button" id="tab-gabor" class="tab-btn active">
                             <span class="tab-btn-icon">🧿</span>
-                            <span class="tab-btn-text" data-i18n="tabGabor"></span>
+                            <span class="tab-btn-text" data-i18n="tabGabor">Gabor</span>
                         </button>
                         <button type="button" id="tab-synop" class="tab-btn">
                             <span class="tab-btn-icon">🧲</span>
-                            <span class="tab-btn-text" data-i18n="tabSynop"></span>
+                            <span class="tab-btn-text" data-i18n="tabSynop">Synoptophore</span>
                         </button>
                         <button type="button" id="tab-rds" class="tab-btn">
                             <span class="tab-btn-icon">🧊</span>
-                            <span class="tab-btn-text" data-i18n="tabRDS"></span>
+                            <span class="tab-btn-text" data-i18n="tabRDS">Stereogram</span>
                         </button>
                     </nav>
 
