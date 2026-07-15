@@ -204,7 +204,7 @@
                         <!-- Language Segment -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                                <span data-i18n="lblSettingLang" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Application Language:</span>
+                                <label data-i18n="lblSettingLang" for="select-lang" style="color: #cbd5e1;">Application Language:</label>
                                 <div id="select-lang" class="pill-group">
                                     <button type="button" class="pill-btn" data-value="en">🇬🇧 EN</button>
                                     <button type="button" class="pill-btn" data-value="ru">🇷🇺 RU</button>
@@ -215,7 +215,7 @@
                         <!-- Session Limit Segment -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                             <div class="pill-row" id="row-session-limit-container" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                                <span data-i18n="lblSettingLimit" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Session Limit:</span>
+                                <label data-i18n="lblSettingLimit" for="select-session-limit" style="color: #cbd5e1;">Session Limit:</label>
                                 <div id="select-session-limit" class="pill-group">
                                     <button type="button" class="pill-btn" data-value="0" data-i18n="optLimitOff">Off</button>
                                     <button type="button" class="pill-btn" data-value="40">40</button>
@@ -228,7 +228,7 @@
                         <!-- Pomodoro Rest Timer Segment -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                                <span data-i18n="lblSettingTimerLimit" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Pomodoro Timer (Minutes):</span>
+                                <label data-i18n="lblSettingTimerLimit" for="select-timer-limit" style="color: #cbd5e1;">Pomodoro Timer (Minutes):</label>
                                 <div id="select-timer-limit" class="pill-group">
                                     <button type="button" class="pill-btn" data-value="0" data-i18n="optTimerOff">Off</button>
                                     <button type="button" class="pill-btn" data-value="5">5m</button>
@@ -278,7 +278,7 @@
                         <!-- Stage Selection -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                                <span data-i18n="lblSettingStartLevel" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Starting Stage:</span>
+                                <label data-i18n="lblSettingStartLevel" for="select-start-level" style="color: #cbd5e1;">Starting Stage:</label>
                                 <div id="select-start-level" class="pill-group" style="max-width: 50%;">
                                     <button type="button" class="pill-btn" data-value="1">1</button>
                                     <button type="button" class="pill-btn" data-value="2">2</button>
@@ -292,7 +292,7 @@
                         <!-- Auto Next -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                                <span data-i18n="lblSettingAutonext" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Auto-Next Flash:</span>
+                                <label data-i18n="lblSettingAutonext" for="select-autonext" style="color: #cbd5e1;">Auto-Next Flash:</label>
                                 <div id="select-autonext" class="pill-group" style="max-width: 45%;">
                                     <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
                                     <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
@@ -310,7 +310,7 @@
                     <div class="accordion-content" id="accordion-content-2" data-visible-in="gabor" role="region" aria-labelledby="accordion-header-2">
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                                <span data-i18n="lblSettingFlash" style="font-size: 12px; font-weight: 600;">Flash Exposure Speed:</span>
+                                <label data-i18n="lblSettingFlash" for="select-flash-duration">Flash Exposure Speed:</label>
                                 <div id="select-flash-duration" class="pill-group" style="max-width: 65%;">
                                     <button type="button" class="pill-btn" data-value="adaptive" data-i18n="optFlashAdaptive">Adapt.</button>
                                     <button type="button" class="pill-btn" data-value="100">100</button>
@@ -393,9 +393,9 @@
                         </div>
                         <div class="settings-row" id="row-crowding-mode" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                                <span data-i18n="lblSettingCrowdingMode" style="font-size: 12px; font-weight: 600;">Crowding Axis:</span>
+                                <label data-i18n="lblSettingCrowdingMode" for="select-crowding-mode"></label>
                                 <div id="select-crowding-mode" class="pill-group" style="max-width: 65%;">
-                                    <button type="button" class="pill-btn" data-value="vertical" data-i18n="optCrowdingVertical">Vert.</button>
+                                    <button type="button" class="pill-btn" data-value="vertical" data-i18n="optCrowdingVertical"></button>
                                     <button type="button" class="pill-btn" data-value="horizontal" data-i18n="optCrowdingHorizontal">Horiz.</button>
                                     <button type="button" class="pill-btn" data-value="all" data-i18n="optCrowdingAll">All</button>
                                 </div>
@@ -404,7 +404,7 @@
                         </div>
                         <div class="settings-row" id="row-flanker-distance" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                                <span data-i18n="lblSettingFlankerDistance" style="font-size: 12px; font-weight: 600;">Flanker Spacing:</span>
+                                <label data-i18n="lblSettingFlankerDistance" for="select-flanker-distance">Flanker Spacing:</label>
                                 <div id="select-flanker-distance" class="pill-group" style="max-width: 55%;">
                                     <button type="button" class="pill-btn" data-value="2" data-i18n="optFlankerDistanceClose">Close (2x)</button>
                                     <button type="button" class="pill-btn" data-value="4" data-i18n="optFlankerDistanceFar">Far (4x)</button>
@@ -435,7 +435,7 @@
                         <!-- Pulling Speed -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                                <span data-i18n="lblSettingPullSpeed" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Ocular Pulling Rate:</span>
+                                <label data-i18n="lblSettingPullSpeed" for="select-pull-speed" style="color: #cbd5e1;">Ocular Pulling Rate:</label>
                                 <div id="select-pull-speed" class="pill-group" style="max-width: 45%;">
                                     <button type="button" class="pill-btn" data-value="1500">1.5s</button>
                                     <button type="button" class="pill-btn" data-value="2500">2.5s</button>
@@ -447,7 +447,7 @@
                         <!-- Target Type -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                                <span data-i18n="lblSettingTargetType" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Target Geometry:</span>
+                                <label data-i18n="lblSettingTargetType" for="select-target-type" style="color: #cbd5e1;">Target Geometry:</label>
                                 <div id="select-target-type" class="pill-group" style="max-width: 50%;">
                                     <button type="button" class="pill-btn" data-value="ring-dot" data-i18n="optTargetRing">Ring</button>
                                     <button type="button" class="pill-btn" data-value="cross-square" data-i18n="optTargetSquare">Cross</button>
@@ -458,7 +458,7 @@
                         <!-- Target Size -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                                <span data-i18n="lblSettingTargetSize" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Ophthalmic Target Size:</span>
+                                <label data-i18n="lblSettingTargetSize" for="select-target-size" style="color: #cbd5e1;">Ophthalmic Target Size:</label>
                                 <div id="select-target-size" class="pill-group" style="max-width: 45%;">
                                     <button type="button" class="pill-btn" data-value="65" data-i18n="optSizeMacular">65px (Mac.)</button>
                                     <button type="button" class="pill-btn" data-value="45" data-i18n="optSizeParamacular">45px (Param.)</button>
@@ -520,7 +520,7 @@
                         <!-- Starting Disparity Depth -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                                <span data-i18n="lblSettingRdsStartDisparity" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Starting Disparity Shift:</span>
+                                <label data-i18n="lblSettingRdsStartDisparity" for="select-rds-start-disparity" style="color: #cbd5e1;">Starting Disparity Shift:</label>
                                 <div id="select-rds-start-disparity" class="pill-group" style="max-width: 45%;">
                                     <button type="button" class="pill-btn" data-value="8">8px</button>
                                     <button type="button" class="pill-btn" data-value="6">6px</button>
@@ -534,7 +534,7 @@
                         <!-- Dot Size -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                                <span data-i18n="lblSettingRdsDotSize" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Stereoscopic Dot Size:</span>
+                                <label data-i18n="lblSettingRdsDotSize" for="select-rds-dot-size" style="color: #cbd5e1;">Stereoscopic Dot Size:</label>
                                 <div id="select-rds-dot-size" class="pill-group" style="max-width: 35%;">
                                     <button type="button" class="pill-btn" data-value="2" data-i18n="optRdsSizeSmall">2px</button>
                                     <button type="button" class="pill-btn" data-value="4" data-i18n="optRdsSizeMedium">4px</button>
@@ -546,7 +546,7 @@
                         <!-- Density -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                                <span data-i18n="lblSettingRdsDensity" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Random Dot Density:</span>
+                                <label data-i18n="lblSettingRdsDensity" for="select-rds-density" style="color: #cbd5e1;">Random Dot Density:</label>
                                 <div id="select-rds-density" class="pill-group" style="max-width: 40%;">
                                     <button type="button" class="pill-btn" data-value="0.35" data-i18n="optRdsDensityLow">35%</button>
                                     <button type="button" class="pill-btn" data-value="0.5" data-i18n="optRdsDensityStandard">50%</button>
@@ -558,7 +558,7 @@
                         <!-- Auto-Next -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                                <span data-i18n="lblSettingRdsAutonext" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Auto-Next Stereogram:</span>
+                                <label data-i18n="lblSettingRdsAutonext" for="select-rds-autonext" style="color: #cbd5e1;">Auto-Next Stereogram:</label>
                                 <div id="select-rds-autonext" class="pill-group" style="max-width: 45%;">
                                     <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
                                     <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
@@ -605,7 +605,7 @@
                         <!-- Float Speed -->
                         <div class="settings-row" id="row-rds-floating-speed" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                                <span data-i18n="lblSettingRdsFloatSpeed" style="font-size: 12px; font-weight: 600;">Floating Drift Rate:</span>
+                                <label data-i18n="lblSettingRdsFloatSpeed" for="select-rds-float-speed">Floating Drift Rate:</label>
                                 <div id="select-rds-float-speed" class="pill-group" style="max-width: 45%;">
                                     <button type="button" class="pill-btn" data-value="slow" data-i18n="optRdsSpeedSlow">Slow</button>
                                     <button type="button" class="pill-btn" data-value="medium" data-i18n="optRdsSpeedMedium">Norm</button>
@@ -637,7 +637,7 @@
                             <!-- Child 1: Red Side selection -->
                             <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                                 <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                                    <span data-i18n="lblSettingRedSide" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Red Filter Lens Position:</span>
+                                    <label data-i18n="lblSettingRedSide" for="select-red-side" style="color: #cbd5e1;">Red Filter Lens Position:</label>
                                     <div id="select-red-side" class="pill-group">
                                         <button type="button" class="pill-btn" data-value="left" data-i18n="optSideLeft">Left</button>
                                         <button type="button" class="pill-btn" data-value="right" data-i18n="optSideRight">Right</button>
@@ -647,7 +647,7 @@
                             <!-- Child 2: Lazy eye side selection -->
                             <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                                 <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                                    <span data-i18n="lblSettingLazySide" style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Lazy (Amblyopic) Eye:</span>
+                                    <label data-i18n="lblSettingLazySide" for="select-lazy-side" style="color: #cbd5e1;">Lazy (Amblyopic) Eye:</label>
                                     <div id="select-lazy-side" class="pill-group">
                                         <button type="button" class="pill-btn" data-value="left" data-i18n="optSideLeft">Left</button>
                                         <button type="button" class="pill-btn" data-value="right" data-i18n="optSideRight">Right</button>
