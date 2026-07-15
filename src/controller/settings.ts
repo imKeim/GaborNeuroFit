@@ -442,7 +442,7 @@ export class SettingsController {
                 if (typeof this.onSyncCallback === 'function') this.onSyncCallback();
             });
         });
-        const headers = document.querySelectorAll('.accordion-header');
+        const headers = document.querySelectorAll<HTMLElement>('.accordion-header');
         headers.forEach(header => {
             header.addEventListener('click', () => {
                 const contentId = header.id.replace('header', 'content');
@@ -464,6 +464,14 @@ export class SettingsController {
                     setTimeout(() => {
                         header.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }, 220); // Small 220ms timeout lets the CSS height expansion transition complete before calculating scroll positions
+                }
+            });
+
+            // W3C ARIA Keyboard Bridge: Delegates Enter and Space keypresses on focused headers to standard native clicks
+            header.addEventListener('keydown', (e: KeyboardEvent) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault(); // Prevent standard page scroll on Space
+                    header.click();
                 }
             });
         });

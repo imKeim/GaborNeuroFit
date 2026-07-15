@@ -7,7 +7,7 @@
   "btnImportCSV": "📥 Import CSV",
   "btnSynopBreak": "Slipped / Reset",
   "btnSynopLock": "Lock Fusion",
-  "chartLegend": "📈 Progress Trend: movement of the curve <strong>upward</strong> represents clinical improvement in cortical sensitivity (threshold reduction).",
+  "chartLegend": "📈 Progress Trend: movement of the curve <strong>upward</strong> represents clinical improvement in cortical sensitivity (threshold reduction). Last 10 sessions.",
   "chartPlaceholder": "Complete at least 2 sessions to plot your contrast sensitivity trend line.",
   "confirmNo": "Cancel",
   "confirmYes": "Yes",

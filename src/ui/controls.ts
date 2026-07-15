@@ -241,7 +241,7 @@ export function bindInputControls(handlers: InputHandlers): void {
 
     if (event.repeat && !isTuningKey) return;
 
-    // Contextual Modal Guard: If any modal is active, isolate input contexts entirely
+    // Contextual Modal Guard: If any modal is active, let standard browser navigation (arrows, typing, sliders) work natively
         const activeModal = document.querySelector('.modal.modal-open') as HTMLElement | null;
         if (activeModal) {
         // System Bypass: Never block browser functional hotkeys (F1-F12) or OS modifiers (Ctrl, Cmd, Alt)
@@ -257,23 +257,14 @@ export function bindInputControls(handlers: InputHandlers): void {
             return;
         }
             
-        // Precise A11y Guard: Only block keys if the user is typing text (e.g. Patient Name), allowing sliders to remain fully responsive
-        const isFormInput = document.activeElement && (
-            (document.activeElement instanceof HTMLInputElement && (document.activeElement.type === 'text' || document.activeElement.type === 'search')) ||
-            document.activeElement.tagName === 'TEXTAREA'
-        );
-            
         // Clinical Calibration Bypass: Allow tuning keys (W, S, Up, Down) if we are in calibration mode
         const isCalibrationMode = activeModal.classList.contains('calibration-mode');
         const isCalibrationKey = isCalibrationMode && ['w', 's', 'arrowup', 'arrowdown', 'ц', 'ы'].includes(key);
 
         if (isCalibrationKey) {
             // Let these keys pass through the modal guard so the directional handler below can process them
-        } else if (key === 'tab' || key === ' ' || key === 'enter' || isFormInput) {
-            return;
         } else {
-            // Block all other game keys during active modals to prevent background manipulation leaks
-            event.preventDefault();
+            // Bypass all other keys so standard dropdowns, inputs, and sliders remain fully accessible
             return;
         }
     }
@@ -327,6 +318,14 @@ export function bindInputControls(handlers: InputHandlers): void {
         } else if (key === 'arrowright' || key === 'd' || key === 'в') {
             if (typeof handlers.onActionRight === 'function') handlers.onActionRight();
         } else if (key === ' ' || key === 'enter') {
+            // Precise A11y Guard: If focus is on an interactive UI button (like Settings, Info, Stats), 
+            // do not intercept Space/Enter, letting browser activate the focused element natively.
+            const focusedEl = document.activeElement;
+            const isFocusedOnButton = focusedEl && 
+                                       focusedEl instanceof HTMLButtonElement && 
+                                       focusedEl.id !== 'btn-start';
+            if (isFocusedOnButton) return;
+
             event.preventDefault();
             if (typeof handlers.onActionPrimary === 'function') handlers.onActionPrimary();
         }

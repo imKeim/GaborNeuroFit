@@ -67,8 +67,10 @@ body {
     -webkit-user-select: none;
 }
 
-input, select, button, option {
+input, select, button, option, .badge {
     font-family: inherit;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
 }
 
 /* Base emoji metric alignment */
@@ -685,15 +687,14 @@ canvas {
 }
 
 /* Kill the ugly jagged browser-default rectangle outline on mouse clicks globally */
-button:focus, input:focus, select:focus {
+button:focus, input:focus, select:focus, [tabindex="0"]:focus {
     outline: none !important;
 }
 
 /* W3C Accessibility: Safe, perfectly rounded neon halos strictly for keyboard navigation */
-.control-btn:focus-visible, .tab-btn:focus-visible, .dash-btn:focus-visible, .dash-input:focus-visible, .pill-btn:focus-visible, .preset-card:focus-visible {
+.control-btn:focus-visible, .tab-btn:focus-visible, .dash-btn:focus-visible, .dash-input:focus-visible, .pill-btn:focus-visible, .preset-card:focus-visible, .close-btn:focus-visible, .accordion-header:focus-visible {
     box-shadow: 0 0 0 3px rgba(59, 144, 255, 0.45) !important;
 }
-
 .action-btn:focus-visible, #btn-start:focus-visible {
     /* Merge existing drop shadows with neon rings for primary elevated buttons */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(59, 144, 255, 0.45) !important;
@@ -855,6 +856,7 @@ button:focus, input:focus, select:focus {
     min-height: 0; /* Overrides default min-height: auto, forcing mobile flex containers to scroll internally */
     overflow-y: auto;
     overscroll-behavior: contain; /* Prevents iOS rubber-banding pulling the document body */
+    padding-left: 8px;
     padding-right: 8px;
 
     /* Permanently reserves scrollbar track space to prevent horizontal jumping during accordion reflows */

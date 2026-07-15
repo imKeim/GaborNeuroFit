@@ -418,7 +418,7 @@ export const Store = {
             this.state.rdsLevel = Math.max(1, Math.min(5, parseInt(localStorage.getItem('gabor_rds_level') || '1', 10)));
             this.state.rdsDotSize = parseInt(localStorage.getItem('gabor_rds_dot_size') || '4', 10);
             this.state.rdsDensity = parseFloat(localStorage.getItem('gabor_rds_density') || '0.50');
-            this.state.rdsStartDisparity = Math.max(1, Math.min(8, parseInt(localStorage.getItem('gabor_rds_start_disparity') || '4', 10)));
+            this.state.rdsStartDisparity = Math.max(1, Math.min(8, parseInt(localStorage.getItem('gabor_rds_start_disparity') || '8', 10)));
             this.state.rdsAutoAdvance = localStorage.getItem('gabor_rds_autonext') !== 'false';
             this.state.rdsIsDynamic = localStorage.getItem('gabor_rds_dynamic') !== 'false';
             this.state.rdsRandomizeVertical = localStorage.getItem('gabor_rds_randomize_vertical') === 'true';

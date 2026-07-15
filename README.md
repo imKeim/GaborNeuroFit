@@ -73,11 +73,15 @@ Flickering the stimulus at 10 Hz (Alpha frequency) forces your visual cortex int
 
 ### Why a Digital Synoptophore? (🧲)
 
-Amblyopia and Strabismus (misaligned eyes) are deeply connected. If your muscles cannot physically align your eyes, the brain will suppress the lazy eye to avoid double vision. The digital Synoptophore bridges this gap: you align the targets to your exact squint angle (sensory fusion), and the software slowly pulls them back to true center (0,0), forcing your eye muscles to contract and build binocular stamina.
+Amblyopia and Strabismus (misaligned eyes) are deeply connected. If your extraocular muscles cannot physically align your eyes, the brain will suppress the lazy eye to avoid double vision (diplopia). The digital Synoptophore bridges this gap by mimicking clinical orthoptic devices. You manually shift the targets to match your exact subjective squint angle (sensory fusion) to calm spasmed muscles. Once locked, the software slowly pulls the targets back to the geometric center (0,0), forcing the extraocular muscles to contract, expanding your vergence reserves and correcting the eye drift.
+
+### Why Random Dot Stereograms? (🧊)
+
+Without Red-Cyan 3D glasses, a stereogram is 100% flat monochrome noise. Dynamic Random Dot Stereograms (DRDS) shuffle this noise at 18Hz (boiling static), which physically blocks monocular "cheating" through blinking or tracking borders. This forces the binocular disparity neurons in the secondary visual cortex ($V2$) to compute depth. Pushing this disparity threshold down to the absolute 1-pixel limit (approx. 20 arcseconds of stereopsis) permanently secures stereoscopic depth perception and locks in binocularity.
 
 ## 🎮 Clinical Training Protocols
 
-GaborNeuroFit features 6 scientifically structured active templates:
+GaborNeuroFit features 8 scientifically structured active protocols and training modes:
 
 *   🩹 **Classic Occlusion (Patching)**: The traditional starting point. Monochrome Gabor, meant to be used with a physical eye patch over your strong eye.
 *   ⚡ **Cortical Speed Blitz**: A high-intensity monochrome speed run. 100 ms flashes to train rapid feedforward processing.
@@ -86,6 +90,7 @@ GaborNeuroFit features 6 scientifically structured active templates:
 *   🎯 **Parafoveal Capture (3D)**: The target Gabor jumps to the periphery, forcing your lazy eye to coordinate spatial attention and fast localization.
 *   ⚙️ **Custom Configuration**: Unlocks all individual toggles for clinicians to design custom training routines.
 *   🧲 **Synoptophore (3D Vergence)**: A specialized orthoptic simulator targeting strabismus. You manually align targets, then the software slowly pulls them to center to train ocular muscles.
+*   🧊 **Stereogram (3D RDS)**: Both eyes open with Red-Cyan glasses. A hidden 3D relief emerges from boiling noise, training depth processing from 8px down to 1px with option for floating pursuit movement.
 
 ## 🏃‍♂️ How to Train Correctly
 
