@@ -23,6 +23,7 @@ import { DashboardController } from './controller/dashboard';
 import { PauseController } from './controller/pause';
 import { PomodoroTimer } from './utils/timer';
 import { drawSynoptophoreTargets } from './engine/synop-render';
+import { drawRandomDotStereogram } from './engine/rds-render';
 
 // Import decoupled bootstrap and i18n modules
 import { resizeCanvasesToDPR } from './utils/bootstrap';
