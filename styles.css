@@ -747,6 +747,8 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
+    will-change: backdrop-filter, opacity;
+    transform: translateZ(0);
     transition: opacity 0.3s ease, background-color 0.2s ease, backdrop-filter 0.2s ease, visibility 0s linear 0.3s;
 }
 
