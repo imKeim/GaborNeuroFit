@@ -213,14 +213,6 @@ export class GaborController {
         if (levelEl) levelEl.innerText = s.currentLevel.toString();
         if (gaborStreakVal) gaborStreakVal.innerText = s.correctStreak.toString();
 
-        let crossSize = 36;
-        if (s.currentLevel === 1) crossSize = 36;
-        else if (s.currentLevel === 2) crossSize = 28;
-        else if (s.currentLevel === 3) crossSize = 22;
-        else if (s.currentLevel === 4) crossSize = 16;
-        else if (s.currentLevel === 5) crossSize = 12;
-        this.cross.style.fontSize = crossSize + 'px';
-
         renderGabor(this.canvas, null, s, this.currentAngleDeg, s.autoContrast, s.autoContrast, this.lastRandomFreq, this.lastRandomSigma, this.lastOffsetX, this.lastOffsetY, 0, this.lastRandomAspectRatio);
 
         const flashDuration = this.getFlashDuration(s);

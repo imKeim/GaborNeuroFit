@@ -82,6 +82,7 @@ function syncVisualState(): void {
         crossNode.style.display = 'none';
     } else if (s.appMode === 'rds') {
         crossNode.style.display = 'block';
+        crossNode.style.fontSize = '36px'; // RDS cross must always remain at the standard large Stage 1 size (36px)
         if (s.rdsIsPermanentCrossEnabled) {
             const rdsState = rdsController ? rdsController.currentState : 'IDLE';
             const isStimulusActive = (rdsState === 'STIMULUS_ACTIVE' || rdsState === 'AWAITING_INPUT') && !s.isPaused;
@@ -96,6 +97,16 @@ function syncVisualState(): void {
         }
     } else {
         crossNode.style.display = 'block';
+        
+        // In Gabor mode, calculate cross size dynamically based on currentLevel
+        let crossSize = 36;
+        if (s.currentLevel === 1) crossSize = 36;
+        else if (s.currentLevel === 2) crossSize = 28;
+        else if (s.currentLevel === 3) crossSize = 22;
+        else if (s.currentLevel === 4) crossSize = 16;
+        else if (s.currentLevel === 5) crossSize = 12;
+        crossNode.style.fontSize = crossSize + 'px';
+
         if (s.isPaused) {
             crossNode.className = 'cross-dimmed';
         } else if (s.isPermanentCrossEnabled) {
