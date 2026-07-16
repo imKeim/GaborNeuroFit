@@ -120,6 +120,17 @@ Yes! Perceptual learning operates at the absolute threshold. Trust the adaptive 
 2. Click **"LOCK FUSION"**. The software will now slowly pull the ring back to the center (0,0).
 3. Do not let the dot slip out! If it does, press **"SLIPPED / RESET"** and try again.
 
+### 🧊 "How do I use the Stereogram (RDS) Mode?"
+
+1. **Prepare your hardware:** Wear calibrated Red-Cyan 3D glasses. Ensure the red lens matches the eye configured in your settings (Default: Red filter on the Left eye).
+2. **Bypass Suppression (Crucial):** Before starting, open Settings, click **"L/R Alignment Test"**, and look at the "L" and "R" letters. Use the **W/S keys** (or vertical swipes) to dim the strong eye's contrast until both letters are equally bright. This unblocks the amblyopic eye's pathway. Close the test.
+3. **Start and Fixate:** Click **"START STEREOGRAM"**. Keep your gaze strictly focused on the central cross (+).
+4. **Detect the 3D relief:** From the boiling dynamic noise, a hidden 3D square will pop out in relief either on the **Left** or **Right** side of the central cross.
+5. **Submit your answer:**
+    *   If the 3D square is on the **left**: Press `A`, `Left Arrow`, swipe left, or click the **Left** button.
+    *   If the 3D square is on the **right**: Press `D`, `Right Arrow`, swipe right, or click the **Right** button.
+6. **Progress:** Answering correctly 3 times in a row decreases the disparity (pixel shift), making the 3D relief flatter and training micro-stereopsis down to 1px depth.
+
 ## 📚 Key Scientific Literature
 
 *   **Hess, R. F., et al. (2010).** *Binocular dichoptic training facilitates binocular vision in adults with amblyopia.* (Dichoptic training vs. patching).

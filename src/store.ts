@@ -106,7 +106,7 @@ export const Store = {
 
         // --- Session Constraints & Timers ---
         sessionLimit: 80,
-        rdsSessionLimit: 25,
+        rdsSessionLimit: 30,
         timerLimitMinutes: 0,
         timerRemainingSeconds: 0,
         timerIsRunning: false,
@@ -425,7 +425,7 @@ export const Store = {
             this.state.rdsIsFloating = localStorage.getItem('gabor_rds_floating') === 'true';
             this.state.rdsFloatSpeed = (localStorage.getItem('gabor_rds_float_speed') as RdsFloatSpeed) || 'medium';
             this.state.rdsIsPermanentCrossEnabled = localStorage.getItem('gabor_rds_permanent_cross') !== 'false';
-            this.state.rdsSessionLimit = parseInt(localStorage.getItem('gabor_rds_session_limit') || '25', 10);
+            this.state.rdsSessionLimit = parseInt(localStorage.getItem('gabor_rds_session_limit') || '30', 10);
 
             // Dynamically resolve active rdsLevel based on rdsDisparity on cold launch (F5)
             let initLvl = 1;

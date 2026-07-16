@@ -36,7 +36,7 @@ import type { InputHandlers } from './ui/controls';
 // Global cache for the active localization dictionary
 let activeTranslations: Record<string, string> = {};
 
-// References to our core OOP controllers instances
+// References to our OOP controllers instances
 let gaborController: GaborController | null = null;
 let settingsController: SettingsController | null = null;
 let synoptophoreController: SynoptophoreController | null = null;
@@ -69,14 +69,15 @@ const btnFusionTest = document.getElementById('btn-fusion-test') as HTMLButtonEl
 const customAlertModal = document.getElementById('custom-alert-modal') as HTMLElement;
 
 /**
- * @description Symmetrically synchronizes the HTML central fixation cross
- * with the global application pause, modality and configuration settings.
+ * @description Centralized visual synchronizer for fixation cross and mouse pointer state
  */
-function syncCrossVisualState(): void {
+function syncVisualState(): void {
     const s = Store.state;
     const crossNode = document.getElementById('cross');
-    if (!crossNode) return;
+    const containerNode = document.getElementById('container');
+    if (!crossNode || !containerNode) return;
 
+    // --- 1. Cross Synchronization ---
     if (s.appMode === 'synoptophore') {
         crossNode.style.display = 'none';
     } else if (s.appMode === 'rds') {
@@ -102,6 +103,19 @@ function syncCrossVisualState(): void {
         } else {
             crossNode.className = 'cross-hidden';
         }
+    }
+
+    // --- 2. Container Cursor Synchronization ---
+    if (s.isPaused) {
+        containerNode.style.cursor = 'pointer';
+    } else if (s.appMode === 'synoptophore') {
+        containerNode.style.cursor = s.synopState === 'align' ? 'grab' : 'default';
+    } else if (s.appMode === 'rds') {
+        const rdsState = rdsController ? rdsController.currentState : 'IDLE';
+        containerNode.style.cursor = rdsState === 'IDLE' ? 'pointer' : 'default';
+    } else {
+        const gaborState = gaborController ? gaborController.currentState : 'IDLE';
+        containerNode.style.cursor = (gaborState === 'IDLE' && !s.isWaitingForAnswer) ? 'pointer' : 'default';
     }
 }
 
@@ -147,11 +161,11 @@ export async function setLanguage(lang: Language): Promise<void> {
         if (rdsController && rdsController.currentState === 'AWAITING_INPUT') {
             btnStart.disabled = true;
             btnStart.style.opacity = '0.4';
-            btnStart.innerText = "...";
+            btnStart.innerText = t.rdsNextBtn || "NEXT STEREOGRAM";
         } else {
             btnStart.disabled = false;
             btnStart.style.opacity = '1';
-            btnStart.innerText = (Store.state.rdsTotal > 0 && !Store.state.autoAdvance) ? (t.rdsNextBtn || "NEXT STEREOGRAM") : (t.rdsStartBtn || "START STEREOGRAM");
+            btnStart.innerText = (Store.state.rdsTotal > 0 && !Store.state.rdsAutoAdvance) ? (t.rdsNextBtn || "NEXT STEREOGRAM") : (t.rdsStartBtn || "START STEREOGRAM");
         }
     } else {
         if (!Store.state.isWaitingForAnswer) {
@@ -271,7 +285,8 @@ window.addEventListener('load', async () => {
         flashOverlay,
         btnStart,
         () => activeTranslations,
-        showCustomAlert
+        showCustomAlert,
+        () => syncVisualState()
     );
 
     synoptophoreController = new SynoptophoreController(
@@ -291,7 +306,7 @@ window.addEventListener('load', async () => {
         btnStart,
         () => activeTranslations,
         showCustomAlert,
-        () => syncCrossVisualState()
+        () => syncVisualState()
     );
 
     dashboardController = new DashboardController(() => activeTranslations);
@@ -300,10 +315,7 @@ window.addEventListener('load', async () => {
         gaborController,
         synoptophoreController,
         rdsController,
-        () => {
-            syncCrossVisualState();
-            setLanguage(Store.state.currentLang);
-        }
+        () => syncVisualState()
     );
 
     // Symmetrical Safe Monkey-Patching (Decorator Pattern)
@@ -472,12 +484,12 @@ window.addEventListener('load', async () => {
             updateMuteBtnUI();
         },
         onActionCanvasClick: () => {
-            if (btnStart.disabled) return;
             const s = Store.state;
             if (s.isPaused) {
                 if (pauseController) pauseController.togglePause();
                 return;
             }
+            if (btnStart.disabled) return;
             const curtain = document.getElementById('calibration-curtain');
             const isInitialStart = curtain && curtain.classList.contains('active');
 
@@ -786,7 +798,7 @@ window.addEventListener('load', async () => {
         }
 
         setLanguage(Store.state.currentLang);
-        syncCrossVisualState();
+        syncVisualState();
     }
 
     function updateMuteBtnUI(): void {
@@ -887,7 +899,7 @@ window.addEventListener('load', async () => {
     updateMuteBtnUI();
     if (settingsController) settingsController.bindSettingsInteractions();
 
-    syncCrossVisualState();
+    syncVisualState();
 
     if (Store.state.appMode === 'synoptophore') {
         const curtain = document.getElementById('calibration-curtain');
@@ -912,6 +924,8 @@ window.addEventListener('load', async () => {
         cross.style.display = 'block';
     }
 
+    syncVisualState();
+
     const pomodoro = new PomodoroTimer(
         (state) => {
             updateScoreboard(state, activeTranslations);
@@ -921,8 +935,15 @@ window.addEventListener('load', async () => {
             if (synoptophoreController) synoptophoreController.abort();
             if (rdsController) rdsController.abort();
 
+            // Reset the session progress (scores/totals) to zero
+            Store.resetSessionProgress();
+
+            // Sanitize and re-enable start button to prevent visual locking after Pomodoro finishes
             btnStart.disabled = false;
             btnStart.style.opacity = "1";
+
+            // Update the visual scoreboard immediately to show 0/0
+            updateScoreboard(Store.state, activeTranslations);
 
             drawIdleState(canvas, null, overlayCanvas, overlayCtx, state.appMode === 'synoptophore' || state.isFusionLockEnabled);
 
@@ -937,11 +958,11 @@ window.addEventListener('load', async () => {
                 btnStart.innerText = t.btnSynopLock || "LOCK FUSION";
             } else if (state.appMode === 'rds') {
                 cross.style.display = 'block';
-                btnStart.innerText = t.startBtn || "START";
+                btnStart.innerText = t.rdsStartBtn || "START STEREOGRAM";
                 drawIdleState(canvas, null, overlayCanvas, overlayCtx, false);
             } else {
                 cross.style.display = 'block';
-                btnStart.innerText = t.startBtn || "START";
+                btnStart.innerText = t.startBtn || "START FLASH";
             }
 
             playSuccess(state.isMuted);

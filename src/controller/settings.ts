@@ -38,6 +38,7 @@ const CONFIG_SCHEMA: ConfigField[] = [
     { id: 'select-start-level', key: 'currentLevel', type: 'pill' },
     { id: 'select-autonext', key: 'autoAdvance', type: 'pill' },
     { id: 'select-session-limit', key: 'sessionLimit', type: 'pill' },
+    { id: 'select-rds-session-limit', key: 'rdsSessionLimit', type: 'pill' },
     { id: 'select-timer-limit', key: 'timerLimitMinutes', type: 'pill' },
     { id: 'slider-left-r', key: 'calibratorLeftR', type: 'int' },
     { id: 'slider-right-g', key: 'calibratorRightG', type: 'int' },
@@ -137,9 +138,7 @@ export class SettingsController {
                 }
             }
 
-            if (field.id === 'select-session-limit') {
-                Store.updateState(s.appMode === 'rds' ? 'rdsSessionLimit' : 'sessionLimit', val);
-            } else if (field.id === 'range-strong-attenuation') {
+            if (field.id === 'range-strong-attenuation') {
                 Store.updateState(s.appMode === 'synoptophore' ? 'synopStrongEyeContrastFactor' : 'strongEyeContrastFactor', val);
                 if (this.valStrongAttenuation) {
                     this.valStrongAttenuation.innerText = (el as HTMLInputElement).value + '%';
@@ -219,20 +218,6 @@ export class SettingsController {
         CONFIG_SCHEMA.forEach(field => {
             const el = document.getElementById(field.id);
             if (!el) return;
-
-            if (field.id === 'select-session-limit') {
-                const targetLimit = s.appMode === 'rds' ? s.rdsSessionLimit : s.sessionLimit;
-                const children = el.querySelectorAll('.pill-btn');
-                children.forEach(child => {
-                    const childVal = parseInt(child.getAttribute('data-value') || '0', 10);
-                    if (childVal === targetLimit) {
-                        child.classList.add('active');
-                    } else {
-                        child.classList.remove('active');
-                    }
-                });
-                return;
-            }
 
             if (field.id === 'range-strong-attenuation') {
                 const inputEl = el as HTMLInputElement;

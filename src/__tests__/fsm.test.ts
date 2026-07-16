@@ -59,7 +59,8 @@ describe('GaborNeuroFit State Machine Fortification', () => {
             mockFlashOverlay,
             mockBtnStart,
             () => ({}), // Fake translation getter
-            vi.fn() // Fake modal popup
+            vi.fn(), // Fake modal popup
+            vi.fn() // Fake syncCross callback
         );
 
         // Take control of the system clock to instantly bypass therapeutic delays

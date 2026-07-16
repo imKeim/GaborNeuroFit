@@ -504,11 +504,6 @@ img.emoji {
     transition: box-shadow 0.1s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-/* Syntactically disable pointer cursor in RDS to prevent tracking distractions */
-#container.mode-rds {
-    cursor: default !important;
-}
-
 canvas {
     display: block;
     width: 100%;

@@ -107,8 +107,8 @@
                 <div id="indicators">
                     <span class="badge" style="color: #22c55e; border-color: rgba(34, 197, 94, 0.3); background: rgba(34, 197, 94, 0.12);"><span data-i18n="stage">Stage</span>: <span id="current-level">1</span>/5</span>
                     <span class="badge" style="color: #3b90ff; border-color: rgba(59, 144, 255, 0.3); background: rgba(59, 144, 255, 0.12);"><span data-i18n="contrast">Contrast</span>: <span id="current-contrast">50</span>%</span>
-                    <span id="badge-gabor-streak" class="badge" style="color: #eab308; border-color: rgba(234, 179, 8, 0.3); background: rgba(234, 179, 8, 0.12); font-weight: bold;">🔥 0</span>
-                    <span id="badge-timer-gabor" class="badge" style="display: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.12);">🍅 00:00</span>
+                    <span id="badge-gabor-streak" class="badge" style="color: #eab308; border-color: rgba(234, 179, 8, 0.3); background: rgba(234, 179, 8, 0.12); font-weight: bold;">🔥 <strong id="val-gabor-streak">0</strong></span>
+                    <span id="badge-timer-gabor" class="badge" style="display: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.12);">🍅 <strong id="val-timer-gabor">00:00</strong></span>
                 </div>
 
                 <!-- Synoptophore Badges -->
@@ -116,15 +116,15 @@
                     <span id="badge-prism-x" class="badge" style="color: #3b90ff; border-color: rgba(59, 144, 255, 0.3); background: rgba(59, 144, 255, 0.12);">X: 0px (0.00Δ)</span>
                     <span id="badge-prism-y" class="badge" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.12);">Y: 0px (0.00Δ)</span>
                     <span id="badge-synop-score" class="badge" style="color: #eab308; border-color: rgba(234, 179, 8, 0.3); background: rgba(234, 179, 8, 0.12); font-weight: bold;">🏆 0</span>
-                    <span id="badge-timer-synop" class="badge" style="display: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.12);">🍅 00:00</span>
+                    <span id="badge-timer-synop" class="badge" style="display: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.12);">🍅 <strong id="val-timer-synop">00:00</strong></span>
                 </div>
 
                 <!-- RDS Badges -->
                 <div id="rds-indicators" style="display: none; justify-content: center; gap: 6px;">
                     <span id="badge-rds-level" class="badge" style="color: #22c55e; border-color: rgba(34, 197, 94, 0.3); background: rgba(34, 197, 94, 0.12);">Stage: 1/5</span>
                     <span id="badge-rds-disparity" class="badge" style="color: #3b90ff; border-color: rgba(59, 144, 255, 0.3); background: rgba(59, 144, 255, 0.12);">Depth: 4px</span>
-                    <span id="badge-rds-streak" class="badge" style="color: #eab308; border-color: rgba(234, 179, 8, 0.3); background: rgba(234, 179, 8, 0.12); font-weight: bold;">🔥 0</span>
-                    <span id="badge-timer-rds" class="badge" style="display: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.12);">🍅 00:00</span>
+                    <span id="badge-rds-streak" class="badge" style="color: #eab308; border-color: rgba(234, 179, 8, 0.3); background: rgba(234, 179, 8, 0.12); font-weight: bold;">🔥 <strong id="val-rds-streak">0</strong></span>
+                    <span id="badge-timer-rds" class="badge" style="display: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.12);">🍅 <strong id="val-timer-rds">00:00</strong></span>
                 </div>
 
                 <!-- Dynamic Ocular Vergence Progress Bar (Hardware Accelerated) -->
@@ -212,9 +212,9 @@
                             </div>
                             <span class="settings-help" data-i18n-html="helpLang">🏥 <strong>Purpose:</strong> Configures interface language and optimizes typographical layouts for native readability.<br>🎮 <strong>Difficulty:</strong> Does not affect exercises.<br>🧭 <strong>Recommendation:</strong> Set your preferred language for the most intuitive guidance.</span>
                         </div>
-                        <!-- Session Limit Segment -->
-                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
-                            <div class="pill-row" id="row-session-limit-container" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                        <!-- Session Limit Segment (Gabor) -->
+                        <div class="settings-row" data-visible-in="gabor" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <label data-i18n="lblSettingLimit" for="select-session-limit" style="color: #cbd5e1;">Session Limit:</label>
                                 <div id="select-session-limit" class="pill-group">
                                     <button type="button" class="pill-btn" data-value="0" data-i18n="optLimitOff">Off</button>
@@ -223,7 +223,20 @@
                                     <button type="button" class="pill-btn" data-value="120">120</button>
                                 </div>
                             </div>
-                            <span class="settings-help" data-i18n-html="helpSessionLimit">🏥 <strong>Purpose:</strong> Strictly limits daily visual workload, preventing cortical fatigue.<br>🎮 <strong>Difficulty:</strong> Depends on the selected trial limit (more trials = higher strain).<br>🧭 <strong>Recommendation:</strong> Standard limit: 80 trials for Gabor and 25 for stereograms.</span>
+                            <span class="settings-help" data-i18n-html="helpSessionLimit">🏥 <strong>Purpose:</strong> Strictly limits daily visual workload, preventing cortical fatigue.<br>🎮 <strong>Difficulty:</strong> Depends on the selected trial limit (more trials = higher strain).<br>🧭 <strong>Recommendation:</strong> Standard limit: 80 trials for Gabor and 30 for stereograms.</span>
+                        </div>
+                        <!-- Session Limit Segment (RDS) -->
+                        <div class="settings-row" data-visible-in="rds" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <label data-i18n="lblSettingLimit" for="select-rds-session-limit" style="color: #cbd5e1;">Session Limit:</label>
+                                <div id="select-rds-session-limit" class="pill-group">
+                                    <button type="button" class="pill-btn" data-value="0" data-i18n="optLimitOff">Off</button>
+                                    <button type="button" class="pill-btn" data-value="15">15</button>
+                                    <button type="button" class="pill-btn" data-value="30">30</button>
+                                    <button type="button" class="pill-btn" data-value="45">45</button>
+                                </div>
+                            </div>
+                            <span class="settings-help" data-i18n-html="helpSessionLimit">🏥 <strong>Purpose:</strong> Strictly limits daily visual workload, preventing cortical fatigue.<br>🎮 <strong>Difficulty:</strong> Depends on the selected trial limit (more trials = higher strain).<br>🧭 <strong>Recommendation:</strong> Standard limit: 80 trials for Gabor and 30 for stereograms.</span>
                         </div>
                         <!-- Pomodoro Rest Timer Segment -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">

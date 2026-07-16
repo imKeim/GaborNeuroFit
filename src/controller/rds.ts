@@ -101,9 +101,11 @@ export class RdsController {
 
         Store.startTimerIfNeeded();
 
+        const t = this.getTranslations();
         this.btnStart.disabled = true;
         this.btnStart.style.opacity = "0.4";
-        this.btnStart.innerText = "...";
+        this.btnStart.innerText = t.rdsNextBtn || "NEXT";
+        if (this.syncCross) this.syncCross();
         playCue(Store.state.isMuted);
 
         this.tracker.setTimeout(() => {
@@ -238,7 +240,8 @@ export class RdsController {
 
         this.btnStart.disabled = true;
         this.btnStart.style.opacity = "0.4";
-        this.btnStart.innerText = "...";
+        this.btnStart.innerText = t.rdsNextBtn || "NEXT";
+        if (this.syncCross) this.syncCross();
 
         this.tracker.setTimeout(() => {
             this.flashOverlay.classList.add('fade-out');
@@ -251,12 +254,12 @@ export class RdsController {
             drawRandomDotStereogram(this.overlayCanvas, this.overlayCtx, Store.state, false, true);
 
             if (this.currentState === RdsState.FEEDBACK) {
-                this.currentState = RdsState.IDLE;
-                if (this.syncCross) this.syncCross();
+                this.transitionTo(RdsState.IDLE);
                 if (!s.rdsAutoAdvance) {
                     this.btnStart.disabled = false;
                     this.btnStart.style.opacity = "1";
                     this.btnStart.innerText = t.rdsNextBtn || "NEXT";
+                    if (this.syncCross) this.syncCross();
                 }
             }
         }, 300);
@@ -268,8 +271,10 @@ export class RdsController {
                 this.triggerMilestoneFlash(() => {
                     const title = t.titleGoldRDS || "🥇 Stereopsis Mastered!";
                     const text = t.sessionMasteredRDS || "Excellent progress!";
+                    Store.resetSessionProgress();
                     this.btnStart.disabled = false;
                     this.btnStart.style.opacity = "1";
+                    this.btnStart.innerText = t.rdsStartBtn || "START STEREOGRAM";
                     this.showCustomModal(title, text);
                     this.transitionTo(RdsState.IDLE);
                     if (this.syncCross) this.syncCross();
@@ -283,8 +288,10 @@ export class RdsController {
                 this.triggerMilestoneFlash(() => {
                     const title = t.titleSilverRDS || "🥈 RDS Session Complete!";
                     const text = (t.sessionCompletedRDS || "Session complete!").replace("{limit}", s.rdsSessionLimit.toString());
+                    Store.resetSessionProgress();
                     this.btnStart.disabled = false;
                     this.btnStart.style.opacity = "1";
+                    this.btnStart.innerText = t.rdsStartBtn || "START STEREOGRAM";
                     this.showCustomModal(title, text);
                     this.transitionTo(RdsState.IDLE);
                     if (this.syncCross) this.syncCross();

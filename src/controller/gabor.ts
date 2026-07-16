@@ -73,12 +73,14 @@ export class GaborController {
         private flashOverlay: HTMLElement,
         private btnStart: HTMLButtonElement,
         private getTranslations: () => Record<string, string>,
-        private showCustomModal: (title: string, text: string) => void
+        private showCustomModal: (title: string, text: string) => void,
+        private syncCross: () => void
     ) {}
 
     abort(): void {
         this.tracker.clearAll();
         this.currentState = TrialState.IDLE;
+        if (this.syncCross) this.syncCross();
     }
 
     transitionTo(nextState: TrialStateValue): boolean {
@@ -90,6 +92,7 @@ export class GaborController {
         if (nextState === TrialState.PRE_CUE || nextState === TrialState.FEEDBACK) {
             this.tracker.clearAll();
         }
+        if (this.syncCross) this.syncCross();
         return true;
     }
 
@@ -105,7 +108,8 @@ export class GaborController {
 
         this.btnStart.disabled = true;
         this.btnStart.style.opacity = "0.4";
-        this.btnStart.innerText = "...";
+        this.btnStart.innerText = this.getTranslations().nextBtn || "NEXT";
+        if (this.syncCross) this.syncCross();
         playCue(Store.state.isMuted);
 
         this.tracker.setTimeout(() => {
@@ -122,7 +126,8 @@ export class GaborController {
 
         this.btnStart.disabled = true;
         this.btnStart.style.opacity = "0.4";
-        this.btnStart.innerText = "...";
+        this.btnStart.innerText = this.getTranslations().nextBtn || "NEXT";
+        if (this.syncCross) this.syncCross();
         playCue(Store.state.isMuted);
 
         this.tracker.setTimeout(() => {
@@ -200,13 +205,13 @@ export class GaborController {
             }
         }
 
-        const gaborStreakEl = document.getElementById('badge-gabor-streak');
+        const gaborStreakVal = document.getElementById('val-gabor-streak');
         const contrastEl = document.getElementById('current-contrast');
         const levelEl = document.getElementById('current-level');
 
         if (contrastEl) contrastEl.innerText = Math.round(s.autoContrast * 100).toString();
         if (levelEl) levelEl.innerText = s.currentLevel.toString();
-        if (gaborStreakEl) gaborStreakEl.innerHTML = `🔥 <strong>${s.correctStreak}</strong>`;
+        if (gaborStreakVal) gaborStreakVal.innerText = s.correctStreak.toString();
 
         let crossSize = 36;
         if (s.currentLevel === 1) crossSize = 36;
@@ -294,7 +299,8 @@ export class GaborController {
 
         this.btnStart.disabled = true;
         this.btnStart.style.opacity = "0.4";
-        this.btnStart.innerText = "...";
+        this.btnStart.innerText = this.getTranslations().nextBtn || "NEXT";
+        if (this.syncCross) this.syncCross();
 
         this.tracker.setTimeout(() => {
             this.flashOverlay.classList.add('fade-out');
@@ -305,11 +311,12 @@ export class GaborController {
             }, 500);
 
             if (this.currentState === TrialState.FEEDBACK) {
-                this.currentState = TrialState.IDLE;
+                this.transitionTo(TrialState.IDLE);
                 if (!s.autoAdvance) {
                     this.btnStart.disabled = false;
                     this.btnStart.style.opacity = "1";
                     this.btnStart.innerText = this.getTranslations().nextBtn || "NEXT";
+                    if (this.syncCross) this.syncCross();
                 }
             }
         }, 300);
@@ -322,8 +329,10 @@ export class GaborController {
             this.tracker.setTimeout(() => {
                 this.triggerMilestoneFlash(() => {
                     const t = this.getTranslations();
+                    Store.resetSessionProgress();
                     this.btnStart.disabled = false;
                     this.btnStart.style.opacity = "1";
+                    this.btnStart.innerText = t.startBtn || "START FLASH";
                     this.showCustomModal(t.titleGold || "🥇 GaborNeuroFit", t.sessionMastered || "Mastered!");
                     this.transitionTo(TrialState.IDLE);
                 });
@@ -335,8 +344,10 @@ export class GaborController {
             this.tracker.setTimeout(() => {
                 this.triggerMilestoneFlash(() => {
                     const t = this.getTranslations();
+                    Store.resetSessionProgress();
                     this.btnStart.disabled = false;
                     this.btnStart.style.opacity = "1";
+                    this.btnStart.innerText = t.startBtn || "START FLASH";
                     const text = (t.sessionCompleted || "Completed").replace("{limit}", s.sessionLimit.toString());
                     this.showCustomModal(t.titleSilver || "🥈 GaborNeuroFit", text);
                     this.transitionTo(TrialState.IDLE);
@@ -351,7 +362,7 @@ export class GaborController {
                 this.triggerTrial();
             }, 900);
         } else {
-            this.currentState = TrialState.IDLE;
+            this.transitionTo(TrialState.IDLE);
         }
     }
 

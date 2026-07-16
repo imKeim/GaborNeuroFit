@@ -320,11 +320,11 @@ export function updateScoreboard(state: AppState, translations: Record<string, s
 
             const badgeDisparity = document.getElementById('badge-rds-disparity');
             const badgeLevel = document.getElementById('badge-rds-level');
-            const badgeStreak = document.getElementById('badge-rds-streak');
+            const rdsStreakVal = document.getElementById('val-rds-streak');
 
             if (badgeDisparity) badgeDisparity.innerHTML = `${t.lblActiveDepth || 'Depth'}: <strong>${state.rdsDisparity}px</strong>`;
             if (badgeLevel) badgeLevel.innerHTML = `${t.stage || 'Stage'}: <strong>${state.rdsLevel}/5</strong>`;
-            if (badgeStreak) badgeStreak.innerHTML = `🔥 <strong>${state.rdsStreak}</strong>`;
+            if (rdsStreakVal) rdsStreakVal.innerText = state.rdsStreak.toString();
         }
     } else {
         if (scoreTextEl) {
@@ -338,30 +338,29 @@ export function updateScoreboard(state: AppState, translations: Record<string, s
 
     const contrastEl = document.getElementById('current-contrast');
     const levelEl = document.getElementById('current-level');
-    const gaborStreakEl = document.getElementById('badge-gabor-streak');
+    const gaborStreakVal = document.getElementById('val-gabor-streak');
 
     if (contrastEl) contrastEl.innerText = Math.round(state.autoContrast * 100).toString();
     if (levelEl) levelEl.innerText = state.currentLevel.toString();
-    if (gaborStreakEl) gaborStreakEl.innerHTML = `🔥 <strong>${state.correctStreak}</strong>`;
+    if (gaborStreakVal) gaborStreakVal.innerText = state.correctStreak.toString();
 
     const timerGabor = document.getElementById('badge-timer-gabor');
     const timerSynop = document.getElementById('badge-timer-synop');
     const timerRds = document.getElementById('badge-timer-rds');
 
+    const valTimerGabor = document.getElementById('val-timer-gabor');
+    const valTimerSynop = document.getElementById('val-timer-synop');
+    const valTimerRds = document.getElementById('val-timer-rds');
+
     if (state.timerLimitMinutes > 0) {
         const timeStr = formatTimerDisplay(state.timerRemainingSeconds);
-        if (timerGabor) { timerGabor.style.display = 'inline-block'; timerGabor.innerHTML = `🍅 ${timeStr}`; }
-        if (timerSynop) { timerSynop.style.display = 'inline-block'; timerSynop.innerHTML = `🍅 ${timeStr}`; }
-        if (timerRds) { timerRds.style.display = 'inline-block'; timerRds.innerHTML = `🍅 ${timeStr}`; }
-        // @ts-ignore
-        if (typeof window !== 'undefined' && window.twemoji) {
-            // @ts-ignore
-            if (timerGabor) window.twemoji.parse(timerGabor);
-            // @ts-ignore
-            if (timerSynop) window.twemoji.parse(timerSynop);
-            // @ts-ignore
-            if (timerRds) window.twemoji.parse(timerRds);
-        }
+        if (timerGabor) timerGabor.style.display = 'inline-block';
+        if (timerSynop) timerSynop.style.display = 'inline-block';
+        if (timerRds) timerRds.style.display = 'inline-block';
+
+        if (valTimerGabor) valTimerGabor.innerText = timeStr;
+        if (valTimerSynop) valTimerSynop.innerText = timeStr;
+        if (valTimerRds) valTimerRds.innerText = timeStr;
     } else {
         if (timerGabor) timerGabor.style.display = 'none';
         if (timerSynop) timerSynop.style.display = 'none';
