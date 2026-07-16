@@ -43,6 +43,15 @@ export class PauseController {
         const nextPausedState = !s.isPaused;
         Store.updateState('isPaused', nextPausedState);
 
+        // Symmetrically disable/enable action buttons during pause to secure the Tab-focus ring
+        const btnLeft = document.getElementById('btn-left') as HTMLButtonElement | null;
+        const btnRight = document.getElementById('btn-right') as HTMLButtonElement | null;
+        const btnReset = document.getElementById('btn-reset') as HTMLButtonElement | null;
+
+        if (btnLeft) btnLeft.disabled = nextPausedState;
+        if (btnRight) btnRight.disabled = nextPausedState;
+        if (btnReset) btnReset.disabled = nextPausedState;
+
         if (nextPausedState) {
             // Abort any pending trials in PRE_CUE state to prevent them from rendering under the paused mask
             if (this.gaborCtrl && this.gaborCtrl.currentState === 'PRE_CUE') {
