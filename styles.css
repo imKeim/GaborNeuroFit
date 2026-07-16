@@ -392,9 +392,13 @@ img.emoji {
     touch-action: manipulation;
 }
 
-#btn-start:active {
+#btn-start:not(:disabled):active {
     transform: scale(0.97);
     box-shadow: 0 2px 8px rgba(0, 122, 255, 0.4);
+}
+
+#btn-start:disabled {
+    pointer-events: none;
 }
 
 /* 5D. Action Switcharoo Buttons */
@@ -494,16 +498,13 @@ img.emoji {
  * Designed with a cold, low-opacity clinical glow to prevent pupillary light reflex.
  */
 #container:active,
+#container:not(.disabled):active,
 #container.dragging {
-    /* Mathematically merges the static volumetric drop-shadow with the procedural neon glow */
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3),
                 0 0 0 2px rgba(255, 255, 255, 0.25),
                 0 0 24px rgba(59, 144, 255, 0.25);
-    
-    /* Ultra-fast responsive transition on press for immediate tactile confirmation (100ms) */
     transition: box-shadow 0.1s cubic-bezier(0.25, 1, 0.5, 1);
 }
-
 canvas {
     display: block;
     width: 100%;

@@ -105,17 +105,16 @@ function syncVisualState(): void {
         }
     }
 
-    // --- 2. Container Cursor Synchronization ---
+    // --- 2. Container Cursor & Class Synchronization ---
     if (s.isPaused) {
         containerNode.style.cursor = 'pointer';
+        containerNode.classList.remove('disabled');
     } else if (s.appMode === 'synoptophore') {
         containerNode.style.cursor = s.synopState === 'align' ? 'grab' : 'default';
-    } else if (s.appMode === 'rds') {
-        const rdsState = rdsController ? rdsController.currentState : 'IDLE';
-        containerNode.style.cursor = rdsState === 'IDLE' ? 'pointer' : 'default';
+        containerNode.classList.toggle('disabled', s.synopState !== 'align');
     } else {
-        const gaborState = gaborController ? gaborController.currentState : 'IDLE';
-        containerNode.style.cursor = (gaborState === 'IDLE' && !s.isWaitingForAnswer) ? 'pointer' : 'default';
+        containerNode.style.cursor = btnStart.disabled ? 'default' : 'pointer';
+        containerNode.classList.toggle('disabled', btnStart.disabled);
     }
 }
 
@@ -539,8 +538,8 @@ window.addEventListener('load', async () => {
 
             Store.startTimerIfNeeded();
 
-            // Set active tactile feedback class to preserve neon glow during active drags
-            if (container) container.classList.add('dragging');
+            // Set active tactile feedback class to preserve neon glow during active drags strictly in Synoptophore mode
+            if (container && s.appMode === 'synoptophore') container.classList.add('dragging');
 
             dragStartX = Store.state.synopTargetX;
             dragStartY = Store.state.synopTargetY;
