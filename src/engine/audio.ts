@@ -1,17 +1,22 @@
-/*
- * GaborNeuroFit - Procedural Audio Synthesis Engine
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file audio.ts
+ * @description Procedural audio synthesis engine built on Web Audio API.
+ * Generates organic acoustic stimuli and cross-modal reinforcement signals 
+ * with zero latency, entirely bypassing external asset loading.
  *
- * Migrated to TypeScript: Employs strict null-checks for AudioContext rendering
- * paths to prevent crashes on strict mobile browsers (iOS Safari context locks).
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
-// Private Web Audio context holder
+/** @description Private Web Audio context holder */
 let audioCtx: AudioContext | null = null;
 
 /**
- * @description Securely instantiates or resumes the browser AudioContext on the first
- * physical user interaction (required by modern auto-play policies).
+ * @description Securely instantiates or resumes the browser AudioContext.
+ * 
+ * @architecture
+ * - Autoplay Compliance: Context is resumed/created only upon physical user interaction.
+ * - Hardware Warm-up: Renders a silent 15ms buffer to unlock DAC hardware channels on restricted mobile browsers.
  */
 export function initAudio(): void {
     try {
@@ -41,11 +46,18 @@ export function initAudio(): void {
 }
 
 /**
- * @description Plays organic pre-cue Bamboo Click.
+ * @description Plays organic pre-cue "Bamboo Click" stimulus.
  *
- * @clinical Synced exactly 180ms before the visual stimulus flash. This generates cross-modal
- * sensory pre-activation: auditory networks prime the visual cortex (V1) attention fields,
- * optimizing neuronal receptivity and reducing accommodative micro-fluctuations in the ciliary muscle.
+ * @clinical
+ * - Cross-modal Sensory Priming: Triggered exactly 180ms before the visual stimulus. 
+ * - Neural Prep: Auditory networks reach the cortex faster than visual ones, priming V1 attention fields, 
+ *   optimizing neuronal receptivity, and reducing accommodative fluctuations in the ciliary muscle.
+ * 
+ * @mathematical
+ * Synthesizes organic hollow wood resonance by combining a 950 Hz triangle wave (body) 
+ * with a sharp 1600 Hz sine wave click (impact).
+ * 
+ * @param {boolean} isMuted - Global sound suppression flag.
  */
 export function playCue(isMuted: boolean): void {
     if (isMuted || !audioCtx) return;
@@ -90,10 +102,13 @@ export function playCue(isMuted: boolean): void {
 }
 
 /**
- * @description Plays negative reinforcement low sweep tone.
+ * @description Plays negative reinforcement descending sweep tone.
  *
- * @clinical Alerts attention networks to recalibrate spatial orientation judgment
- * without triggering an anxiety response.
+ * @clinical 
+ * - Corrective Feedback: Alerts attention networks to recalibrate spatial orientation 
+ *   judgment without triggering an acute anxiety response.
+ * 
+ * @param {boolean} isMuted - Global sound suppression flag.
  */
 export function playError(isMuted: boolean): void {
     if (isMuted || !audioCtx) return;
@@ -124,10 +139,14 @@ export function playError(isMuted: boolean): void {
 }
 
 /**
- * @description Plays smooth descending sweep for vergence slip/reset.
+ * @description Plays smooth descending sweep for vergence slip/reset biofeedback.
  *
- * @clinical Biofeedback indicating extraocular muscular slip. The descending
- * exponential frequency maps intuitively to the physical sensation of losing target lock.
+ * @clinical 
+ * - Muscular Proprioception: Provides biofeedback indicating extraocular muscular slip. 
+ * - Natural Mapping: The descending exponential frequency maps intuitively to the 
+ *   physical sensation of losing binocular target lock.
+ * 
+ * @param {boolean} isMuted - Global sound suppression flag.
  */
 export function playSlip(isMuted: boolean): void {
     if (isMuted || !audioCtx) return;
@@ -160,10 +179,19 @@ export function playSlip(isMuted: boolean): void {
 }
 
 /**
- * @description Plays positive dopamine-releasing Crystal Chime major chord.
+ * @description Plays positive dopamine-releasing "Crystal Chime" major chord.
  *
- * @clinical Dopaminergic reinforcement pathway. A resolved major chord (A-C#-E) securely
- * anchors the correct synaptic pattern established during the subliminal visual task.
+ * @clinical
+ * - Dopaminergic Reinforcement: Resolved major chord (A-C#-E) securely anchors correct 
+ *   synaptic patterns established during the visual orientation task.
+ * - Spatial Localization: Utilizes StereoPannerNode to reinforce the specific retinal 
+ *   meridian where the target was resolved.
+ * 
+ * @mathematical
+ * Arpeggiated A-major triad frequencies: Root A (880 Hz), Major Third C# (1100 Hz), Perfect Fifth E (1320 Hz).
+ * 
+ * @param {boolean} isMuted - Global sound suppression flag.
+ * @param {number} panValue - Spatial audio pan setting [-1.0 to 1.0].
  */
 export function playSuccess(isMuted: boolean, panValue: number = 0.0): void {
     if (isMuted || !audioCtx) return;

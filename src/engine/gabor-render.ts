@@ -1,15 +1,21 @@
-/*
- * GaborNeuroFit - Mathematical Visual Stimulation Engine
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file gabor-render.ts
+ * @description High-performance mathematical visual stimulation engine built on WebGL 1.0.
+ * Leverages GPU-parallel fragment shaders to compute high-frequency Gabor patches, 
+ * lateral inhibition crowding flankers, and real-time sRGB anaglyph color channel routing.
  *
- * Migrated to TypeScript: The WebGL rendering pipeline is now fortified with strict
- * null-checking for shaders, context initialization, and uniform locations.
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
 import type { AppState } from '../types/clinical';
 
+/** @description Singleton WebGL resource manager instance preventing GPU context duplication leaks */
 let webGLManagerInstance: WebGLResourceManager | null = null;
 
+/**
+ * @description Vertex shader program creating a flat clip-space viewport mapping [a_position].
+ */
 const VERTEX_SHADER_SOURCE = `
     attribute vec2 a_position;
     void main() {
@@ -17,6 +23,16 @@ const VERTEX_SHADER_SOURCE = `
     }
 `;
 
+/**
+ * @description Fragment shader program.
+ * 
+ * @mathematical
+ * - Computes foveal Gabor stimulus orientation math: cosine = cos(2 * PI * x_theta * freq)
+ * - Multiplies by the anisotropic Gaussian envelope: exp(-(x_theta^2 + aspect^2 * y_theta^2) / (2 * sigma^2))
+ * - Computes up to 4 flanking collinear/orthogonal visual crowding distractors.
+ * - Symmetrically routes independent left/right ocular data feeds to hardware Red-Cyan sRGB subpixels.
+ * - Applies a precise 1/2.2 gamma correction on final pixel output to preserve clinical contrast linearity on sRGB screens.
+ */
 const FRAGMENT_SHADER_SOURCE = `
     precision highp float;
     uniform vec2 u_resolution;
@@ -132,6 +148,14 @@ const FRAGMENT_SHADER_SOURCE = `
     }
 `;
 
+/**
+ * @description WebGL Resource Manager class.
+ * 
+ * @architecture
+ * Shaders compile once on initialization. Subsequent high-frequency draw iterations 
+ * avoid expensive GPU re-allocations by merely updating u_uniform locations on the GPU,
+ * preventing memory leaks and frame jitter.
+ */
 class WebGLResourceManager {
     public canvas: HTMLCanvasElement;
     public gl: WebGLRenderingContext | null;
@@ -154,7 +178,7 @@ class WebGLResourceManager {
             antialias: true,
             alpha: false,
             premultipliedAlpha: false,
-            powerPreference: "high-performance",
+            powerPreference: "high-performance" as WebGLPowerPreference,
             preserveDrawingBuffer: false
         };
         this.gl = (canvas.getContext('webgl', glOptions) ||
@@ -166,6 +190,9 @@ class WebGLResourceManager {
         }
     }
 
+    /**
+     * @description Compiles vertex and fragment shaders and registers u_uniform locations.
+     */
     init() {
         const gl = this.gl;
         if (!gl) return;
@@ -197,6 +224,9 @@ class WebGLResourceManager {
         this.isReady = true;
     }
 
+    /**
+     * @description Completely releases WebGL shader program bindings to avoid memory leaks.
+     */
     destroy() {
         const gl = this.gl;
         if (!gl) return;
@@ -207,6 +237,9 @@ class WebGLResourceManager {
         this.isReady = false;
     }
 
+    /**
+     * @description Safe helper to instantiate a linked WebGLProgram.
+     */
     createProgram(vertexSrc: string, fragmentSrc: string): WebGLProgram | null {
         const gl = this.gl;
         if (!gl) return null;
@@ -229,6 +262,9 @@ class WebGLResourceManager {
         return program;
     }
 
+    /**
+     * @description Helper to compile raw GLSL code.
+     */
     compileShader(src: string, type: number): WebGLShader | null {
         const gl = this.gl;
         if (!gl) return null;
@@ -245,6 +281,9 @@ class WebGLResourceManager {
         return shader;
     }
 
+    /**
+     * @description Executes flat WebGL viewport draw commands.
+     */
     render(
         state: AppState,
         angleDeg: number,
@@ -306,6 +345,9 @@ class WebGLResourceManager {
 
 /**
  * @description Draws persistent zero-disparity visual stabilization lock frame.
+ * 
+ * @clinical Outer visual anchors force binocular sensory locking (orthophoria), 
+ * preventing ocular drift and suppression during dichoptic central foveation.
  */
 export function drawFusionLockFrame(_canvas: HTMLCanvasElement | null, ctx: CanvasRenderingContext2D | null, scale: number = 1.0): void {
     if (!ctx) return;
@@ -330,7 +372,7 @@ export function drawFusionLockFrame(_canvas: HTMLCanvasElement | null, ctx: Canv
 }
 
 /**
- * @description Modern unified entry point for Gabor rendering with transparent GPU execution.
+ * @description Entry point for GPU-accelerated Gabor patch rendering.
  */
 export function renderGabor(
     canvas: HTMLCanvasElement | null,

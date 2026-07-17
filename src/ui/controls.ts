@@ -15,7 +15,7 @@ export interface InputHandlers {
     onActionPauseToggle?: () => void;
     onActionCanvasClick?: () => void;
     onEscape?: () => void;
-    onDragStart?: () => void;
+    onDragStart?: (event: Event) => void;
     onDragUpdate?: (deltaX: number, deltaY: number) => void;
     onDragEnd?: (deltaTime: number, deltaXTotal: number, deltaYTotal: number, clientX: number, clientY: number) => void;
     onDragMovePreventDefault?: () => boolean;

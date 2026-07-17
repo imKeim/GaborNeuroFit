@@ -1,14 +1,23 @@
-/*
- * GaborNeuroFit - Mathematical 2D/3D Random Dot Stereogram (RDS) Rendering Engine
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file rds-render.ts
+ * @description High-performance mathematical visual engine for 2D/3D Random Dot Stereograms (RDS).
+ * Utilizes persistent offscreen byte buffers and zero-interpolation scaling to render 
+ * frame-perfect 18Hz boiling static noise, entirely isolating binocular depth extraction.
  *
- * Migrated to TypeScript: Employs strict matrix bounds checking and pure
- * Uint8ClampedArray byte processing to ensure frame-perfect 18Hz boiling noise.
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
 import type { AppState } from '../types/clinical';
 
-// Persistent module-level offscreen buffer to prevent Garbage Collection allocation spikes during active renders
+/**
+ * @description Persistent module-level offscreen rendering buffers.
+ * 
+ * @architecture
+ * Re-allocating canvas elements and ImageData arrays inside high-frequency 18Hz animation loops 
+ * triggers severe Garbage Collection (GC) CPU spikes and layout stuttering. Encapsulating buffers 
+ * into file-level singletons eliminates dynamic heap allocations, keeping rendering silky smooth.
+ */
 const offscreenCanvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
 if (offscreenCanvas) {
     offscreenCanvas.width = 256;
@@ -18,13 +27,27 @@ const offscreenCtx = offscreenCanvas?.getContext('2d') || null;
 const imgData = offscreenCtx ? offscreenCtx.createImageData(256, 256) : null;
 const pixelBuffer = imgData ? imgData.data : null;
 
-// Persistent noise grid cache to ensure the "snow" remains static during a single active trial
+/**
+ * @description Persistent binary noise matrix caching slots.
+ * 
+ * @architecture
+ * The background dot matrix must remain perfectly static during a single active trial. 
+ * Reshuffling the grid on every frame would introduce visual noise artifacts, defeating foveal focus.
+ */
 let cachedNoiseGrid: number[][] | null = null;
 let cachedGridCols: number = 0;
 let cachedGridRows: number = 0;
 
 /**
  * @description Generates a deterministic 2D binary noise matrix of 0s and 1s.
+ * 
+ * @mathematical
+ * Populates a [cols x rows] matrix where values are determined by probability threshold [density].
+ * 
+ * @param {number} cols - Grid column count.
+ * @param {number} rows - Grid row count.
+ * @param {number} density - Probability threshold of filled pixels.
+ * @returns {number[][]} Generated binary matrix.
  */
 function generateNoiseMatrix(cols: number, rows: number, density: number): number[][] {
     const grid: number[][] = [];
@@ -41,13 +64,22 @@ function generateNoiseMatrix(cols: number, rows: number, density: number): numbe
 /**
  * @description Renders a complete, calibrated Random Dot Stereogram (RDS) onto the transparent overlay canvas.
  *
- * @clinical Toroidal Wrapping & Subpixel Isolation.
- * 1. Monocular cues (shadows/edges) are functionally eliminated using modulo arithmetic
- *    (toroidal wrap) on the noise matrix. One eye physically cannot see the shape.
- * 2. Independent RGB channel assignment maps the Left view to the Red channel and
- *    the Right view to the Blue/Green channels, ensuring zero optical crosstalk when
- *    worn with clinical Anaglyph glasses.
- *
+ * @clinical 
+ * - Ocular Disparity Mapping: Binocular depth is computed in the secondary visual cortex (V2) by disparity-tuned
+ *   neurons calculating the horizontal phase shift between left and right retinas.
+ * - Anti-Cheat Toroidal Wrapping: To prevent the brain from resolving the target's boundary monocularly 
+ *   (without 3D glasses) via texture seams, the shifted pixels are wrapped around using modulo torus arithmetic.
+ * - Ocular Subpixel Isolation: Directs the left eye's noise to the sRGB Red subpixel channel (calibratorLeftR) 
+ *   and the right eye's noise to the sRGB Green/Blue channels (calibratorRightG/B), ensuring zero optical 
+ *   crosstalk under Red-Cyan absorption filters.
+ * - Zero-Interpolation Scaling: Setting ctx.imageSmoothingEnabled = false prevents browser-native interpolations
+ *   from blurring dot edges. Blurred edges introduce contrast cues, allowing monocular cheating.
+ * 
+ * @mathematical
+ * - Left Eye horizontal shift wrapping formula: leftX = (gx - disparity + cols) % cols.
+ * - Right Eye coordinates are unshifted (gx) to act as the static spatial anchor.
+ * - Scales target size down to 28% inside tracking mode to expand bouncing boundaries.
+ * 
  * @param {HTMLCanvasElement | null} canvas - The primary drawing canvas.
  * @param {CanvasRenderingContext2D | null} ctx - The active 2D rendering context of the transparent overlay canvas.
  * @param {AppState} state - The global store state container.

@@ -1,9 +1,11 @@
-/*
- * GaborNeuroFit - 2D Synoptophore Target Renderer Subsystem
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file synop-render.ts
+ * @description 2D Synoptophore target rendering subsystem.
+ * Implements a digital version of a classic orthoptic device used for diagnosing and 
+ * treating strabismus (squint) by training sensory fusion and motor vergence reserves.
  *
- * Migrated to TypeScript: Enforces strict Canvas 2D typing and parameter extraction
- * heavily tied to the AppState interface to ensure visual fidelity during vergence.
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
 import { drawFusionLockFrame } from './gabor-render';
@@ -12,11 +14,24 @@ import type { AppState } from '../types/clinical';
 /**
  * @description Master mathematical renderer for optometric vergence targets.
  *
- * @clinical Translates the digital strabismus deviation vector (synopTargetX / Y) into decoupled
- * color-channel targets (Dichoptic presentation).
- * If flicker is active, it runs a counter-phase 10Hz Alpha-resonance interpolation:
- * oscillating the lazy eye target through the precise SSoT Neutral Gray background (127 sRGB).
- * This crucially maintains constant average luminescence, preventing pupillary micro-spasms and fatigue.
+ * @clinical
+ * - Dissociated Target Presentation: Translates the digital strabismus deviation vector 
+ *   (synopTargetX / Y) into decoupled color-channel targets (Dichoptic presentation).
+ * - Alpha-Resonance stroboscopy: If flicker is active, it runs a counter-phase 10Hz oscillation 
+ *   on the lazy eye target, pulsing it against the SSoT Neutral Gray background (127 sRGB). 
+ * - Constant Luminance Maintenance: The stroboscopic interpolation ensures that the average 
+ *   pixel luminance remains constant, preventing the pupillary light reflex (pupil constriction/dilation) 
+ *   which would otherwise lead to rapid ocular fatigue and accommodative micro-fluctuations.
+ * 
+ * @mathematical
+ * - Performs linear interpolation (LERP) of channel intensities using the [factor] parameter.
+ * - Symmetrically attenuates the strong eye's color mapping towards neutral gray (127) 
+ *   using synopStrongEyeContrastFactor to equalize interocular suppression.
+ * 
+ * @param {HTMLCanvasElement | null} canvas - Target canvas for rendering.
+ * @param {CanvasRenderingContext2D | null} ctx - 2D context of the overlay canvas.
+ * @param {AppState} state - Global application state.
+ * @param {number} factor - Interpolation factor for flicker animation [-1.0 to 1.0]. Defaults to 1.0.
  */
 export function drawSynoptophoreTargets(
     canvas: HTMLCanvasElement | null,
@@ -48,7 +63,7 @@ export function drawSynoptophoreTargets(
     const g_attenuated = isLazyRed ? Math.round(127 + (g - 127) * strongFactor) : g;
     const b_attenuated = isLazyRed ? Math.round(127 + (b - 127) * strongFactor) : b;
 
-    // CLINICAL COUNTER-PHASE INTERPOLATION (RESONANCE FLICKER) FOR LAZY EYE
+    // Clinical: Counter-phase interpolation (resonance flicker) for the lazy eye target
     const flickerFactor = factor;
 
     const r_lazy = isLazyRed ? Math.max(0, Math.min(255, Math.round(127 + (r - 127) * flickerFactor))) : r_attenuated;
@@ -64,6 +79,7 @@ export function drawSynoptophoreTargets(
     const lx = cx + tx;
     const ly = cy + ty;
 
+    // Render spatial coordinate guidelines if enabled to assist initial target capture
     if (state.synopShowLazyGrid || state.synopShowStrongGrid) {
         ctx.save();
         ctx.setLineDash([2, 5]);
@@ -98,7 +114,9 @@ export function drawSynoptophoreTargets(
     const dotRadius = size * 0.12;
     const crossHalf = size * 0.15;
 
+    // Branch rendering based on target geometry preset
     if (state.synopTargetType === 'cross-square') {
+        // Clinical 'Cross & Square' dissociation pattern
         ctx.strokeStyle = strongColor;
         ctx.lineWidth = lineWidth;
         ctx.lineCap = 'round';
@@ -116,6 +134,7 @@ export function drawSynoptophoreTargets(
         ctx.stroke();
 
     } else {
+        // Clinical 'Ring & Dot' dissociation pattern
         ctx.fillStyle = strongColor;
         ctx.beginPath();
         ctx.arc(cx, cy, dotRadius, 0, 2 * Math.PI);
@@ -128,6 +147,7 @@ export function drawSynoptophoreTargets(
         ctx.stroke();
     }
 
+    // Render persistent zero-disparity stabilization frame
     drawFusionLockFrame(canvas, ctx, scale);
 
     ctx.restore();
