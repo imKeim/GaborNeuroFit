@@ -690,10 +690,11 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
     outline: none !important;
 }
 
-/* W3C Accessibility: Safe, perfectly rounded neon halos strictly for keyboard navigation */
-.control-btn:focus-visible, .tab-btn:focus-visible, .dash-btn:focus-visible, .dash-input:focus-visible, .pill-btn:focus-visible, .preset-card:focus-visible, .close-btn:focus-visible, .accordion-header:focus-visible {
+/* W3C Accessibility: Safe, rounded neon halos strictly for keyboard navigation */
+.control-btn:focus-visible, .tab-btn:focus-visible, .dash-btn:focus-visible, .dash-input:focus-visible, .pill-btn:focus-visible, .preset-card:focus-visible, .close-btn:focus-visible, .accordion-header:focus-visible, .nudge-btn:focus-visible, input[type="range"]:focus-visible {
     box-shadow: 0 0 0 3px rgba(59, 144, 255, 0.45) !important;
 }
+
 .action-btn:focus-visible, #btn-start:focus-visible {
     /* Merge existing drop shadows with neon rings for primary elevated buttons */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(59, 144, 255, 0.45) !important;
@@ -1031,7 +1032,11 @@ input[type="range"] {
     appearance: none;
     -webkit-appearance: none;
     background: transparent;
+    border: none; /* Strip browser default outer rectangular borders entirely */
     outline: none;
+    padding: 0;
+    margin: 0;
+    border-radius: 99px; /* Rounds the outer container to ensure focused neon halos are pill-shaped */
 }
 
 /* Computed track gradient (injected via TS controller) */
