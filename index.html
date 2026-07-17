@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <!--
-      @clinical Viewport Lock. Prevents accidental pinch-to-zoom which would fundamentally
-      destroy the calibrated spatial frequency (cycles per degree) of the Gabor targets.
+      @clinical Viewport Lock
+      Prevents accidental pinch-to-zoom which would fundamentally destroy the 
+      calibrated spatial frequency (cycles per degree) of the Gabor targets.
     -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
@@ -15,19 +16,19 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- PWA & Mobile Install Manifests -->
+    <!-- Block: PWA & Mobile Install Manifests -->
     <link rel="manifest" href="./manifest.webmanifest">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="GaborNeuroFit">
     <link class="apple-touch-icon" href="icon-192-maskable.png">
     <meta name="theme-color" content="#131a26">
-  <script type="module" crossorigin src="./assets/index-Bg2-4s2X.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-CJtg9XJr.css">
+  <script type="module" crossorigin src="./assets/index-BWaRNOxp.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-E29FDcM0.css">
 <link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:inline-sw">if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('./sw.js', { scope: './' })})}</script></head>
 <body>
     <!--
-      @clinical FULLSCREEN CONSOLIDATION LAYER
+      @clinical Fullscreen Consolidation Layer
       Placed at the root body level to guarantee absolute 100% viewport coverage.
       Delivers instantaneous positive/negative visual reinforcement safely via color
       temperature, avoiding startle reflexes associated with sudden brightness changes.
@@ -35,7 +36,7 @@
     <div id="flash-overlay" aria-hidden="true"></div>
 
     <!--
-      @clinical POSTURE & ORIENTATION SHIELD
+      @clinical Posture & Orientation Shield
       Forces portrait mode anatomically. Landscape viewing dramatically distorts
       the 1:1 foveal isolation square and breaks comfortable 50-70cm ergonomic working distance.
     -->
@@ -43,17 +44,14 @@
         <div id="rotation-text" data-i18n="lblRotationBlock">📱 Please rotate your device to portrait mode</div>
     </div>
 
-    <!-- =========================================================
-         APP SHELL (MAIN APPLICATION UI)
-         ========================================================= -->
+    <!-- Block: App Shell (Main Application UI) -->
     <div id="app-wrapper">
 
-        <!-- TOP HUD: System Navigation & Trigger Panel -->
+        <!-- Section: Top HUD Navigation & Trigger Panel -->
         <header id="top-bar" role="banner">
             <h1 id="app-title" aria-label="Gabor Neuro Fit">🧿 GaborNeuroFit</h1>
 
             <nav id="top-controls" aria-label="Application Tools">
-                <!-- Semantic buttons with explicit ARIA descriptions for clinical accessibility -->
                 <button id="btn-mute" class="control-btn" aria-label="Toggle Sound">🔊</button>
                 <button id="btn-pause" class="control-btn" aria-label="Pause Session">⏸️</button>
                 <button id="btn-info" class="control-btn" aria-label="Clinical Handbook">ℹ️</button>
@@ -62,27 +60,26 @@
             </nav>
         </header>
 
-        <!-- MAIN: The Clinical Foveation Workspace -->
+        <!-- Section: Clinical Foveation Workspace -->
         <main id="workspace" role="main" aria-label="Visual Stimulation Arena">
             <!--
-              @clinical ASPECT-RATIO 1:1 CONTAINER
+              @clinical Aspect-Ratio 1:1 Container
               Strictly locked to a perfect square. Ensures mathematical circularity of the Gabor
               Gaussian envelope. Deformation here would ruin the spatial frequency calculations.
             -->
             <div id="container">
-                <!-- GPU Hardware-Accelerated Bottom Layer (WebGL) -->
+                <!-- Logic: GPU Hardware-Accelerated Bottom Layer (WebGL) -->
                 <canvas id="gaborCanvas" width="256" height="256" aria-hidden="true"></canvas>
-                <!-- HUD Transparent Top Layer (Canvas 2D) -->
+                <!-- Logic: HUD Transparent Top Layer (Canvas 2D) -->
                 <canvas id="overlayCanvas" width="256" height="256" aria-hidden="true"></canvas>
 
-                <!-- Protective Rest Shutter (Melts dynamically to avoid visual shock) -->
+                <!-- Logic: Protective Rest Shutter (Melts dynamically to avoid visual shock) -->
                 <div id="calibration-curtain" class="active" aria-hidden="true"></div>
 
-                <!-- Pause State Indicator -->
                 <div id="pause-watermark" data-i18n="pauseWatermark" aria-hidden="true">Paused</div>
 
                 <!--
-                  @clinical FOVEAL ANCHOR (FIXATION CROSS)
+                  @clinical Foveal Anchor (Fixation Cross)
                   Crucial for controlling eccentric fixation. Patients must look strictly here
                   and resolve targets in their para-fovea to trigger true neurological plasticity.
                 -->
@@ -93,18 +90,18 @@
             </div>
         </main>
 
-        <!-- FOOTER: Telemetry, Biofeedback & Input Deck -->
+        <!-- Section: Telemetry, Biofeedback & Input Deck -->
         <footer id="bottom-dock">
 
             <!--
-              @clinical LIVE TELEMETRY BOARD
+              @clinical Live Telemetry Board
               Uses aria-live="polite" to gently announce score changes to visually impaired
               patients via VoiceOver / TalkBack without interrupting the flow.
             -->
             <section id="score-board" aria-live="polite" aria-atomic="true">
                 <div id="score-text"></div>
 
-                <!-- Gabor Badges -->
+                <!-- View: Gabor Badges -->
                 <div id="indicators">
                     <span class="badge" style="color: #22c55e; border-color: rgba(34, 197, 94, 0.3); background: rgba(34, 197, 94, 0.12);"><span data-i18n="stage">Stage</span>: <span id="current-level">1</span>/5</span>
                     <span class="badge" style="color: #3b90ff; border-color: rgba(59, 144, 255, 0.3); background: rgba(59, 144, 255, 0.12);"><span data-i18n="contrast">Contrast</span>: <span id="current-contrast">50</span>%</span>
@@ -112,7 +109,7 @@
                     <span id="badge-timer-gabor" class="badge" style="display: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.12);">🍅 <strong id="val-timer-gabor">00:00</strong></span>
                 </div>
 
-                <!-- Synoptophore Badges -->
+                <!-- View: Synoptophore Badges -->
                 <div id="synop-indicators" style="display: none; justify-content: center; gap: 6px;">
                     <span id="badge-prism-x" class="badge" style="color: #3b90ff; border-color: rgba(59, 144, 255, 0.3); background: rgba(59, 144, 255, 0.12);">X: 0px (0.00Δ)</span>
                     <span id="badge-prism-y" class="badge" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.12);">Y: 0px (0.00Δ)</span>
@@ -120,7 +117,7 @@
                     <span id="badge-timer-synop" class="badge" style="display: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.12);">🍅 <strong id="val-timer-synop">00:00</strong></span>
                 </div>
 
-                <!-- RDS Badges -->
+                <!-- View: RDS Badges -->
                 <div id="rds-indicators" style="display: none; justify-content: center; gap: 6px;">
                     <span id="badge-rds-level" class="badge" style="color: #22c55e; border-color: rgba(34, 197, 94, 0.3); background: rgba(34, 197, 94, 0.12);">Stage: 1/5</span>
                     <span id="badge-rds-disparity" class="badge" style="color: #3b90ff; border-color: rgba(59, 144, 255, 0.3); background: rgba(59, 144, 255, 0.12);">Depth: 4px</span>
@@ -128,24 +125,24 @@
                     <span id="badge-timer-rds" class="badge" style="display: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.12);">🍅 <strong id="val-timer-rds">00:00</strong></span>
                 </div>
 
-                <!-- Dynamic Ocular Vergence Progress Bar (Hardware Accelerated) -->
+                <!-- View: Dynamic Ocular Vergence Progress Bar -->
                 <div id="synop-progress-container" style="display: none; width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 4px; margin-top: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.02);" aria-hidden="true">
                     <div id="synop-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #007aff, #22c55e); transition: width 0.25s cubic-bezier(0.25, 1, 0.5, 1);"></div>
                 </div>
             </section>
 
-            <!-- TACTILE INPUT DECK -->
+            <!-- Section: Tactile Input Deck -->
             <section id="controls-layout" aria-label="Therapy Controls">
-                <!-- Active Template & Temporal Constraints -->
+                <!-- Logic: Active Template & Temporal Constraints -->
                 <div id="mode-status-bar" aria-hidden="true">
                     <span><span data-i18n="lblActiveMode">Mode</span>: <strong id="val-active-mode" style="color: #007aff;">Classic</strong></span>
                     <span><span data-i18n="lblActiveSpeed">Speed</span>: <strong id="val-active-speed">Adaptive</strong></span>
                 </div>
 
-                <!-- PRIMARY TRIGGER (Operated strictly by State Machines via Typescript Injection) -->
+                <!-- Logic: Primary Trigger (Operated strictly by State Machines via Typescript Injection) -->
                 <button type="button" id="btn-start" aria-label="Execute Primary Action"></button>
 
-                <!-- MOTOR/SENSORY SWITCHAROOS -->
+                <!-- Logic: Motor/Sensory Switcharoos -->
                 <div id="action-buttons">
                     <button type="button" class="action-btn" id="btn-left" aria-label="Choose Left">
                         <span>◀</span>
@@ -166,23 +163,20 @@
 
     </div> <!-- Close #app-wrapper -->
 
-    <!-- =========================================================
-         MODALS, DIALOGS & OVERLAYS (PORTAL LAYER)
-         ========================================================= -->
-    <!--
-      @clinical PORTAL PATTERN ARCHITECTURE
+    <!-- 
+      Block: Portal Layer Architecture
       All dialogs are hoisted completely out of the App Shell DOM flow.
       This prevents Cumulative Layout Shifts (CLS) upon dialog rendering and
       guarantees absolute Z-Index supremacy over the WebGL Canvas context.
     -->
     <aside id="modal-layer">
 
-        <!-- CONFIGURATION PANEL MODAL: Scrollable settings cards -->
+        <!-- View: Configuration Panel Modal -->
         <div id="settings-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
             <div class="modal-content">
                 <h2 id="settingsTitle" data-i18n="settingsTitle">Configuration Panel</h2>
 
-                <!-- Symmetrical Settings Mode Switcher (3-Tab config) -->
+                <!-- Logic: Symmetrical Settings Mode Switcher -->
                 <nav id="settings-mode-bar" aria-label="Settings Categories" style="display: flex; background: #131a26; padding: 4px; border-radius: 10px; border: 1px solid #2b354a; margin-bottom: 14px; margin-left: auto; margin-right: auto; width: 100%;">
                     <button type="button" id="settings-tab-gabor" class="tab-btn active">
                         <span class="tab-btn-icon">🧿</span>
@@ -200,9 +194,8 @@
 
                 <div class="modal-scroll-body" tabindex="0">
 
-                    <!-- GLOBAL ERGONOMIC HEADER (Language, Limit, Pomodoro) -->
+                    <!-- Sub-section: Global Ergonomics (Language, Limit, Pomodoro) -->
                     <div style="background: rgba(11, 15, 24, 0.3); padding: 12px; border-radius: var(--radius-elements); border: 1px solid rgba(255, 255, 255, 0.03); display: flex; flex-direction: column; margin-bottom: 14px;">
-                        <!-- Language Segment -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <label data-i18n="lblSettingLang" for="select-lang" style="color: #cbd5e1;">Application Language:</label>
@@ -213,7 +206,6 @@
                             </div>
                             <span class="settings-help" data-i18n-html="helpLang">🏥 <strong>Purpose:</strong> Configures interface language and optimizes typographical layouts for native readability.<br>🎮 <strong>Difficulty:</strong> Does not affect exercises.<br>🧭 <strong>Recommendation:</strong> Set your preferred language for the most intuitive guidance.</span>
                         </div>
-                        <!-- Session Limit Segment (Gabor) -->
                         <div class="settings-row" data-visible-in="gabor" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <label data-i18n="lblSettingLimit" for="select-session-limit" style="color: #cbd5e1;">Session Limit:</label>
@@ -226,7 +218,6 @@
                             </div>
                             <span class="settings-help" data-i18n-html="helpSessionLimit">🏥 <strong>Purpose:</strong> Strictly limits daily visual workload, preventing cortical fatigue.<br>🎮 <strong>Difficulty:</strong> Depends on the selected trial limit (more trials = higher strain).<br>🧭 <strong>Recommendation:</strong> Standard limit: 80 trials for Gabor and 30 for stereograms.</span>
                         </div>
-                        <!-- Session Limit Segment (RDS) -->
                         <div class="settings-row" data-visible-in="rds" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <label data-i18n="lblSettingLimit" for="select-rds-session-limit" style="color: #cbd5e1;">Session Limit:</label>
@@ -239,7 +230,6 @@
                             </div>
                             <span class="settings-help" data-i18n-html="helpSessionLimit">🏥 <strong>Purpose:</strong> Strictly limits daily visual workload, preventing cortical fatigue.<br>🎮 <strong>Difficulty:</strong> Depends on the selected trial limit (more trials = higher strain).<br>🧭 <strong>Recommendation:</strong> Standard limit: 80 trials for Gabor and 30 for stereograms.</span>
                         </div>
-                        <!-- Pomodoro Rest Timer Segment -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <label data-i18n="lblSettingTimerLimit" for="select-timer-limit" style="color: #cbd5e1;">Pomodoro Timer (Minutes):</label>
@@ -254,9 +244,9 @@
                         </div>
                     </div>
 
-                    <!-- GABOR THERAPUTIC AREA (🧿) -->
+                    <!-- Group: Gabor Therapeutic Area -->
                     
-                    <!-- Gabor Block 1: Macro-Preset Selectors -->
+                    <!-- Sub-section: Macro-Presets -->
                     <div id="row-preset-mode" data-visible-in="gabor" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;">
                         <span data-i18n="lblSettingPreset" style="font-size: 13px; font-weight: 700; color: #3b90ff; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">Training Protocol:</span>
                         <div id="select-preset-mode" class="preset-grid">
@@ -287,9 +277,8 @@
                         </div>
                     </div>
 
-                    <!-- Gabor Block 2: Core parameters -->
+                    <!-- Sub-section: Core Parameters -->
                     <div data-visible-in="gabor" style="background: rgba(19, 26, 38, 0.2); padding: 10px; border-radius: var(--radius-elements); border: 1px dashed rgba(255,255,255,0.04); display: flex; flex-direction: column; margin-bottom: 14px;">
-                        <!-- Stage Selection -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <label data-i18n="lblSettingStartLevel" for="select-start-level" style="color: #cbd5e1;">Starting Stage:</label>
@@ -303,7 +292,6 @@
                             </div>
                             <span class="settings-help" data-i18n-html="helpStartLevel">🏥 <strong>Purpose:</strong> Sets starting spatial frequency. Higher stages have ultra-fine lines, challenging foveal photoreceptors and primary visual cortex (V1) networks.<br>🎮 <strong>Difficulty:</strong> Stage 1 — easiest (thick lines); Stage 5 — extreme (micro-acuity lines).<br>🧭 <strong>Recommendation:</strong> Start at Stage 1. Advance only when maintaining sustained accuracy >85%.</span>
                         </div>
-                        <!-- Auto Next -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <label data-i18n="lblSettingAutonext" for="select-autonext" style="color: #cbd5e1;">Auto-Next Flash:</label>
@@ -316,7 +304,7 @@
                         </div>
                     </div>
 
-                    <!-- Gabor Block 3: Stimulation Parameters (Muted Accordion) -->
+                    <!-- Sub-section: Stimulation Parameters -->
                     <div class="accordion-header" id="accordion-header-2" tabindex="0" data-visible-in="gabor" role="button" aria-expanded="false" aria-controls="accordion-content-2">
                         <span data-i18n="lblSettingGroup2">⚡ Gabor & Speed</span>
                         <span class="accordion-arrow" id="accordion-arrow-2" aria-hidden="true">›</span>
@@ -357,7 +345,7 @@
                         </div>
                     </div>
 
-                    <!-- Gabor Block 4: Spatial Configuration & Crowding -->
+                    <!-- Sub-section: Spatial Configuration -->
                     <div class="accordion-header" id="accordion-header-3" tabindex="0" data-visible-in="gabor" role="button" aria-expanded="false" aria-controls="accordion-content-3">
                         <span data-i18n="lblSettingGroup3">🩹 Gabor & Complexity</span>
                         <span class="accordion-arrow" id="accordion-arrow-3" aria-hidden="true">›</span>
@@ -442,11 +430,10 @@
                         </div>
                     </div>
 
-                    <!-- SYNOPTOPHORE THERAPUTIC AREA (🧲) -->
+                    <!-- Group: Synoptophore Therapeutic Area -->
 
-                    <!-- Synoptophore Block 1: Oculomotor Physics -->
+                    <!-- Sub-section: Oculomotor Physics -->
                     <div data-visible-in="synoptophore" style="background: rgba(19, 26, 38, 0.2); padding: 10px; border-radius: var(--radius-elements); border: 1px dashed rgba(255,255,255,0.04); display: flex; flex-direction: column; margin-bottom: 14px;">
-                        <!-- Pulling Speed -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <label data-i18n="lblSettingPullSpeed" for="select-pull-speed" style="color: #cbd5e1;">Ocular Pulling Rate:</label>
@@ -458,7 +445,6 @@
                             </div>
                             <span class="settings-help" data-i18n-html="helpSynopPullSpeed">🏥 <strong>Purpose:</strong> Determines the automatic target pulling speed, exercising vergence reserves.<br>🎮 <strong>Difficulty:</strong> Slower (4.0s) — easy; Faster (1.5s) — high muscle load.<br>🧭 <strong>Recommendation:</strong> Start at 4.0s or 2.5s to allow gentle muscle adaptation.</span>
                         </div>
-                        <!-- Target Type -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <label data-i18n="lblSettingTargetType" for="select-target-type" style="color: #cbd5e1;">Target Geometry:</label>
@@ -469,7 +455,6 @@
                             </div>
                             <span class="settings-help" data-i18n-html="helpTargetType">🏥 <strong>Purpose:</strong> Selects the central sensory anchors for binocular fusion.<br>🎮 <strong>Difficulty:</strong> 'Ring & Dot' — easy (forgiving); 'Cross & Square' — hard (requires strict X/Y alignment).<br>🧭 <strong>Recommendation:</strong> Start with Ring, advance to Cross as deviation angles reduce.</span>
                         </div>
-                        <!-- Target Size -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <label data-i18n="lblSettingTargetSize" for="select-target-size" style="color: #cbd5e1;">Ophthalmic Target Size:</label>
@@ -483,7 +468,7 @@
                         </div>
                     </div>
 
-                    <!-- Synoptophore Block 2: Sensory Support -->
+                    <!-- Sub-section: Sensory Support -->
                     <div class="accordion-header" id="accordion-header-5" tabindex="0" data-visible-in="synoptophore" role="button" aria-expanded="false" aria-controls="accordion-content-5">
                         <span data-i18n="lblSettingGroup5">🧲 Synoptophore & Support</span>
                         <span class="accordion-arrow" id="accordion-arrow-5" aria-hidden="true">›</span>
@@ -527,11 +512,10 @@
                     </div>
 
 
-                    <!-- STEREOGRAM THERAPUTIC AREA (🧊) -->
+                    <!-- Group: Stereogram Therapeutic Area -->
 
-                    <!-- Stereogram Block 1: Stereopsis Depth parameters -->
+                    <!-- Sub-section: Depth Parameters -->
                     <div data-visible-in="rds" style="background: rgba(19, 26, 38, 0.2); padding: 10px; border-radius: var(--radius-elements); border: 1px dashed rgba(255,255,255,0.04); display: flex; flex-direction: column; margin-bottom: 14px;">
-                        <!-- Starting Disparity Depth -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <label data-i18n="lblSettingRdsStartDisparity" for="select-rds-start-disparity" style="color: #cbd5e1;">Starting Disparity Shift:</label>
@@ -545,7 +529,6 @@
                             </div>
                             <span class="settings-help" data-i18n-html="helpRdsStartDisparity">🏥 <strong>Purpose:</strong> Sets initial target shift. Lower values train fine sensory connections in V2 (micro-stereopsis).<br>🎮 <strong>Difficulty:</strong> 8px — easy, thick relief; 1px — fine micro-3D on the edge of depth perception.<br>🧭 <strong>Recommendation:</strong> Start at 6-8px. Aim to master figure recognition at 1px.</span>
                         </div>
-                        <!-- Dot Size -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <label data-i18n="lblSettingRdsDotSize" for="select-rds-dot-size" style="color: #cbd5e1;">Stereoscopic Dot Size:</label>
@@ -557,7 +540,6 @@
                             </div>
                             <span class="settings-help" data-i18n-html="helpRdsDotSize">🏥 <strong>Purpose:</strong> Adjusts individual dot scale. Smaller dots yield denser correlation grids, aiding 3D depth pop-out.<br>🎮 <strong>Difficulty:</strong> 2px — easy to fuse but requires high optical clarity; 6px — requires greater fusion effort.<br>🧭 <strong>Recommendation:</strong> Use 4px or 2px dot scale for optimal balance.</span>
                         </div>
-                        <!-- Density -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <label data-i18n="lblSettingRdsDensity" for="select-rds-density" style="color: #cbd5e1;">Random Dot Density:</label>
@@ -569,7 +551,6 @@
                             </div>
                             <span class="settings-help" data-i18n-html="helpRdsDensity">🏥 <strong>Purpose:</strong> Adjusts filled dot percentages. 50% density provides optimal binocular contrast matching.<br>🎮 <strong>Difficulty:</strong> 50% is easiest; deviations in either direction increase fusion difficulty.<br>🧭 <strong>Recommendation:</strong> Keep ON standard 50%.</span>
                         </div>
-                        <!-- Auto-Next -->
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <label data-i18n="lblSettingRdsAutonext" for="select-rds-autonext" style="color: #cbd5e1;">Auto-Next Stereogram:</label>
@@ -582,7 +563,7 @@
                         </div>
                     </div>
 
-                    <!-- Stereogram Block 2: Dynamics & Pursuit -->
+                    <!-- Sub-section: Dynamics & Pursuit -->
                     <div class="accordion-header" id="accordion-header-6" tabindex="0" data-visible-in="rds" role="button" aria-expanded="false" aria-controls="accordion-content-6">
                         <span data-i18n="lblSettingGroup6">🧊 Stereogram & Dynamics</span>
                         <span class="accordion-arrow" id="accordion-arrow-6" aria-hidden="true">›</span>
@@ -616,7 +597,6 @@
                             </div>
                             <span class="settings-help" data-i18n-html="helpRdsFloating">🏥 <strong>Purpose:</strong> Adds a slow, smooth drifting motion to the hidden square, forcing dynamic vergence tracking to build extraocular muscle stamina.<br>🎮 <strong>Difficulty:</strong> Highly challenging; requires continuous muscle tracking.<br>🧭 <strong>Recommendation:</strong> Enable for dynamic muscle training.</span>
                         </div>
-                        <!-- Float Speed -->
                         <div class="settings-row" id="row-rds-floating-speed" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <label data-i18n="lblSettingRdsFloatSpeed" for="select-rds-float-speed">Floating Drift Rate:</label>
@@ -631,7 +611,7 @@
                     </div>
 
 
-                    <!-- HARDWARE AREA: 3D ANAGLYPH & LENS CALIBRATION -->
+                    <!-- Group: Hardware & Calibration -->
                     <div class="accordion-header" id="accordion-header-4" tabindex="0" role="button" aria-expanded="false" aria-controls="accordion-content-4">
                         <span data-i18n="lblSettingGroup4">🕶️ Binocular 3D Setup</span>
                         <span class="accordion-arrow" id="accordion-arrow-4" aria-hidden="true">›</span>
@@ -646,9 +626,7 @@
                         </div>
 
                         <!-- TS Reactivity Link: anaglyph-settings-panel state is controlled by SettingsController -->
-                        <!-- CSS :nth-child references: (1)=Red Side, (2)=Lazy Side, (3)=Attenuation, (4)=Fusion Lock, (5)=L-Calib, (6)=R-Calib -->
                         <div id="anaglyph-settings-panel" style="border-top: 1px dashed #2b354a; padding-top: 12px; margin-top: 10px; margin-bottom: 0;">
-                            <!-- Child 1: Red Side selection -->
                             <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                                 <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                     <label data-i18n="lblSettingRedSide" for="select-red-side" style="color: #cbd5e1;">Red Filter Lens Position:</label>
@@ -658,7 +636,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <!-- Child 2: Lazy eye side selection -->
                             <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                                 <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                     <label data-i18n="lblSettingLazySide" for="select-lazy-side" style="color: #cbd5e1;">Lazy (Amblyopic) Eye:</label>
@@ -668,7 +645,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <!-- Child 3: Attenuation -->
                             <div class="settings-row" id="row-strong-attenuation" data-visible-in="gabor,synoptophore" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                                 <div style="display: flex; justify-content: space-between; width: 100%;">
                                     <label data-i18n="lblSettingStrongAttenuation" for="range-strong-attenuation">Strong Eye Contrast Balancer:</label>
@@ -681,7 +657,6 @@
                                 </div>
                                 <span class="settings-help" data-i18n-html="helpStrongAttenuation">🏥 <strong>Purpose:</strong> Attenuates contrast for the dominant eye, countering active visual suppression of the weaker eye.<br>🎮 <strong>Difficulty:</strong> 10% — easiest (strong eye heavily dimmed); 100% — hardest (equal contest).<br>🧭 <strong>Recommendation:</strong> Start at 20-30%, gradually advancing to 100% as the weak eye recovers.</span>
                             </div>
-                            <!-- Child 4: Fusion Lock -->
                             <div class="settings-row" id="row-fusion-lock" data-visible-in="gabor" style="flex-direction: column; align-items: flex-start; gap: 4px;">
                                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                                     <label data-i18n="lblSettingFusionLock" for="chk-fusion-lock">Binocular Fusion Lock:</label>
@@ -689,7 +664,6 @@
                                 </div>
                                 <span class="settings-help" data-i18n-html="helpFusionLock" id="help-fusion-lock">🏥 <strong>Purpose:</strong> Renders visual stabilization frames visible to both eyes to prevent ocular drift during rapid exposures.<br>🎮 <strong>Difficulty:</strong> Greatly stabilizes binocular focus.<br>🧭 <strong>Recommendation:</strong> Keep ON across all dichoptic (3D) exercises.</span>
                             </div>
-                            <!-- Child 5: Left Lens Calibration (Subpixel Red balance) -->
                             <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
                                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                                     <span data-i18n-html="lblSettingLeftColor" style="font-size: 13px; font-weight: 500;">Left Lens Calibration (Red eye):</span>
@@ -702,7 +676,6 @@
                                         <button type="button" class="nudge-btn" data-nudge-target="slider-left-r" data-nudge-step="1" data-nudge-dir="1" aria-label="Increase Red Amplitude">+</button>
                                 </div>
                             </div>
-                            <!-- Child 6: Right Lens Calibration (Subpixel Green/Blue balance) -->
                             <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 8px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                                     <span data-i18n-html="lblSettingRightColor" style="font-size: 13px; font-weight: 500;">Right Lens Calibration (Cyan eye):</span>
@@ -730,7 +703,6 @@
                         </div>
                     </div>
 
-                    <!-- Explanation Footer -->
                     <p style="font-size: 11px; color: #8e8e93; line-height: 1.3; margin-top: 15px;" data-i18n="descModeExplanation" id="desc-mode-explanation">Preset guidelines: Select an active protocol as a starting template. Modify any checkbox below to seamlessly transition into 'Custom' configuration mode.</p>
                 </div> <!-- End modal-scroll-body -->
 
@@ -738,7 +710,7 @@
             </div>
         </div>
 
-        <!-- CUSTOM NON-BLOCKING ALERT DIALOG -->
+        <!-- View: Alert Dialog -->
         <div id="custom-alert-modal" class="modal" role="alertdialog" aria-modal="true" aria-labelledby="custom-alert-title" aria-describedby="custom-alert-text" style="z-index: 3000;">
             <div class="modal-content" style="height: auto; max-height: 320px; width: 88%; max-width: 420px; text-align: center; border-radius: var(--border-radius-elements); padding: 20px;">
                 <h2 id="custom-alert-title" style="margin-top: 0; margin-bottom: 12px; font-size: 16px; color: #eab308; font-weight: 700;">GaborNeuroFit</h2>
@@ -749,7 +721,7 @@
             </div>
         </div>
 
-        <!-- CUSTOM NON-BLOCKING CONFIRMATION DIALOG -->
+        <!-- View: Confirmation Dialog -->
         <div id="custom-confirm-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="custom-confirm-title" aria-describedby="custom-confirm-text" style="z-index: 3010;">
             <div class="modal-content" style="height: auto; max-height: 320px; width: 88%; max-width: 420px; text-align: center; border-radius: var(--border-radius-elements); padding: 20px;">
                 <h2 id="custom-confirm-title" style="margin-top: 0; margin-bottom: 12px; font-size: 16px; color: #ef4444; font-weight: 700;">GaborNeuroFit</h2>
@@ -763,7 +735,7 @@
             </div>
         </div>
 
-        <!-- INFO HANDBOOK MODAL -->
+        <!-- View: Clinical Handbook -->
         <div id="info-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
             <div class="modal-content">
                 <h2 id="modalTitle" data-i18n="modalTitle">GaborNeuroFit Clinical Manual</h2>
@@ -787,7 +759,7 @@
             </div>
         </div>
 
-        <!-- HISTORICAL LEADERBOARD MODAL (Relational Multi-User Clinical Dashboard v2.5.0) -->
+        <!-- View: Analytics Dashboard -->
         <div id="stats-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="statsTitle">
             <div class="modal-content">
                 <h2 id="statsTitle" data-i18n="statsTitle">Personal Progress & History</h2>
@@ -902,7 +874,7 @@
     </aside>
 
     <!--
-      @clinical OFFLINE TWEMOJI & TS CORE
+      @architecture Offline PWA Bootstrapper
       PWA offline-first architecture requires the orchestrator to load purely from
       the transpiled TS bundle after compilation.
     -->
