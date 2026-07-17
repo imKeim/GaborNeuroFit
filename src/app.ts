@@ -607,9 +607,15 @@ window.addEventListener('load', async () => {
                 }
             }
         },
-        onDragStart: () => {
+        onDragStart: (event?: Event) => {
             const s = Store.state;
             if (s.isPaused) return;
+
+            // Restrict physical touch/drag operations strictly to the surface of `#container` in Synoptophore
+            if (s.appMode === 'synoptophore' && event) {
+                const target = event.target as HTMLElement;
+                if (!target.closest('#container')) return;
+            }
 
             const curtain = document.getElementById('calibration-curtain');
             if (curtain && curtain.classList.contains('active')) {
@@ -665,14 +671,18 @@ window.addEventListener('load', async () => {
                         const ny = (clientY - rect.top) / rect.height;
                         const edgeZone = 0.25;
 
-                        let didNudge = false;
-                        if (nx < edgeZone) { Store.updateState('synopTargetX', s.synopTargetX - 1); didNudge = true; }
-                        else if (nx > 1 - edgeZone) { Store.updateState('synopTargetX', s.synopTargetX + 1); didNudge = true; }
+                        // Boundary check: Restrict nudge triggers strictly to the physical surface of `#container`
+                        const isInsideContainer = (nx >= 0 && nx <= 1 && ny >= 0 && ny <= 1);
+                        if (isInsideContainer) {
+                            let didNudge = false;
+                            if (nx < edgeZone) { Store.updateState('synopTargetX', s.synopTargetX - 1); didNudge = true; }
+                            else if (nx > 1 - edgeZone) { Store.updateState('synopTargetX', s.synopTargetX + 1); didNudge = true; }
 
-                        if (ny < edgeZone) { Store.updateState('synopTargetY', s.synopTargetY - 1); didNudge = true; }
-                        else if (ny > 1 - edgeZone) { Store.updateState('synopTargetY', s.synopTargetY + 1); didNudge = true; }
+                            if (ny < edgeZone) { Store.updateState('synopTargetY', s.synopTargetY - 1); didNudge = true; }
+                            else if (ny > 1 - edgeZone) { Store.updateState('synopTargetY', s.synopTargetY + 1); didNudge = true; }
 
-                        if (didNudge) triggerSynopDragEffects();
+                            if (didNudge) triggerSynopDragEffects();
+                        }
                     }
                 }
                 return;

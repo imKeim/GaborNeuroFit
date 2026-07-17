@@ -102,7 +102,7 @@ export function bindInputControls(handlers: InputHandlers): void {
 
     if (workspace) {
         workspace.addEventListener('mousedown', (event: MouseEvent) => {
-            if (typeof handlers.onDragStart === 'function') handlers.onDragStart();
+            if (typeof handlers.onDragStart === 'function') handlers.onDragStart(event);
             isMouseDragging = true;
             swipeStartX = event.clientX;
             swipeStartY = event.clientY;
@@ -160,7 +160,7 @@ export function bindInputControls(handlers: InputHandlers): void {
             swipeStartY = touch.clientY;
             swipeStartTime = Date.now();
 
-            if (typeof handlers.onDragStart === 'function') handlers.onDragStart();
+            if (typeof handlers.onDragStart === 'function') handlers.onDragStart(event);
         }, { passive: true });
 
         workspace.addEventListener('touchmove', (event: TouchEvent) => {

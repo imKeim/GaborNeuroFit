@@ -1,10 +1,11 @@
-/*
- * GaborNeuroFit - Multi-User Clinical Data Repository
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file repository.ts
+ * @description Relational Data Access Layer built on top of Web Storage (localStorage).
+ * Simulates a robust database architecture featuring patient profile indexing, chronological session 
+ * query interfaces, cascading relational deletions, and polymorphic Factory schemas.
  *
- * This module implements a decoupled, relational persistence layer on top of localStorage,
- * providing robust profile management, session tracking, and cascading deletions.
- * Migrated to TypeScript: Employs strict type-casting for safe hydration to prevent JSON parsing faults.
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
 import type {
@@ -17,43 +18,75 @@ import type {
     EyeSide
 } from '../types/clinical';
 
+/**
+ * @description Structure of a registered patient profile in the local storage database.
+ */
 export interface PatientProfile {
+    /** @description Cryptographically-secure unique patient identifier, format usr_Date_Entropy */
     id: string;
+    /** @description Sanitized case-insensitive profile name */
     name: string;
+    /** @description Unix timestamp of profile instantiation */
     createdAt: number;
 }
 
 /**
- * @description Flexible Data Transfer Object (DTO) for incoming session saves.
- * Allows the Store to pass a unified object which the Repository will decompose
- * into strict Polymorphic interfaces (Gabor, RDS, Synoptophore) before committing to DB.
+ * @description Flexible Data Transfer Object (DTO) conveying polymorphic session payloads.
+ * Serves as a transitional buffer, decoupling the reactive state tree from the persistence layer.
  */
 export interface SaveSessionPayload {
+    /** @description Target session unique identifier */
     sessionId: string;
+    /** @description Gabor or RDS success score */
     score?: number;
+    /** @description Gabor or RDS total trial limit */
     total?: number;
+    /** @description Difficulty macro stage */
     level?: number;
+    /** @description Contrast threshold ratio achieved [0.01 to 1.0] */
     contrast?: number;
+    /** @description Active clinical modality preset identifier */
     protocol: GaborPreset | 'synoptophore' | 'rds';
+    /** @description Flash duration or auto-next timer values */
     speed?: FlashDurationMode | number | string;
+    /** @description Binocular 3D split toggle */
     isAnaglyph?: boolean;
+    /** @description Contrast balancer ratio of the dominant eye [10 to 100] */
     balance?: number;
+    /** @description Active lateral lazy eye side selection */
     lazyEyeSide?: EyeSide;
+    /** @description 10Hz alpha-flicker toggle */
     isFlicker?: boolean;
+    /** @description Visual crowding flanking bars toggle */
     isCrowding?: boolean;
+    /** @description Parafoveal visual fields eccentric shift toggle */
     isPeripheral?: boolean;
+    /** @description Central fixation helper cross toggle */
     isPermanentCross?: boolean;
+    /** @description Synoptophore horizontal deviation step */
     targetX?: number | null;
+    /** @description Synoptophore vertical deviation step */
     targetY?: number | null;
+    /** @description Original starting deviation offset distance in pixels */
     startDistance?: number | null;
+    /** @description Successful vergence pull or muscular slip outcome */
     outcome?: 'success' | 'slip' | null;
+    /** @description Flanker spacing distance coefficient */
     flankerDistanceCoeff?: number;
+    /** @description RDS cell dot size in pixels */
     rdsDotSize?: number | null;
+    /** @description RDS noise dot ratio percentage */
     rdsDensity?: number | null;
+    /** @description RDS micro-stereopsis disparity threshold achieved in pixels */
     rdsDisparity?: number | null;
 }
 
+/**
+ * @description Static relational database orchestrator class.
+ * Employs strict JSON parsing guards to safely mutate and query Web Storage schemas.
+ */
 export class DataRepository {
+    /** @description LocalStorage schema keys mapping profiles, sessions, and active UID indices */
     static readonly KEYS = {
         PROFILES: 'gabor_db_profiles',
         SESSIONS: 'gabor_db_sessions',
@@ -61,10 +94,14 @@ export class DataRepository {
     };
 
     /**
-     * @description Verifies the integrity of the local database.
-     * Automatically bootstraps a default profile if the database is blank.
-     *
-     * @param {Record<string, string>} translations - Active localization dictionary
+     * @description Verifies and bootstraps the local storage schema.
+     * Automatically registers a default patient profile if the profiles database is empty.
+     * 
+     * @architecture
+     * Generates a secure, cryptographically unique patient identifier using the pattern 
+     * 'usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7) to prevent double-click collisions.
+     * 
+     * @param {Record<string, string>} translations - Dictionary used to localize the default profile name.
      */
     static init(translations: Record<string, string> = {}) {
         try {
@@ -99,8 +136,8 @@ export class DataRepository {
     }
 
     /**
-     * @description Retrieves all registered patient profiles symmetrically.
-     * @returns {PatientProfile[]} Array of strict patient profiles
+     * @description Retrieves all registered patient profiles from Web Storage.
+     * @returns {PatientProfile[]} Array of profiles or empty array on parse failure.
      */
     static getProfiles(): PatientProfile[] {
         try {
@@ -116,7 +153,7 @@ export class DataRepository {
 
     /**
      * @description Retrieves the currently active user profile ID.
-     * @returns {string | null} The active patient UUID
+     * @returns {string | null} Active profile UID or null.
      */
     static getActiveProfileId(): string | null {
         this.init(); // Guarantee DB integrity before read
@@ -124,8 +161,8 @@ export class DataRepository {
     }
 
     /**
-     * @description Switches the active patient session context.
-     * @param {string} id - Target patient profile UUID
+     * @description Switches the active session patient profile.
+     * @param {string} id - Target profile UID.
      */
     static setActiveProfileId(id: string): void {
         try {
@@ -141,8 +178,10 @@ export class DataRepository {
 
     /**
      * @description Spawns a new patient profile.
-     * @param {string} name - Desired profile name
-     * @returns {PatientProfile | null} The created profile, or null on failure
+     * Enforces case-insensitive name uniqueness checks to prevent programmatic duplicates.
+     * 
+     * @param {string} name - Desired profile name.
+     * @returns {PatientProfile | null} The created profile, or null on validation failure.
      */
     static createProfile(name: string): PatientProfile | null {
         try {
@@ -173,9 +212,14 @@ export class DataRepository {
 
     /**
      * @description Executes a cascading deletion of a profile and all its associated training sessions.
-     * Prevents deleting the last remaining profile in the database.
-     * @param {string} id - Target profile ID
-     * @returns {boolean} True if deletion succeeded, false otherwise
+     * 
+     * @architecture
+     * - Hard-locked to prevent 0-profile states in local storage.
+     * - Cascading Delete: Safely filters and purges all historical session records matching the target userId,
+     *   preventing orphaned records and localStorage storage caps exhaustion.
+     * 
+     * @param {string} id - Target profile UID.
+     * @returns {boolean} True if deletion succeeded, false otherwise.
      */
     static deleteProfile(id: string): boolean {
         try {
@@ -213,10 +257,14 @@ export class DataRepository {
 
     /**
      * @description Appends a newly acquired training session to the active patient context.
-     * Implements a robust UPSERT engine based on the active session ID to prevent duplicate entry spam.
-     *
-     * @clinical Polymorphic Factory Routing avoids LocalStorage bloat by strictly confining
-     * saved metrics to the active treatment modality interfaces.
+     * 
+     * @architecture
+     * - Polymorphic Factory Routing: Decomposes the dynamic SaveSessionPayload DTO into Gabor, RDS, 
+     *   or Synoptophore explicit schemas, stripping out irrelevant fields to maintain strict local storage hygiene.
+     * - UPSERT Engine: Evaluates if a record already exists with the current sessionId. Overwrites the 
+     *   existing block if matched, or appends a new record.
+     * 
+     * @param {SaveSessionPayload} payload - Unified payload conveying completed session parameters.
      */
     static saveSession(payload: SaveSessionPayload): void {
         try {
@@ -301,9 +349,8 @@ export class DataRepository {
     }
 
     /**
-     * @description Retrieves all historically recorded sessions across the entire application database.
-     * Raw parsing assumes SessionCore conformity.
-     * @returns {SessionCore[]} All session entries
+     * @description Retrieves all committed sessions.
+     * @returns {SessionCore[]} Array of all session records in the database.
      */
     static getAllSessions(): SessionCore[] {
         try {
@@ -318,9 +365,10 @@ export class DataRepository {
     }
 
     /**
-     * @description Retrieves sessions belonging exclusively to the currently active patient context.
-     * Sorted symmetrically in descending order (newest sessions first).
-     * @returns {SessionCore[]} Filtered and sorted sessions
+     * @description Queries the database for sessions matching the active patient context.
+     * Sorts records in chronological descending order (newest sessions first).
+     * 
+     * @returns {SessionCore[]} Filtered and sorted sessions list.
      */
     static getSessionsForActiveUser(): SessionCore[] {
         const activeUid = this.getActiveProfileId();
@@ -333,8 +381,8 @@ export class DataRepository {
     }
 
     /**
-     * @description Retrieves exclusively sensory Gabor training sessions for the active user.
-     * Safely casts the result to the GaborSession strict interface.
+     * @description Queries exclusively sensory Gabor training sessions for the active user.
+     * @returns {GaborSession[]} Filtered Gabor sessions.
      */
     static getGaborSessionsForActiveUser(): GaborSession[] {
         return this.getSessionsForActiveUser()
@@ -342,8 +390,8 @@ export class DataRepository {
     }
 
     /**
-     * @description Retrieves exclusively motor Synoptophore training sessions for the active user.
-     * Safely casts the result to the SynoptophoreSession strict interface.
+     * @description Queries exclusively motor Synoptophore training sessions for the active user.
+     * @returns {SynoptophoreSession[]} Filtered Synoptophore sessions.
      */
     static getSynopSessionsForActiveUser(): SynoptophoreSession[] {
         return this.getSessionsForActiveUser()
@@ -351,8 +399,8 @@ export class DataRepository {
     }
 
     /**
-     * @description Retrieves exclusively stereoscopic RDS training sessions for the active user.
-     * Safely casts the result to the RdsSession strict interface.
+     * @description Queries exclusively stereoscopic RDS training sessions for the active user.
+     * @returns {RdsSession[]} Filtered RDS sessions.
      */
     static getRdsSessionsForActiveUser(): RdsSession[] {
         return this.getSessionsForActiveUser()
@@ -360,7 +408,7 @@ export class DataRepository {
     }
 
     /**
-     * @description Purges historical sessions associated exclusively with the active patient context.
+     * @description Purges historical session records mapped to the active patient profile UID.
      */
     static clearActiveUserHistory(): void {
         try {
@@ -377,8 +425,7 @@ export class DataRepository {
 
     /**
      * @description One-time legacy database migrator.
-     * Imports old monolithic gabor_history_v2 array into the new multi-user relational database.
-     * Fully typed to prevent null-reference leaks during the mutation.
+     * Parses old monolithic gabor_history_v2 records and maps them cleanly into the Relational v2.5 schema.
      */
     static migrateLegacyDatabase(): void {
         try {

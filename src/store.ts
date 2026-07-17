@@ -1,10 +1,12 @@
-/*
- * GaborNeuroFit - State Management & LocalStorage Persistency Module
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file store.ts
+ * @description Centralized state management module (Store).
+ * Manages the reactive global application state (AppState), handles bidirectional settings 
+ * persistence via localStorage, coordinates mutually exclusive clinical parameters, 
+ * and implements the adaptive 1-up / 3-down psychometric contrast threshold staircase.
  *
- * This module orchestrates the reactive state of the application.
- * Migrated to TypeScript: Employs strict generic type guards to ensure
- * DOM configurations perfectly conform to the clinical SSoT expectations.
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
 import { DataRepository } from './store/repository.js';
@@ -21,6 +23,7 @@ import type {
 } from './types/clinical';
 
 export const Store = {
+    /** @description The Single Source of Truth (SSoT) reactive application state tree */
     state: {
         // --- System & Meta ---
         sessionId: 'session_' + Date.now(),
@@ -116,14 +119,27 @@ export const Store = {
         rdsHistory: [] as number[]
     } as AppState,
 
+    /**
+     * @description Regroups active session trackers by generating a fresh cryptographic timestamp UID.
+     * Prevents database primary key collision on subsequent trial executions.
+     */
     rotateSessionId() {
         this.state.sessionId = 'session_' + Date.now();
     },
 
     /**
-     * @description Core mutation gateway. Employs generic type assertions to ensure that
-     * the assigned value strictly matches the expected property interface.
-     * Prevents fatal runtime misalignment between DOM strings and clinical math logic.
+     * @description Unified state mutation gateway.
+     * Enforces compile-time generics and strictly clamps physical boundaries
+     * to prevent out-of-range parameters from causing GPU/canvas rendering failures.
+     * 
+     * @architecture
+     * - Clamps subpixel RGB values to [0...255] sRGB.
+     * - Clamps RDS disparity steps to [1...8] pixels.
+     * - Clamps Gabor levels to [1...5] and contrast ratios to [0.1...1.0].
+     * - Resolves vertical/horizontal locks on Synoptophore vectors dynamically.
+     * 
+     * @param {K} key - Target state key.
+     * @param {AppState[K]} value - Strictly-typed value payload.
      */
     updateState<K extends keyof AppState>(key: K, value: AppState[K]) {
         let isPresetChanged = false;
@@ -148,8 +164,6 @@ export const Store = {
 
         // =========================================================
         // MATHEMATICAL BOUNDARY CLAMPING
-        // Even with TS ensuring 'value' is a number, we must
-        // clamp physical constraints to prevent renderer crashes.
         // =========================================================
 
         if (key === 'rdsLevel') {
@@ -268,6 +282,13 @@ export const Store = {
         }
     },
 
+    /**
+     * @description Resets volatile session scores, streaks, and histories back to baseline.
+     * Preserves physical calibration parameters, language selection, and user presets.
+     * 
+     * @clinical Symmetrically restores Gabor contrast thresholds back to 50% and 
+     * RDS disparity steps back to the configured rdsStartDisparity to start a fresh therapy block.
+     */
     resetSessionProgress() {
         this.state.autoContrast = 0.50;
         this.state.correctStreak = 0;
@@ -303,6 +324,9 @@ export const Store = {
         this.rotateSessionId();
     },
 
+    /**
+     * @description Launches Pomodoro visual fatigue timer tracking upon first physical trial initiation.
+     */
     startTimerIfNeeded() {
         if (this.state.timerLimitMinutes > 0) {
             if (this.state.timerRemainingSeconds <= 0) {
@@ -315,7 +339,12 @@ export const Store = {
     },
 
     /**
-     * @description Resolves logically conflicting properties (e.g. mutually exclusive UI toggles).
+     * @description Resolves mutually exclusive visual configurations inside Gabor and RDS states.
+     * 
+     * @clinical
+     * - Crowding (flankers) and Peripheral сapture are mutually exclusive to prevent overlapping cognitive tasks.
+     * - 10Hz Flicker requires Gabor patch permanent rendering (isStaticEnabled = true) to prevent timing conflicts.
+     * - RDS vertical eccentricity and floating pursuit are mutually exclusive to isolate motor tracking reserves.
      */
     resolveConflicts(lastActiveTrigger: string | null = null) {
         const s = this.state;
@@ -427,7 +456,7 @@ export const Store = {
             this.state.rdsIsPermanentCrossEnabled = localStorage.getItem('gabor_rds_permanent_cross') !== 'false';
             this.state.rdsSessionLimit = parseInt(localStorage.getItem('gabor_rds_session_limit') || '30', 10);
 
-            // Dynamically resolve active rdsLevel based on rdsDisparity on cold launch (F5)
+            // Dynamically resolve active rdsLevel based on active rdsDisparity on cold launch (F5)
             let initLvl = 1;
             const d = this.state.rdsDisparity;
             if (d <= 8 && d >= 7) initLvl = 1;
@@ -453,6 +482,9 @@ export const Store = {
         this.resolveConflicts(null);
     },
 
+    /**
+     * @description Dehydrates active configuration parameters to localStorage.
+     */
     saveSettings() {
         try {
             localStorage.setItem('gabor_app_mode', this.state.appMode);
@@ -521,6 +553,10 @@ export const Store = {
         }
     },
 
+    /**
+     * @description Dynamically evaluates active parameters against template rules to match preset modes.
+     * @returns {GaborPreset} Matched template identifier or 'custom'.
+     */
     detectMatchingPreset(): GaborPreset {
         const s = this.state;
         if (s.allowStageAdvance === true && s.flashDurationMode === 'adaptive' && s.isPeripheralEnabled === false && s.isCrowdingEnabled === false && s.isOrthogonalFlankersEnabled === false && s.isDynamicFlankersEnabled === false && s.isStaticEnabled === false && s.isAnaglyphEnabled === false && s.allowWideVariance === false && s.allowShapeVariance === false && s.isFlickerEnabled === false && s.isFusionLockEnabled === false) return 'occlusion';
@@ -531,6 +567,10 @@ export const Store = {
         return 'custom';
     },
 
+    /**
+     * @description Hardcodes configuration attributes mapped to selected preset templates.
+     * @param {GaborPreset} mode - Target preset mode.
+     */
     applyPresetTemplate(mode: GaborPreset) {
         this.state.presetMode = mode;
         this.state.flankerDistanceCoeff = 2.0;
@@ -560,6 +600,11 @@ export const Store = {
      * In addition, macro-advancement (Stage jumping) requires 85% sustained accuracy
      * over a 20-trial rolling window. This strict verification parameter ensures that
      * spatial frequency constraints are elevated only after complete neural consolidation occurs.
+     *
+     * @mathematical
+     * - Incorrect Response: Increments contrast by +0.08 to restore stimulus visibility.
+     * - Correct Response (Three consecutive): Decreases contrast by -0.05.
+     * - Clears floating-point errors via IEEE-754 decimal rounding mapping: Math.round(val * 100) / 100.
      *
      * @param {boolean} isCorrect - Did the user correctly identify the target orientation?
      */
@@ -637,6 +682,9 @@ export const Store = {
         }
     },
 
+    /**
+     * @description Saves completed Gabor session statistics to local database storage.
+     */
     saveSession() {
         if (this.state.total === 0) return;
 
@@ -661,6 +709,10 @@ export const Store = {
         });
     },
 
+    /**
+     * @description Returns historically recorded sessions for the currently active user context.
+     * @returns {SessionCore[]} Array of active user sessions.
+     */
     getHistory() {
         return DataRepository.getSessionsForActiveUser();
     }
