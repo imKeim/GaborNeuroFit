@@ -474,7 +474,7 @@ img.emoji {
     border-radius: var(--radius-premium);
     overflow: hidden;
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3); /* Static, deeper clinical shadow */
-    cursor: pointer;
+    cursor: pointer; 
     touch-action: none; /* Prevents absolutely all browser scrolling/zooming over the canvas */
 
     /* Hardware Accelerated Compositing Isolation */
@@ -497,13 +497,16 @@ img.emoji {
  *    during Synoptophore vergence training (Spatiomotor integration).
  * Designed with a cold, low-opacity clinical glow to prevent pupillary light reflex.
  */
-#container:active,
 #container:not(.disabled):active,
 #container.dragging {
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3),
                 0 0 0 2px rgba(255, 255, 255, 0.25),
                 0 0 24px rgba(59, 144, 255, 0.25);
     transition: box-shadow 0.1s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+#container.dragging {
+    cursor: grabbing !important; /* Visual closed-fist feedback during active dragging operations */
 }
 canvas {
     display: block;

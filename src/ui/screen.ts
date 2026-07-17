@@ -289,11 +289,11 @@ export function updateScoreboard(state: AppState, translations: Record<string, s
 
             const badgeX = document.getElementById('badge-prism-x');
             const badgeY = document.getElementById('badge-prism-y');
-            const badgeScore = document.getElementById('badge-synop-score');
+            const valSynopScore = document.getElementById('val-synop-score');
 
             if (badgeX) badgeX.innerHTML = `X: <strong>${signX}${state.synopTargetX}px</strong> (${signX}${pdX}Δ)`;
             if (badgeY) badgeY.innerHTML = `Y: <strong>${signY}${state.synopTargetY}px</strong> (${signY}${pdY}Δ)`;
-            if (badgeScore) badgeScore.innerHTML = `🏆 <strong>${state.synopScore}</strong>`;
+            if (valSynopScore) valSynopScore.innerText = state.synopScore.toString();
         }
 
         if (progressContainer && progressBar) {

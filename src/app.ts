@@ -136,6 +136,7 @@ function syncVisualState(): void {
         containerNode.style.cursor = s.synopState === 'align' ? 'grab' : 'default';
         containerNode.classList.toggle('disabled', s.synopState !== 'align');
     } else {
+        // Restore dynamic pointer visibility based on click readiness to preserve button metaphor
         containerNode.style.cursor = btnStart.disabled ? 'default' : 'pointer';
         containerNode.classList.toggle('disabled', btnStart.disabled);
     }
