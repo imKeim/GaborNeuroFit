@@ -132,14 +132,16 @@ function syncVisualState(): void {
         containerNode.classList.remove('disabled');
     } else if (s.appMode === 'synoptophore') {
         // Manage Synoptophore cursor states symmetrically depending on physical interaction phase
-        if (s.synopState === 'idle') {
-            containerNode.style.cursor = 'pointer'; // Pointing hand invitation to click start curtain on desktop
+        if (s.synopState === 'idle' || s.synopState === 'pulling') {
+            containerNode.style.cursor = 'pointer'; // Pointing hand invitation during setup/slip phases
         } else if (s.synopState === 'align') {
             containerNode.style.cursor = 'move'; // Crisp OS-native 2D move arrows for high-precision dragging
         } else {
-            containerNode.style.cursor = 'default'; // Passive arrow during automatic pulling/active alignment steps
+            containerNode.style.cursor = 'default';
         }
-        containerNode.classList.toggle('disabled', s.synopState !== 'align');
+        // Container remains interactive during both active dragging and click-to-slip vergence phases
+        const isDisabled = (s.synopState !== 'align' && s.synopState !== 'pulling');
+        containerNode.classList.toggle('disabled', isDisabled);
     } else {
         // Restore dynamic pointer visibility based on click readiness to preserve button metaphor
         containerNode.style.cursor = btnStart.disabled ? 'default' : 'pointer';
@@ -587,6 +589,11 @@ window.addEventListener('load', async () => {
             }
 
             if (s.appMode === 'synoptophore') {
+                // Trigger vergence slip/reset if patient taps the canvas during active vergence pulling
+                if (s.synopState === 'pulling' && synoptophoreController) {
+                    synoptophoreController.breakActiveFusion();
+                    return;
+                }
                 Store.startTimerIfNeeded();
                 updateScoreboard(Store.state, activeTranslations);
                 return;

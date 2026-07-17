@@ -25,7 +25,9 @@ export class SynoptophoreController {
         private overlayCtx: CanvasRenderingContext2D,
         private btnStart: HTMLButtonElement,
         private getTranslations: () => Record<string, string>,
-        private showCustomModal: (title: string, text: string) => void
+        private showCustomModal: (title: string, text: string) => void,
+        private onSuccess?: () => void,
+        private onSlip?: (targetX: number, targetY: number, startDistance: number) => void
     ) {}
 
     startFlickerLoop(): void {
@@ -180,6 +182,10 @@ export class SynoptophoreController {
         const currentDist = Math.sqrt(s.synopTargetX * s.synopTargetX + s.synopTargetY * s.synopTargetY);
         const startDist = s.synopStartDistance;
 
+        // Cache active coordinates before state-reset occurs
+        const targetXBeforeReset = s.synopTargetX;
+        const targetYBeforeReset = s.synopTargetY;
+
         let percent = 0;
         if (startDist > 0) {
             percent = Math.max(0, Math.min(100, Math.round(100 * (1 - currentDist / startDist))));
@@ -210,6 +216,11 @@ export class SynoptophoreController {
         updateScoreboard(Store.state, t);
 
         this.showCustomModal(title, text);
+
+        // Trigger the onSlip callback dynamically if configured
+        if (this.onSlip) {
+            this.onSlip(targetXBeforeReset, targetYBeforeReset, startDist);
+        }
     }
 
     /**
@@ -239,6 +250,11 @@ export class SynoptophoreController {
         drawSynoptophoreTargets(this.overlayCanvas, this.overlayCtx, Store.state);
         updateScoreboard(Store.state, t);
 
-        this.showCustomModal(t.synopSuccessTitle || "Success", t.synopSuccessText || "Perfect fusion.");
+        this.showCustomModal(t.synopSuccessTitle || "Success", t.synopSuccessText || "Perfect fusions.");
+
+        // Trigger the onSuccess callback statically if configured
+        if (this.onSuccess) {
+            this.onSuccess();
+        }
     }
 }
