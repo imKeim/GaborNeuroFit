@@ -97,7 +97,7 @@ function syncVisualState(): void {
         }
     } else {
         crossNode.style.display = 'block';
-        
+            
         // In Gabor mode, calculate cross size dynamically based on currentLevel
         let crossSize = 36;
         if (s.currentLevel === 1) crossSize = 36;
@@ -107,12 +107,24 @@ function syncVisualState(): void {
         else if (s.currentLevel === 5) crossSize = 12;
         crossNode.style.fontSize = crossSize + 'px';
 
+        const gaborState = gaborController ? gaborController.currentState : 'IDLE';
+        // Tie cross dimming strictly to physical stimulus visibility on canvas
+        const isStimulusVisible = 
+            (gaborState === 'STIMULUS_ACTIVE') || 
+            (gaborState === 'AWAITING_INPUT' && s.isStaticEnabled);
+
         if (s.isPaused) {
             crossNode.className = 'cross-dimmed';
-        } else if (s.isPermanentCrossEnabled) {
-            crossNode.className = 'cross-dimmed';
+        } else if (isStimulusVisible) {
+            // Symmetrically dim or hide cross only while stimulus remains visible
+            if (s.isPermanentCrossEnabled) {
+                crossNode.className = 'cross-dimmed';
+            } else {
+                crossNode.className = 'cross-hidden';
+            }
         } else {
-            crossNode.className = 'cross-hidden';
+            // Instantly restore full opacity (1.0) on blink completion to assist gaze alignment
+            crossNode.className = '';
         }
     }
 
@@ -127,6 +139,65 @@ function syncVisualState(): void {
         containerNode.style.cursor = btnStart.disabled ? 'default' : 'pointer';
         containerNode.classList.toggle('disabled', btnStart.disabled);
     }
+}
+
+/**
+ * @description Centralized router for safe transitions between clinical modes.
+ */
+function transitionToMode(newMode: AppMode): void {
+    const s = Store.state;
+
+    if (gaborController) gaborController.deactivate();
+    if (rdsController) rdsController.deactivate();
+    if (synoptophoreController) synoptophoreController.deactivate();
+
+    Store.updateState('appMode', newMode);
+    Store.resetSessionProgress();
+
+    btnStart.disabled = false;
+    btnStart.style.opacity = "1";
+
+    const watermark = document.getElementById('pause-watermark');
+    const bPause = document.getElementById('btn-pause');
+    const controlsLayout = document.getElementById('controls-layout');
+    const settingsModal = document.getElementById('settings-modal');
+
+    if (watermark) watermark.classList.remove('active');
+    if (controlsLayout) controlsLayout.classList.remove('paused-state');
+    if (container) container.classList.remove('paused-state');
+    if (settingsModal) settingsModal.classList.remove('calibration-mode');
+
+    if (bPause) {
+        bPause.innerText = '⏸️';
+        if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(bPause);
+    }
+
+    const curtain = document.getElementById('calibration-curtain');
+    const isSynop = (newMode === 'synoptophore');
+    const isRds = (newMode === 'rds');
+
+    if (container) {
+        if (isRds) {
+            container.classList.add('mode-rds');
+        } else {
+            container.classList.remove('mode-rds');
+        }
+    }
+
+    if (isSynop) {
+        if (curtain) curtain.classList.add('active');
+        drawIdleState(canvas, null, overlayCanvas, overlayCtx, true);
+        if (synoptophoreController) synoptophoreController.syncFlickerState();
+    } else if (isRds) {
+        if (curtain) curtain.classList.remove('active');
+        drawIdleState(canvas, null, overlayCanvas, overlayCtx, false);
+    } else {
+        if (curtain) curtain.classList.remove('active');
+        drawIdleState(canvas, null, overlayCanvas, overlayCtx, s.isFusionLockEnabled);
+    }
+
+    setLanguage(s.currentLang);
+    syncVisualState();
 }
 
 /**
@@ -713,68 +784,10 @@ window.addEventListener('load', async () => {
         );
 
         const isTimerChanged = (snapTimerLimit !== Store.state.timerLimitMinutes);
-
-        const btnReset = document.getElementById('btn-reset');
-        const btnLeft = document.getElementById('btn-left');
-        const btnRight = document.getElementById('btn-right');
         const isSynop = (Store.state.appMode === 'synoptophore');
-        const isRds = (Store.state.appMode === 'rds');
-
-        if (btnReset) btnReset.style.display = isSynop ? 'flex' : 'none';
-        if (btnLeft) btnLeft.style.display = isSynop ? 'none' : 'flex';
-        if (btnRight) btnRight.style.display = isSynop ? 'none' : 'flex';
-
-        if (isRds) {
-            container.classList.add('mode-rds');
-        } else {
-            container.classList.remove('mode-rds');
-        }
 
         if (isCriticalChange) {
-            Store.resetSessionProgress();
-
-            btnStart.disabled = false;
-            btnStart.style.opacity = "1";
-
-            if (gaborController) gaborController.stopUnifiedRenderingLoop();
-            if (synoptophoreController) synoptophoreController.stopFlickerLoop();
-
-            const watermark = document.getElementById('pause-watermark');
-            const bPause = document.getElementById('btn-pause');
-            const controlsLayout = document.getElementById('controls-layout');
-            const container = document.getElementById('container');
-
-            if (watermark) watermark.classList.remove('active');
-            if (controlsLayout) controlsLayout.classList.remove('paused-state');
-            if (container) container.classList.remove('paused-state');
-
-            if (bPause) {
-                bPause.innerText = '⏸️';
-                // @ts-ignore 
-                if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(bPause);
-            }
-
-            if (gaborController) gaborController.isAnaglyphTestActive = false;
-            const settingsModal = document.getElementById('settings-modal');
-            if (settingsModal) settingsModal.classList.remove('calibration-mode');
-
-            if (gaborController) gaborController.abort();
-            if (synoptophoreController) synoptophoreController.abort();
-            if (rdsController) rdsController.abort();
-
-            if (isSynop) {
-                const curtain = document.getElementById('calibration-curtain');
-                if (curtain) curtain.classList.add('active');
-                Store.updateState('synopState', 'idle');
-                drawIdleState(canvas, null, overlayCanvas, overlayCtx, true);
-                cross.style.display = 'none';
-            } else if (isRds) {
-                drawIdleState(canvas, null, overlayCanvas, overlayCtx, false);
-                cross.style.display = 'block';
-            } else {
-                drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
-                cross.style.display = 'block';
-            }
+            transitionToMode(Store.state.appMode);
         } else {
             if (gaborController) gaborController.isAnaglyphTestActive = false;
             const settingsModal = document.getElementById('settings-modal');
@@ -790,7 +803,6 @@ window.addEventListener('load', async () => {
                     const curtain = document.getElementById('calibration-curtain');
                     if (curtain) curtain.classList.add('active');
                     drawIdleState(canvas, null, overlayCanvas, overlayCtx, true);
-                    cross.style.display = 'none';
                 }
             }
 
@@ -799,16 +811,16 @@ window.addEventListener('load', async () => {
                     if (Store.state.synopState !== 'idle' && !Store.state.synopFlickerActive) {
                         drawSynoptophoreTargets(overlayCanvas, overlayCtx, Store.state);
                     }
-                } else if (isRds && rdsController && rdsController.currentState === 'IDLE') {
+                } else if (Store.state.appMode === 'rds' && rdsController && rdsController.currentState === 'IDLE') {
                     drawIdleState(canvas, null, overlayCanvas, overlayCtx, false);
-                } else if (!isSynop && !isRds && gaborController && gaborController.currentState === 'IDLE') {
+                } else if (Store.state.appMode === 'gabor' && gaborController && gaborController.currentState === 'IDLE') {
                     drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
                 }
             }
-        }
 
-        setLanguage(Store.state.currentLang);
-        syncVisualState();
+            setLanguage(Store.state.currentLang);
+            syncVisualState();
+        }
     }
 
     function updateMuteBtnUI(): void {
@@ -909,32 +921,7 @@ window.addEventListener('load', async () => {
     updateMuteBtnUI();
     if (settingsController) settingsController.bindSettingsInteractions();
 
-    syncVisualState();
-
-    if (Store.state.appMode === 'synoptophore') {
-        const curtain = document.getElementById('calibration-curtain');
-        if (curtain) curtain.classList.add('active');
-
-        Store.updateState('synopState', 'idle');
-
-        container.classList.remove('mode-rds');
-        drawIdleState(canvas, null, overlayCanvas, overlayCtx, true);
-        if (Store.state.synopFlickerActive) {
-            if (synoptophoreController) synoptophoreController.startFlickerLoop();
-        } else {
-            drawSynoptophoreTargets(overlayCanvas, overlayCtx, Store.state);
-        }
-        cross.style.display = 'none';
-    } else if (Store.state.appMode === 'rds') {
-        drawIdleState(canvas, null, overlayCanvas, overlayCtx, false);
-        cross.style.display = 'block';
-    } else {
-        container.classList.remove('mode-rds');
-        drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
-        cross.style.display = 'block';
-    }
-
-    syncVisualState();
+    transitionToMode(Store.state.appMode);
 
     const pomodoro = new PomodoroTimer(
         (state) => {

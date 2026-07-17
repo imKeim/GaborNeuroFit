@@ -744,12 +744,11 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
     backdrop-filter: blur(0px);
     -webkit-backdrop-filter: blur(0px);
 
-    /* Hardware Accelerated State Toggle */
+    /* Safe State Toggle (Avoid independent GPU layer promotion to prevent backdrop-filter bugs) */
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    will-change: backdrop-filter, opacity;
-    transform: translateZ(0);
+    will-change: opacity;
     transition: opacity 0.3s ease, background-color 0.2s ease, backdrop-filter 0.2s ease, visibility 0s linear 0.3s;
 }
 

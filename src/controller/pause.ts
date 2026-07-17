@@ -29,16 +29,21 @@ export class PauseController {
      */
     togglePause(): void {
         const s = Store.state;
+
+        // Pause execution is structurally forbidden unless all clinical subsystems
+        // are in a completely stable, non-active IDLE state.
+        const isGaborActive = s.appMode === 'gabor' && this.gaborCtrl && this.gaborCtrl.currentState !== 'IDLE';
+        const isRdsActive = s.appMode === 'rds' && this.rdsCtrl && this.rdsCtrl.currentState !== 'IDLE';
+        const isSynopActive = s.appMode === 'synoptophore' && s.synopState !== 'idle';
+
+        if (isGaborActive || isRdsActive || isSynopActive) {
+            return; // Symmetrically and silently ignore any pause requests during active therapy loops
+        }
+
         const container = document.getElementById('container');
         const watermark = document.getElementById('pause-watermark');
         const btnPause = document.getElementById('btn-pause');
         const controlsLayout = document.getElementById('controls-layout');
-
-        // Clinical guard: Protect muscles during active Synoptophore pulling step
-        if (s.appMode === 'synoptophore' && s.synopState === 'pulling') {
-            if (this.synoptophoreCtrl) this.synoptophoreCtrl.breakActiveFusion();
-            return;
-        }
 
         const nextPausedState = !s.isPaused;
         Store.updateState('isPaused', nextPausedState);

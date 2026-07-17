@@ -59,6 +59,12 @@ export class RdsController {
         this.tracker.clearAll();
     }
 
+    deactivate(): void {
+        this.tracker.clearAll();
+        this.currentState = RdsState.IDLE;
+        if (this.syncCross) this.syncCross();
+    }
+
     transitionTo(nextState: RdsStateValue): boolean {
         const allowed = ALLOWED_TRANSITIONS[this.currentState];
         if (!allowed || !allowed.includes(nextState)) return false;

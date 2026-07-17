@@ -77,6 +77,12 @@ export class SynoptophoreController {
         Store.updateState('synopState', 'idle');
     }
 
+    deactivate(): void {
+        this.stopFlickerLoop();
+        this.tracker.clearAll();
+        Store.updateState('synopState', 'idle');
+    }
+
     handlePrimaryAction(): void {
         const s = Store.state;
         if (s.synopState === 'align') {

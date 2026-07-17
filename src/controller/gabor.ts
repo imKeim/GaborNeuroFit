@@ -83,6 +83,13 @@ export class GaborController {
         if (this.syncCross) this.syncCross();
     }
 
+    deactivate(): void {
+        this.isAnaglyphTestActive = false;
+        this.stopUnifiedRenderingLoop();
+        this.currentState = TrialState.IDLE;
+        if (this.syncCross) this.syncCross();
+    }
+
     transitionTo(nextState: TrialStateValue): boolean {
         const allowed = ALLOWED_TRANSITIONS[this.currentState];
         if (!allowed || !allowed.includes(nextState)) {
@@ -108,7 +115,7 @@ export class GaborController {
 
         this.btnStart.disabled = true;
         this.btnStart.style.opacity = "0.4";
-        this.btnStart.innerText = this.getTranslations().nextBtn || "NEXT";
+        this.btnStart.innerText = "...";
         if (this.syncCross) this.syncCross();
         playCue(Store.state.isMuted);
 
@@ -353,8 +360,6 @@ export class GaborController {
                 this.autoNextTimeoutId = null;
                 this.triggerTrial();
             }, 900);
-        } else {
-            this.transitionTo(TrialState.IDLE);
         }
     }
 
