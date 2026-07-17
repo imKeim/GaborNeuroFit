@@ -293,7 +293,8 @@ export function updateScoreboard(state: AppState, translations: Record<string, s
 
             if (badgeX) badgeX.innerHTML = `X: <strong>${signX}${state.synopTargetX}px</strong> (${signX}${pdX}Δ)`;
             if (badgeY) badgeY.innerHTML = `Y: <strong>${signY}${state.synopTargetY}px</strong> (${signY}${pdY}Δ)`;
-            if (valSynopScore) valSynopScore.innerText = state.synopScore.toString();
+            // Symmetrically write textContent to bypass layout reflows during high-frequency drags
+            if (valSynopScore) valSynopScore.textContent = state.synopScore.toString();
         }
 
         if (progressContainer && progressBar) {

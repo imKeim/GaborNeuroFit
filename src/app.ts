@@ -13,7 +13,7 @@ import { DataRepository } from './store/repository';
 import { drawFusionTestPattern } from './engine/calibration-render';
 import { playCue, playError, playSuccess } from './engine/audio';
 import { updateScoreboard, drawIdleState, updateStatusBar } from './ui/screen';
-import { initModals, showCustomAlert, closeCustomAlert } from './ui/modal';
+import { initModals, showCustomAlert, closeCustomAlert, closeModal } from './ui/modal';
 import { bindInputControls } from './ui/controls';
 import { GaborController } from './controller/gabor';
 import { SettingsController } from './controller/settings';
@@ -24,8 +24,6 @@ import { PauseController } from './controller/pause';
 import { PomodoroTimer } from './utils/timer';
 import { drawSynoptophoreTargets } from './engine/synop-render';
 import { drawRandomDotStereogram } from './engine/rds-render';
-
-// Import decoupled bootstrap and i18n modules
 import { resizeCanvasesToDPR } from './utils/bootstrap';
 import { loadLanguage } from './utils/i18n';
 
@@ -90,7 +88,7 @@ function syncVisualState(): void {
             if (isStimulusActive) {
                 crossNode.className = 'cross-white-halo';
             } else {
-                crossNode.className = 'cross-hidden'; // Absolutely no cross anywhere else
+                crossNode.className = 'cross-hidden';
             }
         } else {
             crossNode.className = 'cross-hidden';
@@ -133,7 +131,14 @@ function syncVisualState(): void {
         containerNode.style.cursor = 'pointer';
         containerNode.classList.remove('disabled');
     } else if (s.appMode === 'synoptophore') {
-        containerNode.style.cursor = s.synopState === 'align' ? 'grab' : 'default';
+        // Manage Synoptophore cursor states symmetrically depending on physical interaction phase
+        if (s.synopState === 'idle') {
+            containerNode.style.cursor = 'pointer'; // Pointing hand invitation to click start curtain on desktop
+        } else if (s.synopState === 'align') {
+            containerNode.style.cursor = 'grab'; // Open hand ready for active dragging operations
+        } else {
+            containerNode.style.cursor = 'default'; // Passive arrow during automatic pulling/active alignment steps
+        }
         containerNode.classList.toggle('disabled', s.synopState !== 'align');
     } else {
         // Restore dynamic pointer visibility based on click readiness to preserve button metaphor
@@ -376,7 +381,42 @@ window.addEventListener('load', async () => {
         overlayCtx,
         btnStart,
         () => activeTranslations,
-        showCustomAlert
+        showCustomAlert,
+        () => {
+            const startDist = Store.state.synopStartDistance;
+            // Save successful vergence sweep conforming strictly to Polymorphic interfaces
+            DataRepository.saveSession({
+                sessionId: Store.state.sessionId,
+                protocol: 'synoptophore',
+                speed: Store.state.synopPullSpeed,
+                isAnaglyph: Store.state.isAnaglyphEnabled,
+                balance: Store.state.synopStrongEyeContrastFactor,
+                lazyEyeSide: Store.state.lazyEyeSide,
+                isFlicker: Store.state.synopFlickerActive,
+                targetX: 0,
+                targetY: 0,
+                startDistance: startDist,
+                outcome: 'success'
+            });
+            Store.rotateSessionId(); // Symmetrically rotate ID for the subsequent attempt
+        },
+        (targetX, targetY, startDistance) => {
+            // Save slipped vergence sweep conforming strictly to Polymorphic interfaces
+            DataRepository.saveSession({
+                sessionId: Store.state.sessionId,
+                protocol: 'synoptophore',
+                speed: Store.state.synopPullSpeed,
+                isAnaglyph: Store.state.isAnaglyphEnabled,
+                balance: Store.state.synopStrongEyeContrastFactor,
+                lazyEyeSide: Store.state.lazyEyeSide,
+                isFlicker: Store.state.synopFlickerActive,
+                targetX: targetX,
+                targetY: targetY,
+                startDistance: startDistance,
+                outcome: 'slip'
+            });
+            Store.rotateSessionId(); // Symmetrically rotate ID for the subsequent attempt
+        }
     );
 
     rdsController = new RdsController(
@@ -399,56 +439,6 @@ window.addEventListener('load', async () => {
         rdsController,
         () => syncVisualState()
     );
-
-    // Symmetrical Safe Monkey-Patching (Decorator Pattern)
-    // Clinically captures motor kinematics without bloating physical render loops.
-    // .bind() strictly preserves lexical evaluation context for the decorated class instance.
-    const originalSuccess = synoptophoreController.completeSuccess.bind(synoptophoreController);
-    synoptophoreController.completeSuccess = () => {
-        const startDist = Store.state.synopStartDistance;
-        originalSuccess();
-
-        // Save successful vergence sweep conforming strictly to Polymorphic interfaces
-        DataRepository.saveSession({
-            sessionId: Store.state.sessionId,
-            protocol: 'synoptophore',
-            speed: Store.state.synopPullSpeed,
-            isAnaglyph: Store.state.isAnaglyphEnabled,
-            balance: Store.state.synopStrongEyeContrastFactor,
-            lazyEyeSide: Store.state.lazyEyeSide,
-            isFlicker: Store.state.synopFlickerActive,
-            targetX: 0,
-            targetY: 0,
-            startDistance: startDist,
-            outcome: 'success'
-        });
-        Store.rotateSessionId(); // Symmetrically rotate ID for the subsequent attempt
-    };
-
-    const originalBreak = synoptophoreController.breakActiveFusion.bind(synoptophoreController);
-    synoptophoreController.breakActiveFusion = () => {
-        const targetX = Store.state.synopTargetX;
-        const targetY = Store.state.synopTargetY;
-        const startDist = Store.state.synopStartDistance;
-
-        originalBreak();
-
-        // Save slipped vergence sweep
-        DataRepository.saveSession({
-            sessionId: Store.state.sessionId,
-            protocol: 'synoptophore',
-            speed: Store.state.synopPullSpeed,
-            isAnaglyph: Store.state.isAnaglyphEnabled,
-            balance: Store.state.synopStrongEyeContrastFactor,
-            lazyEyeSide: Store.state.lazyEyeSide,
-            isFlicker: Store.state.synopFlickerActive,
-            targetX: targetX,
-            targetY: targetY,
-            startDistance: startDist,
-            outcome: 'slip'
-        });
-        Store.rotateSessionId();
-    };
 
     settingsController = new SettingsController(() => {
         updateStatusBar(Store.state, activeTranslations);
@@ -929,9 +919,20 @@ window.addEventListener('load', async () => {
             updateScoreboard(state, activeTranslations);
         },
         (state) => {
-            if (gaborController) gaborController.abort();
-            if (synoptophoreController) synoptophoreController.abort();
-            if (rdsController) rdsController.abort();
+            // Safe teardown of all controllers using the standardized deactivate() lifecycle
+            if (gaborController) gaborController.deactivate();
+            if (synoptophoreController) synoptophoreController.deactivate();
+            if (rdsController) rdsController.deactivate();
+
+            // Retrieve modal elements from DOM to cleanly close them upon session completion
+            const settingsModalEl = document.getElementById('settings-modal');
+            const infoModalEl = document.getElementById('info-modal');
+            const statsModalEl = document.getElementById('stats-modal');
+
+            // Symmetrically dismiss all open modals to return DOM to a clean, non-obstructed resting state
+            if (settingsModalEl) closeModal(settingsModalEl);
+            if (infoModalEl) closeModal(infoModalEl);
+            if (statsModalEl) closeModal(statsModalEl);
 
             // Reset the session progress (scores/totals) to zero
             Store.resetSessionProgress();
