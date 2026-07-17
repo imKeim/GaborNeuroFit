@@ -30,14 +30,27 @@ export class PauseController {
     togglePause(): void {
         const s = Store.state;
 
-        // Pause execution is structurally forbidden unless all clinical subsystems
-        // are in a completely stable, non-active IDLE state.
-        const isGaborActive = s.appMode === 'gabor' && this.gaborCtrl && this.gaborCtrl.currentState !== 'IDLE';
-        const isRdsActive = s.appMode === 'rds' && this.rdsCtrl && this.rdsCtrl.currentState !== 'IDLE';
-        const isSynopActive = s.appMode === 'synoptophore' && s.synopState !== 'idle';
-
-        if (isGaborActive || isRdsActive || isSynopActive) {
-            return; // Symmetrically and silently ignore any pause requests during active therapy loops
+        // Block pausing during active transient states that rely on critical visual timers
+        if (!s.isPaused) {
+            if (s.appMode === 'gabor' && this.gaborCtrl) {
+                const gState = this.gaborCtrl.currentState;
+                const isAutoPending = (this.gaborCtrl as any).autoNextTimeoutId !== null;
+                if (gState === 'PRE_CUE' || gState === 'STIMULUS_ACTIVE' || gState === 'FEEDBACK' || isAutoPending) {
+                    return;
+                }
+            }
+            if (s.appMode === 'rds' && this.rdsCtrl) {
+                const rState = this.rdsCtrl.currentState;
+                const isAutoPending = (this.rdsCtrl as any).autoNextTimeoutId !== null;
+                if (rState === 'PRE_CUE' || rState === 'FEEDBACK' || isAutoPending) {
+                    return;
+                }
+            }
+            // Symmetrically protect extraocular muscles during active Synoptophore pulling
+            if (s.appMode === 'synoptophore' && s.synopState === 'pulling') {
+                if (this.synoptophoreCtrl) this.synoptophoreCtrl.breakActiveFusion();
+                return;
+            }
         }
 
         const container = document.getElementById('container');
