@@ -505,9 +505,6 @@ img.emoji {
     transition: box-shadow 0.1s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-#container.dragging {
-    cursor: grabbing !important; /* Visual closed-fist feedback during active dragging operations */
-}
 canvas {
     display: block;
     width: 100%;

@@ -132,10 +132,8 @@ function syncVisualState(): void {
         containerNode.classList.remove('disabled');
     } else if (s.appMode === 'synoptophore') {
         // Manage Synoptophore cursor states symmetrically depending on physical interaction phase
-        if (s.synopState === 'idle') {
-            containerNode.style.cursor = 'pointer'; // Pointing hand invitation to click start curtain on desktop
-        } else if (s.synopState === 'align') {
-            containerNode.style.cursor = 'grab'; // Open hand ready for active dragging operations
+        if (s.synopState === 'idle' || s.synopState === 'align') {
+            containerNode.style.cursor = 'pointer'; // Pointing hand invitation during setup/alignment phases
         } else {
             containerNode.style.cursor = 'default'; // Passive arrow during automatic pulling/active alignment steps
         }
