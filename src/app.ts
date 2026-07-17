@@ -132,8 +132,10 @@ function syncVisualState(): void {
         containerNode.classList.remove('disabled');
     } else if (s.appMode === 'synoptophore') {
         // Manage Synoptophore cursor states symmetrically depending on physical interaction phase
-        if (s.synopState === 'idle' || s.synopState === 'align') {
-            containerNode.style.cursor = 'pointer'; // Pointing hand invitation during setup/alignment phases
+        if (s.synopState === 'idle') {
+            containerNode.style.cursor = 'pointer'; // Pointing hand invitation to click start curtain on desktop
+        } else if (s.synopState === 'align') {
+            containerNode.style.cursor = 'move'; // Crisp OS-native 2D move arrows for high-precision dragging
         } else {
             containerNode.style.cursor = 'default'; // Passive arrow during automatic pulling/active alignment steps
         }
@@ -311,8 +313,10 @@ function runFlash(): void {
             drawSynoptophoreTargets(overlayCanvas, overlayCtx, s);
             btnStart.innerText = activeTranslations.btnSynopLock || "LOCK FUSION";
             updateScoreboard(s, activeTranslations);
+            syncVisualState();
         } else {
             if (synoptophoreController) synoptophoreController.handlePrimaryAction();
+            syncVisualState();
         }
         return;
     }
@@ -397,6 +401,7 @@ window.addEventListener('load', async () => {
                 outcome: 'success'
             });
             Store.rotateSessionId(); // Symmetrically rotate ID for the subsequent attempt
+            syncVisualState();
         },
         (targetX, targetY, startDistance) => {
             // Save slipped vergence sweep conforming strictly to Polymorphic interfaces
@@ -414,6 +419,7 @@ window.addEventListener('load', async () => {
                 outcome: 'slip'
             });
             Store.rotateSessionId(); // Symmetrically rotate ID for the subsequent attempt
+            syncVisualState();
         }
     );
 
