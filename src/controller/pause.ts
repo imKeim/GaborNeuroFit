@@ -1,16 +1,21 @@
-/*
- * GaborNeuroFit - Pause & Rest Phase Orchestrator Controller
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file pause.ts
+ * @description Cross-domain orchestration controller managing application-wide rest phases.
+ * Coordinates the freezing and symmetrical resumption of high-frequency rendering loops, 
+ * stroboscopic animations, and clinical countdown timers across all visual modalities.
  *
- * Migrated to TypeScript: Implements strictly typed Dependency Injection (DI).
- * Ensures safe orchestration of pauses across all FSM clinical domains without visual leakage.
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
 import { Store } from '../store';
 import type { GaborController } from './gabor';
-import type { SynoptophoreController } from './synoptophore';
+import type { SynoptophoreController } from './synop';
 import type { RdsController } from './rds';
 
+/**
+ * @description Controller responsible for global pause state logic and resource preservation.
+ */
 export class PauseController {
     constructor(
         private gaborCtrl: GaborController | null,
@@ -22,18 +27,28 @@ export class PauseController {
     /**
      * @description Master toggle for global application pause states.
      *
-     * @clinical Enforces a strict protection protocol for the extraocular muscles.
-     * Attempting to pause the system while the Synoptophore is actively pulling
-     * muscles to center could cause sudden strabismic diplopia. This orchestrator
-     * safely converts a 'Pause' command into a 'Fusion Slip' to organically relax the muscles instead.
+     * @clinical
+     * - Extraocular Muscle Protection: Attempting to pause while the Synoptophore 
+     *   is actively pulling muscles to center could induce acute diplopia. This method 
+     *   intercepts the pause command and triggers a controlled 'Fusion Slip' instead 
+     *   to safely relax the muscles.
+     * - FSM Integrity: Pausing is structurally blocked during transitional trial states 
+     *   (PRE_CUE, STIMULUS_ACTIVE, FEEDBACK, auto-advance countdowns) to prevent 
+     *   asynchronous soft-locks and data corruption.
+     * 
+     * @architecture
+     * - Freezes Pomodoro countdowns by caching the 'running' state.
+     * - Suspends requestAnimationFrame loops to reduce GPU/CPU thermal load during idle.
+     * - Symmetrically toggles DOM accessibility classes (.paused-state) to dim the arena.
      */
     togglePause(): void {
         const s = Store.state;
 
-        // Block pausing during active transient states that rely on critical visual timers
+        // FSM Transition Guard: Prevent pausing during time-critical visual exposures
         if (!s.isPaused) {
             if (s.appMode === 'gabor' && this.gaborCtrl) {
                 const gState = this.gaborCtrl.currentState;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const isAutoPending = (this.gaborCtrl as any).autoNextTimeoutId !== null;
                 if (gState === 'PRE_CUE' || gState === 'STIMULUS_ACTIVE' || gState === 'FEEDBACK' || isAutoPending) {
                     return;
@@ -41,12 +56,13 @@ export class PauseController {
             }
             if (s.appMode === 'rds' && this.rdsCtrl) {
                 const rState = this.rdsCtrl.currentState;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const isAutoPending = (this.rdsCtrl as any).autoNextTimeoutId !== null;
                 if (rState === 'PRE_CUE' || rState === 'FEEDBACK' || isAutoPending) {
                     return;
                 }
             }
-            // Symmetrically protect extraocular muscles during active Synoptophore pulling
+            // Clinical Safety: Redirect pause command to breakActiveFusion during active vergence pulling
             if (s.appMode === 'synoptophore' && s.synopState === 'pulling') {
                 if (this.synoptophoreCtrl) this.synoptophoreCtrl.breakActiveFusion();
                 return;
@@ -61,7 +77,7 @@ export class PauseController {
         const nextPausedState = !s.isPaused;
         Store.updateState('isPaused', nextPausedState);
 
-        // Symmetrically disable/enable action buttons during pause to secure the Tab-focus ring
+        // UI Hygiene: Disable primary interaction buttons during pause to secure focus ring
         const btnLeft = document.getElementById('btn-left') as HTMLButtonElement | null;
         const btnRight = document.getElementById('btn-right') as HTMLButtonElement | null;
         const btnReset = document.getElementById('btn-reset') as HTMLButtonElement | null;
@@ -71,7 +87,7 @@ export class PauseController {
         if (btnReset) btnReset.disabled = nextPausedState;
 
         if (nextPausedState) {
-            // Abort any pending trials in PRE_CUE state to prevent them from rendering under the paused mask
+            // Entrance: Halt visual processing
             if (this.gaborCtrl && this.gaborCtrl.currentState === 'PRE_CUE') {
                 this.gaborCtrl.abort();
                 const btnStart = document.getElementById('btn-start') as HTMLButtonElement | null;
@@ -89,11 +105,9 @@ export class PauseController {
                 }
             }
 
-            // 1. Freeze Pomodoro countdown timer
             Store.updateState('savedTimerRunningState', s.timerIsRunning);
             Store.updateState('timerIsRunning', false);
 
-            // 2. Dim the visual arena and raise highly salient paused watermark
             if (container) container.classList.add('paused-state');
             if (watermark) watermark.classList.add('active');
             if (controlsLayout) controlsLayout.classList.add('paused-state');
@@ -103,18 +117,15 @@ export class PauseController {
                 if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(btnPause);
             }
 
-            // 3. Delegate cross synchronization to the centralized updater
             if (this.syncCross) this.syncCross();
 
-            // 4. Halt active animation loops without destructive resets
             if (this.gaborCtrl) this.gaborCtrl.stopUnifiedRenderingLoop();
             if (this.synoptophoreCtrl) this.synoptophoreCtrl.stopFlickerLoop();
             if (this.rdsCtrl) this.rdsCtrl.pause();
         } else {
-            // 1. Restore Pomodoro countdown timer state
+            // Resumption: Restore clinical processing
             Store.updateState('timerIsRunning', s.savedTimerRunningState);
 
-            // 2. Symmetrically restore arena brightness (Curtain logic untouched to preserve Synoptophore Idle rest state)
             if (container) container.classList.remove('paused-state');
             if (watermark) watermark.classList.remove('active');
             if (controlsLayout) controlsLayout.classList.remove('paused-state');
@@ -124,20 +135,16 @@ export class PauseController {
                 if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(btnPause);
             }
 
-            // 3. Delegate cross synchronization on resume
             if (this.syncCross) this.syncCross();
 
-            // 4. Symmetrically resume loops depending on the active modality
             if (s.appMode === 'gabor' && s.isWaitingForAnswer) {
                 if (this.gaborCtrl) this.gaborCtrl.startUnifiedRenderingLoop(Store.state);
             } else if (s.appMode === 'rds' && this.rdsCtrl) {
                 if (this.rdsCtrl.currentState === 'STIMULUS_ACTIVE' || this.rdsCtrl.currentState === 'AWAITING_INPUT') {
-                    // Start unified RDS loop symmetrically on resume
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     (this.rdsCtrl as any).startDynamicRdsLoop();
                 }
             } else if (s.appMode === 'synoptophore' && this.synoptophoreCtrl) {
-                // Restore 10Hz Alpha-resonance flicker on resume
                 this.synoptophoreCtrl.syncFlickerState();
             }
         }
@@ -145,8 +152,12 @@ export class PauseController {
 
     /**
      * @description Surgical override to temporarily hide the pause watermark.
-     * @clinical Mandatory during Anaglyph Lens Calibration. The test pattern 'L/R'
-     * is rendered precisely in the center, which would otherwise be obscured by the large "PAUSED" text.
+     * 
+     * @clinical Mandatory during Anaglyph Lens Calibration. The calibration anchors (L/R) 
+     * are located at the geometric center, which would otherwise be obscured by the 
+     * large "PAUSED" text overlay.
+     * 
+     * @param {boolean} hide - If true, forcefully dismisses the watermark.
      */
     overrideWatermarkVisibility(hide: boolean): void {
         const watermark = document.getElementById('pause-watermark');
@@ -155,7 +166,6 @@ export class PauseController {
         if (hide) {
             watermark.classList.remove('active');
         } else {
-            // Restore visibility strictly if the system is currently paused
             if (Store.state.isPaused) {
                 watermark.classList.add('active');
             }

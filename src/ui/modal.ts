@@ -1,43 +1,63 @@
-/*
- * GaborNeuroFit - Modal Dialogs Management Module
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file modal.ts
+ * @description Dialog management module implementing the WAI-ARIA Modal pattern.
+ * Manages the lifecycle of clinical configuration panels and notification alerts, 
+ * ensuring focus integrity, accessibility (a11y) compliance, and semantic color coding.
  *
- * Migrated to TypeScript: Employs strict null-checks for DOM overlays and
- * strictly typed functional callbacks to ensure execution safety inside
- * asynchronous confirmation dialogs.
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
 /**
- * @description Internal helper to resolve semantic brand colors based on title icons/keywords.
- * Implements strict medical severity levels: Danger (Red), Warning (Gold), Success (Green), Info (Blue).
+ * @description Internal helper to resolve semantic brand colors based on severity keywords.
+ * 
+ * @clinical
+ * Implements a strict medical color-coding hierarchy to reduce cognitive load:
+ * - Danger (Red): IRREVERSIBLE / CRITICAL actions.
+ * - Warning (Gold): CLINICAL BREAKS / TIMERS / ERRORS.
+ * - Success (Green): MILESTONES / ACHIEVEMENTS.
+ * - Info (Blue): SYSTEM INFORMATION.
+ *
+ * @param {string} title - Header text containing semantic icons or keywords.
+ * @returns {string} HEX color code.
  */
 function resolveHeaderColor(title: string): string {
     const tLower = title.toLowerCase();
     if (title.includes('❌') || tLower.includes('danger') || tLower.includes('опасно')) return '#ef4444';
     if (title.includes('🥇') || title.includes('🎯') || title.includes('🏆')) return '#22c55e';
     if (title.includes('⚠️') || tLower.includes('warning') || title.includes('предупреждение')) return '#eab308';
-    return '#3b90ff'; // Standard Clinical Blue fallback
+    return '#3b90ff';
 }
 
+/** @description Query selector string for standard focusable HTML elements. */
 const FOCUSABLE_SELECTORS = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+/** @description Reference holder to restore focus back to the trigger element upon modal dismissal. */
 let previousActiveElement: HTMLElement | null = null;
 
+/**
+ * @description Activates a modal dialog with full W3C A11y orchestration.
+ * 
+ * @a11y
+ * - Focus Restoration: Memorizes the currently focused element.
+ * - ARIA Muting: Applies aria-hidden="true" to the background wrapper.
+ * - Focus Trap: Initiates Tab-cycling within the modal boundaries.
+ * - Auto-focus: Shifts focus to the first interactive element.
+ *
+ * @param {HTMLElement | null} modal - The target modal container.
+ */
 export function openModal(modal: HTMLElement | null): void {
     if (!modal) return;
     
-    // 1. Memorize previously focused trigger element to preserve visual focus history
     previousActiveElement = document.activeElement as HTMLElement;
 
     modal.classList.add('modal-open');
 
-    // 2. Hide background layout from screen readers and DOM tab order
     const appWrapper = document.getElementById('app-wrapper');
     if (appWrapper) appWrapper.setAttribute('aria-hidden', 'true');
 
-    // 3. Setup and bind focus trap loop
     setupFocusTrap(modal);
 
-    // 4. Focus first interactive element inside the modal to orient the user instantly
     const focusable = Array.from(modal.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS))
         .filter(el => el.offsetWidth > 0 && el.offsetHeight > 0);
     if (focusable.length > 0) {
@@ -45,25 +65,30 @@ export function openModal(modal: HTMLElement | null): void {
     }
 }
 
+/**
+ * @description Dismisses a modal dialog and restores background accessibility.
+ * @param {HTMLElement | null} modal - The target modal container.
+ */
 export function closeModal(modal: HTMLElement | null): void {
     if (!modal) return;
 
     modal.classList.remove('modal-open');
 
-    // 1. Un-mute background layout
     const appWrapper = document.getElementById('app-wrapper');
     if (appWrapper) appWrapper.removeAttribute('aria-hidden');
 
-    // 2. Remove focus trap listeners
     destroyFocusTrap(modal);
 
-    // 3. Return focus precisely back to the parent trigger button
     if (previousActiveElement) {
         previousActiveElement.focus();
         previousActiveElement = null;
     }
 }
 
+/**
+ * @description Sets up a cyclic Tab-navigation loop (Focus Trap).
+ * @param {HTMLElement} modal - Container element to trap focus in.
+ */
 function setupFocusTrap(modal: HTMLElement): void {
     destroyFocusTrap(modal);
 
@@ -94,20 +119,29 @@ function setupFocusTrap(modal: HTMLElement): void {
         }
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (modal as any)._focusTrapHandler = handler;
     modal.addEventListener('keydown', handler);
 }
 
+/**
+ * @description Removes the focus trap listeners from the modal.
+ * @param {HTMLElement} modal - Container element.
+ */
 function destroyFocusTrap(modal: HTMLElement): void {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handler = (modal as any)._focusTrapHandler;
     if (handler) {
         modal.removeEventListener('keydown', handler);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         delete (modal as any)._focusTrapHandler;
     }
 }
 
 /**
- * @description Renders a precise, non-blocking custom modal window in sRGB space.
+ * @description Renders a non-blocking clinical alert dialog.
+ * @param {string} title - Semantic header text.
+ * @param {string} text - Localized body message (supports HTML).
  */
 export function showCustomAlert(title: string, text: string): void {
     const modal = document.getElementById('custom-alert-modal');
@@ -122,24 +156,33 @@ export function showCustomAlert(title: string, text: string): void {
 
     openModal(modal);
 
-    // @ts-ignore - Ignore missing Twemoji global typings strictly for DOM injection
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     if (typeof window !== 'undefined' && window.twemoji) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         window.twemoji.parse(modal);
     }
 }
 
-/**
- * @description Dismisses the custom alert modal non-blockingly
- */
+/** @description Programmatically dismisses the active custom alert. */
 export function closeCustomAlert(): void {
     const modal = document.getElementById('custom-alert-modal');
     closeModal(modal);
 }
 
 /**
- * @description Renders a beautiful non-blocking custom confirmation dialog with Yes/No actions.
- * @param callback - Typed to explicitly return a boolean state resolving the user's intent.
+ * @description Spawns a non-blocking confirmation dialog with success/cancel branches.
+ * 
+ * @architecture
+ * Implements a strict cleanup pattern: removes all listeners and window bridges 
+ * once the callback resolves to prevent memory leaks and event bubbling collisions.
+ * 
+ * @param {string} title - Semantic header text.
+ * @param {string} text - Localized body text.
+ * @param {string} yesLabel - Localized confirm button label.
+ * @param {string} noLabel - Localized cancel button label.
+ * @param {(isConfirmed: boolean) => void} callback - Typed resolution handler.
  */
 export function showCustomConfirm(
     title: string,
@@ -164,13 +207,14 @@ export function showCustomConfirm(
 
     openModal(modal);
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     if (typeof window !== 'undefined' && window.twemoji) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         window.twemoji.parse(modal);
     }
 
-    // Core event handlers with standard lexical scopes for absolute teardown
     const onYes = () => {
         closeModal(modal);
         cleanup();
@@ -206,10 +250,11 @@ export function showCustomConfirm(
 }
 
 /**
- * @description Initializes click listeners for settings and manual popup modals
- * @param onSettingsOpen - Pre-open hook to sync UI selectors with actual store parameters
- * @param onSettingsSave - Close hook to commit modified UI selectors to store and localStorage
- * @param onStatsOpen - Hook to trigger relational data rendering just before dashboard appears
+ * @description Global modal initializer binding UI triggers to clinical panels.
+ * 
+ * @param {Function} onSettingsOpen - Pre-open hydration hook.
+ * @param {Function} onSettingsSave - Post-close persistence hook.
+ * @param {Function} onStatsOpen - Dashboard telemetry refresh hook.
  */
 export function initModals(
     onSettingsOpen: () => void,
@@ -228,7 +273,6 @@ export function initModals(
     const btnStats = document.getElementById('btn-stats');
     const btnCloseStats = document.getElementById('btn-close-stats');
 
-    // Bind custom alert close button cleanly inside initModals (SoC compliant)
     const btnCloseCustomAlert = document.getElementById('btn-close-custom-alert');
     if (btnCloseCustomAlert) {
         btnCloseCustomAlert.addEventListener('click', () => {
@@ -239,6 +283,7 @@ export function initModals(
     if (btnInfo && infoModal) {
         btnInfo.addEventListener('click', () => {
             openModal(infoModal);
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(infoModal);
         });
@@ -253,6 +298,7 @@ export function initModals(
         btnSettings.addEventListener('click', () => {
             if (typeof onSettingsOpen === 'function') onSettingsOpen();
             openModal(settingsModal);
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(settingsModal);
         });
@@ -269,6 +315,7 @@ export function initModals(
         btnStats.addEventListener('click', () => {
             if (typeof onStatsOpen === 'function') onStatsOpen();
             openModal(statsModal);
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(statsModal);
         });

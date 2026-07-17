@@ -78,7 +78,8 @@ img.emoji {
     height: 1.1em;
     width: 1.1em;
     margin: 0 .05em 0 .1em;
-    vertical-align: -0.1em;
+    /* Clinical: middle alignment prevents subpixel line-height shifts during scaling */
+    vertical-align: middle;
     display: inline-block;
 }
 
@@ -586,7 +587,10 @@ canvas {
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    /* Hardware Isolation: preserve foveal cross-line sharpness during size transitions */
+    transform: translate(-50%, -50%) translateZ(0);
+    backface-visibility: hidden;
+    
     width: 0.66em;
     height: 0.66em;
     display: block;
@@ -776,22 +780,32 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
     background: #1c2331;
     border: 1px solid #2b354a;
     border-radius: var(--radius-premium);
-    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45); /* Unified deepest premium depth shadow (Level 3) */
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
     width: 100%;
     max-width: 640px;
-    max-height: min(85dvh, 800px); /* Strict height containment */
+    max-height: min(85dvh, 800px);
     display: flex;
-    flex-direction: column; /* Flex rules keep Header/Footer pinned */
-    overflow: hidden; /* Locks card boundaries to prevent mobile Flexbox height bloating and layout leakage */
+    flex-direction: column;
+    overflow: hidden;
+
+    /* 
+     * Hardware & Type Stability:
+     * 1. antialiased: forces consistent font rendering between motion and rest states.
+     * 2. will-change: preserves the GPU layer to prevent subpixel layout "snapping" at the end of transition.
+     */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
 
     /* Spring physics entrance */
-    transform: scale(0.92);
+    transform: scale(0.92) translateZ(0);
     opacity: 0;
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
 }
 
 .modal.modal-open .modal-content {
-    transform: scale(1);
+    transform: scale(1) translateZ(0);
     opacity: 1;
 }
 
@@ -818,6 +832,20 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
 .modal-content h2 { margin: 0 0 16px 0; font-size: clamp(16px, 4vw, 20px); text-align: center; color: #3b90ff; font-weight: 700; flex-shrink: 0; }
 .modal-content h4 { margin: 16px 0 8px 0; font-size: clamp(14px, 3.5vw, 16px); border-bottom: 1px solid #2b354a; padding-bottom: 6px; color: #f1f3f9; }
 .modal-content p, .modal-content li { font-size: clamp(12px, 3vw, 14px); line-height: 1.5; color: #cbd5e1; }
+
+/* 
+ * Hardware Isolation for text containers: prevents subpixel line-flow jumping 
+ * and horizontal "snapping" of emojis/text during modal transitions.
+ */
+.modal-content h2, 
+.modal-content h4, 
+.modal-content p, 
+.modal-content li,
+.preset-card-title {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
 .modal-content ul { padding-left: 20px; margin: 8px 0; }
 
 .close-btn {

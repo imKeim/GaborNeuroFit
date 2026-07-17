@@ -1,9 +1,11 @@
-/*
- * GaborNeuroFit - Perceptual Learning Trial Controller
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file gabor.ts
+ * @description Orchestrates the Finite State Machine (FSM) for Gabor perceptual learning trials.
+ * Manages chronological trial sequences, orientation randomization, and real-time sensory 
+ * feedback loops while ensuring asynchronous safety through strict state transitions.
  *
- * Migrated to TypeScript: Employs strict Finite State Machine (FSM) type literals
- * to ensure that asynchronous sensory events evaluate in absolute sequence.
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
 import { Store } from '../store';
@@ -13,8 +15,10 @@ import { playCue, playSuccess, playError } from '../engine/audio';
 import { updateScoreboard, updateStatusBar, drawIdleState } from '../ui/screen';
 import type { AppState } from '../types/clinical';
 
+/** @description Available states for the Gabor trial life-cycle. */
 export type TrialStateValue = 'IDLE' | 'PRE_CUE' | 'STIMULUS_ACTIVE' | 'AWAITING_INPUT' | 'FEEDBACK';
 
+/** @description Enum-like dictionary of Gabor states. */
 export const TrialState: Record<TrialStateValue, TrialStateValue> = {
     IDLE: 'IDLE',
     PRE_CUE: 'PRE_CUE',
@@ -23,9 +27,16 @@ export const TrialState: Record<TrialStateValue, TrialStateValue> = {
     FEEDBACK: 'FEEDBACK'
 };
 
+/** @description Spatial frequency ranges mapped to difficulty levels. */
 interface FrequencyRange { min: number; max: number; }
+/** @description Gaussian envelope size ranges mapped to difficulty levels. */
 interface SigmaRange { min: number; max: number; }
 
+/** 
+ * @clinical
+ * Higher stages target higher spatial frequencies. 
+ * Level 5 (0.17-0.24) pushes V1 neurons toward their maximum resolution limit.
+ */
 const levelFreqRanges: Record<number, FrequencyRange> = {
     1: { min: 0.03, max: 0.05 },
     2: { min: 0.05, max: 0.08 },
@@ -34,6 +45,11 @@ const levelFreqRanges: Record<number, FrequencyRange> = {
     5: { min: 0.17, max: 0.24 }
 };
 
+/** 
+ * @clinical
+ * Smaller sigma (Level 5) forces the brain to resolve orientations 
+ * using a smaller foveal retinal area, reducing peripheral cues.
+ */
 const levelSigmaRanges: Record<number, SigmaRange> = {
     1: { min: 40, max: 50 },
     2: { min: 32, max: 40 },
@@ -42,6 +58,7 @@ const levelSigmaRanges: Record<number, SigmaRange> = {
     5: { min: 12, max: 17 }
 };
 
+/** @description Strict transition graph preventing illegal state jumps (e.g., IDLE -> FEEDBACK). */
 const ALLOWED_TRANSITIONS: Record<string, TrialStateValue[]> = {
     'IDLE': ['PRE_CUE'],
     'PRE_CUE': ['STIMULUS_ACTIVE'],
@@ -50,9 +67,15 @@ const ALLOWED_TRANSITIONS: Record<string, TrialStateValue[]> = {
     'FEEDBACK': ['IDLE']
 };
 
+/**
+ * @description Controller managing Gabor trial logic and rendering coordination.
+ */
 export class GaborController {
+    /** @description Current FSM state. Defaults to IDLE. */
     public currentState: TrialStateValue = TrialState.IDLE;
+    /** @description Tracks and garbage-collects active timers and animation frames. */
     public tracker: AsyncResourceTracker = new AsyncResourceTracker();
+    /** @description Toggle for the L/R anaglyph calibration test pattern. */
     public isAnaglyphTestActive: boolean = false;
 
     private currentAngleDeg: number = 0;
@@ -77,12 +100,14 @@ export class GaborController {
         private syncCross: () => void
     ) {}
 
+    /** @description Aborts current trial by clearing timers and resetting state to IDLE. */
     abort(): void {
         this.tracker.clearAll();
         this.currentState = TrialState.IDLE;
         if (this.syncCross) this.syncCross();
     }
 
+    /** @description Standardized idempotent teardown of the controller resources. */
     deactivate(): void {
         this.isAnaglyphTestActive = false;
         this.stopUnifiedRenderingLoop();
@@ -90,6 +115,11 @@ export class GaborController {
         if (this.syncCross) this.syncCross();
     }
 
+    /**
+     * @description Attempts to move the FSM to a new state.
+     * @param {TrialStateValue} nextState - The desired destination state.
+     * @returns {boolean} True if transition succeeded, false if illegal jump was blocked.
+     */
     transitionTo(nextState: TrialStateValue): boolean {
         const allowed = ALLOWED_TRANSITIONS[this.currentState];
         if (!allowed || !allowed.includes(nextState)) {
@@ -103,6 +133,13 @@ export class GaborController {
         return true;
     }
 
+    /**
+     * @description Initiates a new training trial.
+     * 
+     * @clinical
+     * Triggers the pre-cue auditory priming 180ms before visual stimulus onset
+     * to reduce accommodative micro-fluctuations and prime V1 receptivity.
+     */
     triggerTrial(): void {
         if (this.autoNextTimeoutId) {
             clearTimeout(this.autoNextTimeoutId);
@@ -124,9 +161,10 @@ export class GaborController {
         }, 180);
     }
 
+    /**
+     * @description Re-displays the current stimulus without regenerating randomized parameters.
+     */
     reFlashCurrentGabor(): void {
-        // If the Gabor is permanently lit (static/flicker),
-        // we strictly block re-flashing to prevent visual phase-resets and acoustic spam.
         if (Store.state.isStaticEnabled) return;
 
         if (!this.transitionTo(TrialState.PRE_CUE)) return;
@@ -142,6 +180,14 @@ export class GaborController {
         }, 180);
     }
 
+    /**
+     * @description Core rendering orchestrator. Sets up WebGL parameters and initiates exposure.
+     * 
+     * @clinical
+     * - Orientation Selectivity: excludes vertical angles (-15..+15 deg) to force distinct L/R differentiation.
+     * - Ricco's Law (Spatial Summation): Automatically increases Gabor sigma when contrast drops below 12%
+     *   to facilitate ultra-low threshold detection through area summation.
+     */
     private _runRenderCycle(isNewTrial: boolean): void {
         const t = this.getTranslations();
         const s = Store.state;
@@ -171,8 +217,9 @@ export class GaborController {
 
         if (isNewTrial) {
             do {
+                // Randomize tilt between -80 and +80 degrees
                 this.currentAngleDeg = Math.floor(Math.random() * 160) - 80;
-            } while (Math.abs(this.currentAngleDeg) < 15);
+            } while (Math.abs(this.currentAngleDeg) < 15); // Disallow ambiguous vertical tilt
 
             const freqRange = levelFreqRanges[s.currentLevel] || levelFreqRanges[1];
             this.lastRandomFreq = Math.random() * (freqRange.max - freqRange.min) + freqRange.min;
@@ -198,6 +245,7 @@ export class GaborController {
 
             const summationThreshold = 0.12;
             if (s.autoContrast < summationThreshold) {
+                // Clinical: Compensate for low visibility using Ricco's area summation logic
                 const summationMultiplier = 1.0 + (summationThreshold - s.autoContrast) * 3.0;
                 this.lastRandomSigma = this.lastRandomSigma * summationMultiplier;
             }
@@ -242,6 +290,7 @@ export class GaborController {
         }
 
         if (!s.isStaticEnabled) {
+            // Transient flash logic
             this.tracker.setTimeout(() => {
                 this.stopUnifiedRenderingLoop();
                 drawIdleState(this.canvas, null, this.overlayCanvas, this.overlayCtx, s.isFusionLockEnabled);
@@ -252,9 +301,7 @@ export class GaborController {
                 this.transitionTo(TrialState.AWAITING_INPUT);
             }, flashDuration);
         } else {
-            // In static or flicker modes, the Gabor patch remains permanently illuminated.
-            // We keep the central trigger button strictly disabled to prevent visually jarring phase-resets,
-            // focusing the patient's cognitive resources solely on resolving and submitting the L/R answer.
+            // Static/Flicker persistent logic
             this.btnStart.disabled = true;
             this.btnStart.style.opacity = "0.4";
             this.btnStart.innerText = "...";
@@ -262,6 +309,10 @@ export class GaborController {
         }
     }
 
+    /**
+     * @description Evaluates the user's orientation choice.
+     * @param {'left' | 'right'} userChoice - Selected Gabor tilt.
+     */
     submitAnswer(userChoice: 'left' | 'right'): void {
         if (this.currentState !== TrialState.AWAITING_INPUT && this.currentState !== TrialState.STIMULUS_ACTIVE) return;
 
@@ -276,14 +327,14 @@ export class GaborController {
 
         this.container.classList.remove('success-pulse', 'error-shake');
         this.flashOverlay.classList.remove('flash-success', 'flash-error');
-        // Force reflow
+        // Force browser reflow to reset CSS animations
         void this.container.offsetWidth;
         void this.flashOverlay.offsetWidth;
 
         Store.registerResult(isCorrect);
 
         if (isCorrect) {
-            // Deep spatial cross-modality reinforcement for Visual Cortex mapping
+            // Spatial Pan: reinforcing neural field mapping via directional auditory rewards
             const panValue = correctAnswer === 'left' ? -0.40 : 0.40;
             playSuccess(s.isMuted, panValue);
             this.flashOverlay.classList.add('flash-success');
@@ -323,6 +374,7 @@ export class GaborController {
         updateScoreboard(s, this.getTranslations());
         Store.saveSession();
 
+        // Milestone Check: Stage 5 Mastery at 1% contrast
         const minContrastLimit = s.allowLowContrast ? 0.01 : 0.05;
         if (s.currentLevel === 5 && s.autoContrast <= minContrastLimit && s.correctStreak >= 12) {
             this.tracker.setTimeout(() => {
@@ -339,6 +391,7 @@ export class GaborController {
             return;
         }
 
+        // Milestone Check: Daily Session Limit reached
         if (s.sessionLimit > 0 && s.total >= s.sessionLimit) {
             this.tracker.setTimeout(() => {
                 this.triggerMilestoneFlash(() => {
@@ -363,6 +416,11 @@ export class GaborController {
         }
     }
 
+    /**
+     * @description Calculates exposure duration mapped to stage difficulty.
+     * @param {AppState} state - Global state reference.
+     * @returns {number} Duration in milliseconds.
+     */
     getFlashDuration(state: AppState): number {
         if (state.flashDurationMode === '100') return 100;
         if (state.flashDurationMode === '180') return 180;
@@ -376,10 +434,14 @@ export class GaborController {
         return 110;
     }
 
+    /**
+     * @description Initiates high-performance animation frames for stroboscopic or phase-shifting stimuli.
+     * @param {AppState} s - Global state reference.
+     */
     startUnifiedRenderingLoop(s: AppState): void {
         this.flankerPhaseOffset = 0;
         const startTime = performance.now();
-        const optimalFrequencyCoeff = 0.062831853;
+        const optimalFrequencyCoeff = 0.062831853; // Fixed 10Hz resonance coefficient
 
         const loop = (timestamp: number) => {
             const isAllowedToAnimate =
@@ -389,6 +451,7 @@ export class GaborController {
             if (!isAllowedToAnimate) return;
 
             if (this.isAnaglyphTestActive) {
+                // Clear GL buffer if calibration pattern is active
                 const gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl') as WebGLRenderingContext | null;
                 if (gl) {
                     gl.clearColor(0.498, 0.498, 0.498, 1.0);
@@ -407,6 +470,7 @@ export class GaborController {
             let flankerContrast = s.autoContrast;
 
             if (s.isFlickerEnabled) {
+                // Alpha-resonance modulation at 10Hz
                 centralContrast = s.autoContrast * Math.sin(elapsed * optimalFrequencyCoeff);
             }
 
@@ -432,11 +496,13 @@ export class GaborController {
         this.tracker.requestAnimationFrame(loop);
     }
 
+    /** @description Stops the animation loop and purges active frames from the tracker. */
     stopUnifiedRenderingLoop(): void {
         this.flankerPhaseOffset = 0;
         this.tracker.clearAll();
     }
 
+    /** @description Triggers visual celebration feedback for milestone achievements. */
     triggerMilestoneFlash(callback?: () => void): void {
         let count = 0;
         this.tracker.setInterval(() => {

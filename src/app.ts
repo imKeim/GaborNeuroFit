@@ -1,10 +1,11 @@
-/*
- * GaborNeuroFit - High-Performance Orchestrator & Entry Point
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file app.ts
+ * @description Central Orchestrator and Entry Point of GaborNeuroFit.
+ * Integrates reactive state management, persistent storage, and specialized clinical controllers. 
+ * Manages the high-level application lifecycle, input dispatching, and mode-switching logic.
  *
- * Migrated to TypeScript: Employs strict Dependency Injection (DI) and precise
- * DOM element casting to guarantee that interface bindings and FSM lifecycles
- * initialize flawlessly across all clinical modalities.
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
 // Import core dependencies
@@ -17,7 +18,7 @@ import { initModals, showCustomAlert, closeCustomAlert, closeModal } from './ui/
 import { bindInputControls } from './ui/controls';
 import { GaborController } from './controller/gabor';
 import { SettingsController } from './controller/settings';
-import { SynoptophoreController } from './controller/synoptophore';
+import { SynoptophoreController } from './controller/synop';
 import { RdsController } from './controller/rds';
 import { DashboardController } from './controller/dashboard';
 import { PauseController } from './controller/pause';
@@ -34,7 +35,7 @@ import type { InputHandlers } from './ui/controls';
 // Global cache for the active localization dictionary
 let activeTranslations: Record<string, string> = {};
 
-// References to our OOP controllers instances
+/** @description Global registry for modality-specific controller singletons. */
 let gaborController: GaborController | null = null;
 let settingsController: SettingsController | null = null;
 let synoptophoreController: SynoptophoreController | null = null;
@@ -42,7 +43,10 @@ let rdsController: RdsController | null = null;
 let dashboardController: DashboardController | null = null;
 let pauseController: PauseController | null = null;
 
-// Settings Snapshot State holds (Protects session progress on non-critical config changes)
+/** 
+ * @description "Dirty-checking" snapshots of critical clinical parameters. 
+ * Captured upon opening settings to determine if a hard session reset is mandatory.
+ */
 let snapAppMode: AppMode | null = null;
 let snapPresetMode: GaborPreset | null = null;
 let snapLevel: number | null = null;
@@ -67,7 +71,13 @@ const btnFusionTest = document.getElementById('btn-fusion-test') as HTMLButtonEl
 const customAlertModal = document.getElementById('custom-alert-modal') as HTMLElement;
 
 /**
- * @description Centralized visual synchronizer for fixation cross and mouse pointer state
+ * @description Centralized visual synchronizer for fixation cross and mouse pointer state.
+ * 
+ * @clinical 
+ * - Cross Scaling: Stage 1 (36px) down to Stage 5 (12px). Smaller anchors increase 
+ *   foveal fixation accuracy requirements during high-frequency Gabor stimulation.
+ * - Dynamic Visibility: Restores 100% opacity precisely when the stimulus is hidden 
+ *   to assist the brain in re-centering focus before the next trial.
  */
 function syncVisualState(): void {
     const s = Store.state;
@@ -75,7 +85,7 @@ function syncVisualState(): void {
     const containerNode = document.getElementById('container');
     if (!crossNode || !containerNode) return;
 
-    // --- 1. Cross Synchronization ---
+    // Logic: Fixation cross-scaling and visibility orchestration
     if (s.appMode === 'synoptophore') {
         crossNode.style.display = 'none';
     } else if (s.appMode === 'rds') {
@@ -106,12 +116,17 @@ function syncVisualState(): void {
         crossNode.style.fontSize = crossSize + 'px';
 
         const gaborState = gaborController ? gaborController.currentState : 'IDLE';
+        const isCalibration = gaborController ? gaborController.isAnaglyphTestActive : false;
+
         // Tie cross dimming strictly to physical stimulus visibility on canvas
         const isStimulusVisible = 
             (gaborState === 'STIMULUS_ACTIVE') || 
             (gaborState === 'AWAITING_INPUT' && s.isStaticEnabled);
 
-        if (s.isPaused) {
+        if (isCalibration) {
+            // Clinical: maintain maximum cross opacity during dichoptic lens calibration
+            crossNode.className = '';
+        } else if (s.isPaused) {
             crossNode.className = 'cross-dimmed';
         } else if (isStimulusVisible) {
             // Symmetrically dim or hide cross only while stimulus remains visible
@@ -126,7 +141,7 @@ function syncVisualState(): void {
         }
     }
 
-    // --- 2. Container Cursor & Class Synchronization ---
+    // Logic: Interactive arena cursor and state synchronization
     if (s.isPaused) {
         containerNode.style.cursor = 'pointer';
         containerNode.classList.remove('disabled');
@@ -150,15 +165,23 @@ function syncVisualState(): void {
 }
 
 /**
- * @description Centralized router for safe transitions between clinical modes.
+ * @description Atomic router for safe transitions between clinical modalities.
+ * 
+ * @architecture 
+ * - Idempotent Teardown: Forcefully deactivates all active controllers and purges 
+ *   asynchronous buffers before re-initializing the workspace.
+ * - SSoT Enforcement: Resets session progress and rotates UUIDs to ensure 
+ *   database record integrity for the upcoming training block.
  */
 function transitionToMode(newMode: AppMode): void {
     const s = Store.state;
 
+    // Step: Component teardown
     if (gaborController) gaborController.deactivate();
     if (rdsController) rdsController.deactivate();
     if (synoptophoreController) synoptophoreController.deactivate();
 
+    // Step: State persistence reset
     Store.updateState('appMode', newMode);
     Store.resetSessionProgress();
 
@@ -192,6 +215,7 @@ function transitionToMode(newMode: AppMode): void {
         }
     }
 
+    // Step: Workspace re-initialization
     if (isSynop) {
         if (curtain) curtain.classList.add('active');
         drawIdleState(canvas, null, overlayCanvas, overlayCtx, true);
@@ -269,14 +293,19 @@ export async function setLanguage(lang: Language): Promise<void> {
     updateStatusBar(Store.state, t);
 
     // Provide soft degradation for global Twemoji parsing across the active HUD and modals
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     if (typeof window !== 'undefined' && window.twemoji) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         window.twemoji.parse(document.getElementById('top-bar'));
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         window.twemoji.parse(document.getElementById('bottom-dock'));
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         window.twemoji.parse(document.getElementById('settings-modal'));
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         window.twemoji.parse(document.getElementById('stats-modal'));
     }
@@ -295,7 +324,7 @@ function runFlash(): void {
         curtain.classList.remove('active');
     }
 
-    // Route inputs depending on active appMode (Single Source of Truth)
+    // Logic: Clinical modality routing
     if (s.appMode === 'rds') {
         if (rdsController && rdsController.currentState === 'IDLE') {
             rdsController.triggerTrial();
@@ -323,7 +352,7 @@ function runFlash(): void {
         return;
     }
 
-    // Lock start triggers while the calibration test pattern is active
+    // Gabor: Lock start triggers while the calibration test pattern is active
     if (gaborController && gaborController.isAnaglyphTestActive) return;
 
     if (s.isWaitingForAnswer) {
@@ -334,13 +363,13 @@ function runFlash(): void {
 }
 
 /**
- * Orchestrator bootstrap initialization block
+ * @description Orchestrator bootstrap initialization block
  */
 window.addEventListener('load', async () => {
-    // Instantly scale the canvas backing stores to prevent initial-load blurry upscaling
+    // Logic: Canvas backing store scaling
     resizeCanvasesToDPR();
     
-    // Handle viewport resizing and orientation changes to maintain crisp, dpr-scaled visual targets
+    // Logic: Responsive viewport recalibration
     window.addEventListener('resize', () => {
         resizeCanvasesToDPR();
         if (Store.state.appMode === 'synoptophore') {
@@ -359,14 +388,14 @@ window.addEventListener('load', async () => {
 
     Store.loadSettings();
 
-    // 1. Fetch and load translation bundle asynchronously first
+    // Step: Localization hydration
     await setLanguage(Store.state.currentLang);
 
-    // 2. Initialize database synchronously using fully loaded translations (retaining zero-hardcode SSoT)
+    // Step: Persistent storage initialization
     DataRepository.init(activeTranslations);
     DataRepository.migrateLegacyDatabase();
 
-    // Instantiate core controllers with strictly typed WebGL Canvas and Overlay Context
+    // Step: Dependency Injection (Controller instances)
     gaborController = new GaborController(
         canvas,
         overlayCanvas,
@@ -380,6 +409,11 @@ window.addEventListener('load', async () => {
         () => syncVisualState()
     );
 
+    /** 
+     * @architecture Inversion of Control (IoC)
+     * SynoptophoreController is completely decoupled from the DataRepository. 
+     * Orchestrator injects persistence logic via onSuccess and onSlip callbacks.
+     */
     synoptophoreController = new SynoptophoreController(
         overlayCanvas,
         overlayCtx,
@@ -388,7 +422,7 @@ window.addEventListener('load', async () => {
         showCustomAlert,
         () => {
             const startDist = Store.state.synopStartDistance;
-            // Save successful vergence sweep conforming strictly to Polymorphic interfaces
+            // Persistence Hook: Save successful 100% motor vergence sweep
             DataRepository.saveSession({
                 sessionId: Store.state.sessionId,
                 protocol: 'synoptophore',
@@ -462,14 +496,17 @@ window.addEventListener('load', async () => {
     // Stamp initial language to metadata for comparison tracking
     activeTranslations._currentLangMetadata = Store.state.currentLang;
 
-    // Architectural Interceptor: Safeguards resources and clinical timers when view is obstructed
+    /** 
+     * @architecture Interceptor
+     * Safeguards resources and clinical timers when foveal workspace is obstructed.
+     */
     function enforceSystemPause(): void {
         if (!Store.state.isPaused && pauseController) {
             pauseController.togglePause();
         }
     }
 
-    // Additive binding for standalone Handbook modal
+    // Logic: Handbook modal binding
     const btnInfo = document.getElementById('btn-info');
     if (btnInfo) {
         btnInfo.addEventListener('click', enforceSystemPause);
@@ -480,7 +517,7 @@ window.addEventListener('load', async () => {
             enforceSystemPause();
             Store.loadSettings();
 
-            // Take snapshot of critical clinical parameters to detect destructive changes later
+            // Take snapshot of clinical parameters to detect destructive changes
             snapAppMode = Store.state.appMode;
             snapPresetMode = Store.state.presetMode;
             snapLevel = Store.state.currentLevel;
@@ -561,6 +598,10 @@ window.addEventListener('load', async () => {
             Store.saveSettings();
             updateMuteBtnUI();
         },
+        /** 
+         * @description Primary interaction trigger for the visual arena.
+         * @clinical Implements the "Canvas-as-Trigger" metaphor. 
+         */
         onActionCanvasClick: () => {
             const s = Store.state;
             if (s.isPaused) {
@@ -607,11 +648,12 @@ window.addEventListener('load', async () => {
                 }
             }
         },
+        /** @description Handles tactile engagement start for vergence and swipes. */
         onDragStart: (event?: Event) => {
             const s = Store.state;
             if (s.isPaused) return;
 
-            // Restrict physical touch/drag operations strictly to the surface of `#container` in Synoptophore
+            // Isomorphic Isolation: Ignore any interaction started outside the gray foveal arena
             if (s.appMode === 'synoptophore' && event) {
                 const target = event.target as HTMLElement;
                 if (!target.closest('#container')) return;
@@ -785,6 +827,7 @@ window.addEventListener('load', async () => {
         });
     }
 
+    /** @description Synchronizes state and triggers re-initialization if clinical changes are detected. */
     function saveSettingsFromUI(): void {
         if (settingsController) settingsController.syncStateFromUI();
         Store.saveSettings();
@@ -835,15 +878,18 @@ window.addEventListener('load', async () => {
         }
     }
 
+    /** @description Updates the mute/unmute button text and Twemoji assets. */
     function updateMuteBtnUI(): void {
         const btnMute = document.getElementById('btn-mute');
         if (btnMute) {
             btnMute.innerText = Store.state.isMuted ? '🔇' : '🔊';
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(btnMute);
         }
     }
 
+    // Logic: Fusion calibration test pattern trigger
     if (btnFusionTest) {
         btnFusionTest.addEventListener('click', () => {
             const settingsModal = document.getElementById('settings-modal');
@@ -857,8 +903,7 @@ window.addEventListener('load', async () => {
             if (gaborController && !gaborController.isAnaglyphTestActive && settingsModal) {
                 settingsModal.classList.add('modal-clear-backdrop');
                 
-                // Instantly hide the PAUSED watermark on the exact millisecond of click, 
-                // preventing it from flashing on top of the gray transition curtain.
+                // Clinical: instantly hide watermark to reveal central calibration anchors
                 if (pauseController) pauseController.overrideWatermarkVisibility(true);
             }
 
@@ -871,7 +916,8 @@ window.addEventListener('load', async () => {
                         container.classList.add('calibration-active');
 
                         if (scrollBody && settingsModal) {
-                            // Safe persistent state anchoring
+                            // Safe persistent state anchoring for modal scrolling
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             (settingsModal as any)._savedScrollTop = scrollBody.scrollTop;
                         }
 
@@ -884,12 +930,11 @@ window.addEventListener('load', async () => {
 
                         if (synoptophoreController) synoptophoreController.stopFlickerLoop();
 
-                        // Symmetrical Calibration Lock: Force draw the spatial reference frame during active calibration for ALL modes (including RDS)
                         drawIdleState(canvas, null, overlayCanvas, overlayCtx, true);
                         drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
                         canvas.style.display = 'block';
                         overlayCanvas.style.display = 'block';
-                        cross.style.display = 'block'; // Keep the crisp native CSS cross visible during calibration
+                        cross.style.display = 'block'; 
                                 
                         if (modalContent) modalContent.classList.remove('modal-transitioning');
                         if (calibrationCurtain) calibrationCurtain.classList.remove('active');
@@ -906,7 +951,6 @@ window.addEventListener('load', async () => {
                         scrollBody.scrollTop = (settingsModal as any)._savedScrollTop;
                     }
 
-                    // Architectural delegation: Safely restore watermark
                     if (pauseController) pauseController.overrideWatermarkVisibility(false);
 
                     drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.appMode === 'synoptophore' || Store.state.isFusionLockEnabled);
@@ -935,34 +979,34 @@ window.addEventListener('load', async () => {
 
     transitionToMode(Store.state.appMode);
 
+    /** 
+     * @clinical Ophthalmic Fatigue Protocol (Pomodoro)
+     * Monitors active foveation time and enforces periodic ciliary muscle relaxation.
+     */
     const pomodoro = new PomodoroTimer(
         (state) => {
             updateScoreboard(state, activeTranslations);
         },
         (state) => {
-            // Safe teardown of all controllers using the standardized deactivate() lifecycle
+            // Forced Clinical Reset: Instantly halt all active modalities and timers
             if (gaborController) gaborController.deactivate();
             if (synoptophoreController) synoptophoreController.deactivate();
             if (rdsController) rdsController.deactivate();
 
-            // Retrieve modal elements from DOM to cleanly close them upon session completion
             const settingsModalEl = document.getElementById('settings-modal');
             const infoModalEl = document.getElementById('info-modal');
             const statsModalEl = document.getElementById('stats-modal');
 
-            // Symmetrically dismiss all open modals to return DOM to a clean, non-obstructed resting state
+            // Symmetrically dismiss all open modals to return DOM to a clean resting state
             if (settingsModalEl) closeModal(settingsModalEl);
             if (infoModalEl) closeModal(infoModalEl);
             if (statsModalEl) closeModal(statsModalEl);
 
-            // Reset the session progress (scores/totals) to zero
             Store.resetSessionProgress();
 
-            // Sanitize and re-enable start button to prevent visual locking after Pomodoro finishes
             btnStart.disabled = false;
             btnStart.style.opacity = "1";
 
-            // Update the visual scoreboard immediately to show 0/0
             updateScoreboard(Store.state, activeTranslations);
 
             drawIdleState(canvas, null, overlayCanvas, overlayCtx, state.appMode === 'synoptophore' || state.isFusionLockEnabled);

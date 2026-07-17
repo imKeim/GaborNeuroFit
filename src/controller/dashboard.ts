@@ -1,28 +1,50 @@
-/*
- * GaborNeuroFit - Dashboard & Patient Registry Controller
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file dashboard.ts
+ * @description Controller for the Patient Dashboard and Clinical Registry.
+ * Manages multi-user profile lifecycles, analytical progress charting, and 
+ * high-fidelity RFC 4180 CSV data interchange (import/export).
  *
- * Migrated to TypeScript: Employs strict null-checks and safe parsing boundaries
- * to process imported/exported CSV arrays without data loss or exceptions.
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
 import { Store } from '../store';
 import { DataRepository } from '../store/repository';
-import { renderProgressChart, renderSynopProgressChart, renderRdsProgressChart, updateLeaderboard, updateSynopLeaderboard, updateRdsLeaderboard, getCompactPresetLabel, updateScoreboard } from '../ui/screen';
+import { 
+    renderProgressChart, 
+    renderSynopProgressChart, 
+    renderRdsProgressChart, 
+    updateLeaderboard, 
+    updateSynopLeaderboard, 
+    updateRdsLeaderboard, 
+    getCompactPresetLabel, 
+    updateScoreboard 
+} from '../ui/screen';
 import { showCustomAlert, showCustomConfirm } from '../ui/modal';
 import { parseCSV, serializeCSV } from '../utils/csv';
 import type { EyeSide, RdsSession, GaborSession, SynoptophoreSession } from '../types/clinical';
 
+/**
+ * @description Orchestrator for the analytical dashboard and patient profile management.
+ */
 export class DashboardController {
     constructor(private getTranslations: () => Record<string, string>) {
         this.bindEvents();
     }
 
+    /**
+     * @description Synchronizes the dashboard UI with the current persistent state.
+     * 
+     * @architecture
+     * Triggers distinct rendering loops for Gabor, Synoptophore, and RDS analytics 
+     * based on active user history query results.
+     */
     refreshStatsUI(): void {
         const activeUid = DataRepository.getActiveProfileId();
         const profiles = DataRepository.getProfiles();
         const t = this.getTranslations();
 
+        // Hydrate profile selection dropdown
         const dropdown = document.getElementById('select-active-profile') as HTMLSelectElement | null;
         if (dropdown) {
             dropdown.innerHTML = profiles.map(p =>
@@ -30,26 +52,40 @@ export class DashboardController {
             ).join('');
         }
 
+        // Render Gabor modality progress and leaderboards
         const gaborSessions = DataRepository.getGaborSessionsForActiveUser();
         renderProgressChart(gaborSessions, t);
         updateLeaderboard(gaborSessions, t, Store.state.currentLang);
 
+        // Render Synoptophore modality progress and leaderboards
         const synopSessions = DataRepository.getSynopSessionsForActiveUser();
         renderSynopProgressChart(synopSessions, t);
         updateSynopLeaderboard(synopSessions, t, Store.state.currentLang);
 
+        // Render RDS modality progress and leaderboards
         const rdsSessions = DataRepository.getRdsSessionsForActiveUser();
         renderRdsProgressChart(rdsSessions, t);
         updateRdsLeaderboard(rdsSessions, t, Store.state.currentLang);
 
+        // Soft degradation for global Twemoji parsing across the dashboard
         const statsModal = document.getElementById('stats-modal');
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         if (typeof window !== 'undefined' && window.twemoji && statsModal) {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             window.twemoji.parse(statsModal);
         }
     }
 
+    /**
+     * @description Attaches event listeners for dashboard interactions.
+     * 
+     * @architecture
+     * - Tab Orchestration: Manages conditional display logic for modality-specific data views.
+     * - Profile CRUD: Handles creation, deletion, and context-switching of patient records.
+     * - CSV Pipeline: Binds export/import triggers for clinical data portability.
+     */
     private bindEvents(): void {
         const tabGabor = document.getElementById('tab-gabor');
         const tabSynop = document.getElementById('tab-synop');
@@ -87,24 +123,23 @@ export class DashboardController {
             });
         }
 
+        // Handle patient context switching
         const selectActiveProfile = document.getElementById('select-active-profile') as HTMLSelectElement | null;
         if (selectActiveProfile) {
             selectActiveProfile.addEventListener('change', () => {
                 DataRepository.setActiveProfileId(selectActiveProfile.value);
-                Store.state.score = 0;
-                Store.state.total = 0;
                 Store.resetSessionProgress();
                 updateScoreboard(Store.state, this.getTranslations());
                 this.refreshStatsUI();
             });
         }
 
+        // Handle new patient profile creation
         const formAddProfile = document.getElementById('form-add-profile');
         const inputNewProfile = document.getElementById('input-new-profile') as HTMLInputElement | null;
         if (formAddProfile && inputNewProfile) {
-            // SSoT Form Submission: Handles both tactile clicks on "Add" button and system "Enter" keyboard events symmetrically
             formAddProfile.addEventListener('submit', (event) => {
-                event.preventDefault(); // Protect against browser-default destructive page reloads on submit
+                event.preventDefault(); 
                 
                 const t = this.getTranslations();
                 const name = inputNewProfile.value.trim();
@@ -113,7 +148,6 @@ export class DashboardController {
                     return;
                 }
 
-                // Prevent duplicate patient profiles (case-insensitive and trimmed)
                 const profiles = DataRepository.getProfiles();
                 const exists = profiles.some(p => p.name.toLowerCase() === name.toLowerCase());
                 if (exists) {
@@ -127,8 +161,6 @@ export class DashboardController {
                 if (newProf) {
                     DataRepository.setActiveProfileId(newProf.id);
                     inputNewProfile.value = '';
-                    Store.state.score = 0;
-                    Store.state.total = 0;
                     Store.resetSessionProgress();
                     updateScoreboard(Store.state, t);
                     this.refreshStatsUI();
@@ -136,6 +168,7 @@ export class DashboardController {
             });
         }
 
+        // Handle profile deletion with cascading history purge
         const btnDeleteProfile = document.getElementById('btn-delete-profile');
         if (btnDeleteProfile) {
             btnDeleteProfile.addEventListener('click', () => {
@@ -161,8 +194,6 @@ export class DashboardController {
                     (isConfirmed) => {
                         if (isConfirmed && activeUid) {
                             DataRepository.deleteProfile(activeUid);
-                            Store.state.score = 0;
-                            Store.state.total = 0;
                             Store.resetSessionProgress();
                             updateScoreboard(Store.state, t);
                             this.refreshStatsUI();
@@ -172,6 +203,7 @@ export class DashboardController {
             });
         }
 
+        // Handle bulk history purge for the active user
         const btnClearHistory = document.getElementById('btn-clear-history');
         if (btnClearHistory) {
             btnClearHistory.addEventListener('click', () => {
@@ -185,8 +217,6 @@ export class DashboardController {
                     (isConfirmed) => {
                         if (isConfirmed) {
                             DataRepository.clearActiveUserHistory();
-                            Store.state.score = 0;
-                            Store.state.total = 0;
                             Store.resetSessionProgress();
                             updateScoreboard(Store.state, t);
                             this.refreshStatsUI();
@@ -196,6 +226,7 @@ export class DashboardController {
             });
         }
 
+        // Handle RFC 4180 CSV clinical report export
         const btnExportCsv = document.getElementById('btn-export-csv');
         if (btnExportCsv) {
             btnExportCsv.addEventListener('click', () => {
@@ -205,6 +236,7 @@ export class DashboardController {
 
                 const headers = (t.csvHeaders || "Date,Mode,Lazy Eye Side,Score/Total,Accuracy %,Gabor Stage,Contrast Threshold %,Contrast Balancer %,10Hz Flicker,Visual Crowding,Peripheral Shift,Permanent Cross,Synop Deviation X (px),Synop Deviation Y (px),Synop Start Distance (px),Outcome,RDS Dot Size (px),RDS Dot Density %,RDS Disparity Threshold (px)").split(',');
 
+                // Polymorphic session extraction for flat CSV serialization
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const rawRows: any[][] = sessions.map(s => {
                     const dateStr = new Date(s.timestamp).toISOString().replace(/T/, ' ').replace(/\..+/, '');
@@ -212,8 +244,6 @@ export class DashboardController {
                     const isSynop = s.protocol === 'synoptophore';
                     const isRds = s.protocol === 'rds';
                     const modeLabel = getCompactPresetLabel(s.protocol, t);
-
-                    // --- Polymorphic Data Extraction depending on specific Casted Type ---
 
                     if (isSynop) {
                         const ss = s as SynoptophoreSession;
@@ -275,6 +305,7 @@ export class DashboardController {
             });
         }
 
+        // Handle clinical report CSV import
         const btnImportCsv = document.getElementById('btn-import-csv');
         const inputImportCsv = document.getElementById('input-import-csv') as HTMLInputElement | null;
         if (btnImportCsv && inputImportCsv) {
@@ -293,13 +324,22 @@ export class DashboardController {
                     if (e.target && typeof e.target.result === 'string') {
                         this.parseAndImportCSV(e.target.result);
                     }
-                    inputImportCsv.value = ''; // Reset file input
+                    inputImportCsv.value = ''; 
                 };
                 reader.readAsText(file, 'UTF-8');
             });
         }
     }
 
+    /**
+     * @description Parses raw CSV strings into clinical session records.
+     * 
+     * @architecture
+     * Implements a deterministic deduplication algorithm by generating 
+     * composite session IDs based on exact trial timestamps and protocols.
+     * 
+     * @param {string} text - Raw CSV data stream.
+     */
     private parseAndImportCSV(text: string): void {
         const t = this.getTranslations();
         try {
@@ -375,8 +415,7 @@ export class DashboardController {
                 const rdsDisparity = rdsDisparityRaw ? parseInt(rdsDisparityRaw, 10) || null : null;
 
                 parsedSessions.push({
-                    // Generate a deterministic ID based on exact unique parameters of the session
-                    // to prevent creating double-clones in the relational DB upon repeating imports.
+                    // Deterministic ID generation to prevent duplicate clones during repeatable imports
                     id: 'imported_' + timestamp + '_' + protocol + '_' + score + '_' + total + '_' + (rdsDisparity || 0),
                     timestamp: timestamp,
                     score: score,

@@ -1,19 +1,37 @@
-/*
- * GaborNeuroFit - Declarative i18n Engine
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file i18n.ts
+ * @description Declarative internationalization (i18n) engine.
+ * Implements a data-driven DOM injection pattern using data-i18n attributes. 
+ * Decouples translation dictionaries from application logic and ensures 
+ * secure, localized text rendering.
  *
- * Migrated to TypeScript: Extensively utilizes DOM Type Guards to strictly assign
- * textual properties (like placeholders) exclusively to valid input nodes without violations.
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
 import { Store } from '../store.js';
 import type { Language } from '../types/clinical';
 
+/** @description Global translation buffer used to cache active localized strings. */
 export let activeTranslations: Record<string, string> = {};
 
 /**
- * @description Asynchronously loads localized JSON dictionaries from the static assets
- * and declaratively maps translation keys to data-i18n elements across the DOM tree.
+ * @description Asynchronously loads localized JSON dictionaries and hydrates the DOM.
+ * 
+ * @architecture
+ * - Cascading Fallbacks: If the requested locale fails to load, the engine 
+ *   automatically attempts to fetch the English (en.json) dictionary to maintain UI stability.
+ * - SSoT Synchronization: Commits the new language selection to the global Store 
+ *   and persists it to localStorage for state recovery.
+ * 
+ * @security
+ * - XSS Prevention: Utilizes .textContent for standard nodes to ensure 
+ *   dictionary strings are treated as literal data, not executable markup.
+ * - Isolated Markup: Restricts .innerHTML injection strictly to elements 
+ *   marked with [data-i18n-html].
+ * 
+ * @param {Language} lang - The target language code to load.
+ * @returns {Promise<Record<string, string>>} The loaded translation dictionary.
  */
 export async function loadLanguage(lang: Language): Promise<Record<string, string>> {
     try {
@@ -50,7 +68,7 @@ export async function loadLanguage(lang: Language): Promise<Record<string, strin
         }
     });
 
-    // Declaratively resolve input placeholders strictly guarding input node types
+    // Declaratively resolve input placeholders using strict DOM Type Guards
     document.querySelectorAll('[data-i18n-placeholder]').forEach((el: Element) => {
         const key = el.getAttribute('data-i18n-placeholder');
         if (key && t[key] !== undefined) {
@@ -59,9 +77,6 @@ export async function loadLanguage(lang: Language): Promise<Record<string, strin
             }
         }
     });
-
-    // Synchronize the language selection (Pill Tabs logic is handled reactively by SettingsController)
-    // Legacy <select> code is completely removed, ensuring SSoT.
 
     return activeTranslations;
 }

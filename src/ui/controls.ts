@@ -1,11 +1,17 @@
-/*
- * GaborNeuroFit - User Input Controls & Keybindings Handler Module
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file controls.ts
+ * @description Input Driver module orchestrating hardware and gestural interactions.
+ * Abstracts physical input events (Mouse, Touch, Keyboard) into a normalized clinical 
+ * switchboard, providing high-performance virtual loops for smooth vergence tracking.
  *
- * Migrated to TypeScript: Employs an exact InputHandlers interface contract.
- * Strictly asserts Touch, Mouse, and Keyboard events to prevent event propagation crashes.
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
+/**
+ * @description Standardized interface for application-wide input callbacks.
+ * Decouples physical event listeners from the clinical state machine.
+ */
 export interface InputHandlers {
     onActionLeft?: () => void;
     onActionRight?: () => void;
@@ -15,7 +21,9 @@ export interface InputHandlers {
     onActionPauseToggle?: () => void;
     onActionCanvasClick?: () => void;
     onEscape?: () => void;
+    /** @param {Event} event - Raw input event used to determine spatial origin. */
     onDragStart?: (event: Event) => void;
+    /** @param {number} deltaX - Normalized horizontal offset in virtual pixels. */
     onDragUpdate?: (deltaX: number, deltaY: number) => void;
     onDragEnd?: (deltaTime: number, deltaXTotal: number, deltaYTotal: number, clientX: number, clientY: number) => void;
     onDragMovePreventDefault?: () => boolean;
@@ -25,10 +33,13 @@ export interface InputHandlers {
 
 /**
  * @description Binds hardware and gestural input controls to the visual workspace.
- * Transcribed strictly into an abstract, mockable "Switchboard" controller.
- * It contains zero dependencies on global state stores or specific clinical modes.
+ * 
+ * @architecture
+ * - Normalization: Translates varying physical screen resolutions into a fixed 256x256 virtual coordinate system.
+ * - Virtual Game Loop: Implements high-frequency (20Hz) polling for held keys to bypass OS-native repeat delays.
+ * - Event Delegation: Intercepts canvas clicks while preserving UI button accessibility.
  *
- * @param {InputHandlers} handlers - Standardized dictionary of physical action callbacks.
+ * @param {InputHandlers} handlers - Dictionary of normalized action callbacks.
  */
 export function bindInputControls(handlers: InputHandlers): void {
     const btnLeft = document.getElementById('btn-left') as HTMLButtonElement | null;
@@ -49,6 +60,10 @@ export function bindInputControls(handlers: InputHandlers): void {
     let keyIntervalId: number | null = null;
     let keyDelayId: number | null = null;
 
+    /**
+     * @description Polls the active key set and emits directional shifts at 20Hz.
+     * @clinical Essential for smooth extraocular muscle exercise during vergence alignment.
+     */
     function handleHeldKeys(): void {
         if (typeof handlers.onDirectionalShift !== 'function') {
             stopKeyLoop();
@@ -73,6 +88,7 @@ export function bindInputControls(handlers: InputHandlers): void {
         }
     }
 
+    /** @description Starts the 20Hz polling interval for held movement keys. */
     function startKeyLoop(): void {
         handleHeldKeys();
 
@@ -83,6 +99,7 @@ export function bindInputControls(handlers: InputHandlers): void {
         }
     }
 
+    /** @description Terminates the key polling loop and clears active timers. */
     function stopKeyLoop(): void {
         if (keyDelayId !== null) {
             window.clearTimeout(keyDelayId);
@@ -101,18 +118,21 @@ export function bindInputControls(handlers: InputHandlers): void {
     }
 
     if (workspace) {
+        // Clinical: 2D coordinate normalization pipeline
+
         workspace.addEventListener('mousedown', (event: MouseEvent) => {
             if (typeof handlers.onDragStart === 'function') handlers.onDragStart(event);
             isMouseDragging = true;
             swipeStartX = event.clientX;
             swipeStartY = event.clientY;
-            swipeStartTime = Date.now(); // Record start time for unified mouse-drag velocity calculations
+            swipeStartTime = Date.now();
         });
 
         window.addEventListener('mousemove', (event: MouseEvent) => {
             if (isMouseDragging && container) {
                 const diffX = event.clientX - swipeStartX;
                 const diffY = event.clientY - swipeStartY;
+                // Mathematical normalization to virtual 256px grid
                 const ratio = 256.0 / container.clientWidth;
                 const logicalDeltaX = Math.round(diffX * ratio);
                 const logicalDeltaY = Math.round(diffY * ratio);
@@ -130,7 +150,6 @@ export function bindInputControls(handlers: InputHandlers): void {
                 const deltaYTotal = event.clientY - swipeStartY;
                 const deltaTime = Date.now() - swipeStartTime;
 
-                // Symmetrically trigger onDragEnd for mouse events to cleanly strip the .dragging class
                 if (typeof handlers.onDragEnd === 'function') {
                     handlers.onDragEnd(deltaTime, deltaXTotal, deltaYTotal, event.clientX, event.clientY);
                 }
@@ -200,10 +219,9 @@ export function bindInputControls(handlers: InputHandlers): void {
             }
         }, { passive: true });
 
-        // Touch Cancel Handler: Safeguards against layout freeze if OS gestures or notification alerts interrupt dragging
         workspace.addEventListener('touchcancel', () => {
             if (typeof handlers.onDragEnd === 'function') {
-                handlers.onDragEnd(0, 0, 0, 0, 0); // Gracefully terminate dragging coordinates and reset .dragging state
+                handlers.onDragEnd(0, 0, 0, 0, 0); 
             }
         }, { passive: true });
     }
@@ -235,46 +253,47 @@ export function bindInputControls(handlers: InputHandlers): void {
         });
     }
 
+    /**
+     * @description Master keyboard event dispatcher.
+     * 
+     * @a11y
+     * - Modal Guard: Standardizes ESC to close modals.
+     * - Clinical Bypass: Permits W/S/Arrow keys to pass through to the calibration panel.
+     * - Text Guard: Disables hotkeys while typing in patient registry fields.
+     * - Focus Guard: Space/Enter only trigger trials if focus is not on a specific UI button.
+     */
     window.addEventListener('keydown', (event: KeyboardEvent) => {
         const key = event.key.toLowerCase();
         const isTuningKey = ['arrowup', 'arrowdown', 'w', 's', 'ц', 'ы'].includes(key);
 
-    if (event.repeat && !isTuningKey) return;
+        if (event.repeat && !isTuningKey) return;
 
-    // Contextual Modal Guard: If any modal is active, let standard browser navigation (arrows, typing, sliders) work natively
         const activeModal = document.querySelector('.modal.modal-open') as HTMLElement | null;
         if (activeModal) {
-        // System Bypass: Never block browser functional hotkeys (F1-F12) or OS modifiers (Ctrl, Cmd, Alt)
-        const isSystemFKey = key.startsWith('f') && key.length > 1 && !isNaN(Number(key.slice(1)));
-        if (isSystemFKey || event.ctrlKey || event.metaKey || event.altKey) {
-            return; // Let the browser handle system commands natively
+            const isSystemFKey = key.startsWith('f') && key.length > 1 && !isNaN(Number(key.slice(1)));
+            if (isSystemFKey || event.ctrlKey || event.metaKey || event.altKey) {
+                return; 
+            }
+
+            if (key === 'escape' || key === 'esc') {
+                event.preventDefault();
+                if (typeof handlers.onEscape === 'function') handlers.onEscape();
+                return;
+            }
+                
+            const isCalibrationMode = activeModal.classList.contains('calibration-mode');
+            const isCalibrationKey = isCalibrationMode && ['w', 's', 'arrowup', 'arrowdown', 'ц', 'ы'].includes(key);
+
+            if (!isCalibrationKey) {
+                return;
+            }
         }
 
-        // Let escape close the topmost active modal
-        if (key === 'escape' || key === 'esc') {
-            event.preventDefault();
-            if (typeof handlers.onEscape === 'function') handlers.onEscape();
-            return;
-        }
-            
-        // Clinical Calibration Bypass: Allow tuning keys (W, S, Up, Down) if we are in calibration mode
-        const isCalibrationMode = activeModal.classList.contains('calibration-mode');
-        const isCalibrationKey = isCalibrationMode && ['w', 's', 'arrowup', 'arrowdown', 'ц', 'ы'].includes(key);
-
-        if (isCalibrationKey) {
-            // Let these keys pass through the modal guard so the directional handler below can process them
-        } else {
-            // Bypass all other keys so standard dropdowns, inputs, and sliders remain fully accessible
-            return;
-        }
-    }
-
-    // Precise A11y Guard for global scope: Only block hotkeys if the user is typing text, strictly ignoring sliders (type="range")
-    const isGlobalTextInput = document.activeElement && (
-        (document.activeElement instanceof HTMLInputElement && (document.activeElement.type === 'text' || document.activeElement.type === 'search')) ||
-        document.activeElement.tagName === 'TEXTAREA'
-    );
-    if (isGlobalTextInput) return;
+        const isGlobalTextInput = document.activeElement && (
+            (document.activeElement instanceof HTMLInputElement && (document.activeElement.type === 'text' || document.activeElement.type === 'search')) ||
+            document.activeElement.tagName === 'TEXTAREA'
+        );
+        if (isGlobalTextInput) return;
 
         if (key === 'escape' || key === 'esc') {
             if (typeof handlers.onEscape === 'function') handlers.onEscape();
@@ -318,8 +337,6 @@ export function bindInputControls(handlers: InputHandlers): void {
         } else if (key === 'arrowright' || key === 'd' || key === 'в') {
             if (typeof handlers.onActionRight === 'function') handlers.onActionRight();
         } else if (key === ' ' || key === 'enter') {
-            // Precise A11y Guard: If focus is on an interactive UI button (like Settings, Info, Stats), 
-            // do not intercept Space/Enter, letting browser activate the focused element natively.
             const focusedEl = document.activeElement;
             const isFocusedOnButton = focusedEl && 
                                        focusedEl instanceof HTMLButtonElement && 

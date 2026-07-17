@@ -1,22 +1,38 @@
-/*
- * GaborNeuroFit - Bootstrapper & Environment Overrides
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file bootstrap.ts
+ * @description System bootstrapper and environment coordinator.
+ * Manages global API augmentations, hardware-specific visual scaling (DPR), 
+ * and ensures 100% offline asset availability for PWA environments.
  *
- * Migrated to TypeScript: Global environment augmentations and strict DOM casting.
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
 import { initAudio } from '../engine/audio.js';
 
-// Global Augmentation to prevent TS compiler errors when accessing non-standard browser APIs
+/** 
+ * @description Global Augmentation block.
+ * @architecture Informs the TS compiler about external CDN-loaded libraries and 
+ * legacy prefixed browser APIs (e.g., Safari's webkitAudioContext).
+ */
 declare global {
     interface Window {
+        /** @description Twemoji parsing engine for vector emoji rendering. */
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         twemoji?: any;
+        /** @description Legacy WebKit AudioContext support for older iOS devices. */
         webkitAudioContext?: typeof AudioContext;
     }
 }
 
-// Intercept Twemoji parser globally to enforce absolute offline local path loading
+/**
+ * @description Twemoji CDN Interceptor Proxy.
+ * 
+ * @architecture 
+ * Forcefully redirects Twemoji vector requests to the local /public/emojis directory. 
+ * This guarantees privacy and full offline functionality in PWA mode, preventing 
+ * layout shifts caused by external asset latency.
+ */
 if (typeof window !== 'undefined' && window.twemoji) {
     const originalParse = window.twemoji.parse;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -31,13 +47,18 @@ if (typeof window !== 'undefined' && window.twemoji) {
 }
 
 /**
- * @description Dynamically scales the canvas and overlay backing stores to match
- * the high-DPI (Retina) physical pixel boundaries of the active display device.
+ * @description Dynamically scales the canvas backing store to match physical display pixels.
  *
- * @clinical Retina-display alignment is crucial. Visual acuity (VA) training uses
- * high-frequency Gabor gratings (Stage 5). If the canvas uses logical CSS scaling instead of
- * physical DPR backing, the sub-pixel arrays will blur (interpolation artifacts), destroying
- * the strictly controlled physiological contrast thresholds.
+ * @clinical 
+ * - Retina/High-DPI Alignment: Visual acuity (VA) training utilizes high-frequency Gabor 
+ *   gratings (Stage 5) with 1-2 pixel thickness. 
+ * - Anti-Aliasing Prevention: Standard CSS scaling introduces bilinear interpolation 
+ *   artifacts (blurring). Matching the backing store to the physical devicePixelRatio 
+ *   ensures sub-pixel sharpness, preserving strictly controlled spatial frequencies.
+ * 
+ * @mathematical
+ * Sets internal dimensions as Physical_Size = CSS_Bounding_Rect * devicePixelRatio.
+ * Hard-capped at 1024px to prevent VRAM exhaustion on 4K+ displays.
  */
 export function resizeCanvasesToDPR(): void {
     const canvas = document.getElementById('gaborCanvas') as HTMLCanvasElement | null;
@@ -57,7 +78,12 @@ export function resizeCanvasesToDPR(): void {
     }
 }
 
-// Register audio activation listeners globally to unlock AudioContext
+/** 
+ * @description Audio Unlocking Pipeline.
+ * @architecture
+ * Registers one-time listeners to resume the AudioContext upon the first physical 
+ * user gesture, satisfying modern browser autoplay security policies.
+ */
 if (typeof window !== 'undefined') {
     window.addEventListener('click', initAudio, { once: true });
     window.addEventListener('touchstart', initAudio, { once: true, passive: true });

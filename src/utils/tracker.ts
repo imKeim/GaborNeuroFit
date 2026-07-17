@@ -1,11 +1,16 @@
-/*
- * GaborNeuroFit - Asynchronous Resource Tracker Utility
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file tracker.ts
+ * @description Asynchronous Resource Tracker and Garbage Collection utility.
+ * Manages the lifecycle of JavaScript timers, intervals, and requestAnimationFrame requests.
+ * Acts as a safety fuse to prevent memory leaks and "zombie" callbacks during clinical mode switching.
  *
- * This utility class tracks and garbage-collects active JavaScript timers,
- * intervals, and requestAnimationFrame requests to prevent memory/GPU leaks.
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
+/**
+ * @description Utility class for tracking and batch-clearing asynchronous resources.
+ */
 export class AsyncResourceTracker {
     private timeouts: Set<number>;
     private intervals: Set<number>;
@@ -18,10 +23,22 @@ export class AsyncResourceTracker {
     }
 
     /**
-     * @description Safe wrapper for setTimeout. Auto-deletes itself from tracker upon execution.
+     * @description Safe wrapper for window.setTimeout.
+     * 
+     * @architecture 
+     * Implements a self-cleaning mechanism: the timer ID is automatically purged 
+     * from the internal registry once the callback executes, ensuring an accurate 
+     * inventory of pending tasks.
+     * 
+     * @clinical 
+     * Essential for managing Gabor flash exposure durations (100-350ms) and feedback 
+     * window animations without risking overlapping stimuli.
+     * 
+     * @param {Function} callback - The function to execute.
+     * @param {number} delay - Delay in milliseconds.
+     * @returns {number} The generated timeout ID.
      */
     setTimeout(callback: () => void, delay: number): number {
-        // Enforce browser-side setTimeout return type as number via window context
         const id = window.setTimeout(() => {
             this.timeouts.delete(id);
             callback();
@@ -31,7 +48,15 @@ export class AsyncResourceTracker {
     }
 
     /**
-     * @description Safe wrapper for setInterval
+     * @description Safe wrapper for window.setInterval.
+     * 
+     * @clinical 
+     * Used for long-running vergence pull intervals in Synoptophore mode, 
+     * ensuring constant and predictable motor load on extraocular muscles.
+     * 
+     * @param {Function} callback - The function to execute repeatedly.
+     * @param {number} delay - Interval in milliseconds.
+     * @returns {number} The generated interval ID.
      */
     setInterval(callback: () => void, delay: number): number {
         const id = window.setInterval(callback, delay);
@@ -40,7 +65,18 @@ export class AsyncResourceTracker {
     }
 
     /**
-     * @description Safe wrapper for requestAnimationFrame
+     * @description Safe wrapper for window.requestAnimationFrame.
+     * 
+     * @architecture 
+     * Synchronizes high-frequency rendering with the display refresh rate (VSync), 
+     * preventing screen tearing and ensuring thermal efficiency.
+     * 
+     * @clinical 
+     * Critical for maintaining stable 10Hz Alpha-resonance flicker loops and 
+     * 18Hz dynamic RDS noise boiling without frame drops.
+     * 
+     * @param {FrameRequestCallback} callback - The render function.
+     * @returns {number} The generated frame request ID.
      */
     requestAnimationFrame(callback: (timestamp: number) => void): number {
         const id = window.requestAnimationFrame((timestamp: number) => {
@@ -52,8 +88,12 @@ export class AsyncResourceTracker {
     }
 
     /**
-     * @description Instantly purge all active registered asynchronous timers and frame loops.
-     * Prevents delayed visual callbacks from interfering with newly initialized clinical modalities.
+     * @description Forcefully purges all active registered asynchronous timers and frame loops.
+     * 
+     * @architecture 
+     * Performs an atomic teardown of the asynchronous context. This prevents "delayed visual 
+     * ghosts" (callbacks from a previous training session) from firing once a new 
+     * modality has been initialized on the same canvas.
      */
     clearAll(): void {
         this.timeouts.forEach((id) => window.clearTimeout(id));

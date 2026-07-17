@@ -1,13 +1,19 @@
-/*
- * GaborNeuroFit - Pomodoro Timer Utility
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file timer.ts
+ * @description Pomodoro-based physiological visual fatigue monitoring utility.
+ * Implements absolute system clock synchronization to manage mandatory recovery intervals, 
+ * preventing accommodative spasms during intensive foveation exercises.
  *
- * Encapsulates physiological visual fatigue timer loops.
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
 import { Store } from '../store.js';
 import type { AppState } from '../types/clinical';
 
+/**
+ * @description High-precision countdown timer leveraging System Clock SSoT.
+ */
 export class PomodoroTimer {
     private onTick: (state: AppState) => void;
     private onComplete: (state: AppState) => void;
@@ -21,33 +27,44 @@ export class PomodoroTimer {
     }
 
     /**
-     * @description Initializes the 1-second Pomodoro heartbeat.
+     * @description Initializes the 1-second physiological heartbeat loop.
      *
-     * @clinical Forces periodic recovery intervals. Continuous near-point active foveation
-     * (especially during cross-eyed stereogram fusion) induces extreme ciliary muscle fatigue
-     * (accommodative spasm). The timer forces the patient to look at a distant target (20/20/20 rule)
-     * to safely relax parasympathetic innervation.
+     * @clinical 
+     * - Fatigue Mitigation: Enforces the 20-20-20 rule (look 20 feet away for 20 seconds). 
+     * - Ciliary Muscle Protection: Prevents accommodative spasm caused by prolonged 
+     *   near-point binocular fusion during RDS and Synoptophore modes.
+     * - Neuroplasticity Consolidation: Mandatory rest intervals facilitate the 
+     *   stabilization of newly formed synaptic connections in the visual cortex.
+     * 
+     * @mathematical
+     * - Drift Prevention: Avoids standard setInterval cumulative error by calculating 
+     *   remaining time as Delta = (TargetTimestamp - CurrentTimestamp).
+     * - Rounding: Utilizes Math.round() to map millisecond deltas to discrete UI seconds.
+     * 
+     * @architecture
+     * - Smart Pause: Halts countdown if UI is obstructed by modals, as reading instructions 
+     *   does not constitute the primary visual load being monitored.
+     * - Sliding Target: While frozen, the targetEndTime is continuously shifted forward 
+     *   by the delta of the pause duration, ensuring perfect continuity upon resumption.
      */
     init(): void {
         if (this.intervalId !== null) {
             window.clearInterval(this.intervalId);
         }
 
-        // Reset the tracking cache state on initialization
         this.lastRemainingSeconds = -1;
 
         this.intervalId = window.setInterval(() => {
             const s = Store.state;
             if (s.timerLimitMinutes === 0) return;
 
-            // Detect and adapt to any external modifications of the countdown state
-            // (e.g. Store.startTimerIfNeeded() resetting it to 300, or settings updates)
+            // Sync target timestamp if state was modified externally (e.g., settings reset)
             if (s.timerRemainingSeconds !== this.lastRemainingSeconds) {
                 this.targetEndTime = Date.now() + (s.timerRemainingSeconds * 1000);
                 this.lastRemainingSeconds = s.timerRemainingSeconds;
             }
 
-            // Smart Pause: Halts physiological countdown if any overlay modal is blocking the screen
+            // Detect modal obstructions to trigger smart pause
             const settingsModal = document.getElementById('settings-modal');
             const infoModal = document.getElementById('info-modal');
             const statsModal = document.getElementById('stats-modal');
@@ -69,20 +86,18 @@ export class PomodoroTimer {
                                   isConfirmOpen;
 
             if (isTimerFrozen) {
-                // While the timer is paused or the view is obstructed by a modal,
-                // we continuously shift the targetEndTime forward to match the active remaining seconds.
-                // This perfectly anchors the countdown target to the exact millisecond the user resumes.
+                // Continuous target shifting during pause to maintain remaining seconds integrity
                 this.targetEndTime = Date.now() + (s.timerRemainingSeconds * 1000);
                 return;
             }
 
-            // High-precision Delta-Time Calculation against absolute system clock SSoT
+            // Calculate exact discrete seconds remaining
             const remaining = Math.max(0, Math.round((this.targetEndTime - Date.now()) / 1000));
-            this.lastRemainingSeconds = remaining; // Sync our local cache before committing state update
+            this.lastRemainingSeconds = remaining; 
             Store.updateState('timerRemainingSeconds', remaining);
             this.onTick(s);
 
-            // Terminate active operations and enforce a strict clinical break interval on zero
+            // Execute clinical break sequence on zero
             if (remaining <= 0) {
                 Store.updateState('timerIsRunning', false);
                 this.onComplete(s);

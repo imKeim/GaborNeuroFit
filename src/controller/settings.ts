@@ -1,21 +1,33 @@
-/*
- * GaborNeuroFit - Declarative Settings Binder Controller
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file settings.ts
+ * @description Bidirectional Data Binder for application configurations.
+ * Acts as the declarative bridge between the reactive Store and the modal UI, 
+ * synchronizing over 50 clinical parameters while enforcing mode-specific visibility rules.
  *
- * Migrated to TypeScript: Employs strict "keyof AppState" generic constraint mapping.
- * This guarantees that DOM element bindings mathematically correspond to actual
- * physical application parameters, eliminating hidden mutation bugs.
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
 import { Store } from '../store';
 import type { AppState } from '../types/clinical';
 
+/** 
+ * @description Definition of a declarative UI-to-State binding field.
+ * @architecture Ensures that each DOM identifier corresponds strictly to an AppState key.
+ */
 interface ConfigField {
+    /** @description DOM element ID in index.html */
     id: string;
+    /** @description Target key in the reactive AppState tree */
     key: keyof AppState;
+    /** @description Component type used to determine parsing logic */
     type: 'checkbox' | 'value' | 'int' | 'float' | 'boolean' | 'percent' | 'pill' | 'grid';
 }
 
+/** 
+ * @description Master schema mapping UI components to clinical state parameters.
+ * Serves as the Single Source of Truth for settings synchronization.
+ */
 const CONFIG_SCHEMA: ConfigField[] = [
     { id: 'chk-stage-advance', key: 'allowStageAdvance', type: 'checkbox' },
     { id: 'select-flash-duration', key: 'flashDurationMode', type: 'pill' },
@@ -65,6 +77,9 @@ const CONFIG_SCHEMA: ConfigField[] = [
     { id: 'select-preset-mode', key: 'presetMode', type: 'grid' }
 ];
 
+/**
+ * @description Controller responsible for modal settings UI orchestration.
+ */
 export class SettingsController {
     private anaglyphPanel: HTMLElement | null;
     private valStrongAttenuation: HTMLElement | null;
@@ -78,6 +93,10 @@ export class SettingsController {
         this.rangeStrongAttenuation = document.getElementById('range-strong-attenuation') as HTMLInputElement | null;
     }
 
+    /**
+     * @description Dynamically updates the visual 'filled' portion of a range slider.
+     * @mathematical Computes percentage fill and injects it into the CSS '--percent' variable.
+     */
     updateSliderTrackGradient(slider: HTMLInputElement | null): void {
         if (!slider || slider.type !== 'range') return;
         const min = parseFloat(slider.min) || 0;
@@ -87,6 +106,13 @@ export class SettingsController {
         slider.style.setProperty('--percent', percent + '%');
     }
 
+    /**
+     * @description Synchronizes the global Store state based on current DOM input values.
+     * 
+     * @architecture
+     * Iterates through CONFIG_SCHEMA to perform type-safe value extraction and 
+     * triggers preset detection if manual overrides occurred.
+     */
     syncStateFromUI(): void {
         const s = Store.state;
         let lastActiveTrigger: string | null = null;
@@ -110,11 +136,9 @@ export class SettingsController {
                     if (field.key === 'rdsIsFloating') lastActiveTrigger = 'rdsIsFloating';
                 }
             } else if (field.type === 'pill' || field.type === 'grid') {
-                // Extract data-value of the currently active child inside our custom segmented controls
                 const activeChild = el.querySelector('.active') as HTMLElement | null;
                 const rawVal = activeChild ? activeChild.getAttribute('data-value') || '' : '';
                 
-                // Parse values cleanly to prevent type mismatch inside State machine
                 if (field.key === 'autoAdvance' || field.key === 'rdsAutoAdvance') {
                     val = (rawVal === 'true');
                 } else if (typeof s[field.key] === 'number') {
@@ -150,7 +174,8 @@ export class SettingsController {
             } else if (field.id === 'slider-right-b') {
                 Store.updateState(s.appMode === 'synoptophore' ? 'synopCalibratorRightB' : 'calibratorRightB', val);
             } else {
-                // @ts-ignore - Dynamic key mapping is safe based on SCHEMA configuration
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
                 Store.updateState(field.key, val);
             }
 
@@ -160,8 +185,6 @@ export class SettingsController {
         Store.resolveConflicts(lastActiveTrigger);
 
         if (s.appMode === 'gabor') {
-            // Only auto-detect presets if the user is not actively in custom manual mode.
-            // This allows the "Custom" card to act as an explicit unlock trigger for locked sliders.
             if (s.presetMode !== 'custom') {
                 const detectedPreset = Store.detectMatchingPreset();
                 Store.updateState('presetMode', detectedPreset);
@@ -175,12 +198,18 @@ export class SettingsController {
         }
     }
 
+    /**
+     * @description Hydrates modal UI elements based on the current Store state.
+     * 
+     * @clinical 
+     * Automatically clamps Gabor subpixel calibrations to >= 127 to prevent negative phase 
+     * underflow during active perceptual trials.
+     */
     updatePresetUI(): void {
         const s = Store.state;
         const isSynop = s.appMode === 'synoptophore';
 
         if (!isSynop) {
-            // Safeguard: Automatically clamp Gabor subpixel calibrations to prevent negative phase underflow.
             if (s.calibratorLeftR < 127) s.calibratorLeftR = 127;
             if (s.calibratorRightG < 127) s.calibratorRightG = 127;
             if (s.calibratorRightB < 127) s.calibratorRightB = 127;
@@ -232,7 +261,6 @@ export class SettingsController {
                 const inputEl = el as HTMLInputElement;
                 inputEl.checked = s[field.key] as boolean;
             } else if (field.type === 'pill' || field.type === 'grid') {
-                // Symmetrical hydration: Toggle .active on the child that matches the Store value
                 const currentValue = String(s[field.key]);
                 const children = el.querySelectorAll('.pill-btn, .preset-card');
                 children.forEach(child => {
@@ -259,7 +287,7 @@ export class SettingsController {
             }
 
             if (field.type === 'checkbox' || el.tagName === 'SELECT' || field.type === 'pill' || field.type === 'grid') {
-                // Do nothing for gradients
+                // Skip track updates for non-range controls
             } else {
                 this.updateSliderTrackGradient(el as HTMLInputElement);
             }
@@ -273,6 +301,7 @@ export class SettingsController {
         this.updateVisibilityPanels();
     }
 
+    /** @description Refreshes subpixel RGB numeric labels on the calibration panel. */
     updateCalibrationLabels(s: AppState): void {
         const valR = document.getElementById('val-calib-r');
         const valG = document.getElementById('val-calib-g');
@@ -287,10 +316,16 @@ export class SettingsController {
         if (valB) valB.innerText = (b - 127 > 0 ? '+' : '') + (b - 127);
     }
 
+    /**
+     * @description Orchestrates the contextual visibility of settings groups.
+     * 
+     * @clinical 
+     * Filters out parameters that are irrelevant to the current training modality, 
+     * significantly reducing cognitive workload and preventing misconfigurations.
+     */
     updateVisibilityPanels(): void {
         const s = Store.state;
         const isSynop = (s.appMode === 'synoptophore');
-        const isRds = (s.appMode === 'rds');
         const currentMode = s.appMode;
 
         document.querySelectorAll<HTMLElement>('[data-visible-in]').forEach(el => {
@@ -340,19 +375,17 @@ export class SettingsController {
         }
 
         if (this.anaglyphPanel) {
-            const isAnaglyphActive = s.isAnaglyphEnabled || isSynop || isRds;
+            const isAnaglyphActive = s.isAnaglyphEnabled || isSynop || s.appMode === 'rds';
 
             this.anaglyphPanel.style.display = 'block';
             this.anaglyphPanel.style.opacity = isAnaglyphActive ? '1' : '0.4';
             
-            // Disable/enable all input elements and buttons inside the calibration panel based on 3D state
             this.anaglyphPanel.querySelectorAll<HTMLInputElement | HTMLButtonElement>('input, button').forEach(input => {
                 if (input.id !== 'chk-anaglyph') {
                     input.disabled = !isAnaglyphActive;
                 }
             });
 
-            // Disable/enable touch interactions for all horizontal Pill-groups
             this.anaglyphPanel.querySelectorAll<HTMLElement>('.pill-group').forEach(group => {
                 group.style.pointerEvents = isAnaglyphActive ? 'auto' : 'none';
             });
@@ -363,7 +396,7 @@ export class SettingsController {
         if (headerAnaglyph) {
             const isMonocularPreset = (s.presetMode === 'occlusion' || s.presetMode === 'blitz');
             const shouldDisable3D = !s.isAnaglyphEnabled && isMonocularPreset;
-            if (shouldDisable3D && !isSynop && !isRds) {
+            if (shouldDisable3D && !isSynop && s.appMode !== 'rds') {
                 headerAnaglyph.style.opacity = '0.35';
                 headerAnaglyph.style.pointerEvents = 'none';
                 if (contentAnaglyph) contentAnaglyph.classList.remove('open');
@@ -376,6 +409,14 @@ export class SettingsController {
         }
     }
 
+    /**
+     * @description Attaches high-performance input listeners to settings controls.
+     * 
+     * @architecture
+     * - Event Delegation: Binds click events to horizontal pill/grid groups to reduce memory overhead.
+     * - W3C A11y Bridge: Delegates Space/Enter keypresses on focused headers to native click actions.
+     * - High-Precision Nudges: Implements Pointer-down auto-repeat loops for fine-tuning range values.
+     */
     bindSettingsInteractions(): void {
         const chkY = document.getElementById('chk-synop-lock-y') as HTMLInputElement | null;
         const chkX = document.getElementById('chk-synop-lock-x') as HTMLInputElement | null;
@@ -410,23 +451,21 @@ export class SettingsController {
             });
         }
 
-        // High-Performance Event Delegation: Bind click events to all horizontal Pill-groups and Preset-grids
         document.querySelectorAll('.pill-group, .preset-grid').forEach(parent => {
             parent.addEventListener('click', (event) => {
                 const target = event.target as HTMLElement;
                 const button = target.closest('.pill-btn, .preset-card') as HTMLElement | null;
                 if (!button || button.classList.contains('active')) return;
 
-                // Move active class instantly for premium tactical feedback
                 parent.querySelectorAll('.pill-btn, .preset-card').forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
 
-                // Synchronize state with store, apply preset rules and trigger UI updates
                 this.syncStateFromUI();
                 this.updatePresetUI();
                 if (typeof this.onSyncCallback === 'function') this.onSyncCallback();
             });
         });
+
         const headers = document.querySelectorAll<HTMLElement>('.accordion-header');
         headers.forEach(header => {
             header.addEventListener('click', () => {
@@ -444,18 +483,16 @@ export class SettingsController {
                     const arrow = header.querySelector('.accordion-arrow');
                     if (arrow) arrow.classList.add('active');
 
-                    // Responsive Scroll: Smoothly bring the header of the opened accordion
-                    // into the visible viewport area, keeping both the section title and its first interactive field visible.
+                    // Smooth viewport anchoring for opened sections
                     setTimeout(() => {
                         header.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 220); // Small 220ms timeout lets the CSS height expansion transition complete before calculating scroll positions
+                    }, 220); 
                 }
             });
 
-            // W3C ARIA Keyboard Bridge: Delegates Enter and Space keypresses on focused headers to standard native clicks
             header.addEventListener('keydown', (e: KeyboardEvent) => {
                 if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault(); // Prevent standard page scroll on Space
+                    e.preventDefault();
                     header.click();
                 }
             });
@@ -486,7 +523,8 @@ export class SettingsController {
             });
         });
 
-        document.querySelectorAll('.nudge-btn').forEach(btn => {
+        // Initialize high-frequency nudge buttons for precise calibration
+        document.querySelectorAll<HTMLElement>('.nudge-btn').forEach(btn => {
             let nudgeIntervalId: number | null = null;
             let nudgeTimeoutId: number | null = null;
 
@@ -519,9 +557,18 @@ export class SettingsController {
                 clearNudgeTimers();
                 performNudge();
 
+                // Start auto-repeat loop after 350ms initial hold delay
                 nudgeTimeoutId = window.setTimeout(() => {
                     nudgeIntervalId = window.setInterval(performNudge, 45);
                 }, 350);
+            });
+
+            // Enable keyboard activation (Enter/Space) for nudge buttons
+            btn.addEventListener('keydown', (e: KeyboardEvent) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    performNudge();
+                }
             });
 
             btn.addEventListener('pointerup', clearNudgeTimers);

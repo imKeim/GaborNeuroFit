@@ -1,9 +1,11 @@
-/*
- * GaborNeuroFit - Stereopsis (RDS) Perceptual Learning Controller
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file rds.ts
+ * @description Controller orchestrating Finite State Machine (FSM) for Stereopsis (RDS) trials.
+ * Manages chronological sequences of binocular disparity tasks, psychometric staircase scaling, 
+ * and dynamic 18Hz boiling noise cycles to isolate depth decoding in the V2 visual cortex.
  *
- * Migrated to TypeScript: Employs strict FSM types to safeguard rendering loops,
- * guaranteeing correct stereoscopic depth calculations without race conditions.
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
 import { Store } from '../store';
@@ -14,8 +16,10 @@ import { playCue, playSuccess, playError } from '../engine/audio';
 import { updateScoreboard, drawIdleState } from '../ui/screen';
 import type { EyeSide } from '../types/clinical';
 
+/** @description Valid states for the RDS trial lifecycle. */
 export type RdsStateValue = 'IDLE' | 'PRE_CUE' | 'STIMULUS_ACTIVE' | 'AWAITING_INPUT' | 'FEEDBACK';
 
+/** @description Enum-like dictionary of RDS states. */
 export const RdsState: Record<RdsStateValue, RdsStateValue> = {
     IDLE: 'IDLE',
     PRE_CUE: 'PRE_CUE',
@@ -24,6 +28,7 @@ export const RdsState: Record<RdsStateValue, RdsStateValue> = {
     FEEDBACK: 'FEEDBACK'
 };
 
+/** @description Strict transition rules preventing asynchronous logic violations. */
 const ALLOWED_TRANSITIONS: Record<string, RdsStateValue[]> = {
     'IDLE': ['PRE_CUE'],
     'PRE_CUE': ['STIMULUS_ACTIVE'],
@@ -32,8 +37,13 @@ const ALLOWED_TRANSITIONS: Record<string, RdsStateValue[]> = {
     'FEEDBACK': ['IDLE']
 };
 
+/**
+ * @description Main controller for Stereogram training blocks.
+ */
 export class RdsController {
+    /** @description Current FSM state. Defaults to IDLE. */
     public currentState: RdsStateValue = RdsState.IDLE;
+    /** @description Centralized resource tracker for safe async cleanup. */
     public tracker: AsyncResourceTracker = new AsyncResourceTracker();
     private autoNextTimeoutId: number | null = null;
 
@@ -49,22 +59,30 @@ export class RdsController {
         private syncCross: () => void
     ) {}
 
+    /** @description Forcefully resets the controller to IDLE and clears pending timers. */
     abort(): void {
         this.tracker.clearAll();
         this.currentState = RdsState.IDLE;
         if (this.syncCross) this.syncCross();
     }
 
+    /** @description Pauses the controller without resetting the state machine. */
     pause(): void {
         this.tracker.clearAll();
     }
 
+    /** @description Idempotent teardown method for mode switching. */
     deactivate(): void {
         this.tracker.clearAll();
         this.currentState = RdsState.IDLE;
         if (this.syncCross) this.syncCross();
     }
 
+    /**
+     * @description Attempts a safe FSM state mutation.
+     * @param {RdsStateValue} nextState - Target state.
+     * @returns {boolean} Success status.
+     */
     transitionTo(nextState: RdsStateValue): boolean {
         const allowed = ALLOWED_TRANSITIONS[this.currentState];
         if (!allowed || !allowed.includes(nextState)) return false;
@@ -77,6 +95,13 @@ export class RdsController {
         return true;
     }
 
+    /**
+     * @description Initializes a fresh RDS session block.
+     * 
+     * @clinical 
+     * Resets disparity to the starting value and clears streaks to allow 
+     * neural adaptation at the configured threshold.
+     */
     initSession(): void {
         const s = Store.state;
         const t = this.getTranslations();
@@ -86,7 +111,6 @@ export class RdsController {
         Store.updateState('rdsTotal', 0);
         Store.updateState('rdsStreak', 0);
         Store.updateState('rdsStaircaseStreak', 0);
-        // Clean instantiation of empty number array for strict types
         Store.updateState('rdsHistory', [] as number[]);
 
         this.btnStart.disabled = false;
@@ -97,6 +121,9 @@ export class RdsController {
         if (this.syncCross) this.syncCross();
     }
 
+    /**
+     * @description Triggers a single RDS trial with auditory priming.
+     */
     triggerTrial(): void {
         if (this.autoNextTimeoutId) {
             clearTimeout(this.autoNextTimeoutId);
@@ -119,6 +146,13 @@ export class RdsController {
         }, 180);
     }
 
+    /**
+     * @description Core rendering logic for the hidden 3D target.
+     * 
+     * @mathematical
+     * Randomizes target side (Left/Right) and optionally vertical offset (rdsTargetY).
+     * Calculates safe bounds to prevent the 3D square from clipping outside the virtual 256px grid.
+     */
     runRenderCycle(): void {
         const s = Store.state;
         this.transitionTo(RdsState.STIMULUS_ACTIVE);
@@ -167,6 +201,16 @@ export class RdsController {
         this.btnStart.innerText = "...";
     }
 
+    /**
+     * @description Processes user answer and modulates disparity staircase.
+     * 
+     * @clinical 
+     * - Success: Increments staircase streak. 3 correct decodings decrease disparity (harder).
+     * - Error: Resets streaks and increases disparity (easier).
+     * - Threshold: Achieving 1px disparity demonstrates excellent micro-stereopsis resolution (~20 arcsec).
+     * 
+     * @param {EyeSide} userChoice - User's perceived target location.
+     */
     submitAnswer(userChoice: EyeSide): void {
         if (this.currentState !== RdsState.AWAITING_INPUT) return;
 
@@ -195,7 +239,6 @@ export class RdsController {
         const activeHistory = s.rdsHistory ? [...s.rdsHistory] : [];
 
         if (isCorrect) {
-            // Symmetrical subtle spatial audio reinforcement
             const panValue = s.rdsTargetSide === 'left' ? -0.40 : 0.40;
             playSuccess(s.isMuted, panValue);
             this.flashOverlay.classList.add('flash-success');
@@ -224,6 +267,7 @@ export class RdsController {
 
         if (activeHistory.length > 20) activeHistory.shift();
 
+        // Map pixel disparity back to the discrete clinical stages 1-5
         let newLevel = 1;
         if (newDisparity <= 8 && newDisparity >= 7) newLevel = 1;
         else if (newDisparity <= 6 && newDisparity >= 5) newLevel = 2;
@@ -231,15 +275,12 @@ export class RdsController {
         else if (newDisparity === 2) newLevel = 4;
         else if (newDisparity === 1) newLevel = 5;
 
-        // TS Generics strictly enforce these number mutations
         Store.updateState('rdsScore', newScore);
         Store.updateState('rdsTotal', newTotal);
         Store.updateState('rdsStreak', newStreak);
         Store.updateState('rdsStaircaseStreak', newStaircaseStreak);
         Store.updateState('rdsDisparity', newDisparity);
         Store.updateState('rdsLevel', newLevel);
-
-        // Ensure TS understands it's a number array
         Store.updateState('rdsHistory', activeHistory as any);
 
         this.saveRdsSession();
@@ -257,6 +298,7 @@ export class RdsController {
                 this.flashOverlay.classList.remove('flash-success', 'flash-error', 'fade-out');
             }, 500);
 
+            // Re-render flat noise (hide 3D) after answer for rest phase
             drawRandomDotStereogram(this.overlayCanvas, this.overlayCtx, Store.state, false, true);
 
             if (this.currentState === RdsState.FEEDBACK) {
@@ -272,6 +314,7 @@ export class RdsController {
 
         updateScoreboard(Store.state, t);
 
+        // Milestone: 1px disparity mastery with sustained accuracy
         if (newLevel === 5 && newDisparity === 1 && newStreak >= 12) {
             this.tracker.setTimeout(() => {
                 this.triggerMilestoneFlash(() => {
@@ -289,6 +332,7 @@ export class RdsController {
             return;
         }
 
+        // Milestone: Session trial limit reached
         if (s.rdsSessionLimit > 0 && newTotal >= s.rdsSessionLimit) {
             this.tracker.setTimeout(() => {
                 this.triggerMilestoneFlash(() => {
@@ -314,6 +358,7 @@ export class RdsController {
         }
     }
 
+    /** @description CElebratory milestone visual feedback loop. */
     triggerMilestoneFlash(callback?: () => void): void {
         let count = 0;
         this.tracker.setInterval(() => {
@@ -335,10 +380,20 @@ export class RdsController {
         }, 120);
     }
 
+    /**
+     * @description High-frequency loop for dynamic noise and smooth target pursuit.
+     * 
+     * @clinical 
+     * - Boiling static at ~18Hz completely blocks monocular boundary cheats.
+     * - Smooth DVD-bouncing drifts hidden shapes in 3D, exercising dynamic vergence reserves.
+     * 
+     * @mathematical
+     * Employs linear interpolation of triangular oscillators to compute driftX/Y bouncing vectors.
+     */
     private startDynamicRdsLoop(): void {
         const s = Store.state;
         let lastUpdateTime = 0;
-        const frameInterval = 55; // ~18Hz boiling noise
+        const frameInterval = 55; // Fixed 18Hz boiling static interval
         const startTime = performance.now();
 
         const getBounceOffset = (elapsed: number, period: number, amplitude: number): number => {
@@ -384,6 +439,7 @@ export class RdsController {
                 lastUpdateTime = timestamp;
                 drawRandomDotStereogram(this.overlayCanvas, this.overlayCtx, s, true);
             } else if (s.rdsIsFloating) {
+                // Smooth pursuit updates without reshuffling noise grid
                 drawRandomDotStereogram(this.overlayCanvas, this.overlayCtx, s, false);
             }
 
@@ -393,6 +449,7 @@ export class RdsController {
         this.tracker.requestAnimationFrame(loop);
     }
 
+    /** @description Commits RDS session data to the relational database storage. */
     private saveRdsSession(): void {
         const s = Store.state;
         if (s.rdsTotal === 0) return;
