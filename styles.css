@@ -1,22 +1,26 @@
-/*
- * GaborNeuroFit - Intrinsic Design Framework & UI Engine
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file styles.css
+ * @description Intrinsic Design Framework & UI Engine for GaborNeuroFit.
  *
- * Architecture: Design Tokens, CSS Grid/Flex Fluidity, A11y Hardware Detection.
+ * @architecture Layered CSS architecture utilizing Design Tokens, Grid/Flex fluidity, 
+ * hardware-accelerated GPU compositing, and W3C Accessibility (A11y) focus trapping.
+ *
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
 /* ==========================================================================
-   1. DESIGN TOKENS (SSoT FOR PHYSICS, SPACING, AND Z-INDEX)
+   Block: Design Tokens (SSoT for Physics, Spacing, and Z-Index)
    ========================================================================== */
 :root {
     /* Fluid scale anchored to viewport dimensions to eliminate snapping */
-    --fluid-scale: clamp(0.85, calc(1vh + 0.5vw), 1.3); /* Wrapped in calc() to prevent browser rendering engine syntax rejection */
+    --fluid-scale: clamp(0.85, calc(1vh + 0.5vw), 1.3);
 
     /* Biomorphic radii avoiding jagged edges for neurological safety */
     --radius-premium: calc(32px * var(--fluid-scale));
     --radius-elements: calc(16px * var(--fluid-scale));
-    --radius-sm: calc(10px * var(--fluid-scale)); /* For dense, interactive micro-components */
-    --radius-pill: 999px;
+    --radius-sm: calc(10px * var(--fluid-scale));
+    --radius-pill: 99px;
 
     /* Intrinsic Spacing (Tightened to prioritize central canvas) */
     --pad-v: clamp(8px, 2dvh, 16px);
@@ -39,7 +43,7 @@
 }
 
 /* ==========================================================================
-   2. DOM RESET & CLINICAL TYPOGRAPHY
+   Block: DOM Reset & Clinical Typography
    ========================================================================== */
 *, *::before, *::after {
     box-sizing: border-box;
@@ -49,11 +53,17 @@
 body {
     margin: 0;
     padding: 0;
-    /* Neutral sRGB gray radial gradient to prevent retinal light adaptation */
+    /* 
+     * @clinical Neutral sRGB gray radial gradient background prevents retinal 
+     * light adaptation and maintains pupil diameter stability between flashes.
+     */
     background: radial-gradient(circle at center, #7f7f7f 0%, #585858 100%);
     color: #f1f3f9;
     font-family: 'Overpass', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    /* Tabular nums ensure scoring digits don't shift layout horizontally during tracking */
+    /* 
+     * @architecture Tabular nums ensure scoring digits don't shift layout 
+     * horizontally during fast tracking updates.
+     */
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum" 1;
     display: flex;
@@ -73,7 +83,6 @@ input, select, button, option, .badge {
     font-feature-settings: "tnum" 1;
 }
 
-/* Base emoji metric alignment */
 img.emoji {
     height: 1.1em;
     width: 1.1em;
@@ -91,7 +100,7 @@ img.emoji {
 }
 
 /* ==========================================================================
-   3. APP SHELL (FLUID ADAPTIVE CONTAINER)
+   Block: App Shell (Fluid Adaptive Container)
    ========================================================================== */
 #app-wrapper {
     display: flex;
@@ -104,20 +113,18 @@ img.emoji {
     max-width: 100vw;
     max-height: 100dvh;
 
-    /* Universal Glassmorphism Baseline (Consistency applied to all devices) */
+    /* Universal Glassmorphism Baseline */
     background: rgba(120, 120, 120, 0.35);
     backdrop-filter: blur(16px) saturate(120%);
     -webkit-backdrop-filter: blur(16px) saturate(120%);
 
-    /* Shadows exist globally but naturally clip outside the viewport on mobile */
     box-shadow: 0 30px 100px rgba(0, 0, 0, 0.12),
                 0 10px 25px rgba(0, 0, 0, 0.08);
 
-    /* Ready for border transition without jumping layout */
     border: 1px solid transparent;
     border-radius: 0;
 
-    /* Graceful edge constraints respecting OS hardware cutouts (e.g. Dynamic Island) */
+    /* Graceful edge constraints respecting OS hardware cutouts (e.g., Dynamic Island) */
     padding: calc(var(--pad-v) + env(safe-area-inset-top, 0px))
              calc(var(--pad-h) + env(safe-area-inset-right, 0px))
              calc(var(--pad-v) + env(safe-area-inset-bottom, 0px))
@@ -126,7 +133,7 @@ img.emoji {
 
     /* Orchestrated Transition and Post-load fade */
     opacity: 0;
-    /* Hardware acceleration restricted strictly to compositing layer properties to prevent VRAM bloat and text blurring */
+    /* Hardware acceleration restricted strictly to compositing layer properties to prevent VRAM bloat */
     will-change: opacity, transform;
     transition:
         opacity 0.3s ease-out,
@@ -142,31 +149,28 @@ img.emoji {
 }
 
 /*
- * Enterprise Desktop Mutation
+ * @architecture Enterprise Desktop Mutation
  * Smoothly morphs the full-screen canvas into a centered, floating frosted-glass console.
  */
 @media (min-width: 530px) {
     #app-wrapper {
         max-width: clamp(480px, 90vw, 640px);
-        height: 100%; /* Force expansion to provide maximum physiological space for the Gabor arena */
-        /* Reclaiming vertical space: expanding bounds to 98% to minimize dead outer margins */
+        height: 100%;
         max-height: clamp(600px, 98dvh, 1080px);
 
-        /* Reveal the floating premium card edges */
         border-color: rgba(127, 127, 127, 0.2);
         border-radius: var(--radius-premium);
 
-        /* Sacrificing top/bottom white-space to guarantee Gabor area integrity */
         padding: 16px clamp(20px, 3vw, 32px);
     }
 }
 
 /* ==========================================================================
-   4. HEADER (SYSTEM CONTROLS)
+   Block: Header (System Controls)
    ========================================================================== */
 #top-bar {
     z-index: var(--z-topbar);
-    flex-shrink: 0; /* Protects header from vertical compression */
+    flex-shrink: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -185,7 +189,6 @@ img.emoji {
     color: #3b90ff;
     letter-spacing: 0.5px;
     white-space: nowrap;
-    /* Soft degradation: allows title to shrink before squishing control buttons */
     flex: 1 1 auto;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -213,7 +216,7 @@ img.emoji {
     justify-content: center;
     border: 1px solid rgba(0, 122, 255, 0.2);
     transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
-    touch-action: manipulation; /* Prevents 300ms mobile tap delay */
+    touch-action: manipulation;
 }
 
 .control-btn:active {
@@ -221,9 +224,12 @@ img.emoji {
     transform: scale(0.92);
 }
 
-/* W3C Accessibility: Reveals focus outline ONLY for keyboard navigation (Tab), remaining hidden for mouse/touch */
+/* 
+ * @a11y Reveals focus outline ONLY for keyboard navigation (Tab), 
+ * remaining hidden for mouse/touch interactions to preserve aesthetics.
+ */
 .control-btn:focus-visible, .action-btn:focus-visible, #btn-start:focus-visible, .tab-btn:focus-visible {
-    outline: 2px solid transparent; /* Keeps outline detectable for High Contrast Mode without rendering square artifacts */
+    outline: 2px solid transparent; 
     outline-offset: 0;
 }
 
@@ -235,7 +241,7 @@ img.emoji {
 }
 
 /* ==========================================================================
-   5. FOOTER DECK (TELEMETRY & CONTROLS)
+   Block: Footer Deck (Telemetry & Controls)
    ========================================================================== */
 #bottom-dock {
     z-index: var(--z-dock);
@@ -246,7 +252,7 @@ img.emoji {
     gap: var(--gap-core);
 }
 
-/* 5A. Scoreboard */
+/* Scoreboard */
 #score-board {
     width: 100%;
     background: rgba(44, 52, 64, 0.85);
@@ -267,7 +273,7 @@ img.emoji {
 #indicators {
     display: flex;
     justify-content: center;
-    flex-wrap: wrap; /* Allows badges to wrap safely on extremely narrow phones */
+    flex-wrap: wrap;
     gap: 6px;
 }
 
@@ -280,7 +286,7 @@ img.emoji {
     white-space: nowrap;
 }
 
-/* 5B. Input Controls Layout */
+/* Input Controls Layout */
 #controls-layout {
     display: flex;
     flex-direction: column;
@@ -293,45 +299,32 @@ img.emoji {
     transition: opacity 0.3s ease, filter 0.3s ease;
 }
 
-/* @clinical Visual UX Lock: Disables interaction mechanics globally while preserving FSM variable states */
+/* 
+ * @clinical Visual UX Lock: 
+ * Disables interaction mechanics globally while preserving FSM variable states.
+ */
 #controls-layout.paused-state,
 #container.paused-state > canvas {
-    /* Surgically dims ONLY the optical layers, protecting the watermark and curtain from inheriting transparency */
+    /* Surgically dims ONLY the optical layers, protecting the watermark from transparency */
     opacity: 0.45;
     filter: grayscale(65%);
 }
 
-/* 
- * Bypass visual pause dimming during active dichoptic lens calibration.
- * Restores 100% sRGB luminosity to prevent chromatic crosstalk in red-cyan 3D glasses.
- */
 #container.paused-state.calibration-active > canvas {
     opacity: 1 !important;
     filter: none !important;
 }
 
-/* 
- * Completely hide the central fixation cross during active pauses.
- * Prevents overlapping artifacts under the text watermark and encourages ciliary muscle relaxation.
- */
 #container.paused-state #cross {
     opacity: 0 !important;
     visibility: hidden !important;
 }
 
-/* 
- * Force override: Ensure the central CSS cross remains beautifully visible and crisp 
- * during active dichoptic lens calibration, bypassing the global pause hiding.
- */
 #container.paused-state.calibration-active #cross {
     opacity: 1 !important;
     visibility: visible !important;
 }
 
-/*
- * Force hide the pause text watermark during active calibration to avoid visual clutter and 
- * prevent patient distraction from the foveation central anchor.
- */
 #container.calibration-active #pause-watermark {
     opacity: 0 !important;
     visibility: hidden !important;
@@ -339,7 +332,7 @@ img.emoji {
 }
 
 #controls-layout.paused-state {
-    pointer-events: none; /* Physically severs touch/mouse tracking during the pause */
+    pointer-events: none;
 }
 
 #mode-status-bar {
@@ -373,15 +366,15 @@ img.emoji {
     white-space: nowrap;
 }
 
-/* 5C. Primary Trigger */
+/* Primary Trigger */
 #btn-start {
     appearance: none;
     width: 100%;
-    padding: clamp(10px, 2vh, 16px); /* Allows button to compress vertically */
+    padding: clamp(10px, 2vh, 16px);
     font-size: clamp(13px, 3.5vw, 16px);
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 1px; /* Optical kerning prevents the bold text from turning into an illegible brick */
+    letter-spacing: 1px;
     background: linear-gradient(135deg, #007aff, #0056b3);
     color: white;
     border: none;
@@ -402,7 +395,7 @@ img.emoji {
     pointer-events: none;
 }
 
-/* 5D. Action Switcharoo Buttons */
+/* Action Switcharoo Buttons */
 #action-buttons {
     display: flex;
     width: 100%;
@@ -412,7 +405,7 @@ img.emoji {
 .action-btn {
     appearance: none;
     flex: 1;
-    height: clamp(40px, 6.5vh, 56px); /* Sacrificing excessive button height */
+    height: clamp(40px, 6.5vh, 56px);
     font-size: clamp(11px, 2.5vw, 14px);
     font-weight: 700;
     color: #fff;
@@ -432,13 +425,13 @@ img.emoji {
 
 .action-btn .btn-label {
     text-transform: uppercase;
-    letter-spacing: 1px; /* Optical kerning for improved ALL CAPS readability */
+    letter-spacing: 1px;
 }
 
 .action-btn span {
-    font-size: clamp(16px, 4vw, 16px); /* Proportional scaling down */
+    font-size: clamp(16px, 4vw, 16px);
     line-height: 1;
-    display: inline-block; /* Breaks the flexbox vertical stretching bug */
+    display: inline-block;
 }
 
 .action-btn:active {
@@ -448,10 +441,9 @@ img.emoji {
 }
 
 /* ==========================================================================
-   7. CLINICAL WORKSPACE (FOVEAL ARENA)
+   Block: Clinical Workspace (Foveal Arena)
    ========================================================================== */
 #workspace {
-    /* 0% basis forces strict geometric resolution, preventing flexbox from blowing up the container */
     flex: 1 1 0%;
     width: 100%;
     display: flex;
@@ -474,29 +466,23 @@ img.emoji {
     justify-content: center;
     border-radius: var(--radius-premium);
     overflow: hidden;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3); /* Static, deeper clinical shadow */
-    cursor: pointer; 
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    cursor: default; 
     touch-action: none; /* Prevents absolutely all browser scrolling/zooming over the canvas */
 
-    /* Hardware Accelerated Compositing Isolation */
     will-change: transform, box-shadow;
     backface-visibility: hidden;
     transform: translateZ(0);
     
-    /* 
-     * Decoupled dual-transition timings. 
-     * When touch is released, the glow fades out smoothly and organically over 280ms.
-     */
     transition: box-shadow 0.28s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease, filter 0.3s ease;
 }
 
 /*
  * @clinical Multisensory Kinesthetic Feedback
  * Pulsing border when the patient actively swipes or drags the canvas.
- * 1. Operant Conditioning: Provides immediate micro-reward confirmation for children.
- * 2. Parietal Lobe Anchor: Syncs visual boundaries with tactile finger placement
- *    during Synoptophore vergence training (Spatiomotor integration).
- * Designed with a cold, low-opacity clinical glow to prevent pupillary light reflex.
+ * - Operant Conditioning: Provides immediate micro-reward confirmation for children.
+ * - Parietal Lobe Anchor: Syncs visual boundaries with tactile finger placement
+ *   during Synoptophore vergence training (Spatiomotor integration).
  */
 #container:not(.disabled):active,
 #container.dragging {
@@ -530,7 +516,7 @@ canvas {
 }
 
 /* ==========================================================================
-   7. FIXATION ANCHORS & CURTAINS
+   Block: Fixation Anchors & Curtains
    ========================================================================== */
 #calibration-curtain {
     z-index: var(--z-curtain);
@@ -554,30 +540,25 @@ canvas {
     position: absolute;
     top: 50%;
     left: 50%;
-    color: #ffffff; /* Corrected CSS syntax to restore solid white fill */
-    -webkit-text-stroke: 1.5px #1a222f; /* Dark gray clean outline stroke */
+    color: #ffffff; 
+    -webkit-text-stroke: 1.5px #1a222f;
     font-weight: 800;
     font-size: clamp(24px, 5vw, 32px);
     text-transform: uppercase;
     letter-spacing: 4px;
     pointer-events: none;
-    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); /* Lightweight drop-shadow for depth */
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 
-    /* Hardware Accelerated Premium Entrance */
     opacity: 0;
     visibility: hidden;
-    /* Element subtly shrinks and sinks downwards when hidden */
     transform: translate(-50%, -46%) scale(0.96);
-    /* Exit animation is fast and immediate */
     transition: opacity 0.15s ease-out, transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0s linear 0.15s;
 }
 
 #pause-watermark.active {
     opacity: 1;
     visibility: visible;
-    /* Element naturally rises to perfect mathematical center */
     transform: translate(-50%, -50%) scale(1);
-    /* Staggered entrance: delayed by 0.15s to allow UI dimming/modals to precede the text rendering */
     transition: opacity 0.3s ease-out 0.15s, transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1) 0.15s, visibility 0s linear 0s;
 }
 
@@ -631,7 +612,7 @@ canvas {
 .cross-line-v { width: 0.055em; height: 0.44em; }
 
 /* ==========================================================================
-   8. CLINICAL REINFORCEMENT ANIMATIONS
+   Block: Clinical Reinforcement Animations
    ========================================================================== */
 #flash-overlay {
     z-index: var(--z-flash-overlay);
@@ -675,7 +656,10 @@ canvas {
     animation: errorShake 0.36s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
-/* W3C Accessibility Medical Standard: Disable threatening animations for patients with vestibular disorders */
+/* 
+ * @a11y Medical Standard: 
+ * Disable threatening animations for patients with vestibular disorders 
+ */
 @media (prefers-reduced-motion: reduce) {
     .success-pulse, .error-shake {
         animation: none !important;
@@ -691,7 +675,9 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
     outline: none !important;
 }
 
-/* W3C Accessibility: Safe, rounded neon halos strictly for keyboard navigation */
+/* 
+ * @a11y Safe, rounded neon halos strictly for keyboard navigation 
+ */
 .control-btn:focus-visible, .tab-btn:focus-visible, .dash-btn:focus-visible, .dash-input:focus-visible, .pill-btn:focus-visible, .preset-card:focus-visible, .close-btn:focus-visible, .accordion-header:focus-visible, .nudge-btn:focus-visible, input[type="range"]:focus-visible {
     box-shadow: 0 0 0 3px rgba(59, 144, 255, 0.45) !important;
 }
@@ -730,7 +716,7 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
 }
 
 /* ==========================================================================
-   9. PORTAL LAYER (MODALS & DIALOGS)
+   Block: Portal Layer (Modals & Dialogs)
    ========================================================================== */
 .modal {
     position: fixed;
@@ -749,7 +735,6 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
     backdrop-filter: blur(0px);
     -webkit-backdrop-filter: blur(0px);
 
-    /* Safe State Toggle (Avoid independent GPU layer promotion to prevent backdrop-filter bugs) */
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -772,10 +757,6 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
     -webkit-backdrop-filter: blur(0px) !important;
 }
 
-/*
- * Modal Content Array
- * Constrained mathematically to viewport limits
- */
 .modal-content {
     background: #1c2331;
     border: 1px solid #2b354a;
@@ -789,7 +770,7 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
     overflow: hidden;
 
     /* 
-     * Hardware & Type Stability:
+     * @architecture Hardware & Type Stability:
      * 1. antialiased: forces consistent font rendering between motion and rest states.
      * 2. will-change: preserves the GPU layer to prevent subpixel layout "snapping" at the end of transition.
      */
@@ -860,7 +841,7 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
     font-size: clamp(13px, 3.5vw, 15px);
     font-weight: 700;
     cursor: pointer;
-    flex-shrink: 0; /* Protects OK button from squishing */
+    flex-shrink: 0; 
     transition: background 0.15s ease, transform 0.1s ease, opacity 0.15s ease;
     touch-action: manipulation;
 }
@@ -873,19 +854,19 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
 .close-btn:disabled {
     opacity: 0.3;
     cursor: default;
-    pointer-events: none; /* Blocks all clicks and transitions when disabled */
+    pointer-events: none;
 }
 
 /* Internal Scroll Body */
 .modal-scroll-body {
     flex: 1 1 auto;
-    min-height: 0; /* Overrides default min-height: auto, forcing mobile flex containers to scroll internally */
+    min-height: 0; 
     overflow-y: auto;
-    overscroll-behavior: contain; /* Prevents iOS rubber-banding pulling the document body */
+    overscroll-behavior: contain;
     padding-left: 8px;
     padding-right: 8px;
 
-    /* Permanently reserves scrollbar track space to prevent horizontal jumping during accordion reflows */
+    /* Permanently reserves scrollbar track space to prevent horizontal jumping */
     scrollbar-gutter: stable;
 
     scrollbar-width: thin;
@@ -899,11 +880,6 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
     border-radius: 6px;
 }
 
-/* 
- * Mobile scrolling bottom spacer.
- * Creates a physical whitespace boundary that WebKit cannot ignore during momentum scrolling,
- * preventing scrolled content from overlapping the absolute-positioned OK button on touch screens.
- */
 .modal-scroll-body::after {
     content: '';
     display: block;
@@ -913,29 +889,29 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
 }
 
 /* ==========================================================================
-   10. SETTINGS FORMS & ACCORDIONS (INTERACTIVE DATA LAYER)
+   Block: Settings Forms & Accordions (Interactive Data Layer)
    ========================================================================== */
 .tab-btn {
     appearance: none;
     flex: 1;
     border: none;
-    padding: 6px 4px; /* Tighter horizontal padding to fit beautifully on any screen */
-    border-radius: 6px !important; /* Concentric radius (Outer 10px - padding 4px) to force rounded active highlights */
-    font-size: clamp(9.5px, 2.4vw, 11px); /* Slightly more compact font size for stacked layout */
+    padding: 6px 4px;
+    border-radius: 6px !important; 
+    font-size: clamp(9.5px, 2.4vw, 11px);
     font-weight: 700;
     background: transparent;
     color: #8e8e93;
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
-    flex-direction: column; /* Shift from inline-flow to vertical Stack */
+    flex-direction: column; 
     align-items: center;
     justify-content: center;
-    gap: 3px; /* Air gap between active 3D Emoji and the label text below */
+    gap: 3px; 
 }
 
 .tab-btn-icon {
-    font-size: clamp(14px, 3.8vw, 16px); /* Elevate icon scale slightly to catch peripheral focus */
+    font-size: clamp(14px, 3.8vw, 16px);
     line-height: 1;
     display: inline-block;
 }
@@ -1007,7 +983,7 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
     flex: 1 1 auto;
     line-height: 1.35;
     padding-right: 12px;
-    word-wrap: break-word; /* Prevents rigid text bounds pushing flex layouts */
+    word-wrap: break-word; 
 }
 
 /* Custom Semantic Dropdown */
@@ -1049,7 +1025,7 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
 }
 
 /* ==========================================================================
-   11. RANGE SLIDERS & CLINICAL CALIBRATION HARDWARE
+   Block: Range Sliders & Clinical Calibration Hardware
    ========================================================================== */
 .settings-row input[type="range"] { margin: 12px 0; width: 100%; cursor: pointer; }
 
@@ -1057,17 +1033,18 @@ input[type="range"] {
     appearance: none;
     -webkit-appearance: none;
     background: transparent;
-    border: none; /* Strip browser default outer rectangular borders entirely */
+    border: none;
     outline: none;
     padding: 0;
     margin: 0;
-    border-radius: 99px; /* Rounds the outer container to ensure focused neon halos are pill-shaped */
+    border-radius: 99px; /* Rounds the outer container for pill-shaped focus halos */
 }
 
 /* Computed track gradient (injected via TS controller) */
 input[type="range"]::-webkit-slider-runnable-track {
     height: 6px;
-    border-radius: 3px;
+    border-radius: 99px;
+    border: none;
     background: linear-gradient(
         to right,
         var(--slider-thumb-color, #3b90ff) 0%,
@@ -1078,7 +1055,8 @@ input[type="range"]::-webkit-slider-runnable-track {
 }
 input[type="range"]::-moz-range-track {
     height: 6px;
-    border-radius: 3px;
+    border-radius: 99px;
+    border: none;
     background: linear-gradient(
         to right,
         var(--slider-thumb-color, #3b90ff) 0%,
@@ -1096,7 +1074,7 @@ input[type="range"]::-webkit-slider-thumb {
     border-radius: 50%;
     background: var(--slider-thumb-color, #ffffff) !important;
     box-shadow: 0 2px 6px rgba(0,0,0,0.5);
-    margin-top: -8px; /* Centers thumb over track */
+    margin-top: -8px;
     transition: transform 0.1s ease;
 }
 input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.15); }
@@ -1135,13 +1113,13 @@ input[type="range"]::-moz-range-thumb {
 .nudge-btn:disabled {
     opacity: 0.3;
     cursor: default;
-    pointer-events: none; /* Strictly blocks all pointer, touch and click events on browser hardware level */
+    pointer-events: none;
 }
 
 .settings-help { font-size: 11px; color: #8e8e93; line-height: 1.4; margin-top: 4px; display: block; }
 
 /* ==========================================================================
-   12. CALIBRATION BOTTOM SHEET (HUD ESCAPE PATTERN)
+   Block: Calibration Bottom Sheet (HUD Escape Pattern)
    ========================================================================== */
 /* Safely anchors the modal to the bottom of the screen during sub-pixel optical calibration */
 #settings-modal.calibration-mode {
@@ -1154,38 +1132,34 @@ input[type="range"]::-moz-range-thumb {
 
 #settings-modal.calibration-mode .modal-content {
     height: auto;
-    max-height: none !important; /* Allow the sheet to naturally fit all sliders without squishing */
+    max-height: none !important;
     padding: 12px 14px;
     box-shadow: 0 -4px 24px rgba(0,0,0,0.6);
-    margin-top: auto; /* Push down */
-    margin-bottom: 0; /* Glue to bottom edge */
-    margin-left: auto; /* Center horizontally */
+    margin-top: auto;
+    margin-bottom: 0;
+    margin-left: auto;
     margin-right: auto;
     overflow: hidden !important;
 }
 
 #settings-modal.calibration-mode .modal-scroll-body {
-    overflow: hidden !important; /* Strictly forbid scrolling in calibration mode */
+    overflow: hidden !important;
     margin-bottom: 0;
-    padding-right: 0; /* Remove scrollbar margin */
+    padding-right: 0;
 }
 
 @media (max-width: 529px) {
-    #desc-mode-explanation { display: none !important; } /* Hide clutter on phones */
+    #desc-mode-explanation { display: none !important; }
 }
 
 /* Strict DOM stripping specifically during calibration focus mode */
 #settings-modal.calibration-mode .settings-row { margin-bottom: 6px; padding-bottom: 6px; gap: 4px; }
 
-/* 
- * Bulletproof structural silencer: Hides EVERYTHING inside the scroll body by default 
- * during calibration, preventing global headers or open accordions from overlapping the canvas.
- */
+/* Bulletproof structural silencer: Hides EVERYTHING inside the scroll body by default */
 #settings-modal.calibration-mode .modal-scroll-body > * {
     display: none !important;
 }
 
-/* Force hide the main top tab bar switcher during calibration to free up vertical space */
 #settings-modal.calibration-mode #settings-mode-bar {
     display: none !important;
 }
@@ -1209,7 +1183,6 @@ input[type="range"]::-moz-range-thumb {
     display: none !important;
 }
 
-/* Hide the detailed strong attenuation help block exclusively during active L/R calibration */
 #settings-modal.calibration-mode #row-strong-attenuation .settings-help {
     display: none !important;
 }
@@ -1218,11 +1191,11 @@ input[type="range"]::-moz-range-thumb {
 #settings-modal.calibration-mode #btn-fusion-test { order: -1 !important; margin: 0 0 12px 0 !important; padding: 10px !important; }
 
 /* ==========================================================================
-   13. DASHBOARD TABLES & LEADERBOARDS
+   Block: Dashboard Tables & Leaderboards
    ========================================================================== */
 .leaderboard-container {
     width: 100%;
-    background: rgba(11, 15, 24, 0.3); /* Clinical airy transparency */
+    background: rgba(11, 15, 24, 0.3);
     border-radius: var(--radius-elements);
     padding: clamp(10px, 2vw, 14px) clamp(12px, 3vw, 16px);
     margin: 0 0 14px 0;
@@ -1231,14 +1204,14 @@ input[type="range"]::-moz-range-thumb {
 
 .leaderboard-list {
     list-style: none;
-    padding: 0 !important; /* Neutralizes .modal-content ul padding-left leakage */
+    padding: 0 !important;
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 6px; /* Perfect breathing room for row items */
+    gap: 6px;
     height: 100%;
     overflow-y: auto;
-    scrollbar-width: none; /* Hide internal scroll as modal handles it */
+    scrollbar-width: none;
 }
 
 .leaderboard-list::-webkit-scrollbar {
@@ -1254,7 +1227,7 @@ input[type="range"]::-moz-range-thumb {
 }
 .leaderboard-item:last-child { border-bottom: none; padding-bottom: 0; }
 
-/* Dashboard Forms & Buttons (Extracted from legacy inline-soup) */
+/* Dashboard Forms & Buttons */
 .dash-input {
     width: 100%;
     background: #131a26;
@@ -1287,35 +1260,35 @@ input[type="range"]::-moz-range-thumb {
 .btn-ghost-green { background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.25); color: #22c55e; }
 
 /* ==========================================================================
-   14. COMPLEMENTARY PILL TABS & PRESET GRIDS
+   Block: Complementary Pill Tabs & Preset Grids
    ========================================================================== */
 
-/* 14A. Horizontal Segmented Pill Controls */
+/* Horizontal Segmented Pill Controls */
 .pill-group {
     display: flex;
     background: #131a26;
-    padding: 3px; /* Tighter padding for elite compactness */
+    padding: 3px;
     border-radius: var(--radius-elements);
     border: 1px solid #2b354a;
-    width: fit-content; /* Strictly wrap the content to be narrow */
-    max-width: 48%; /* Prevent stretching, giving text labels more breathing room */
+    width: fit-content;
+    max-width: 48%;
     justify-content: flex-end;
     box-sizing: border-box;
-    gap: 2px; /* Minimal gap between segmented options */
+    gap: 2px;
 }
 
 .pill-btn {
     appearance: none;
     flex: 0 1 auto;
-    min-width: 30px; /* Slimmer base target for numbers */
+    min-width: 30px;
     border: none;
     background: transparent;
     color: #8e8e93;
-    font-size: clamp(9.5px, 2.4vw, 11.5px); /* More compact font size to avoid visual overflow */
+    font-size: clamp(9.5px, 2.4vw, 11.5px);
     font-weight: 700;
-    padding: 5px 8px; /* Tighter vertical and horizontal padding to make pills narrow and sleek */
+    padding: 5px 8px;
     cursor: pointer;
-    border-radius: calc(var(--radius-elements) - 4px); /* Concentric visual rounding */
+    border-radius: calc(var(--radius-elements) - 4px);
     transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
     text-align: center;
     white-space: nowrap;
@@ -1327,7 +1300,7 @@ input[type="range"]::-moz-range-thumb {
     gap: 2px;
 }
 
-/* 14C. Symmetrical Layout Spacing Rows */
+/* Symmetrical Layout Spacing Rows */
 .pill-row {
     display: flex;
     flex-direction: row;
@@ -1336,7 +1309,7 @@ input[type="range"]::-moz-range-thumb {
     gap: 12px;
     padding-bottom: 8px;
     margin-bottom: 8px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03); /* Elegant horizontal dividing line */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
 }
 
 .pill-row:last-child {
@@ -1348,26 +1321,26 @@ input[type="range"]::-moz-range-thumb {
 /* 
  * Mobile Premium Stacking (Variant B)
  * Automatically transitions settings rows to vertical columns on small screens (< 480px).
- * This prevents horizontal text clipping while allowing pills to be wide, legible, and easy to tap.
+ * Prevents horizontal text clipping while allowing pills to be wide and legible.
  */
 @media (max-width: 480px) {
     .pill-row {
         flex-direction: column;
-        align-items: flex-start; /* Place descriptive labels on top */
+        align-items: flex-start;
         gap: 6px;
         padding-bottom: 10px;
         margin-bottom: 10px;
     }
 
     .pill-group {
-        width: 100% !important; /* Allow the pill group to expand across the full card width */
+        width: 100% !important;
         max-width: 100% !important;
-        justify-content: space-between; /* Distribute buttons evenly across the line */
+        justify-content: space-between;
     }
 
     .pill-btn {
-        flex: 1 1 auto; /* Let buttons stretch gracefully to take equal shares of the screen width */
-        padding: 6px 10px; /* Breathe slightly more on mobile touch screens */
+        flex: 1 1 auto;
+        padding: 6px 10px;
     }
 }
 
@@ -1381,7 +1354,7 @@ input[type="range"]::-moz-range-thumb {
     background: rgba(43, 53, 74, 0.3);
 }
 
-/* 14B. Preset Grid Selector Cards */
+/* Preset Grid Selector Cards */
 .preset-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -1429,6 +1402,8 @@ input[type="range"]::-moz-range-thumb {
     line-height: 1.3;
     max-width: 100%;
     display: -webkit-box;
+    /* Multiline truncation: Webkit hack + W3C Standard for future-proofing */
+    line-clamp: 2;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;

@@ -1,9 +1,11 @@
-/*
- * GaborNeuroFit - Bundler & PWA Optimization Configuration
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file vite.config.ts
+ * @description Bundler and PWA optimization configuration for GaborNeuroFit.
+ * Orchestrates the compilation pipeline, static asset packaging, and Workbox 
+ * service-worker strategies to ensure 100% offline clinical capability.
  *
- * This configuration manages compilation pipelines, static assets packaging,
- * and sets up Workbox service-worker rules for offline clinical capability.
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
 import { defineConfig } from 'vite';
@@ -11,8 +13,15 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { configDefaults } from 'vitest/config';
 
 export default defineConfig({
+  /** @description Force relative base paths to enable standalone local deployments. */
   base: './',
+
   plugins: [
+    /**
+     * @block PWA Orchestration
+     * @clinical Offline Continuity: Guarantees that vision therapy remains accessible 
+     * in clinical environments with restricted connectivity or shielded rooms.
+     */
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'inline',
@@ -23,8 +32,7 @@ export default defineConfig({
         'icon-512.png',
         'icon-512-maskable.png',
         'i18n/en.json',
-        'i18n/ru.json',
-        'emojis/*.svg'
+        'i18n/ru.json'
       ],
       manifest: {
         name: 'GaborNeuroFit Training Suite',
@@ -33,6 +41,7 @@ export default defineConfig({
         theme_color: '#131a26',
         background_color: '#7f7f7f',
         display: 'standalone',
+        /** @clinical Enforces portrait orientation to preserve ergonomic working distance. */
         orientation: 'portrait',
         start_url: './index.html',
         icons: [
@@ -63,10 +72,14 @@ export default defineConfig({
         ]
       },
       workbox: {
+        /** @description Pre-caches all essential logic and styles for sub-second offline launch. */
         globPatterns: ['**/*.{js,css,html,svg,png,json}'],
         runtimeCaching: [
           {
-            // Cache Google Web Fonts resources for complete offline runtime
+            /** 
+             * @performance Typography Stability: Cache Google Fonts to prevent 
+             * layout shifts and ensure consistent visual acuity scaling.
+             */
             urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com.*/i,
             handler: 'CacheFirst',
             options: {
@@ -84,9 +97,16 @@ export default defineConfig({
       }
     })
   ],
+
+  /**
+   * @block Unit Testing Architecture
+   * @architecture Employs Vitest with JSDoc environment for lightweight DOM simulation.
+   */
   test: {
-    environment: 'jsdom', // Simulates browser window inside Node.js
-    globals: true, // Enables global test functions natively
-    exclude: [...configDefaults.exclude, '**/e2e/**'], // Strictly excludes Playwright E2E browser tests from Vitest unit runner
+    /** @description Simulates a browser-like global environment inside Node.js. */
+    environment: 'jsdom',
+    globals: true,
+    /** @description Strictly isolates unit tests from Playwright E2E browser automation. */
+    exclude: [...configDefaults.exclude, '**/e2e/**'],
   },
 });

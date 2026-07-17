@@ -3,16 +3,17 @@
   "private": true,
   "version": "2.0.0",
   "type": "module",
+  "license": "GPL-3.0-or-later",
   "scripts": {
     "dev": "vite",
     "build": "npm run build-assets && vite build",
     "preview": "vite preview",
+    "build-assets": "npx tsx scripts/generate-assets.ts",
     "type-check": "tsc --noEmit",
     "test": "vitest run --reporter=verbose",
     "test:watch": "vitest --reporter=verbose",
-    "test:e2e": "playwright test --config=playwright.config.ts",
-    "test:e2e:ui": "playwright test --config=playwright.config.ts --ui",
-    "build-assets": "npx tsx scripts/generate-assets.ts"
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",

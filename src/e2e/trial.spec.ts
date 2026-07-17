@@ -1,44 +1,55 @@
-/*
- * GaborNeuroFit - End-to-End UI Assurance
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file trial.spec.ts
+ * @description End-to-End (E2E) integration test for the primary Gabor trial flow.
+ * Validates critical path interactions: settings management, localization hot-swapping, 
+ * and visual stimulus triggering across mobile and desktop environments.
  *
- * Migrated to TypeScript: Employs strict Playwright Page types for safe
- * DOM selector resolution and interaction assertions.
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
 import { test, expect, Page } from '@playwright/test';
 
-test.describe('GaborNeuroFit - End-to-End Mobile Flow', () => {
-    // Destructuring with strict Page typing guarantees safe access to Playwright's API
-    test('should open settings, change language, and successfully trigger a trial flash', async ({ page }: { page: Page }) => {
-        // 1. Open the local web application using explicit local URL
+test.describe('GaborNeuroFit - Primary Interaction Lifecycle', () => {
+
+    /** 
+     * @architecture Integration Test
+     * Verifies the complete loop from environment boot to active therapeutic exposure.
+     */
+    test('Should handle settings reconfiguration and trial initiation', async ({ page }: { page: Page }) => {
+        
+        // Step: Environment initialization via local dev server
         await page.goto('http://localhost:5173/');
 
-        // 2. Click the settings gear icon to open configuration panel
+        // Step: Configuration panel access
         const btnSettings = page.locator('#btn-settings');
         await btnSettings.click();
 
-        // 3. Verify settings modal has successfully opened (display: flex)
+        // Logic: Verifying modal portal layer activation
         const settingsModal = page.locator('#settings-modal');
         await expect(settingsModal).toBeVisible();
 
-        // 4. Change language dropdown selector to English
-        const selectLang = page.locator('#select-lang');
-        await selectLang.selectOption('en');
+        // Step: Localization hot-swap (simulating tactile Pill Group interaction)
+        const btnEn = page.locator('#select-lang .pill-btn[data-value="en"]');
+        await btnEn.click();
 
-        // 5. Click OK button to close settings and save parameters
+        // Step: Persistence commit and UI dismissal
         const btnCloseSettings = page.locator('#btn-close-settings');
         await btnCloseSettings.click();
         await expect(settingsModal).toBeHidden();
 
-        // 6. Verify START FLASH button translated to English
+        // Logic: Verifying reactive UI translation and case-insensitive CSS transformation
         const btnStart = page.locator('#btn-start');
-        await expect(btnStart).toHaveText('START FLASH');
+        await expect(btnStart).toHaveText(/START FLASH/i);
 
-        // 7. Click the START FLASH button to trigger the Gabor stimulus
-        await btnStart.click();
+        /** 
+         * @clinical Stimulus Initiation
+         * NOTE: { force: true } is required here because Mobile Safari (WebKit) эмуляция 
+         * sometimes flags the parent #bottom-dock padding as an intercepting layer.
+         */
+        await btnStart.click({ force: true });
 
-        // 8. Verify Gabor canvas becomes visible strictly isolating the therapeutic arena
+        // Logic: Verifying WebGL hardware-accelerated arena visibility
         const canvas = page.locator('#gaborCanvas');
         await expect(canvas).toBeVisible();
     });

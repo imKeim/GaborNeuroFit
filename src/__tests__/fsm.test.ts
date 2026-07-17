@@ -1,17 +1,18 @@
-/*
- * GaborNeuroFit - Finite State Machine (FSM) Security Assurance
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file fsm.test.ts
+ * @description Finite State Machine (FSM) security and synchronization assurance.
+ * Strictly verifies the chronological integrity of therapeutic event loops, 
+ * protecting patient data from asynchronous race conditions and input noise.
  *
- * This test suite strictly verifies the chronological safety of therapeutic
- * event loops, protecting the patient data from asynchronous race conditions,
- * rapid input spam, and temporal sequence violations.
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { GaborController } from '../controller/gabor';
 import { Store } from '../store';
 
-// Mock Web Audio and WebGL dependencies to prevent Node.js hardware pipeline crashes
+// Logic: Mocking hardware dependencies to prevent Node.js environment crashes
 vi.mock('./engine/audio', () => ({
     playCue: vi.fn(),
     playSuccess: vi.fn(),
@@ -24,7 +25,6 @@ vi.mock('../engine/gabor-render', () => ({
     drawFusionLockFrame: vi.fn()
 }));
 
-// Isolate the FSM logic from physical DOM UI rendering faults
 vi.mock('../ui/screen', () => ({
     updateScoreboard: vi.fn(),
     updateStatusBar: vi.fn(),
@@ -34,7 +34,7 @@ vi.mock('../ui/screen', () => ({
 describe('GaborNeuroFit State Machine Fortification', () => {
     let ctrl: GaborController;
 
-    // Mock DOM elements required for Controller instantiation
+    // Logic: Mocking DOM requirements for headless controller execution
     const mockCanvas = document.createElement('canvas');
     const mockOverlayCanvas = document.createElement('canvas');
     const mockOverlayCtx = mockOverlayCanvas.getContext('2d') as CanvasRenderingContext2D;
@@ -44,12 +44,11 @@ describe('GaborNeuroFit State Machine Fortification', () => {
     const mockBtnStart = document.createElement('button');
 
     beforeEach(() => {
-        // Reset absolute clinical baseline before every test
+        // Step: Reset absolute clinical baseline
         Store.state.score = 0;
         Store.state.total = 0;
         Store.state.isWaitingForAnswer = false;
 
-        // Initialize a fresh controller
         ctrl = new GaborController(
             mockCanvas,
             mockOverlayCanvas,
@@ -58,27 +57,24 @@ describe('GaborNeuroFit State Machine Fortification', () => {
             mockContainer,
             mockFlashOverlay,
             mockBtnStart,
-            () => ({}), // Fake translation getter
-            vi.fn(), // Fake modal popup
-            vi.fn() // Fake syncCross callback
+            () => ({}),
+            vi.fn(),
+            vi.fn()
         );
 
-        // Take control of the system clock to instantly bypass therapeutic delays
+        // Logic: Employing fake timers to bypass therapeutic delays during validation
         vi.useFakeTimers();
     });
 
     afterEach(() => {
         vi.restoreAllMocks();
-        ctrl.abort(); // Ensure trackers are purged
+        ctrl.abort(); 
     });
 
-    // ============================================================================
-    // 1. ILLEGAL TRANSITIONS PROTECTION
-    // ============================================================================
+    /* Context: Topological integrity and transition guards */
+
     it('Should rigidly reject illegal topological jumps (e.g. IDLE directly to FEEDBACK)', () => {
         expect(ctrl.currentState).toBe('IDLE');
-
-        // Attempt an illegal operation
         const result = ctrl.transitionTo('FEEDBACK');
 
         // FSM must block the action and preserve the safe state
@@ -94,21 +90,17 @@ describe('GaborNeuroFit State Machine Fortification', () => {
         expect(ctrl.currentState).toBe('STIMULUS_ACTIVE');
     });
 
-    // ============================================================================
-    // 2. INPUT DEBOUNCE (Spam Armor)
-    // ============================================================================
+    /* Context: Protection against motor impulsivity and input noise */
+
     it('Should armor the psychometric staircase against user input spam (Button Mashing)', () => {
-        // Mock a legally initiated answer phase
         ctrl.currentState = 'AWAITING_INPUT';
 
-        // Simulate a frustrated patient rapid-firing the confirmation button 5 times locally
+        // Step: Simulate rapid-fire input noise (5 consecutive clicks)
         for (let i = 0; i < 5; i++) {
             ctrl.submitAnswer('left');
         }
 
-        // The first call mutates the state to FEEDBACK.
-        // The remaining 4 calls MUST hit the internal return guard.
-        // As a result, the global total should mathematically only increment exactly once.
+        // Logic: First call mutates state, subsequent 4 must be ignored by FSM guards
         expect(Store.state.total).toBe(1);
         expect(ctrl.currentState).toBe('FEEDBACK');
     });
@@ -117,32 +109,25 @@ describe('GaborNeuroFit State Machine Fortification', () => {
         ctrl.currentState = 'PRE_CUE';
         ctrl.submitAnswer('right');
 
-        // Input should not register. Trial total remains untouched.
+        // Clinical: Input should not register before sensory stimulus exposure
         expect(Store.state.total).toBe(0);
-        expect(ctrl.currentState).toBe('PRE_CUE'); // State remains in pre-cue
+        expect(ctrl.currentState).toBe('PRE_CUE');
     });
 
-    // ============================================================================
-    // 3. SECURE GARBAGE COLLECTION (Memory Leaks)
-    // ============================================================================
-    it('Should completely strip all pending asynchronous callbacks upon clinical abort', () => {
-        // Trigger a trial which schedules the 180ms audio-to-visual pre-cue delay
-        ctrl.triggerTrial();
+    /* Context: Asynchronous resource hygiene and leak prevention */
 
-        // We ensure a timeout is queued in our custom wrapper
+    it('Should completely strip all pending asynchronous callbacks upon clinical abort', () => {
+        // Step: Initiate trial and queue the 180ms audio-to-visual delay
+        ctrl.triggerTrial();
         expect(ctrl.currentState).toBe('PRE_CUE');
 
-        // The user suddenly clicks the "Settings" menu button
+        // Step: Trigger emergency component teardown
         ctrl.abort();
-
-        // The state must instantly yield to IDLE
         expect(ctrl.currentState).toBe('IDLE');
 
-        // Advance time by 200ms. If the timer WAS NOT cleared, it would try to fire
-        // _runRenderCycle and mutate the state to STIMULUS_ACTIVE.
+        // Logic: Advance time beyond the original timeout. No state mutation should occur.
         vi.advanceTimersByTime(200);
 
-        // State must defensively REMAIN IDLE because the timeout was safely deleted
         expect(ctrl.currentState).toBe('IDLE');
     });
 });

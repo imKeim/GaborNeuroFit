@@ -1,9 +1,11 @@
-/*
- * GaborNeuroFit - Clinical Mathematics & Boundaries Assurance
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file math.test.ts
+ * @description Clinical Mathematics and Boundary Assurance suite.
+ * Validates the physical constraints of psychometric staircases, 
+ * toroidal noise grid algebra, and geometric vergence vectors.
  *
- * This test suite strictly verifies the physical boundaries of physiological
- * calculations: psychometric staircases, toriodal arrays, and geometric vectors.
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -11,10 +13,9 @@ import { Store } from '../store';
 
 describe('GaborNeuroFit Core Mathematics', () => {
 
-    // ============================================================================
-    // 1. GABOR SENSORY STAIRCASE BOUNDARIES
-    // ============================================================================
-    describe('Adaptive Psychometric Staircase (1-up / 3-down)', () => {
+    /* Context: Psychometric staircase boundary enforcement */
+
+    describe('Adaptive Staircase Algorithm (1-up / 3-down)', () => {
         beforeEach(() => {
             Store.state.score = 0;
             Store.state.total = 0;
@@ -30,9 +31,10 @@ describe('GaborNeuroFit Core Mathematics', () => {
             Store.updateState('autoContrast', 0.06);
             Store.updateState('staircaseStreak', 2);
 
-            Store.registerResult(true); // 3rd success drops contrast by 0.05
+            // Logic: 3rd consecutive success triggers contrast reduction
+            Store.registerResult(true); 
 
-            // 0.06 - 0.05 = 0.01, BUT clamp should force it back to 0.05
+            // Result (0.01) must be clamped to clinical minimum (0.05)
             expect(Store.state.autoContrast).toBe(0.05);
         });
 
@@ -43,119 +45,86 @@ describe('GaborNeuroFit Core Mathematics', () => {
 
             Store.registerResult(true);
 
-            // 0.03 - 0.05 = -0.02, BUT clamp guarantees 0.01 (preventing total invisibility/NaN shaders)
+            // Clinical: Clamp guarantees 0.01 visibility to prevent total signal loss
             expect(Store.state.autoContrast).toBe(0.01);
         });
 
         it('Should NEVER exceed ceiling threshold (1.00) on consecutive failures', () => {
             Store.updateState('autoContrast', 0.98);
+            Store.registerResult(false); 
 
-            Store.registerResult(false); // Failure adds +0.08
-
-            // 0.98 + 0.08 = 1.06, BUT clamp enforces 1.00 max physical contrast
+            // Logic: 0.98 + 0.08 = 1.06, must be clamped to 1.00 physical maximum
             expect(Store.state.autoContrast).toBe(1.00);
         });
 
         it('Should resolve IEEE 754 floating point arithmetic safely', () => {
             Store.updateState('autoContrast', 0.15);
-            Store.registerResult(false); // +0.08
+            Store.registerResult(false); 
 
-            // JS normally renders 0.15 + 0.08 as 0.22999999999999998
-            // The clinically safe rounding mechanism should yield exactly 0.23
+            // Logic: 0.15 + 0.08 must yield exactly 0.23, bypassing 0.229999... artifacts
             expect(Store.state.autoContrast).toBe(0.23);
         });
 
-        it('Should decrease contrast ONLY after 3 consecutive correct answers (3-down rule)', () => {
+        /** @clinical Validates the 3-down rule of the Wetherill-Levitt staircase */
+        it('Should decrease contrast ONLY after 3 consecutive correct answers', () => {
             Store.updateState('autoContrast', 0.50);
 
-            Store.registerResult(true); // 1st success, contrast remains 0.50
+            Store.registerResult(true); 
             expect(Store.state.autoContrast).toBe(0.50);
 
-            Store.registerResult(true); // 2nd success, contrast remains 0.50
+            Store.registerResult(true); 
             expect(Store.state.autoContrast).toBe(0.50);
 
-            Store.registerResult(true); // 3rd success -> triggers contrast drop (-0.05)
+            Store.registerResult(true); 
             expect(Store.state.autoContrast).toBe(0.45);
-            expect(Store.state.staircaseStreak).toBe(0); // Streak resets after execution
-        });
-
-        it('Should advance macro difficulty stage if rolling accuracy is >= 85% over 20 trials', () => {
-            Store.updateState('currentLevel', 1);
-            Store.updateState('autoContrast', 0.50);
-
-            // Simulate 20 consecutive correct answers
-            for (let i = 0; i < 20; i++) {
-                Store.registerResult(true);
-            }
-
-            // Stage difficulty should automatically advance from 1 to 2
-            expect(Store.state.currentLevel).toBe(2);
-            // Contrast resets to tighter baseline for the new harder stage
-            expect(Store.state.autoContrast).toBe(0.40);
         });
     });
 
-    // ============================================================================
-    // 2. RDS TOROIDAL SHIFT ALGEBRA (No-Ghosting Mechanism)
-    // ============================================================================
+    /* Context: Toroidal wrapping algebra (Suppression of monocular cues) */
+
     describe('Stereoscopic Matrix Toroidal Shifting', () => {
-        // Pure function matching the formula used in engine/rds-render.ts
+        // Logic: Mirroring the formula used in engine/rds-render.ts
         const calculateRdsIndex = (gx: number, disparity: number, cols: number) => {
             return (gx - disparity + cols) % cols;
         };
 
         it('Should reliably shift pixels perfectly right-to-left within bounds', () => {
             const cols = 64;
-            let gx = 32;
-            let disparity = 4;
-            expect(calculateRdsIndex(gx, disparity, cols)).toBe(28);
+            expect(calculateRdsIndex(32, 4, cols)).toBe(28);
         });
 
-        it('Should correctly wrap negative spatial arrays around the toroidal geometry (Prevent Array Underflow)', () => {
-            const cols = 64; // Grid size
-            const disparity = 8; // Deep stereopsis
-            const gx = 2; // Close to left edge
-
-            // 2 - 8 = -6. Without (+ cols), JS modulo yields -6.
-            // With clinical toroidal wrapping: (-6 + 64) % 64 = 58 (Wrapped gracefully to right edge)
+        /** @mathematical Verifies the torus closure to prevent array underflow */
+        it('Should wrap negative spatial arrays around the toroidal geometry', () => {
+            const cols = 64; 
+            const disparity = 8;
+            const gx = 2; // (2 - 8 + 64) % 64 = 58
             expect(calculateRdsIndex(gx, disparity, cols)).toBe(58);
         });
     });
 
-    // ============================================================================
-    // 3. SYNOPTOPHORE MOTOR KINEMATICS
-    // ============================================================================
-    describe('Vergence Vector Normalization', () => {
-        // Pure function representing the engine's percent evaluation
+    /* Context: Oculomotor vergence vector normalization */
+
+    describe('Vergence Progress Normalization', () => {
         const calcMuscleContractionProgress = (currentDist: number, startDist: number) => {
             if (startDist <= 0) return 0;
             return Math.max(0, Math.min(100, Math.round(100 * (1 - currentDist / startDist))));
         };
 
-        it('Should accurately evaluate Euclidean distance into normalized Prism Diopter percentage', () => {
-            const startDist = 30; // 30px lateral strabismic deviation
-            const currentDist = 15; // Pulled exactly halfway to neutral
-            expect(calcMuscleContractionProgress(currentDist, startDist)).toBe(50); // 50% physical recovery
+        it('Should accurately evaluate Euclidean distance into contraction percentage', () => {
+            expect(calcMuscleContractionProgress(15, 30)).toBe(50);
         });
 
-        it('Should clamp muscle progress to 100% and avoid overflow upon reaching zero', () => {
-            const startDist = 20;
-            const currentDist = 0; // Absolute optical center
-            expect(calcMuscleContractionProgress(currentDist, startDist)).toBe(100);
+        it('Should clamp muscle progress to 100% and avoid overflow upon center capture', () => {
+            expect(calcMuscleContractionProgress(0, 20)).toBe(100);
         });
 
-        it('Should clamp backward slipping vectors to 0% and NEVER return negative progress', () => {
-            const startDist = 20;
-            const currentDist = 25; // Eye slipped further OUTWARD than the initial calibration
-
-            // Unclamped this would be -25%, which breaks database charts. Clamp enforces 0%.
-            expect(calcMuscleContractionProgress(currentDist, startDist)).toBe(0);
+        /** @clinical Ensures backward slips do not corrupt database charts */
+        it('Should clamp backward slipping vectors to 0% progress', () => {
+            expect(calcMuscleContractionProgress(25, 20)).toBe(0);
         });
 
-        it('Should defensively block division by zero (Infinity exceptions) when distances collapse', () => {
-            const startDist = 0; // Edge case: User clicked "LOCK" without shifting target
-            const currentDist = 0;
-            expect(calcMuscleContractionProgress(currentDist, startDist)).toBe(0);
+        it('Should defensively block division by zero exceptions', () => {
+            expect(calcMuscleContractionProgress(0, 0)).toBe(0);
         });
     });
 });

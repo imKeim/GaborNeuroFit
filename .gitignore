@@ -1,4 +1,4 @@
-# Dependency directories (never push temporary node modules to GitHub)
+# Dependency directories
 node_modules/
 
 # Build output directories

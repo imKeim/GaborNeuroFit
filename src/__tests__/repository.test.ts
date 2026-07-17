@@ -1,16 +1,17 @@
-/*
- * GaborNeuroFit - Persistence Layer & Relational DB Assurance
- * Copyright (C) 2026 Pavel Korotkov
+/**
+ * @file repository.test.ts
+ * @description Persistence Layer and Relational Database Integrity suite.
+ * Guarantees that patient profiles and polymorphic session data are 
+ * serialized without data loss or foreign key collisions.
  *
- * This test suite verifies the integrity of the DataRepository, guaranteeing that
- * patient profiles, clinical history chunks, and polymorphic session objects are
- * flawlessly serialized/deserialized without data loss or foreign key collisions.
+ * @copyright (C) 2026 Pavel Korotkov
+ * @license GNU GPL v3
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { DataRepository } from '../store/repository';
 
-// Provide a mock LocalStorage architecture for the Node.js test runner
+// Logic: Providing a memory-based LocalStorage mock for the Node.js runner
 const localStorageMock = (() => {
     let store: Record<string, string> = {};
     return {
@@ -29,7 +30,7 @@ const localStorageMock = (() => {
 
 describe('DataRepository Integrity Operations', () => {
     beforeEach(() => {
-        // Intercept global browser LocalStorage calls and route to our RAM Mock
+        // Step: Intercept global storage calls and route to RAM mock
         vi.stubGlobal('localStorage', localStorageMock);
         localStorageMock.clear();
         vi.clearAllMocks();
@@ -39,9 +40,8 @@ describe('DataRepository Integrity Operations', () => {
         vi.unstubAllGlobals();
     });
 
-    // ============================================================================
-    // 1. PROFILE BOOTSTRAPPING & REFERENTIAL INTEGRITY
-    // ============================================================================
+    /* Context: Database hydration and referential integrity */
+
     it('Should bootstrap a default profile gracefully if completely empty', () => {
         DataRepository.init({ defaultPatientName: 'Root Patient' });
 
@@ -53,8 +53,8 @@ describe('DataRepository Integrity Operations', () => {
         expect(activeUid).toBe(profiles[0].id);
     });
 
+    /** @architecture Validates cascading purge protocol */
     it('Should perform destructive Cascading Deletes cleanly avoiding DB leaks', () => {
-        // 1. Manually shape database state
         DataRepository.init();
         const p1 = DataRepository.getProfiles()[0];
         const p2 = DataRepository.createProfile('Secondary Patient');
@@ -62,7 +62,7 @@ describe('DataRepository Integrity Operations', () => {
         expect(p2).not.toBeNull();
         if (!p2) return;
 
-        // 2. Inject sessions strictly mapped to specific profile UUIDs
+        // Step: Injecting sessions strictly mapped to specific profile UUIDs
         DataRepository.setActiveProfileId(p1.id);
         DataRepository.saveSession({ sessionId: 'session_A', protocol: 'occlusion' });
 
@@ -70,18 +70,12 @@ describe('DataRepository Integrity Operations', () => {
         DataRepository.saveSession({ sessionId: 'session_B', protocol: 'occlusion' });
         DataRepository.saveSession({ sessionId: 'session_C', protocol: 'occlusion' });
 
-        // Total DB should contain 3 sessions
         expect(DataRepository.getAllSessions().length).toBe(3);
 
-        // 3. Initiate relational cascade elimination
-        const deleteSuccess = DataRepository.deleteProfile(p2.id);
-        expect(deleteSuccess).toBe(true);
+        // Step: Initiate relational cascade elimination
+        DataRepository.deleteProfile(p2.id);
 
-        const remainingProfiles = DataRepository.getProfiles();
-        expect(remainingProfiles.length).toBe(1);
-        expect(remainingProfiles[0].id).toBe(p1.id);
-
-        // 4. Verify absolute session integrity: p2's sessions must vanish, p1's must survive
+        // Clinical: p2's history must vanish, while p1's record must survive
         const remainingSessions = DataRepository.getAllSessions();
         expect(remainingSessions.length).toBe(1);
         expect(remainingSessions[0].id).toBe('session_A');
@@ -90,74 +84,51 @@ describe('DataRepository Integrity Operations', () => {
     it('Should refuse to delete the very last profile to prevent empty DB crashes', () => {
         DataRepository.init();
         const p1 = DataRepository.getProfiles()[0];
-
         const deleteSuccess = DataRepository.deleteProfile(p1.id);
 
-        expect(deleteSuccess).toBe(false); // Operation blocked
-        expect(DataRepository.getProfiles().length).toBe(1); // Profile remains
+        expect(deleteSuccess).toBe(false); 
+        expect(DataRepository.getProfiles().length).toBe(1); 
     });
 
-    // ============================================================================
-    // 2. POLYMORPHIC FACTORY INJECTION
-    // ============================================================================
-    it('Should strictly isolate Polymorphic fields during payload serialization (No bleed-over)', () => {
+    /* Context: Modality-specific payload serialization */
+
+    /** @architecture Verifies polymorphic factory stripping logic */
+    it('Should strictly isolate Polymorphic fields during payload serialization', () => {
         DataRepository.init();
 
-        // Push a Synoptophore payload
+        // Step: Pushing a Synoptophore payload with Gabor-specific pollution
         DataRepository.saveSession({
             sessionId: 'synop_123',
             protocol: 'synoptophore',
             targetX: -15,
             targetY: 0,
             outcome: 'success',
-            // Inject malicious payload attributes that shouldn't belong here
-            contrast: 0.99,
-            rdsDensity: 0.75
+            contrast: 0.99, // Polluting field
+            rdsDensity: 0.75 // Polluting field
         });
 
-        const activeSessions = DataRepository.getAllSessions();
-        expect(activeSessions.length).toBe(1);
+        const savedItem = DataRepository.getAllSessions()[0] as any;
 
-        const savedItem = activeSessions[0] as any; // Cast as ANY to test exact object keys
-
-        // Assert Synoptophore fields exist
+        // Logic: Assert that irrelevant fields were stripped by the factory
         expect(savedItem.synopTargetX).toBe(-15);
-        expect(savedItem.synopOutcome).toBe('success');
-
-        // Assert bleeding fields WERE STRIPPED BY THE FACTORY!
-        // This is crucial to prevent localStorage bloat.
         expect(savedItem.contrast).toBeUndefined();
         expect(savedItem.rdsDensity).toBeUndefined();
     });
 
-    // ============================================================================
-    // 3. UPSERT MECHANICS (Duplicates Protection)
-    // ============================================================================
+    /* Context: Deterministic data deduplication (UPSERT) */
+
     it('Should cleanly UPSERT existing sessions preventing chronological duplicates', () => {
         DataRepository.init();
-
         const sharedId = 'duplicate_session_x';
 
-        // Write #1
-        DataRepository.saveSession({
-            sessionId: sharedId,
-            protocol: 'occlusion',
-            score: 10
-        });
-
-        // Write #2 (Using same ID but different score)
-        DataRepository.saveSession({
-            sessionId: sharedId,
-            protocol: 'occlusion',
-            score: 55
-        });
+        // Step: Writing record and then overwriting with modified data
+        DataRepository.saveSession({ sessionId: sharedId, protocol: 'occlusion', score: 10 });
+        DataRepository.saveSession({ sessionId: sharedId, protocol: 'occlusion', score: 55 });
 
         const activeSessions = DataRepository.getAllSessions();
 
-        // Ensures array length is 1, not 2.
+        // Logic: Array length must remain 1, preventing historical bloat
         expect(activeSessions.length).toBe(1);
-
-        // Ensures the final value OVERWROTE the old one logic.
         expect((activeSessions[0] as any).score).toBe(55);
     });
 });

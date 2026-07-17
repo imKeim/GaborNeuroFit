@@ -133,7 +133,9 @@ Yes! Perceptual learning operates at the absolute threshold. Trust the adaptive 
 
 ## 📚 Key Scientific Literature
 
-*   **Hess, R. F., et al. (2010).** *Binocular dichoptic training facilitates binocular vision in adults with amblyopia.* (Dichoptic training vs. patching).
-*   **Polat, U., et al. (2004).** *Collinear stimuli facilitate visual acuity in adults with amblyopia.* (Gabor-based perceptual learning).
-*   **Levi, D. M., & Li, R. W. (2009).** *Perceptual learning as a potential treatment for amblyopia: a mini-review.* (Synaptic plasticity in adult V1).
-*   **Scheiman, M., et al. (2005).** *A randomized clinical trial of vision therapy/orthoptics versus pencil pushups for the treatment of convergence insufficiency in children.* (Proves the clinical superiority of structured orthoptic/vergence exercises).
+*   **Julesz, B. (1971).** *Foundations of Cyclopean Perception.* University of Chicago Press. (The foundational work establishing that depth perception is a high-level cortical process, justifying the use of RDS to bypass monocular cues).
+*   **Hess, R. F., et al. (2010).** *Binocular dichoptic training facilitates binocular vision in adults with amblyopia.* (Demonstrates that dichoptic/3D stimulation is superior to traditional occlusion in breaking cortical suppression).
+*   **Polat, U., et al. (2004).** *Improving vision in adult amblyopia by perceptual learning.* (Key evidence for Gabor-based perceptual learning effectiveness in adult amblyopia).
+*   **Levi, D. M., & Li, R. W. (2009).** *Perceptual learning as a potential treatment for amblyopia: a mini-review.* (Review of synaptic plasticity mechanisms in the adult V1 visual cortex).
+*   **Scheiman, M., et al. (2005).** *A randomized clinical trial of vision therapy/orthoptics versus pencil pushups for the treatment of convergence insufficiency in children.* (CITT study - proves the clinical superiority of structured orthoptic/vergence exercises).
+*   **Von Noorden, G. K., & Campos, E. C. (2002).** *Binocular Vision and Ocular Motility: Theory and Management of Strabismus.* (The clinical standard for strabismus treatment and the scientific rationale for vergence reserve training).
