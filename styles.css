@@ -564,7 +564,7 @@ canvas {
     opacity: 0;
     visibility: hidden;
     transform: translate(-50%, -46%) scale(0.96);
-    transition: opacity 0.15s ease-out, transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0s linear 0.15s;
+    transition: opacity 0.06s ease-out, transform 0.12s cubic-bezier(0.25, 0.8, 0.25, 1), visibility 0s linear 0.1s;
 }
 
 #pause-watermark.active {
