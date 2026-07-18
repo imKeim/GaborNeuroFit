@@ -8,25 +8,33 @@
  * @license GNU GPL v3
  */
 
-// Import core dependencies
+// Data & Persistence Layer (Source of Truth)
 import { Store } from './store';
 import { DataRepository } from './store/repository';
+
+// Controller Layer (Clinical Modality Orchestrators)
+import { GaborController } from './controller/gabor';
+import { RdsController } from './controller/rds';
+import { SynoptophoreController } from './controller/synop';
+import { SettingsController } from './controller/settings';
+import { DashboardController } from './controller/dashboard';
+import { PauseController } from './controller/pause';
+
+// Rendering Engine Layer (WebGL, 2D Canvas & Generative Audio)
+import { renderGabor } from './engine/gabor-render';
+import { drawRandomDotStereogram } from './engine/rds-render';
+import { drawSynoptophoreTargets } from './engine/synop-render';
 import { drawFusionTestPattern } from './engine/calibration-render';
 import { playCue, playError, playSuccess } from './engine/audio';
+
+// User Interface Layer (Presentation & Physical Inputs)
 import { updateScoreboard, drawIdleState, updateStatusBar } from './ui/screen';
 import { initModals, showCustomAlert, closeCustomAlert, closeModal } from './ui/modal';
 import { bindInputControls } from './ui/controls';
-import { GaborController } from './controller/gabor';
-import { SettingsController } from './controller/settings';
-import { SynoptophoreController } from './controller/synop';
-import { RdsController } from './controller/rds';
-import { DashboardController } from './controller/dashboard';
-import { PauseController } from './controller/pause';
-import { PomodoroTimer } from './utils/timer';
-import { drawSynoptophoreTargets } from './engine/synop-render';
-import { drawRandomDotStereogram } from './engine/rds-render';
-import { renderGabor } from './engine/gabor-render';
+
+// Utility & Environment Layer (Offline Hydration, Pacing & PWA)
 import { resizeCanvasesToDPR } from './utils/bootstrap';
+import { PomodoroTimer } from './utils/timer';
 import { loadLanguage } from './utils/i18n';
 
 // Import strict types

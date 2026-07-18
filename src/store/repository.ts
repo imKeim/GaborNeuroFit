@@ -338,6 +338,23 @@ export class DataRepository {
                 // Update the existing active session
                 sessions[existingIdx] = currentSession;
             } else {
+                // Auto-limit: enforce rolling FIFO cap dynamically balanced by the number of active profiles
+                const profileCount = this.getProfiles().length;
+                // Safely clamp per-user limit between 100 and 1000 sessions depending on the scale of the clinic
+                const maxSessionsPerUser = Math.max(100, Math.min(1000, Math.floor(10000 / Math.max(1, profileCount))));
+
+                const userSessions = sessions.filter(s => s.userId === activeUid);
+                if (userSessions.length >= maxSessionsPerUser) {
+                    // Sort user sessions chronologically to find the oldest one safely
+                    userSessions.sort((a, b) => a.timestamp - b.timestamp);
+                    const oldestUserSession = userSessions[0];
+                    if (oldestUserSession) {
+                        const oldestGlobalIdx = sessions.findIndex(s => s.id === oldestUserSession.id);
+                        if (oldestGlobalIdx > -1) {
+                            sessions.splice(oldestGlobalIdx, 1);
+                        }
+                    }
+                }
                 // Insert a brand new session entry
                 sessions.push(currentSession);
             }
