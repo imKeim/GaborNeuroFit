@@ -82,8 +82,8 @@ export class GaborController {
     public lastRandomAspectRatio: number = 1.0;
     public lastOffsetX: number = 0;
     public lastOffsetY: number = 0;
-    private flankerPhaseOffset: number = 0;
-    private autoNextTimeoutId: number | null = null;
+    public flankerPhaseOffset: number = 0;
+    public autoNextTimeoutId: number | null = null;
 
     constructor(
         private canvas: HTMLCanvasElement,

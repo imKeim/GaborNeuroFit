@@ -49,16 +49,14 @@ export class PauseController {
         if (!s.isPaused) {
             if (s.appMode === 'gabor' && this.gaborCtrl) {
                 const gState = this.gaborCtrl.currentState;
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const isAutoPending = (this.gaborCtrl as any).autoNextTimeoutId !== null;
+                const isAutoPending = this.gaborCtrl.autoNextTimeoutId !== null;
                 if (gState === 'PRE_CUE' || gState === 'STIMULUS_ACTIVE' || gState === 'FEEDBACK' || isAutoPending) {
                     return;
                 }
             }
             if (s.appMode === 'rds' && this.rdsCtrl) {
                 const rState = this.rdsCtrl.currentState;
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const isAutoPending = (this.rdsCtrl as any).autoNextTimeoutId !== null;
+                const isAutoPending = this.rdsCtrl.autoNextTimeoutId !== null;
                 if (rState === 'PRE_CUE' || rState === 'FEEDBACK' || isAutoPending) {
                     return;
                 }

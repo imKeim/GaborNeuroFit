@@ -1068,10 +1068,9 @@ window.addEventListener('load', async () => {
             const settingsModal = document.getElementById('settings-modal');
             const modalContent = settingsModal ? settingsModal.querySelector('.modal-content') : null;
             const scrollBody = settingsModal ? settingsModal.querySelector('.modal-scroll-body') : null;
-            const calibrationCurtain = document.getElementById('calibration-curtain');
 
             if (modalContent) modalContent.classList.add('modal-transitioning');
-            if (calibrationCurtain) calibrationCurtain.classList.add('active');
+            Store.updateState('isCurtainActive', true);
 
             if (!s.isAnaglyphTestActive && settingsModal) {
                 settingsModal.classList.add('modal-clear-backdrop');
@@ -1110,7 +1109,7 @@ window.addEventListener('load', async () => {
                         cross.style.display = 'block'; 
                                 
                         if (modalContent) modalContent.classList.remove('modal-transitioning');
-                        if (calibrationCurtain) calibrationCurtain.classList.remove('active');
+                        Store.updateState('isCurtainActive', false);
                 } else {
                     btnFusionTest.classList.remove('active');
                     container.classList.remove('calibration-active');
@@ -1136,7 +1135,7 @@ window.addEventListener('load', async () => {
                     if (modalContent) modalContent.classList.remove('modal-transitioning');
 
                     setTimeout(() => {
-                        if (calibrationCurtain) calibrationCurtain.classList.remove('active');
+                        Store.updateState('isCurtainActive', false);
                     }, 150);
                 }
             }, 250);

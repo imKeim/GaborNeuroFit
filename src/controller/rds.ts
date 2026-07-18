@@ -45,7 +45,7 @@ export class RdsController {
     public currentState: RdsStateValue = RdsState.IDLE;
     /** @description Centralized resource tracker for safe async cleanup. */
     public tracker: AsyncResourceTracker = new AsyncResourceTracker();
-    private autoNextTimeoutId: number | null = null;
+    public autoNextTimeoutId: number | null = null;
 
     constructor(
         private canvas: HTMLCanvasElement,
@@ -278,7 +278,7 @@ export class RdsController {
         Store.updateState('rdsStaircaseStreak', newStaircaseStreak);
         Store.updateState('rdsDisparity', newDisparity);
         Store.updateState('rdsLevel', newLevel);
-        Store.updateState('rdsHistory', activeHistory as any);
+        Store.updateState('rdsHistory', activeHistory);
 
         this.saveRdsSession();
 
