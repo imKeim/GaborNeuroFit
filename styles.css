@@ -576,38 +576,71 @@ canvas {
 
 #cross {
     z-index: var(--z-foveal-cross);
-    font-size: 36px; /* JS-driven injection */
     position: absolute;
     top: 50%;
     left: 50%;
-    /* Hardware Isolation: preserve foveal cross-line sharpness during size transitions */
     transform: translate(-50%, -50%) translateZ(0);
     backface-visibility: hidden;
-    
     width: 0.66em;
     height: 0.66em;
     display: block;
-    opacity: 1;
     pointer-events: none;
     transition: font-size 0.2s ease, opacity 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
-
-    /* Anti-masking Foveal Halo Zone */
     background-color: rgba(127, 127, 127, 0.66);
     border-radius: 50%;
     box-shadow: 0 0 0.33em 0.2em rgba(127, 127, 127, 0.65);
 }
 
-#cross.cross-dimmed {
+#container[data-app-mode="synoptophore"] #cross {
+    display: none;
+}
+
+#container[data-app-mode="rds"] #cross {
+    display: block;
+    font-size: 36px;
+}
+
+#container[data-app-mode="gabor"][data-level="1"] #cross { font-size: 36px; }
+#container[data-app-mode="gabor"][data-level="2"] #cross { font-size: 28px; }
+#container[data-app-mode="gabor"][data-level="3"] #cross { font-size: 22px; }
+#container[data-app-mode="gabor"][data-level="4"] #cross { font-size: 16px; }
+#container[data-app-mode="gabor"][data-level="5"] #cross { font-size: 12px; }
+
+#container[data-cross-state="hidden"] #cross {
+    opacity: 0;
+    visibility: hidden;
+}
+
+#container[data-cross-state="dimmed"] #cross {
     opacity: 0.22;
 }
 
-#cross.cross-hidden {
-    opacity: 0;
-}
-
-#cross.cross-white-halo {
+#container[data-cross-state="white-halo"] #cross {
     background-color: rgba(255, 255, 255, 0.65);
     box-shadow: 0 0 0.25em 0.2em rgba(255, 255, 255, 0.65);
+}
+
+#container[data-cross-state="visible"] #cross {
+    opacity: 1;
+    visibility: visible;
+}
+
+#container[data-paused="true"] {
+    cursor: pointer;
+}
+
+#container[data-app-mode="synoptophore"][data-synop-state="idle"],
+#container[data-app-mode="synoptophore"][data-synop-state="pulling"] {
+    cursor: pointer;
+}
+
+#container[data-app-mode="synoptophore"][data-synop-state="align"] {
+    cursor: move;
+}
+
+#container[data-app-mode="gabor"][data-start-disabled="false"],
+#container[data-app-mode="rds"][data-start-disabled="false"] {
+    cursor: pointer;
 }
 
 .cross-line-h, .cross-line-v {

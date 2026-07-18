@@ -31,6 +31,7 @@ export const Store = {
         appMode: 'gabor',
         isPaused: false,
         isMuted: false,
+        isCurtainActive: true,
 
         // --- Hardware & 3D ---
         isAnaglyphEnabled: true,

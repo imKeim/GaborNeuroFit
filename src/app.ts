@@ -144,92 +144,64 @@ function syncVisualState(): void {
     const containerNode = document.getElementById('container');
     if (!crossNode || !containerNode) return;
 
+    const curtain = document.getElementById('calibration-curtain');
+    if (curtain) {
+        curtain.classList.toggle('active', s.isCurtainActive);
+    }
+
+    containerNode.dataset.appMode = s.appMode;
+    containerNode.dataset.paused = String(s.isPaused);
+    containerNode.dataset.curtainActive = String(s.isCurtainActive);
+    containerNode.dataset.level = String(s.currentLevel);
+    containerNode.dataset.synopState = s.synopState;
+    containerNode.dataset.startDisabled = String(btnStart.disabled);
+
+    let crossState = 'hidden';
+
     // Logic: Fixation cross-scaling and visibility orchestration
     if (s.appMode === 'synoptophore') {
-        crossNode.style.display = 'none';
+        crossState = 'hidden';
     } else if (s.appMode === 'rds') {
-        crossNode.style.display = 'block';
-        crossNode.style.fontSize = '36px'; // RDS cross must always remain at the standard large Stage 1 size (36px)
         if (s.rdsIsPermanentCrossEnabled) {
             const rdsState = rdsController ? rdsController.currentState : 'IDLE';
             const isStimulusActive = (rdsState === 'STIMULUS_ACTIVE' || rdsState === 'AWAITING_INPUT') && !s.isPaused;
-
-            if (isStimulusActive) {
-                crossNode.className = 'cross-white-halo';
-            } else {
-                crossNode.className = 'cross-hidden';
-            }
+            crossState = isStimulusActive ? 'white-halo' : 'hidden';
         } else {
-            crossNode.className = 'cross-hidden';
+            crossState = 'hidden';
         }
     } else {
-        crossNode.style.display = 'block';
-            
-        // In Gabor mode, calculate cross size dynamically based on currentLevel
-        let crossSize = 36;
-        if (s.currentLevel === 1) crossSize = 36;
-        else if (s.currentLevel === 2) crossSize = 28;
-        else if (s.currentLevel === 3) crossSize = 22;
-        else if (s.currentLevel === 4) crossSize = 16;
-        else if (s.currentLevel === 5) crossSize = 12;
-        crossNode.style.fontSize = crossSize + 'px';
-
         const gaborState = gaborController ? gaborController.currentState : 'IDLE';
         const isCalibration = gaborController ? gaborController.isAnaglyphTestActive : false;
-
-        // Tie cross dimming strictly to physical stimulus visibility on canvas
-        const isStimulusVisible = 
-            (gaborState === 'STIMULUS_ACTIVE') || 
-            (gaborState === 'AWAITING_INPUT' && s.isStaticEnabled);
+        const isStimulusVisible = (gaborState === 'STIMULUS_ACTIVE') || (gaborState === 'AWAITING_INPUT' && s.isStaticEnabled);
 
         if (isCalibration) {
-            // Clinical: maintain maximum cross opacity during dichoptic lens calibration
-            crossNode.className = '';
+            crossState = 'visible';
         } else if (s.isPaused) {
-            crossNode.className = 'cross-dimmed';
+            crossState = 'dimmed';
         } else if (isStimulusVisible) {
-            // Symmetrically dim or hide cross only while stimulus remains visible
-            if (s.isPermanentCrossEnabled) {
-                crossNode.className = 'cross-dimmed';
-            } else {
-                crossNode.className = 'cross-hidden';
-            }
+            crossState = s.isPermanentCrossEnabled ? 'dimmed' : 'hidden';
         } else {
-            // Instantly restore full opacity (1.0) on blink completion to assist gaze alignment
-            crossNode.className = '';
+            crossState = 'visible';
         }
     }
 
+    containerNode.dataset.crossState = s.isCurtainActive ? 'hidden' : crossState;
+
     // Logic: Interactive arena cursor and state synchronization
     if (s.isPaused) {
-        containerNode.style.cursor = 'pointer';
         containerNode.classList.remove('disabled');
     } else if (s.appMode === 'synoptophore') {
-        // Manage Synoptophore cursor states symmetrically depending on physical interaction phase
-        if (s.synopState === 'idle' || s.synopState === 'pulling') {
-            containerNode.style.cursor = 'pointer'; // Pointing hand invitation during setup/slip phases
-        } else if (s.synopState === 'align') {
-            containerNode.style.cursor = 'move'; // Crisp OS-native 2D move arrows for high-precision dragging
-        } else {
-            containerNode.style.cursor = 'default';
-        }
         // Container remains interactive during both active dragging and click-to-slip vergence phases
         const isDisabled = (s.synopState !== 'align' && s.synopState !== 'pulling');
         containerNode.classList.toggle('disabled', isDisabled);
     } else {
-        // Restore dynamic pointer visibility based on click readiness to preserve button metaphor
-        containerNode.style.cursor = btnStart.disabled ? 'default' : 'pointer';
         containerNode.classList.toggle('disabled', btnStart.disabled);
     }
 
     // Logic: Synchronize Synoptophore Reset button state
     const btnResetNode = document.getElementById('btn-reset') as HTMLButtonElement | null;
     if (btnResetNode) {
-        if (s.appMode === 'synoptophore') {
-            btnResetNode.disabled = (s.synopState !== 'align');
-        } else {
-            btnResetNode.disabled = false;
-        }
+        btnResetNode.disabled = s.appMode === 'synoptophore' ? (s.synopState !== 'align') : false;
     }
 
     // Logic: Synchronize Left and Right buttons disabled states based on active pause
@@ -290,7 +262,6 @@ function transitionToMode(newMode: AppMode): void {
         if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(bPause);
     }
 
-    const curtain = document.getElementById('calibration-curtain');
     const isSynop = (newMode === 'synoptophore');
     const isRds = (newMode === 'rds');
 
@@ -302,17 +273,14 @@ function transitionToMode(newMode: AppMode): void {
         }
     }
 
-    // Step: Workspace re-initialization
+    Store.updateState('isCurtainActive', true);
+
+    drawIdleState(canvas, null, overlayCanvas, overlayCtx, s.appMode === 'synoptophore' || s.isFusionLockEnabled);
+
     if (isSynop) {
-        if (curtain) curtain.classList.add('active');
-        drawIdleState(canvas, null, overlayCanvas, overlayCtx, true);
         if (synoptophoreController) synoptophoreController.syncFlickerState();
     } else if (isRds) {
-        if (curtain) curtain.classList.remove('active');
         if (rdsController) rdsController.initSession();
-    } else {
-        if (curtain) curtain.classList.remove('active');
-        drawIdleState(canvas, null, overlayCanvas, overlayCtx, s.isFusionLockEnabled);
     }
 
     setLanguage(s.currentLang);
@@ -403,11 +371,7 @@ function runFlash(): void {
     if (btnStart.disabled) return;
     const s = Store.state;
 
-    // Smoothly melt the initial calibration gray curtain on the very first active therapy launch
-    const curtain = document.getElementById('calibration-curtain');
-    if (curtain && curtain.classList.contains('active')) {
-        curtain.classList.remove('active');
-    }
+    const isInitialStart = s.isCurtainActive;
 
     // Logic: Clinical modality routing
     if (s.appMode === 'rds') {
@@ -421,7 +385,7 @@ function runFlash(): void {
         if (s.synopState === 'idle') {
             playCue(s.isMuted);
 
-            if (curtain) curtain.classList.remove('active');
+            Store.updateState('isCurtainActive', false);
 
             Store.updateState('synopState', 'align');
             Store.startTimerIfNeeded();
@@ -439,6 +403,10 @@ function runFlash(): void {
 
     // Gabor: Lock start triggers while the calibration test pattern is active
     if (gaborController && gaborController.isAnaglyphTestActive) return;
+
+    if (isInitialStart) {
+        Store.updateState('isCurtainActive', false);
+    }
 
     if (s.isWaitingForAnswer) {
         if (gaborController) gaborController.reFlashCurrentGabor();
@@ -720,24 +688,14 @@ window.addEventListener('load', async () => {
                 return;
             }
             if (btnStart.disabled) return;
+
             const curtain = document.getElementById('calibration-curtain');
             const isInitialStart = curtain && curtain.classList.contains('active');
 
+            // Route all initial starts cleanly through runFlash
             if (isInitialStart) {
-                if (s.appMode === 'synoptophore') {
-                    runFlash();
-                    return;
-                }
-                curtain.classList.remove('active');
-
-                if (s.appMode === 'rds') {
-                    if (rdsController) rdsController.triggerTrial();
-                    return;
-                }
-                if (s.appMode === 'gabor') {
-                    runFlash();
-                    return;
-                }
+                runFlash();
+                return;
             }
 
             if (s.appMode === 'synoptophore') {
@@ -783,11 +741,7 @@ window.addEventListener('load', async () => {
 
             const curtain = document.getElementById('calibration-curtain');
             if (curtain && curtain.classList.contains('active')) {
-                if (s.appMode === 'synoptophore') {
-                    runFlash();
-                    return;
-                }
-                curtain.classList.remove('active');
+                return;
             }
 
             Store.startTimerIfNeeded();
@@ -1193,6 +1147,8 @@ window.addEventListener('load', async () => {
             btnStart.disabled = false;
 
             updateScoreboard(Store.state, activeTranslations);
+
+            Store.updateState('isCurtainActive', true);
 
             drawIdleState(canvas, null, overlayCanvas, overlayCtx, state.appMode === 'synoptophore' || state.isFusionLockEnabled);
 

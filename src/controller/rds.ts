@@ -116,7 +116,6 @@ export class RdsController {
         this.btnStart.disabled = false;
         this.btnStart.innerText = t.rdsStartBtn || "START";
 
-        drawRandomDotStereogram(this.overlayCanvas, this.overlayCtx, s, true, true);
         if (this.syncCross) this.syncCross();
     }
 
@@ -192,6 +191,9 @@ export class RdsController {
         } else {
             drawRandomDotStereogram(this.overlayCanvas, this.overlayCtx, s, true, false);
         }
+
+        Store.updateState('isCurtainActive', false);
+        if (this.syncCross) this.syncCross();
 
         this.btnStart.disabled = true;
         this.btnStart.innerText = "...";
@@ -315,6 +317,7 @@ export class RdsController {
                     const title = t.titleGoldRDS || "🥇 Stereopsis Mastered!";
                     const text = t.sessionMasteredRDS || "Excellent progress!";
                     Store.resetSessionProgress();
+                    Store.updateState('isCurtainActive', true);
                     this.btnStart.disabled = false;
                     this.btnStart.innerText = t.rdsStartBtn || "START STEREOGRAM";
                     this.showCustomModal(title, text);
@@ -333,6 +336,7 @@ export class RdsController {
                     const title = t.titleSilverRDS || "🥈 RDS Session Complete!";
                     const text = (t.sessionCompletedRDS || "Session complete!").replace("{limit}", s.rdsSessionLimit.toString());
                     Store.resetSessionProgress();
+                    Store.updateState('isCurtainActive', true);
                     this.btnStart.disabled = false;
                     this.btnStart.innerText = t.rdsStartBtn || "START STEREOGRAM";
                     this.showCustomModal(title, text);

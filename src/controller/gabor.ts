@@ -281,6 +281,9 @@ export class GaborController {
         this.canvas.style.display = 'block';
         Store.updateState('isWaitingForAnswer', true);
 
+        const curtain = document.getElementById('calibration-curtain');
+        if (curtain) curtain.classList.remove('active');
+
         const isAnimating = (s.isDynamicFlankersEnabled && s.isCrowdingEnabled) || s.isFlickerEnabled;
 
         if (isAnimating) {
@@ -376,6 +379,7 @@ export class GaborController {
                 this.triggerMilestoneFlash(() => {
                     const t = this.getTranslations();
                     Store.resetSessionProgress();
+                    Store.updateState('isCurtainActive', true);
                     this.btnStart.disabled = false;
                     this.btnStart.innerText = t.startBtn || "START FLASH";
                     this.showCustomModal(t.titleGold || "🥇 GaborNeuroFit", t.sessionMastered || "Mastered!");
@@ -392,6 +396,7 @@ export class GaborController {
                 this.triggerMilestoneFlash(() => {
                     const t = this.getTranslations();
                     Store.resetSessionProgress();
+                    Store.updateState('isCurtainActive', true);
                     this.btnStart.disabled = false;
                     this.btnStart.innerText = t.startBtn || "START FLASH";
                     const text = (t.sessionCompleted || "Completed").replace("{limit}", s.sessionLimit.toString());
