@@ -319,7 +319,7 @@ export class RdsController {
                     Store.updateState('isSessionCompleted', true);
                     Store.updateState('isCurtainActive', true);
                     this.btnStart.disabled = false;
-                    this.btnStart.innerText = t.btnResetSession || "🔄 RESTART SESSION";
+                    this.btnStart.innerText = t.btnResetSession || "Reset Session";
                     this.showCustomModal(title, text);
                     this.transitionTo(RdsState.IDLE);
                     if (this.syncCross) this.syncCross();
@@ -338,7 +338,7 @@ export class RdsController {
                     Store.updateState('isSessionCompleted', true);
                     Store.updateState('isCurtainActive', true);
                     this.btnStart.disabled = false;
-                    this.btnStart.innerText = t.btnResetSession || "🔄 RESTART SESSION";
+                    this.btnStart.innerText = t.btnResetSession || "Reset Session";
                     this.showCustomModal(title, text);
                     this.transitionTo(RdsState.IDLE);
                     if (this.syncCross) this.syncCross();

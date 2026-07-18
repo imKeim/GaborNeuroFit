@@ -21,7 +21,8 @@ export class PauseController {
         private gaborCtrl: GaborController | null,
         private synoptophoreCtrl: SynoptophoreController | null,
         private rdsCtrl: RdsController | null,
-        private syncCross: () => void
+        private syncCross: () => void,
+        private getTranslations: () => Record<string, string>
     ) {}
 
     /**
@@ -106,11 +107,12 @@ export class PauseController {
             Store.updateState('savedTimerRunningState', s.timerIsRunning);
             Store.updateState('timerIsRunning', false);
 
+            const t = this.getTranslations();
             if (container) container.classList.add('paused-state');
             if (watermark) watermark.classList.add('active');
             if (controlsLayout) controlsLayout.classList.add('paused-state');
             if (btnPause) {
-                btnPause.innerText = '▶️';
+                btnPause.innerText = t.btnPausePlay || "▶️";
                 // @ts-ignore
                 if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(btnPause);
             }
@@ -124,11 +126,12 @@ export class PauseController {
             // Resumption: Restore clinical processing
             Store.updateState('timerIsRunning', s.savedTimerRunningState);
 
+            const t = this.getTranslations();
             if (container) container.classList.remove('paused-state');
             if (watermark) watermark.classList.remove('active');
             if (controlsLayout) controlsLayout.classList.remove('paused-state');
             if (btnPause) {
-                btnPause.innerText = '⏸️';
+                btnPause.innerText = t.btnPausePause || "⏸️";
                 // @ts-ignore
                 if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(btnPause);
             }

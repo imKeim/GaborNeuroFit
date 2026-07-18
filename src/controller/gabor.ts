@@ -369,7 +369,7 @@ export class GaborController {
                     Store.updateState('isSessionCompleted', true);
                     Store.updateState('isCurtainActive', true);
                     this.btnStart.disabled = false;
-                    this.btnStart.innerText = t.btnResetSession || "🔄 RESTART SESSION";
+                    this.btnStart.innerText = t.btnResetSession || "Reset Session";
                     this.showCustomModal(t.titleGold || "🥇 GaborNeuroFit", t.sessionMastered || "Mastered!");
                     this.transitionTo(TrialState.IDLE);
                 });
@@ -386,7 +386,7 @@ export class GaborController {
                     Store.updateState('isSessionCompleted', true);
                     Store.updateState('isCurtainActive', true);
                     this.btnStart.disabled = false;
-                    this.btnStart.innerText = t.btnResetSession || "🔄 RESTART SESSION";
+                    this.btnStart.innerText = t.btnResetSession || "Reset Session";
                     const text = (t.sessionCompleted || "Completed").replace("{limit}", s.sessionLimit.toString());
                     this.showCustomModal(t.titleSilver || "🥈 GaborNeuroFit", text);
                     this.transitionTo(TrialState.IDLE);

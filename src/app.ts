@@ -220,6 +220,10 @@ function syncVisualState(): void {
     if (btnSettingsNode) btnSettingsNode.disabled = disableModals || s.isSessionCompleted;
     if (btnStatsNode) btnStatsNode.disabled = disableModals;
     if (btnInfoNode) btnInfoNode.disabled = disableModals;
+
+    // Reparse Twemoji on the primary button whenever its state or text changes
+    // @ts-ignore
+    if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(btnStart);
 }
 
 /**
@@ -320,7 +324,7 @@ export async function setLanguage(lang: Language): Promise<void> {
     // Procedurally assign the dynamic state-dependent Start button text on load
     if (Store.state.isSessionCompleted) {
         btnStart.disabled = false;
-        btnStart.innerText = t.btnResetSession || "🔄 RESTART SESSION";
+        btnStart.innerText = t.btnResetSession || "Reset Session";
     } else if (Store.state.appMode === 'synoptophore') {
         if (Store.state.synopState === 'idle') {
             btnStart.innerText = t.synopStartBtn || "START ALIGNMENT";
@@ -541,7 +545,8 @@ window.addEventListener('load', async () => {
         gaborController,
         synoptophoreController,
         rdsController,
-        () => syncVisualState()
+        () => syncVisualState(),
+        () => activeTranslations
     );
 
     settingsController = new SettingsController(() => {
@@ -1030,8 +1035,9 @@ window.addEventListener('load', async () => {
     /** @description Updates the mute/unmute button text and Twemoji assets. */
     function updateMuteBtnUI(): void {
         const btnMute = document.getElementById('btn-mute');
+        const t = activeTranslations;
         if (btnMute) {
-            btnMute.innerText = Store.state.isMuted ? '🔇' : '🔊';
+            btnMute.innerText = Store.state.isMuted ? (t.btnMuteOn || "🔇") : (t.btnMuteOff || "🔊");
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(btnMute);
@@ -1177,7 +1183,8 @@ window.addEventListener('load', async () => {
                 cross.style.display = 'block';
             }
 
-            btnStart.innerText = t.btnResetSession || "🔄 RESTART SESSION";
+            btnStart.innerText = t.btnResetSession || "Reset Session";
+            syncVisualState();
 
             playGoldAward(state.isMuted); // Play majestic PS1-style aura chimes for Pomodoro complete!
             showCustomAlert(t.titlePomodoro || '🍅 Pomodoro', t.sessionTimerCompleted || "Rest.");
