@@ -366,10 +366,10 @@ export class GaborController {
             this.tracker.setTimeout(() => {
                 this.triggerMilestoneFlash(() => {
                     const t = this.getTranslations();
-                    Store.resetSessionProgress();
+                    Store.updateState('isSessionCompleted', true);
                     Store.updateState('isCurtainActive', true);
                     this.btnStart.disabled = false;
-                    this.btnStart.innerText = t.startBtn || "START FLASH";
+                    this.btnStart.innerText = t.btnResetSession || "🔄 RESTART SESSION";
                     this.showCustomModal(t.titleGold || "🥇 GaborNeuroFit", t.sessionMastered || "Mastered!");
                     this.transitionTo(TrialState.IDLE);
                 });
@@ -383,10 +383,10 @@ export class GaborController {
             this.tracker.setTimeout(() => {
                 this.triggerMilestoneFlash(() => {
                     const t = this.getTranslations();
-                    Store.resetSessionProgress();
+                    Store.updateState('isSessionCompleted', true);
                     Store.updateState('isCurtainActive', true);
                     this.btnStart.disabled = false;
-                    this.btnStart.innerText = t.startBtn || "START FLASH";
+                    this.btnStart.innerText = t.btnResetSession || "🔄 RESTART SESSION";
                     const text = (t.sessionCompleted || "Completed").replace("{limit}", s.sessionLimit.toString());
                     this.showCustomModal(t.titleSilver || "🥈 GaborNeuroFit", text);
                     this.transitionTo(TrialState.IDLE);

@@ -643,6 +643,11 @@ canvas {
     cursor: pointer;
 }
 
+#container[data-session-completed="true"] ~ #action-buttons .action-btn {
+    opacity: 0.35;
+    pointer-events: none;
+}
+
 .cross-line-h, .cross-line-v {
     position: absolute;
     top: 50%;

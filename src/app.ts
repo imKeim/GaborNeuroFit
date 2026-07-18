@@ -155,6 +155,7 @@ function syncVisualState(): void {
     containerNode.dataset.level = String(s.currentLevel);
     containerNode.dataset.synopState = s.synopState;
     containerNode.dataset.startDisabled = String(btnStart.disabled);
+    containerNode.dataset.sessionCompleted = String(s.isSessionCompleted);
 
     let crossState = 'hidden';
 
@@ -216,7 +217,7 @@ function syncVisualState(): void {
     const btnInfoNode = document.getElementById('btn-info') as HTMLButtonElement | null;
 
     const disableModals = !canPause();
-    if (btnSettingsNode) btnSettingsNode.disabled = disableModals;
+    if (btnSettingsNode) btnSettingsNode.disabled = disableModals || s.isSessionCompleted;
     if (btnStatsNode) btnStatsNode.disabled = disableModals;
     if (btnInfoNode) btnInfoNode.disabled = disableModals;
 }
@@ -317,7 +318,10 @@ export async function setLanguage(lang: Language): Promise<void> {
     if (btnRight) btnRight.style.display = isSynop ? 'none' : 'flex';
 
     // Procedurally assign the dynamic state-dependent Start button text on load
-    if (Store.state.appMode === 'synoptophore') {
+    if (Store.state.isSessionCompleted) {
+        btnStart.disabled = false;
+        btnStart.innerText = t.btnResetSession || "🔄 RESTART SESSION";
+    } else if (Store.state.appMode === 'synoptophore') {
         if (Store.state.synopState === 'idle') {
             btnStart.innerText = t.synopStartBtn || "START ALIGNMENT";
         } else if (Store.state.synopState === 'align') {
@@ -371,7 +375,16 @@ function runFlash(): void {
     if (btnStart.disabled) return;
     const s = Store.state;
 
-    const isInitialStart = s.isCurtainActive;
+    if (s.isSessionCompleted) {
+        Store.resetSessionProgress();
+        Store.updateState('isCurtainActive', false);
+        setLanguage(s.currentLang);
+        syncVisualState();
+        return;
+    }
+
+    const curtain = document.getElementById('calibration-curtain');
+    const isInitialStart = curtain && curtain.classList.contains('active');
 
     // Logic: Clinical modality routing
     if (s.appMode === 'rds') {
@@ -1139,7 +1152,7 @@ window.addEventListener('load', async () => {
             if (infoModalEl) closeModal(infoModalEl);
             if (statsModalEl) closeModal(statsModalEl);
 
-            Store.resetSessionProgress();
+            Store.updateState('isSessionCompleted', true);
 
             btnStart.disabled = false;
 
@@ -1157,15 +1170,14 @@ window.addEventListener('load', async () => {
                     drawSynoptophoreTargets(overlayCanvas, overlayCtx, state);
                 }
                 cross.style.display = 'none';
-                btnStart.innerText = t.btnSynopLock || "LOCK FUSION";
             } else if (state.appMode === 'rds') {
                 cross.style.display = 'block';
-                btnStart.innerText = t.rdsStartBtn || "START STEREOGRAM";
                 drawIdleState(canvas, null, overlayCanvas, overlayCtx, false);
             } else {
                 cross.style.display = 'block';
-                btnStart.innerText = t.startBtn || "START FLASH";
             }
+
+            btnStart.innerText = t.btnResetSession || "🔄 RESTART SESSION";
 
             playGoldAward(state.isMuted); // Play majestic PS1-style aura chimes for Pomodoro complete!
             showCustomAlert(t.titlePomodoro || '🍅 Pomodoro', t.sessionTimerCompleted || "Rest.");

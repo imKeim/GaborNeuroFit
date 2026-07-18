@@ -108,6 +108,8 @@ export interface AppState {
     isCurtainActive: boolean;
     /** @description Toggle for the dichoptic alignment calibration test pattern (L/R test) */
     isAnaglyphTestActive: boolean;
+    /** @description Toggle representing session finalization (via milestone or timer) to enforce a rest break before manual reset */
+    isSessionCompleted: boolean;
 
     // --- Global Hardware & Dichoptic Calibration ---
 

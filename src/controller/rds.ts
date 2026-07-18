@@ -316,10 +316,10 @@ export class RdsController {
                 this.triggerMilestoneFlash(() => {
                     const title = t.titleGoldRDS || "🥇 Stereopsis Mastered!";
                     const text = t.sessionMasteredRDS || "Excellent progress!";
-                    Store.resetSessionProgress();
+                    Store.updateState('isSessionCompleted', true);
                     Store.updateState('isCurtainActive', true);
                     this.btnStart.disabled = false;
-                    this.btnStart.innerText = t.rdsStartBtn || "START STEREOGRAM";
+                    this.btnStart.innerText = t.btnResetSession || "🔄 RESTART SESSION";
                     this.showCustomModal(title, text);
                     this.transitionTo(RdsState.IDLE);
                     if (this.syncCross) this.syncCross();
@@ -335,10 +335,10 @@ export class RdsController {
                 this.triggerMilestoneFlash(() => {
                     const title = t.titleSilverRDS || "🥈 RDS Session Complete!";
                     const text = (t.sessionCompletedRDS || "Session complete!").replace("{limit}", s.rdsSessionLimit.toString());
-                    Store.resetSessionProgress();
+                    Store.updateState('isSessionCompleted', true);
                     Store.updateState('isCurtainActive', true);
                     this.btnStart.disabled = false;
-                    this.btnStart.innerText = t.rdsStartBtn || "START STEREOGRAM";
+                    this.btnStart.innerText = t.btnResetSession || "🔄 RESTART SESSION";
                     this.showCustomModal(title, text);
                     this.transitionTo(RdsState.IDLE);
                     if (this.syncCross) this.syncCross();

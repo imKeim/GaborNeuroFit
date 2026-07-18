@@ -33,6 +33,7 @@ export const Store = {
         isMuted: false,
         isCurtainActive: true,
         isAnaglyphTestActive: false,
+        isSessionCompleted: false,
 
         // --- Hardware & 3D ---
         isAnaglyphEnabled: true,
@@ -302,6 +303,7 @@ export const Store = {
         this.state.synopState = 'idle';
         this.state.isPaused = false;
         this.state.savedTimerRunningState = false;
+        this.state.isSessionCompleted = false;
 
         // Reset active RDS session metrics symmetrically
         this.state.rdsScore = 0;
