@@ -641,7 +641,7 @@ window.addEventListener('load', async () => {
     const handlers: InputHandlers = {
         onActionLeft: () => {
             const s = Store.state;
-            if (s.isPaused) return;
+            if (s.isPaused || s.isSessionCompleted) return;
             if (s.isAnaglyphTestActive) return;
 
             if (s.appMode === 'synoptophore') {
@@ -657,7 +657,7 @@ window.addEventListener('load', async () => {
         },
         onActionRight: () => {
             const s = Store.state;
-            if (s.isPaused) return;
+            if (s.isPaused || s.isSessionCompleted) return;
             if (s.isAnaglyphTestActive) return;
 
             if (s.appMode === 'synoptophore') {
@@ -673,7 +673,7 @@ window.addEventListener('load', async () => {
         },
         onActionReset: () => {
             const s = Store.state;
-            if (s.isPaused) return;
+            if (s.isPaused || s.isSessionCompleted) return;
             if (s.appMode === 'synoptophore' && s.synopState === 'align') {
                 Store.updateState('synopTargetX', 0);
                 Store.updateState('synopTargetY', 0);
@@ -703,7 +703,7 @@ window.addEventListener('load', async () => {
                 if (pauseController) pauseController.togglePause();
                 return;
             }
-            if (btnStart.disabled) return;
+            if (btnStart.disabled && !s.isSessionCompleted) return;
 
             const curtain = document.getElementById('calibration-curtain');
             const isInitialStart = curtain && curtain.classList.contains('active');
