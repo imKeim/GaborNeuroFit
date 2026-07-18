@@ -75,15 +75,13 @@ export class GaborController {
     public currentState: TrialStateValue = TrialState.IDLE;
     /** @description Tracks and garbage-collects active timers and animation frames. */
     public tracker: AsyncResourceTracker = new AsyncResourceTracker();
-    /** @description Toggle for the L/R anaglyph calibration test pattern. */
-    public isAnaglyphTestActive: boolean = false;
 
-    private currentAngleDeg: number = 0;
-    private lastRandomFreq: number = 0.08;
-    private lastRandomSigma: number = 40;
-    private lastRandomAspectRatio: number = 1.0;
-    private lastOffsetX: number = 0;
-    private lastOffsetY: number = 0;
+    public currentAngleDeg: number = 0;
+    public lastRandomFreq: number = 0.08;
+    public lastRandomSigma: number = 40;
+    public lastRandomAspectRatio: number = 1.0;
+    public lastOffsetX: number = 0;
+    public lastOffsetY: number = 0;
     private flankerPhaseOffset: number = 0;
     private autoNextTimeoutId: number | null = null;
 
@@ -108,7 +106,7 @@ export class GaborController {
 
     /** @description Standardized idempotent teardown of the controller resources. */
     deactivate(): void {
-        this.isAnaglyphTestActive = false;
+        Store.updateState('isAnaglyphTestActive', false);
         this.stopUnifiedRenderingLoop();
         this.currentState = TrialState.IDLE;
         if (this.syncCross) this.syncCross();
@@ -439,7 +437,7 @@ export class GaborController {
 
             if (!isAllowedToAnimate) return;
 
-            if (this.isAnaglyphTestActive) {
+            if (Store.state.isAnaglyphTestActive) {
                 // Clear GL buffer if calibration pattern is active
                 const gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl') as WebGLRenderingContext | null;
                 if (gl) {

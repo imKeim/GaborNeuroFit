@@ -171,7 +171,7 @@ function syncVisualState(): void {
         }
     } else {
         const gaborState = gaborController ? gaborController.currentState : 'IDLE';
-        const isCalibration = gaborController ? gaborController.isAnaglyphTestActive : false;
+        const isCalibration = s.isAnaglyphTestActive;
         const isStimulusVisible = (gaborState === 'STIMULUS_ACTIVE') || (gaborState === 'AWAITING_INPUT' && s.isStaticEnabled);
 
         if (isCalibration) {
@@ -402,7 +402,7 @@ function runFlash(): void {
     }
 
     // Gabor: Lock start triggers while the calibration test pattern is active
-    if (gaborController && gaborController.isAnaglyphTestActive) return;
+    if (Store.state.isAnaglyphTestActive) return;
 
     if (isInitialStart) {
         Store.updateState('isCurtainActive', false);
@@ -533,7 +533,7 @@ window.addEventListener('load', async () => {
 
     settingsController = new SettingsController(() => {
         updateStatusBar(Store.state, activeTranslations);
-        if (gaborController && gaborController.isAnaglyphTestActive) {
+        if (Store.state.isAnaglyphTestActive) {
             drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
         }
         
@@ -595,7 +595,7 @@ window.addEventListener('load', async () => {
             snapRdsStartDisparity = Store.state.rdsStartDisparity;
 
             if (btnFusionTest) {
-                if (gaborController && gaborController.isAnaglyphTestActive) {
+                if (Store.state.isAnaglyphTestActive) {
                     btnFusionTest.classList.add('active');
                 } else {
                     btnFusionTest.classList.remove('active');
@@ -624,7 +624,7 @@ window.addEventListener('load', async () => {
         onActionLeft: () => {
             const s = Store.state;
             if (s.isPaused) return;
-            if (gaborController && gaborController.isAnaglyphTestActive) return;
+            if (s.isAnaglyphTestActive) return;
 
             if (s.appMode === 'synoptophore') {
                 if (s.synopState === 'align') {
@@ -640,7 +640,7 @@ window.addEventListener('load', async () => {
         onActionRight: () => {
             const s = Store.state;
             if (s.isPaused) return;
-            if (gaborController && gaborController.isAnaglyphTestActive) return;
+            if (s.isAnaglyphTestActive) return;
 
             if (s.appMode === 'synoptophore') {
                 if (s.synopState === 'align') {
@@ -807,7 +807,7 @@ window.addEventListener('load', async () => {
         onDragUpdate: (deltaX: number, deltaY: number) => {
             const s = Store.state;
             if (s.isPaused) return;
-            if (gaborController && gaborController.isAnaglyphTestActive) {
+            if (s.isAnaglyphTestActive) {
                 const slider = document.getElementById('range-strong-attenuation') as HTMLInputElement | null;
                 if (slider) {
                     const delta = -deltaY * 0.4;
@@ -864,14 +864,14 @@ window.addEventListener('load', async () => {
         },
         isDirectionalHoldActive: () => {
             const s = Store.state;
-            if (gaborController && gaborController.isAnaglyphTestActive) {
+            if (s.isAnaglyphTestActive) {
                 return true;
             }
             return (s.appMode === 'synoptophore' && s.synopState === 'align');
         },
         onDirectionalShift: (dx: number, dy: number) => {
             const s = Store.state;
-            if (gaborController && gaborController.isAnaglyphTestActive) {
+            if (s.isAnaglyphTestActive) {
                 if (dy !== 0) {
                     const slider = document.getElementById('range-strong-attenuation') as HTMLInputElement | null;
                     if (slider) {
@@ -897,6 +897,7 @@ window.addEventListener('load', async () => {
             if (pauseController) pauseController.togglePause();
         },
         onEscape: () => {
+            const s = Store.state;
             const confirmModal = document.getElementById('custom-confirm-modal');
             const settingsModal = document.getElementById('settings-modal');
             const infoModal = document.getElementById('info-modal');
@@ -907,8 +908,8 @@ window.addEventListener('load', async () => {
             const isInfoOpen = infoModal && infoModal.classList.contains('modal-open');
             const isStatsOpen = statsModal && statsModal.classList.contains('modal-open');
 
-            if (isConfirmOpen || isSettingsOpen || isInfoOpen || isStatsOpen || (gaborController && gaborController.isAnaglyphTestActive)) {
-                if (gaborController && gaborController.isAnaglyphTestActive) {
+            if (isConfirmOpen || isSettingsOpen || isInfoOpen || isStatsOpen || s.isAnaglyphTestActive) {
+                if (s.isAnaglyphTestActive) {
                     const bTest = document.getElementById('btn-fusion-test');
                     if (bTest) bTest.click();
                     return;
@@ -964,7 +965,7 @@ window.addEventListener('load', async () => {
         const isTimerChanged = (snapTimerLimit !== Store.state.timerLimitMinutes);
         const isSynop = (Store.state.appMode === 'synoptophore');
 
-        if (gaborController) gaborController.isAnaglyphTestActive = false;
+        Store.updateState('isAnaglyphTestActive', false);
         const settingsModal = document.getElementById('settings-modal');
         if (settingsModal) settingsModal.classList.remove('calibration-mode');
 
@@ -1003,9 +1004,7 @@ window.addEventListener('load', async () => {
                     if (gaborController && gaborController.currentState === 'IDLE') {
                         drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
                     } else if (gaborController && gaborController.currentState === 'AWAITING_INPUT' && Store.state.isStaticEnabled) {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        const gc = gaborController as any;
-                        renderGabor(canvas, null, Store.state, gc.currentAngleDeg, Store.state.autoContrast, Store.state.autoContrast, gc.lastRandomFreq, gc.lastRandomSigma, gc.lastOffsetX, gc.lastOffsetY, 0, gc.lastRandomAspectRatio);
+                        renderGabor(canvas, null, Store.state, gaborController.currentAngleDeg, Store.state.autoContrast, Store.state.autoContrast, gaborController.lastRandomFreq, gaborController.lastRandomSigma, gaborController.lastOffsetX, gaborController.lastOffsetY, 0, gaborController.lastRandomAspectRatio);
                     }
                 }
             }
@@ -1029,6 +1028,7 @@ window.addEventListener('load', async () => {
     // Logic: Fusion calibration test pattern trigger
     if (btnFusionTest) {
         btnFusionTest.addEventListener('click', () => {
+            const s = Store.state;
             const settingsModal = document.getElementById('settings-modal');
             const modalContent = settingsModal ? settingsModal.querySelector('.modal-content') : null;
             const scrollBody = settingsModal ? settingsModal.querySelector('.modal-scroll-body') : null;
@@ -1037,7 +1037,7 @@ window.addEventListener('load', async () => {
             if (modalContent) modalContent.classList.add('modal-transitioning');
             if (calibrationCurtain) calibrationCurtain.classList.add('active');
 
-            if (gaborController && !gaborController.isAnaglyphTestActive && settingsModal) {
+            if (!s.isAnaglyphTestActive && settingsModal) {
                 settingsModal.classList.add('modal-clear-backdrop');
                 
                 // Clinical: instantly hide watermark to reveal central calibration anchors
@@ -1046,9 +1046,9 @@ window.addEventListener('load', async () => {
 
             setTimeout(() => {
                 if (!gaborController) return;
-                gaborController.isAnaglyphTestActive = !gaborController.isAnaglyphTestActive;
+                Store.updateState('isAnaglyphTestActive', !s.isAnaglyphTestActive);
 
-                    if (gaborController.isAnaglyphTestActive) {
+                    if (s.isAnaglyphTestActive) {
                         btnFusionTest.classList.add('active');
                         container.classList.add('calibration-active');
 

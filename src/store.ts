@@ -32,6 +32,7 @@ export const Store = {
         isPaused: false,
         isMuted: false,
         isCurtainActive: true,
+        isAnaglyphTestActive: false,
 
         // --- Hardware & 3D ---
         isAnaglyphEnabled: true,

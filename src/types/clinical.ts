@@ -98,12 +98,16 @@ export interface AppState {
     sessionId: string;
     /** @description Active localization language code */
     currentLang: Language;
+    /** @description Active therapeutic visual modality targeting distinct cortical or extraocular pathways */
     appMode: AppMode;
     /** @description Global pause lock preventing visual rendering and active timers */
     isPaused: boolean;
     /** @description Sound effects mute toggle */
     isMuted: boolean;
+    /** @description Toggle for the protective foveal curtain to block light adaptation during rest */
     isCurtainActive: boolean;
+    /** @description Toggle for the dichoptic alignment calibration test pattern (L/R test) */
+    isAnaglyphTestActive: boolean;
 
     // --- Global Hardware & Dichoptic Calibration ---
 
