@@ -11,7 +11,7 @@
 import { Store } from '../store';
 import { AsyncResourceTracker } from '../utils/tracker';
 import { renderGabor, drawFusionLockFrame } from '../engine/gabor-render';
-import { playCue, playSuccess, playError } from '../engine/audio';
+import { playCue, playSuccess, playError, playSilverAward, playGoldAward } from '../engine/audio';
 import { updateScoreboard, updateStatusBar, drawIdleState } from '../ui/screen';
 import type { AppState } from '../types/clinical';
 
@@ -371,6 +371,7 @@ export class GaborController {
         // Milestone Check: Stage 5 Mastery at 1% contrast
         const minContrastLimit = s.allowLowContrast ? 0.01 : 0.05;
         if (s.currentLevel === 5 && s.autoContrast <= minContrastLimit && s.correctStreak >= 12) {
+            playGoldAward(s.isMuted); // Play majestic D-Major 9th gold chimes
             this.tracker.setTimeout(() => {
                 this.triggerMilestoneFlash(() => {
                     const t = this.getTranslations();
@@ -386,6 +387,7 @@ export class GaborController {
 
         // Milestone Check: Daily Session Limit reached
         if (s.sessionLimit > 0 && s.total >= s.sessionLimit) {
+            playSilverAward(s.isMuted); // Play elegant shimmering silver chimes
             this.tracker.setTimeout(() => {
                 this.triggerMilestoneFlash(() => {
                     const t = this.getTranslations();

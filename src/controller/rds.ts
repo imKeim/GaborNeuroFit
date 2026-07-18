@@ -12,7 +12,7 @@ import { Store } from '../store';
 import { DataRepository } from '../store/repository';
 import { AsyncResourceTracker } from '../utils/tracker';
 import { drawRandomDotStereogram } from '../engine/rds-render';
-import { playCue, playSuccess, playError } from '../engine/audio';
+import { playCue, playSuccess, playError, playSilverAward, playGoldAward } from '../engine/audio';
 import { updateScoreboard, drawIdleState } from '../ui/screen';
 import type { EyeSide } from '../types/clinical';
 
@@ -310,6 +310,7 @@ export class RdsController {
 
         // Milestone: 1px disparity mastery with sustained accuracy
         if (newLevel === 5 && newDisparity === 1 && newStreak >= 12) {
+            playGoldAward(s.isMuted); // Play majestic D-Major 9th gold chimes
             this.tracker.setTimeout(() => {
                 this.triggerMilestoneFlash(() => {
                     const title = t.titleGoldRDS || "🥇 Stereopsis Mastered!";
@@ -327,6 +328,7 @@ export class RdsController {
 
         // Milestone: Session trial limit reached
         if (s.rdsSessionLimit > 0 && newTotal >= s.rdsSessionLimit) {
+            playSilverAward(s.isMuted); // Play elegant shimmering silver chimes
             this.tracker.setTimeout(() => {
                 this.triggerMilestoneFlash(() => {
                     const title = t.titleSilverRDS || "🥈 RDS Session Complete!";

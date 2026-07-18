@@ -256,3 +256,143 @@ export function playSuccess(isMuted: boolean, panValue: number = 0.0): void {
         console.warn("Acoustic success feedback generation bypassed:", e);
     }
 }
+
+/**
+ * @description Synthesizes an elegant cascading silver chime (G-Major 7th arpeggio).
+ * @param {boolean} isMuted - Global sound suppression flag.
+ */
+export function playSilverAward(isMuted: boolean): void {
+    if (isMuted) return;
+    try {
+        initAudio();
+        const ctx = audioCtx;
+        if (!ctx) return;
+        const now = ctx.currentTime + 0.015;
+
+        // G-Major 7th chord: G4 (392Hz), B4 (493.88Hz), D5 (587.33Hz), F#5 (739.99Hz)
+        const notes = [392.00, 493.88, 587.33, 739.99];
+        let currentDelay = 0;
+
+        notes.forEach((freq, idx) => {
+            const noteTime = now + currentDelay;
+            const osc = ctx.createOscillator();
+            const noteGain = ctx.createGain();
+
+            let destination: AudioNode = ctx.destination;
+            if (ctx.createStereoPanner) {
+                const panner = ctx.createStereoPanner();
+                const pan = idx % 2 === 0 ? -0.45 : 0.45; // alternate left/right pan
+                panner.pan.setValueAtTime(pan, noteTime);
+                panner.connect(ctx.destination);
+                destination = panner;
+            }
+
+            osc.type = 'triangle'; // triangle gives a softer, cleaner bell sound
+            osc.frequency.setValueAtTime(freq, noteTime);
+            osc.detune.setValueAtTime((Math.random() * 8) - 4, noteTime); // subtle organic detuning
+
+            noteGain.gain.setValueAtTime(0, noteTime);
+            noteGain.gain.linearRampToValueAtTime(0.12, noteTime + 0.005);
+            noteGain.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.45);
+
+            osc.connect(noteGain);
+            noteGain.connect(destination);
+
+            osc.start(noteTime);
+            osc.stop(noteTime + 0.45);
+
+            currentDelay += 0.05 + Math.random() * 0.03; // 50ms to 80ms arpeggiator delay
+        });
+    } catch (e) {
+        console.warn("Silver award chime synthesis bypassed:", e);
+    }
+}
+
+/**
+ * @description Synthesizes a majestic, deep PS1-style resonant aura (detuned D-Major 9th chord).
+ * @param {boolean} isMuted - Global sound suppression flag.
+ */
+export function playGoldAward(isMuted: boolean): void {
+    if (isMuted) return;
+    try {
+        initAudio();
+        const ctx = audioCtx;
+        if (!ctx) return;
+        const now = ctx.currentTime + 0.015;
+
+        // Create a Master Biquad Filter to sweep the frequencies (warm aura)
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(150, now);
+        filter.frequency.exponentialRampToValueAtTime(1500, now + 1.8);
+        filter.Q.setValueAtTime(1.5, now);
+        filter.connect(ctx.destination);
+
+        // The Bass Drone (Warm Cello D3 = 146.83 Hz - cozy, safe and rich)
+        const bassOsc = ctx.createOscillator();
+        const bassGain = ctx.createGain();
+        bassOsc.type = 'triangle'; // triangle wave is soft, flute-like and safe for kids
+        bassOsc.frequency.setValueAtTime(146.83, now);
+
+        bassGain.gain.setValueAtTime(0, now);
+        bassGain.gain.linearRampToValueAtTime(0.20, now + 0.40);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, now + 2.5);
+
+        bassOsc.connect(bassGain);
+        bassGain.connect(filter);
+        bassOsc.start(now);
+        bassOsc.stop(now + 2.5);
+
+        // Cascading majestic D-Major 9th chord: F#4, A4, C#5, E5, F#5, A5
+        const notes = [370.00, 440.00, 554.37, 659.25, 739.99, 880.00];
+        let currentDelay = 0;
+
+        notes.forEach((freq, idx) => {
+            const noteTime = now + currentDelay;
+            const osc = ctx.createOscillator();
+            const noteGain = ctx.createGain();
+
+            // Symmetrical Stereo Panning: Left-to-right sweep across notes
+            let destination: AudioNode = filter;
+            if (ctx.createStereoPanner) {
+                const panner = ctx.createStereoPanner();
+                const pan = -0.75 + (idx / (notes.length - 1)) * 1.5; // Sweep from -0.75 to +0.75
+                panner.pan.setValueAtTime(pan, noteTime);
+                panner.connect(filter);
+                destination = panner;
+            }
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, noteTime);
+            osc.detune.setValueAtTime((Math.random() * 12) - 6, noteTime); // dynamic organic detuning
+
+            noteGain.gain.setValueAtTime(0, noteTime);
+            noteGain.gain.linearRampToValueAtTime(0.10, noteTime + 0.01);
+            noteGain.gain.exponentialRampToValueAtTime(0.001, noteTime + 1.2);
+
+            osc.connect(noteGain);
+            noteGain.connect(destination);
+
+            osc.start(noteTime);
+            osc.stop(noteTime + 1.2);
+
+            // Shimmer Hammer Effect (high bell chime)
+            const shimmer = ctx.createOscillator();
+            const shimmerGain = ctx.createGain();
+            shimmer.type = 'sine';
+            shimmer.frequency.setValueAtTime(freq * 3, noteTime); // 3rd harmonic
+            shimmerGain.gain.setValueAtTime(0.03, noteTime);
+            shimmerGain.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.12);
+
+            shimmer.connect(shimmerGain);
+            shimmerGain.connect(destination);
+            shimmer.start(noteTime);
+            shimmer.stop(noteTime + 0.12);
+
+            // Slightly randomized cascade delay
+            currentDelay += 0.06 + Math.random() * 0.04; // 60ms to 100ms arpeggiation delay
+        });
+    } catch (e) {
+        console.warn("Gold award chime synthesis bypassed:", e);
+    }
+}

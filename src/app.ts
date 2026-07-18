@@ -25,7 +25,7 @@ import { renderGabor } from './engine/gabor-render';
 import { drawRandomDotStereogram } from './engine/rds-render';
 import { drawSynoptophoreTargets } from './engine/synop-render';
 import { drawFusionTestPattern } from './engine/calibration-render';
-import { playCue, playError, playSuccess } from './engine/audio';
+import { playCue, playError, playGoldAward } from './engine/audio';
 
 // User Interface Layer (Presentation & Physical Inputs)
 import { updateScoreboard, drawIdleState, updateStatusBar } from './ui/screen';
@@ -1146,7 +1146,7 @@ window.addEventListener('load', async () => {
                 btnStart.innerText = t.startBtn || "START FLASH";
             }
 
-            playSuccess(state.isMuted);
+            playGoldAward(state.isMuted); // Play majestic PS1-style aura chimes for Pomodoro complete!
             showCustomAlert(t.titlePomodoro || '🍅 Pomodoro', t.sessionTimerCompleted || "Rest.");
         }
     );
