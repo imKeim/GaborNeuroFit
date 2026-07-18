@@ -25,6 +25,7 @@ import { PauseController } from './controller/pause';
 import { PomodoroTimer } from './utils/timer';
 import { drawSynoptophoreTargets } from './engine/synop-render';
 import { drawRandomDotStereogram } from './engine/rds-render';
+import { renderGabor } from './engine/gabor-render';
 import { resizeCanvasesToDPR } from './utils/bootstrap';
 import { loadLanguage } from './utils/i18n';
 
@@ -936,13 +937,13 @@ window.addEventListener('load', async () => {
         const isTimerChanged = (snapTimerLimit !== Store.state.timerLimitMinutes);
         const isSynop = (Store.state.appMode === 'synoptophore');
 
+        if (gaborController) gaborController.isAnaglyphTestActive = false;
+        const settingsModal = document.getElementById('settings-modal');
+        if (settingsModal) settingsModal.classList.remove('calibration-mode');
+
         if (isCriticalChange) {
             transitionToMode(Store.state.appMode);
         } else {
-            if (gaborController) gaborController.isAnaglyphTestActive = false;
-            const settingsModal = document.getElementById('settings-modal');
-            if (settingsModal) settingsModal.classList.remove('calibration-mode');
-
             if (isTimerChanged) {
                 Store.updateState('timerRemainingSeconds', Store.state.timerLimitMinutes * 60);
                 Store.updateState('timerIsRunning', false);
