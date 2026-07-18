@@ -51,6 +51,11 @@ export function openModal(modal: HTMLElement | null): void {
     
     previousActiveElement = document.activeElement as HTMLElement;
 
+    // Instantly and synchronously remove focus from the background button to satisfy WAI-ARIA before setting aria-hidden
+    if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+    }
+
     modal.classList.add('modal-open');
 
     const appWrapper = document.getElementById('app-wrapper');
@@ -58,11 +63,17 @@ export function openModal(modal: HTMLElement | null): void {
 
     setupFocusTrap(modal);
 
-    const focusable = Array.from(modal.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS))
-        .filter(el => el.offsetWidth > 0 && el.offsetHeight > 0);
-    if (focusable.length > 0) {
-        focusable[0].focus();
-    }
+    // Instantly shift focus to the modal container to prevent active element leaks
+    modal.focus();
+
+    // Symmetrically attempt to focus the first inner interactive element with a minor 50ms transition lookahead
+    setTimeout(() => {
+        const focusable = Array.from(modal.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS))
+            .filter(el => el.offsetWidth > 0 && el.offsetHeight > 0);
+        if (focusable.length > 0) {
+            focusable[0].focus();
+        }
+    }, 50);
 }
 
 /**

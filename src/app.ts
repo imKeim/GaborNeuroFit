@@ -907,10 +907,14 @@ window.addEventListener('load', async () => {
                 }
                 if (isSettingsOpen) {
                     saveSettingsFromUI();
-                    if (settingsModal) settingsModal.classList.remove('modal-open');
+                    closeModal(settingsModal);
                 }
-                if (isInfoOpen && infoModal) infoModal.classList.remove('modal-open');
-                if (isStatsOpen && statsModal) statsModal.classList.remove('modal-open');
+                if (isInfoOpen) {
+                    closeModal(infoModal);
+                }
+                if (isStatsOpen) {
+                    closeModal(statsModal);
+                }
                 return;
             }
 
