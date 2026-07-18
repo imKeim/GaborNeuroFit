@@ -66,6 +66,7 @@ export class PomodoroTimer {
 
             const isTimerFrozen = s.isPaused || 
                                   !s.timerIsRunning || 
+                                  s.isSessionCompleted || 
                                   document.body.classList.contains('modal-is-open');
 
             if (isTimerFrozen) {
