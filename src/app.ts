@@ -185,16 +185,17 @@ function syncVisualState(): void {
     const btnResetNode = document.getElementById('btn-reset') as HTMLButtonElement | null;
     if (btnResetNode) {
         if (s.appMode === 'synoptophore') {
-            const isBlocked = (s.synopState !== 'align');
-            btnResetNode.disabled = isBlocked;
-            btnResetNode.style.opacity = isBlocked ? '0.35' : '1';
-            btnResetNode.style.pointerEvents = isBlocked ? 'none' : 'auto';
+            btnResetNode.disabled = (s.synopState !== 'align');
         } else {
             btnResetNode.disabled = false;
-            btnResetNode.style.opacity = '1';
-            btnResetNode.style.pointerEvents = 'auto';
         }
     }
+
+    // Logic: Synchronize Left and Right buttons disabled states based on active pause
+    const btnLeftNode = document.getElementById('btn-left') as HTMLButtonElement | null;
+    const btnRightNode = document.getElementById('btn-right') as HTMLButtonElement | null;
+    if (btnLeftNode) btnLeftNode.disabled = s.isPaused;
+    if (btnRightNode) btnRightNode.disabled = s.isPaused;
 }
 
 /**
@@ -222,7 +223,6 @@ function transitionToMode(newMode: AppMode): void {
     Store.resetSessionProgress();
 
     btnStart.disabled = false;
-    btnStart.style.opacity = "1";
 
     const watermark = document.getElementById('pause-watermark');
     const bPause = document.getElementById('btn-pause');
@@ -309,11 +309,9 @@ export async function setLanguage(lang: Language): Promise<void> {
     } else if (Store.state.appMode === 'rds') {
         if (rdsController && rdsController.currentState === 'AWAITING_INPUT') {
             btnStart.disabled = true;
-            btnStart.style.opacity = '0.4';
             btnStart.innerText = t.rdsNextBtn || "NEXT STEREOGRAM";
         } else {
             btnStart.disabled = false;
-            btnStart.style.opacity = '1';
             btnStart.innerText = (Store.state.rdsTotal > 0 && !Store.state.rdsAutoAdvance) ? (t.rdsNextBtn || "NEXT STEREOGRAM") : (t.rdsStartBtn || "START STEREOGRAM");
         }
     } else {
@@ -1095,7 +1093,6 @@ window.addEventListener('load', async () => {
             Store.resetSessionProgress();
 
             btnStart.disabled = false;
-            btnStart.style.opacity = "1";
 
             updateScoreboard(Store.state, activeTranslations);
 

@@ -393,6 +393,7 @@ img.emoji {
 
 #btn-start:disabled {
     pointer-events: none;
+    opacity: 0.4;
 }
 
 /* Action Switcharoo Buttons */
@@ -438,6 +439,12 @@ img.emoji {
     background: linear-gradient(135deg, #2e3745, #242b35);
     transform: scale(0.95) translateY(2px);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.action-btn:disabled {
+    opacity: 0.35;
+    pointer-events: none;
+    cursor: default;
 }
 
 /* ==========================================================================

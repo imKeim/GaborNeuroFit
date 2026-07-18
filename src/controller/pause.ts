@@ -93,7 +93,6 @@ export class PauseController {
                 const btnStart = document.getElementById('btn-start') as HTMLButtonElement | null;
                 if (btnStart) {
                     btnStart.disabled = false;
-                    btnStart.style.opacity = "1";
                 }
             }
             if (this.rdsCtrl && this.rdsCtrl.currentState === 'PRE_CUE') {
@@ -101,7 +100,6 @@ export class PauseController {
                 const btnStart = document.getElementById('btn-start') as HTMLButtonElement | null;
                 if (btnStart) {
                     btnStart.disabled = false;
-                    btnStart.style.opacity = "1";
                 }
             }
 

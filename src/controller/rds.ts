@@ -114,7 +114,6 @@ export class RdsController {
         Store.updateState('rdsHistory', [] as number[]);
 
         this.btnStart.disabled = false;
-        this.btnStart.style.opacity = '1';
         this.btnStart.innerText = t.rdsStartBtn || "START";
 
         drawRandomDotStereogram(this.overlayCanvas, this.overlayCtx, s, true, true);
@@ -136,7 +135,6 @@ export class RdsController {
 
         const t = this.getTranslations();
         this.btnStart.disabled = true;
-        this.btnStart.style.opacity = "0.4";
         this.btnStart.innerText = t.rdsNextBtn || "NEXT";
         if (this.syncCross) this.syncCross();
         playCue(Store.state.isMuted);
@@ -197,7 +195,6 @@ export class RdsController {
         }
 
         this.btnStart.disabled = true;
-        this.btnStart.style.opacity = '0.4';
         this.btnStart.innerText = "...";
     }
 
@@ -223,7 +220,6 @@ export class RdsController {
         const isCorrect = (userChoice === s.rdsTargetSide);
 
         this.btnStart.disabled = false;
-        this.btnStart.style.opacity = '1';
 
         this.container.classList.remove('success-pulse', 'error-shake');
         this.flashOverlay.classList.remove('flash-success', 'flash-error');
@@ -286,7 +282,6 @@ export class RdsController {
         this.saveRdsSession();
 
         this.btnStart.disabled = true;
-        this.btnStart.style.opacity = "0.4";
         this.btnStart.innerText = t.rdsNextBtn || "NEXT";
         if (this.syncCross) this.syncCross();
 
@@ -305,7 +300,6 @@ export class RdsController {
                 this.transitionTo(RdsState.IDLE);
                 if (!s.rdsAutoAdvance) {
                     this.btnStart.disabled = false;
-                    this.btnStart.style.opacity = "1";
                     this.btnStart.innerText = t.rdsNextBtn || "NEXT";
                     if (this.syncCross) this.syncCross();
                 }
@@ -322,7 +316,6 @@ export class RdsController {
                     const text = t.sessionMasteredRDS || "Excellent progress!";
                     Store.resetSessionProgress();
                     this.btnStart.disabled = false;
-                    this.btnStart.style.opacity = "1";
                     this.btnStart.innerText = t.rdsStartBtn || "START STEREOGRAM";
                     this.showCustomModal(title, text);
                     this.transitionTo(RdsState.IDLE);
@@ -340,7 +333,6 @@ export class RdsController {
                     const text = (t.sessionCompletedRDS || "Session complete!").replace("{limit}", s.rdsSessionLimit.toString());
                     Store.resetSessionProgress();
                     this.btnStart.disabled = false;
-                    this.btnStart.style.opacity = "1";
                     this.btnStart.innerText = t.rdsStartBtn || "START STEREOGRAM";
                     this.showCustomModal(title, text);
                     this.transitionTo(RdsState.IDLE);
