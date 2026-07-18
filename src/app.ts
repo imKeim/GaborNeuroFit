@@ -140,6 +140,7 @@ function canPause(): boolean {
  */
 function syncVisualState(): void {
     const s = Store.state;
+    const t = activeTranslations;
     const crossNode = document.getElementById('cross');
     const containerNode = document.getElementById('container');
     if (!crossNode || !containerNode) return;
@@ -149,13 +150,30 @@ function syncVisualState(): void {
         curtain.classList.toggle('active', s.isCurtainActive);
     }
 
+    const activeLevel = s.appMode === 'rds' ? s.rdsLevel : s.currentLevel;
+
     containerNode.dataset.appMode = s.appMode;
     containerNode.dataset.paused = String(s.isPaused);
     containerNode.dataset.curtainActive = String(s.isCurtainActive);
-    containerNode.dataset.level = String(s.currentLevel);
+    containerNode.dataset.level = String(activeLevel);
     containerNode.dataset.synopState = s.synopState;
     containerNode.dataset.startDisabled = String(btnStart.disabled);
     containerNode.dataset.sessionCompleted = String(s.isSessionCompleted);
+
+    // Declarative Main Button Text Logic
+    if (s.isSessionCompleted) {
+        btnStart.innerText = t.btnResetSession || "Reset Session";
+    } else if (s.appMode === 'synoptophore') {
+        if (s.synopState === 'idle') btnStart.innerText = t.synopStartBtn || "Start Alignment";
+        else if (s.synopState === 'align') btnStart.innerText = t.btnSynopLock || "Lock Fusion";
+        else btnStart.innerText = t.btnSynopBreak || "Slipped / Reset";
+    } else if (s.appMode === 'rds') {
+        if (rdsController && rdsController.currentState === 'AWAITING_INPUT') btnStart.innerText = "...";
+        else btnStart.innerText = (s.rdsTotal > 0 && !s.rdsAutoAdvance) ? (t.rdsNextBtn || "Next Stereogram") : (t.rdsStartBtn || "Start Stereogram");
+    } else {
+        if (s.isWaitingForAnswer) btnStart.innerText = t.reflashBtn || "Re-Flash";
+        else btnStart.innerText = (s.total > 0 && !s.autoAdvance) ? (t.nextBtn || "Next Flash") : (t.startBtn || "Start Flash");
+    }
 
     let crossState = 'hidden';
 
@@ -382,7 +400,6 @@ function runFlash(): void {
     if (s.isSessionCompleted) {
         Store.resetSessionProgress();
         Store.updateState('isCurtainActive', false);
-        setLanguage(s.currentLang);
         syncVisualState();
         return;
     }
@@ -1159,12 +1176,11 @@ window.addEventListener('load', async () => {
             if (statsModalEl) closeModal(statsModalEl);
 
             Store.updateState('isSessionCompleted', true);
+            Store.updateState('isCurtainActive', true);
 
             btnStart.disabled = false;
 
             updateScoreboard(Store.state, activeTranslations);
-
-            Store.updateState('isCurtainActive', true);
 
             drawIdleState(canvas, null, overlayCanvas, overlayCtx, state.appMode === 'synoptophore' || state.isFusionLockEnabled);
 
@@ -1175,15 +1191,10 @@ window.addEventListener('load', async () => {
                 } else {
                     drawSynoptophoreTargets(overlayCanvas, overlayCtx, state);
                 }
-                cross.style.display = 'none';
             } else if (state.appMode === 'rds') {
-                cross.style.display = 'block';
                 drawIdleState(canvas, null, overlayCanvas, overlayCtx, false);
-            } else {
-                cross.style.display = 'block';
             }
 
-            btnStart.innerText = t.btnResetSession || "Reset Session";
             syncVisualState();
 
             playGoldAward(state.isMuted); // Play majestic PS1-style aura chimes for Pomodoro complete!

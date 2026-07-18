@@ -365,13 +365,12 @@ export class GaborController {
             playGoldAward(s.isMuted); // Play majestic D-Major 9th gold chimes
             this.tracker.setTimeout(() => {
                 this.triggerMilestoneFlash(() => {
-                    const t = this.getTranslations();
                     Store.updateState('isSessionCompleted', true);
                     Store.updateState('isCurtainActive', true);
                     this.btnStart.disabled = false;
-                    this.btnStart.innerText = t.btnResetSession || "Reset Session";
-                    this.showCustomModal(t.titleGold || "🥇 GaborNeuroFit", t.sessionMastered || "Mastered!");
+                    this.showCustomModal(this.getTranslations().titleGold || "🥇 GaborNeuroFit", this.getTranslations().sessionMastered || "Mastered!");
                     this.transitionTo(TrialState.IDLE);
+                    if (this.syncCross) this.syncCross();
                 });
             }, 400);
             return;
@@ -382,14 +381,13 @@ export class GaborController {
             playSilverAward(s.isMuted); // Play elegant shimmering silver chimes
             this.tracker.setTimeout(() => {
                 this.triggerMilestoneFlash(() => {
-                    const t = this.getTranslations();
                     Store.updateState('isSessionCompleted', true);
                     Store.updateState('isCurtainActive', true);
                     this.btnStart.disabled = false;
-                    this.btnStart.innerText = t.btnResetSession || "Reset Session";
-                    const text = (t.sessionCompleted || "Completed").replace("{limit}", s.sessionLimit.toString());
-                    this.showCustomModal(t.titleSilver || "🥈 GaborNeuroFit", text);
+                    const text = (this.getTranslations().sessionCompleted || "Completed").replace("{limit}", s.sessionLimit.toString());
+                    this.showCustomModal(this.getTranslations().titleSilver || "🥈 GaborNeuroFit", text);
                     this.transitionTo(TrialState.IDLE);
+                    if (this.syncCross) this.syncCross();
                 });
             }, 400);
             return;

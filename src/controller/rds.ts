@@ -314,13 +314,10 @@ export class RdsController {
             playGoldAward(s.isMuted); // Play majestic D-Major 9th gold chimes
             this.tracker.setTimeout(() => {
                 this.triggerMilestoneFlash(() => {
-                    const title = t.titleGoldRDS || "🥇 Stereopsis Mastered!";
-                    const text = t.sessionMasteredRDS || "Excellent progress!";
                     Store.updateState('isSessionCompleted', true);
                     Store.updateState('isCurtainActive', true);
                     this.btnStart.disabled = false;
-                    this.btnStart.innerText = t.btnResetSession || "Reset Session";
-                    this.showCustomModal(title, text);
+                    this.showCustomModal(this.getTranslations().titleGoldRDS || "🥇 Stereopsis Mastered!", this.getTranslations().sessionMasteredRDS || "Excellent progress!");
                     this.transitionTo(RdsState.IDLE);
                     if (this.syncCross) this.syncCross();
                 });
@@ -333,13 +330,11 @@ export class RdsController {
             playSilverAward(s.isMuted); // Play elegant shimmering silver chimes
             this.tracker.setTimeout(() => {
                 this.triggerMilestoneFlash(() => {
-                    const title = t.titleSilverRDS || "🥈 RDS Session Complete!";
-                    const text = (t.sessionCompletedRDS || "Session complete!").replace("{limit}", s.rdsSessionLimit.toString());
                     Store.updateState('isSessionCompleted', true);
                     Store.updateState('isCurtainActive', true);
                     this.btnStart.disabled = false;
-                    this.btnStart.innerText = t.btnResetSession || "Reset Session";
-                    this.showCustomModal(title, text);
+                    const text = (this.getTranslations().sessionCompletedRDS || "Session complete!").replace("{limit}", s.rdsSessionLimit.toString());
+                    this.showCustomModal(this.getTranslations().titleSilverRDS || "🥈 RDS Session Complete!", text);
                     this.transitionTo(RdsState.IDLE);
                     if (this.syncCross) this.syncCross();
                 });
