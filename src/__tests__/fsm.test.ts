@@ -38,7 +38,6 @@ describe('GaborNeuroFit State Machine Fortification', () => {
     const mockCanvas = document.createElement('canvas');
     const mockOverlayCanvas = document.createElement('canvas');
     const mockOverlayCtx = mockOverlayCanvas.getContext('2d') as CanvasRenderingContext2D;
-    const mockCross = document.createElement('div');
     const mockContainer = document.createElement('div');
     const mockFlashOverlay = document.createElement('div');
     const mockBtnStart = document.createElement('button');
@@ -53,7 +52,6 @@ describe('GaborNeuroFit State Machine Fortification', () => {
             mockCanvas,
             mockOverlayCanvas,
             mockOverlayCtx,
-            mockCross,
             mockContainer,
             mockFlashOverlay,
             mockBtnStart,

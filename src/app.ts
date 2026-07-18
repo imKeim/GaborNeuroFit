@@ -453,7 +453,6 @@ window.addEventListener('load', async () => {
         canvas,
         overlayCanvas,
         overlayCtx,
-        cross,
         container,
         flashOverlay,
         btnStart,
@@ -461,7 +460,6 @@ window.addEventListener('load', async () => {
         showCustomAlert,
         () => syncVisualState()
     );
-
     /** 
      * @architecture Inversion of Control (IoC)
      * SynoptophoreController is completely decoupled from the DataRepository. 

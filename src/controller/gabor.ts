@@ -91,7 +91,6 @@ export class GaborController {
         private canvas: HTMLCanvasElement,
         private overlayCanvas: HTMLCanvasElement,
         private overlayCtx: CanvasRenderingContext2D,
-        private cross: HTMLElement,
         private container: HTMLElement,
         private flashOverlay: HTMLElement,
         private btnStart: HTMLButtonElement,
