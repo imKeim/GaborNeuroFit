@@ -64,26 +64,9 @@ export class PomodoroTimer {
                 this.lastRemainingSeconds = s.timerRemainingSeconds;
             }
 
-            // Detect modal obstructions to trigger smart pause
-            const settingsModal = document.getElementById('settings-modal');
-            const infoModal = document.getElementById('info-modal');
-            const statsModal = document.getElementById('stats-modal');
-            const customAlertModal = document.getElementById('custom-alert-modal');
-            const customConfirmModal = document.getElementById('custom-confirm-modal');
-
-            const isSettingsOpen = settingsModal?.classList.contains('modal-open') ?? false;
-            const isInfoOpen = infoModal?.classList.contains('modal-open') ?? false;
-            const isStatsOpen = statsModal?.classList.contains('modal-open') ?? false;
-            const isAlertOpen = customAlertModal?.classList.contains('modal-open') ?? false;
-            const isConfirmOpen = customConfirmModal?.classList.contains('modal-open') ?? false;
-
             const isTimerFrozen = s.isPaused || 
                                   !s.timerIsRunning || 
-                                  isSettingsOpen || 
-                                  isInfoOpen || 
-                                  isStatsOpen || 
-                                  isAlertOpen || 
-                                  isConfirmOpen;
+                                  document.body.classList.contains('modal-is-open');
 
             if (isTimerFrozen) {
                 // Continuous target shifting during pause to maintain remaining seconds integrity
