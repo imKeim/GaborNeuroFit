@@ -354,16 +354,4 @@ export function bindInputControls(handlers: InputHandlers): void {
             event.preventDefault();
         }
     }, { passive: false });
-
-    let lastTouchEnd = 0;
-    document.addEventListener('touchend', (event: TouchEvent) => {
-        const now = Date.now();
-        const target = event.target as HTMLElement;
-        if (target.closest('.action-btn') || target.closest('#btn-start') || target.closest('#container')) {
-            if (now - lastTouchEnd <= 300) {
-                event.preventDefault();
-            }
-        }
-        lastTouchEnd = now;
-    }, false);
 }

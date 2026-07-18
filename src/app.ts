@@ -180,6 +180,21 @@ function syncVisualState(): void {
         containerNode.style.cursor = btnStart.disabled ? 'default' : 'pointer';
         containerNode.classList.toggle('disabled', btnStart.disabled);
     }
+
+    // Logic: Synchronize Synoptophore Reset button state
+    const btnResetNode = document.getElementById('btn-reset') as HTMLButtonElement | null;
+    if (btnResetNode) {
+        if (s.appMode === 'synoptophore') {
+            const isBlocked = (s.synopState !== 'align');
+            btnResetNode.disabled = isBlocked;
+            btnResetNode.style.opacity = isBlocked ? '0.35' : '1';
+            btnResetNode.style.pointerEvents = isBlocked ? 'none' : 'auto';
+        } else {
+            btnResetNode.disabled = false;
+            btnResetNode.style.opacity = '1';
+            btnResetNode.style.pointerEvents = 'auto';
+        }
+    }
 }
 
 /**
