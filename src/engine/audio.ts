@@ -60,9 +60,10 @@ export function initAudio(): void {
  * @param {boolean} isMuted - Global sound suppression flag.
  */
 export function playCue(isMuted: boolean): void {
-    if (isMuted || !audioCtx) return;
+    if (isMuted) return;
     try {
-        initAudio(); // Ensure context is running
+        initAudio();
+        if (!audioCtx) return;
 
         // Introduce a tiny 15ms buffer lookahead to prevent crackle artifacts in hardware DACs
         const now = audioCtx.currentTime + 0.015;
@@ -111,9 +112,10 @@ export function playCue(isMuted: boolean): void {
  * @param {boolean} isMuted - Global sound suppression flag.
  */
 export function playError(isMuted: boolean): void {
-    if (isMuted || !audioCtx) return;
+    if (isMuted) return;
     try {
         initAudio();
+        if (!audioCtx) return;
         const now = audioCtx.currentTime + 0.015;
 
         const osc = audioCtx.createOscillator();
@@ -149,9 +151,10 @@ export function playError(isMuted: boolean): void {
  * @param {boolean} isMuted - Global sound suppression flag.
  */
 export function playSlip(isMuted: boolean): void {
-    if (isMuted || !audioCtx) return;
+    if (isMuted) return;
     try {
         initAudio();
+        if (!audioCtx) return;
         const now = audioCtx.currentTime + 0.015;
         const duration = 0.48;
 
@@ -194,9 +197,10 @@ export function playSlip(isMuted: boolean): void {
  * @param {number} panValue - Spatial audio pan setting [-1.0 to 1.0].
  */
 export function playSuccess(isMuted: boolean, panValue: number = 0.0): void {
-    if (isMuted || !audioCtx) return;
+    if (isMuted) return;
     try {
         initAudio();
+        if (!audioCtx) return;
         const now = audioCtx.currentTime + 0.015;
 
         // Create StereoPannerNode if supported by browser to enable spatial sound rewards

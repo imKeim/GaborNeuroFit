@@ -733,14 +733,13 @@ window.addEventListener('load', async () => {
                 }
             }
 
-            // Isomorphic Isolation: Ignore any interaction started outside the gray foveal arena
+            // Ignore any interaction started outside the gray foveal arena
             if (s.appMode === 'synoptophore' && event) {
                 const target = event.target as HTMLElement;
                 if (!target.closest('#container')) return;
             }
 
-            const curtain = document.getElementById('calibration-curtain');
-            if (curtain && curtain.classList.contains('active')) {
+            if (s.isCurtainActive) {
                 return;
             }
 
