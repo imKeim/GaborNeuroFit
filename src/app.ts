@@ -51,6 +51,8 @@ let snapAppMode: AppMode | null = null;
 let snapPresetMode: GaborPreset | null = null;
 let snapLevel: number | null = null;
 let snapTimerLimit: number | null = null;
+let snapRdsStartDisparity: number | null = null;
+let wasPausedBeforeSettings: boolean = false;
 
 // Abstracted dragging coordinates context holds
 let dragStartX: number = 0;
@@ -258,7 +260,7 @@ function transitionToMode(newMode: AppMode): void {
         if (synoptophoreController) synoptophoreController.syncFlickerState();
     } else if (isRds) {
         if (curtain) curtain.classList.remove('active');
-        drawIdleState(canvas, null, overlayCanvas, overlayCtx, false);
+        if (rdsController) rdsController.initSession();
     } else {
         if (curtain) curtain.classList.remove('active');
         drawIdleState(canvas, null, overlayCanvas, overlayCtx, s.isFusionLockEnabled);
@@ -548,6 +550,9 @@ window.addEventListener('load', async () => {
 
     initModals(
         () => {
+            // Record if the game was already paused by the user before opening settings
+            wasPausedBeforeSettings = Store.state.isPaused;
+
             enforceSystemPause();
             Store.loadSettings();
 
@@ -556,6 +561,7 @@ window.addEventListener('load', async () => {
             snapPresetMode = Store.state.presetMode;
             snapLevel = Store.state.currentLevel;
             snapTimerLimit = Store.state.timerLimitMinutes;
+            snapRdsStartDisparity = Store.state.rdsStartDisparity;
 
             if (btnFusionTest) {
                 if (gaborController && gaborController.isAnaglyphTestActive) {
@@ -923,7 +929,8 @@ window.addEventListener('load', async () => {
         const isCriticalChange = (
             snapAppMode !== Store.state.appMode ||
             snapPresetMode !== Store.state.presetMode ||
-            snapLevel !== Store.state.currentLevel
+            snapLevel !== Store.state.currentLevel ||
+            snapRdsStartDisparity !== Store.state.rdsStartDisparity
         );
 
         const isTimerChanged = (snapTimerLimit !== Store.state.timerLimitMinutes);
@@ -949,15 +956,29 @@ window.addEventListener('load', async () => {
                 }
             }
 
+            // Restore the original pause state if we didn't perform a critical transition
+            if (Store.state.isPaused !== wasPausedBeforeSettings && pauseController) {
+                pauseController.togglePause();
+            }
+
             if (!Store.state.isPaused) {
                 if (isSynop) {
                     if (Store.state.synopState !== 'idle' && !Store.state.synopFlickerActive) {
                         drawSynoptophoreTargets(overlayCanvas, overlayCtx, Store.state);
                     }
-                } else if (Store.state.appMode === 'rds' && rdsController && rdsController.currentState === 'IDLE') {
-                    drawIdleState(canvas, null, overlayCanvas, overlayCtx, false);
-                } else if (Store.state.appMode === 'gabor' && gaborController && gaborController.currentState === 'IDLE') {
-                    drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
+                } else if (Store.state.appMode === 'rds') {
+                    if (rdsController) {
+                        const isIdle = rdsController.currentState === 'IDLE' || rdsController.currentState === 'FEEDBACK';
+                        drawRandomDotStereogram(overlayCanvas, overlayCtx, Store.state, false, isIdle);
+                    }
+                } else if (Store.state.appMode === 'gabor') {
+                    if (gaborController && gaborController.currentState === 'IDLE') {
+                        drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
+                    } else if (gaborController && gaborController.currentState === 'AWAITING_INPUT' && Store.state.isStaticEnabled) {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        const gc = gaborController as any;
+                        renderGabor(canvas, null, Store.state, gc.currentAngleDeg, Store.state.autoContrast, Store.state.autoContrast, gc.lastRandomFreq, gc.lastRandomSigma, gc.lastOffsetX, gc.lastOffsetY, 0, gc.lastRandomAspectRatio);
+                    }
                 }
             }
 
