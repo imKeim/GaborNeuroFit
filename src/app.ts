@@ -320,7 +320,7 @@ export async function setLanguage(lang: Language): Promise<void> {
     } else if (Store.state.appMode === 'rds') {
         if (rdsController && rdsController.currentState === 'AWAITING_INPUT') {
             btnStart.disabled = true;
-            btnStart.innerText = t.rdsNextBtn || "NEXT STEREOGRAM";
+            btnStart.innerText = "...";
         } else {
             btnStart.disabled = false;
             btnStart.innerText = (Store.state.rdsTotal > 0 && !Store.state.rdsAutoAdvance) ? (t.rdsNextBtn || "NEXT STEREOGRAM") : (t.rdsStartBtn || "START STEREOGRAM");

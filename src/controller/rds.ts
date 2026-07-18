@@ -133,9 +133,8 @@ export class RdsController {
 
         Store.startTimerIfNeeded();
 
-        const t = this.getTranslations();
         this.btnStart.disabled = true;
-        this.btnStart.innerText = t.rdsNextBtn || "NEXT";
+        this.btnStart.innerText = "...";
         if (this.syncCross) this.syncCross();
         playCue(Store.state.isMuted);
 
