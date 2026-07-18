@@ -137,12 +137,17 @@ export class SynoptophoreController {
 
         const dist = Math.sqrt(this.startX * this.startX + this.startY * this.startY);
 
-        // Clinical Anti-Cheat: Block immediate locks at geometric center
+        // Block immediate locks at geometric center
         if (dist < 3) {
             playError(s.isMuted);
             const scoreTextEl = document.getElementById('score-text');
             if (scoreTextEl) {
                 scoreTextEl.innerHTML = `<span style="color: #f59e0b; font-weight: bold;">${t.synopWarnAlign || '⚠️ Offset target first!'}</span>`;
+                scoreTextEl.dataset.warningActive = "true";
+                this.tracker.setTimeout(() => {
+                    scoreTextEl.dataset.warningActive = "false";
+                    updateScoreboard(Store.state, t);
+                }, 3000);
             }
             return;
         }

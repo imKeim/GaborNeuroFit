@@ -272,7 +272,7 @@ export function updateScoreboard(state: AppState, translations: Record<string, s
     const progressBar = document.getElementById('synop-progress-bar');
 
     if (state.appMode === 'synoptophore') {
-        if (scoreTextEl) {
+        if (scoreTextEl && scoreTextEl.dataset.warningActive !== "true") {
             scoreTextEl.innerHTML = t.lblPrismDeviation || 'Deviation Angle (Prism)';
         }
 
@@ -311,6 +311,7 @@ export function updateScoreboard(state: AppState, translations: Record<string, s
         }
     } else if (state.appMode === 'rds') {
         if (scoreTextEl) {
+            scoreTextEl.dataset.warningActive = "false";
             scoreTextEl.innerHTML = `${t.correctLabel || 'Correct'}: <strong>${state.rdsScore}</strong> / ${t.totalLabel || 'Total'}: <strong>${state.rdsTotal}</strong>`;
         }
         if (indicatorsEl) indicatorsEl.style.display = 'none';
@@ -329,6 +330,7 @@ export function updateScoreboard(state: AppState, translations: Record<string, s
         }
     } else {
         if (scoreTextEl) {
+            scoreTextEl.dataset.warningActive = "false";
             scoreTextEl.innerHTML = `${t.correctLabel || 'Correct'}: <strong>${state.score}</strong> / ${t.totalLabel || 'Total'}: <strong>${state.total}</strong>`;
         }
         if (indicatorsEl) indicatorsEl.style.display = 'flex';

@@ -271,13 +271,6 @@ export class GaborController {
         const flashDuration = this.getFlashDuration(s);
         updateStatusBar(s, t);
 
-        this.cross.classList.remove('cross-dimmed', 'cross-hidden');
-        if (s.isPermanentCrossEnabled) {
-            this.cross.classList.add('cross-dimmed');
-        } else {
-            this.cross.classList.add('cross-hidden');
-        }
-
         this.canvas.style.display = 'block';
         Store.updateState('isWaitingForAnswer', true);
 
@@ -295,7 +288,6 @@ export class GaborController {
             this.tracker.setTimeout(() => {
                 this.stopUnifiedRenderingLoop();
                 drawIdleState(this.canvas, null, this.overlayCanvas, this.overlayCtx, s.isFusionLockEnabled);
-                this.cross.classList.remove('cross-dimmed', 'cross-hidden');
                 this.btnStart.disabled = false;
                 this.btnStart.innerText = t.reflashBtn || "RE-FLASH";
                 this.transitionTo(TrialState.AWAITING_INPUT);
@@ -319,7 +311,6 @@ export class GaborController {
         Store.updateState('isWaitingForAnswer', false);
 
         this.transitionTo(TrialState.FEEDBACK);
-        this.cross.classList.remove('cross-dimmed', 'cross-hidden');
 
         const correctAnswer = this.currentAngleDeg < 0 ? 'left' : 'right';
         const isCorrect = (userChoice === correctAnswer);
