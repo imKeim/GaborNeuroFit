@@ -62,6 +62,7 @@ let snapLevel: number | null = null;
 let snapTimerLimit: number | null = null;
 let snapRdsStartDisparity: number | null = null;
 let wasPausedBeforeSettings: boolean = false;
+let wasPausedBeforeModal: boolean = false;
 
 // Abstracted dragging coordinates context holds
 let dragStartX: number = 0;
@@ -98,6 +99,35 @@ const container = document.getElementById('container') as HTMLElement;
 const btnStart = document.getElementById('btn-start') as HTMLButtonElement;
 const btnFusionTest = document.getElementById('btn-fusion-test') as HTMLButtonElement;
 const customAlertModal = document.getElementById('custom-alert-modal') as HTMLElement;
+
+/**
+ * @description Helper to evaluate if the state machine is in a pausable/interactive state.
+ */
+function canPause(): boolean {
+    const s = Store.state;
+    if (s.isPaused) return true;
+
+    if (s.appMode === 'gabor' && gaborController) {
+        const gState = gaborController.currentState;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const isAutoPending = (gaborController as any).autoNextTimeoutId !== null;
+        if (gState === 'PRE_CUE' || gState === 'STIMULUS_ACTIVE' || gState === 'FEEDBACK' || isAutoPending) {
+            return false;
+        }
+    }
+    if (s.appMode === 'rds' && rdsController) {
+        const rState = rdsController.currentState;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const isAutoPending = (rdsController as any).autoNextTimeoutId !== null;
+        if (rState === 'PRE_CUE' || rState === 'FEEDBACK' || isAutoPending) {
+            return false;
+        }
+    }
+    if (s.appMode === 'synoptophore' && s.synopState === 'pulling') {
+        return false;
+    }
+    return true;
+}
 
 /**
  * @description Centralized visual synchronizer for fixation cross and mouse pointer state.
@@ -207,6 +237,16 @@ function syncVisualState(): void {
     const btnRightNode = document.getElementById('btn-right') as HTMLButtonElement | null;
     if (btnLeftNode) btnLeftNode.disabled = s.isPaused;
     if (btnRightNode) btnRightNode.disabled = s.isPaused;
+
+    // Sync modal buttons accessibility based on FSM state
+    const btnSettingsNode = document.getElementById('btn-settings') as HTMLButtonElement | null;
+    const btnStatsNode = document.getElementById('btn-stats') as HTMLButtonElement | null;
+    const btnInfoNode = document.getElementById('btn-info') as HTMLButtonElement | null;
+
+    const disableModals = !canPause();
+    if (btnSettingsNode) btnSettingsNode.disabled = disableModals;
+    if (btnStatsNode) btnStatsNode.disabled = disableModals;
+    if (btnInfoNode) btnInfoNode.disabled = disableModals;
 }
 
 /**
@@ -546,15 +586,31 @@ window.addEventListener('load', async () => {
      * Safeguards resources and clinical timers when foveal workspace is obstructed.
      */
     function enforceSystemPause(): void {
-        if (!Store.state.isPaused && pauseController) {
-            pauseController.togglePause();
+        if (pauseController) {
+            wasPausedBeforeModal = Store.state.isPaused;
+            if (!Store.state.isPaused) {
+                pauseController.togglePause();
+            }
+        }
+    }
+
+    /**
+     * @description Restores the previous pause state upon clinical modal obstruction dismissal.
+     */
+    function restoreSystemPause(): void {
+        if (pauseController) {
+            if (Store.state.isPaused && !wasPausedBeforeModal) {
+                pauseController.togglePause();
+            }
         }
     }
 
     // Logic: Handbook modal binding
     const btnInfo = document.getElementById('btn-info');
     if (btnInfo) {
-        btnInfo.addEventListener('click', enforceSystemPause);
+        btnInfo.addEventListener('click', () => {
+            enforceSystemPause();
+        });
     }
 
     initModals(
@@ -588,6 +644,12 @@ window.addEventListener('load', async () => {
         () => {
             enforceSystemPause();
             if (dashboardController) dashboardController.refreshStatsUI();
+        },
+        () => {
+            restoreSystemPause();
+        },
+        () => {
+            restoreSystemPause();
         }
     );
 
@@ -911,9 +973,11 @@ window.addEventListener('load', async () => {
                 }
                 if (isInfoOpen) {
                     closeModal(infoModal);
+                    restoreSystemPause();
                 }
                 if (isStatsOpen) {
                     closeModal(statsModal);
+                    restoreSystemPause();
                 }
                 return;
             }

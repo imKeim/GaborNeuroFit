@@ -272,7 +272,9 @@ export function showCustomConfirm(
 export function initModals(
     onSettingsOpen: () => void,
     onSettingsSave: () => void,
-    onStatsOpen: () => void
+    onStatsOpen: () => void,
+    onStatsClose: () => void,
+    onInfoClose: () => void
 ): void {
     const infoModal = document.getElementById('info-modal');
     const btnInfo = document.getElementById('btn-info');
@@ -304,6 +306,7 @@ export function initModals(
     if (btnCloseModal && infoModal) {
         btnCloseModal.addEventListener('click', () => {
             closeModal(infoModal);
+            if (typeof onInfoClose === 'function') onInfoClose();
         });
     }
 
@@ -337,6 +340,7 @@ export function initModals(
     if (btnCloseStats && statsModal) {
         btnCloseStats.addEventListener('click', () => {
             closeModal(statsModal);
+            if (typeof onStatsClose === 'function') onStatsClose();
         });
     }
 }
