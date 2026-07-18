@@ -50,6 +50,9 @@ export async function loadLanguage(lang: Language): Promise<Record<string, strin
     Store.state.currentLang = lang;
     Store.saveSettings();
 
+    // Dynamically update HTML lang attribute to let mobile screen readers (TalkBack/VoiceOver) switch speech engines instantly
+    document.documentElement.lang = lang;
+
     const t = activeTranslations;
 
     // Declaratively resolve all plain text localization nodes safely via textContent
