@@ -57,6 +57,24 @@ let dragStartX: number = 0;
 let dragStartY: number = 0;
 let dragStartStrongFactor: number = 0.3; // Calibrated contrast factor context holder
 
+// Context holders for edge-touch auto-repeat hold timers
+let edgeTimeoutId: number | null = null;
+let edgeIntervalId: number | null = null;
+let isEdgeHoldingActive: boolean = false;
+let lastTouchTime: number = 0; // Filter simulated ghost mouse events
+
+/** @description Utility to clear edge-touch hold timers and release resources. */
+function clearEdgeTimers(): void {
+    if (edgeTimeoutId !== null) {
+        window.clearTimeout(edgeTimeoutId);
+        edgeTimeoutId = null;
+    }
+    if (edgeIntervalId !== null) {
+        window.clearInterval(edgeIntervalId);
+        edgeIntervalId = null;
+    }
+}
+
 // Primary DOM References for view rendering (Strict Casting)
 const canvas = document.getElementById('gaborCanvas') as HTMLCanvasElement;
 const overlayCanvas = document.getElementById('overlayCanvas') as HTMLCanvasElement;
@@ -175,6 +193,9 @@ function syncVisualState(): void {
  */
 function transitionToMode(newMode: AppMode): void {
     const s = Store.state;
+
+    clearEdgeTimers();
+    isEdgeHoldingActive = false;
 
     // Step: Component teardown
     if (gaborController) gaborController.deactivate();
@@ -653,6 +674,17 @@ window.addEventListener('load', async () => {
             const s = Store.state;
             if (s.isPaused) return;
 
+            // Filter out simulated ghost mouse events immediately after actual touch gestures
+            if (event) {
+                if (event.type === 'touchstart') {
+                    lastTouchTime = Date.now();
+                } else if (event.type === 'mousedown') {
+                    if (Date.now() - lastTouchTime < 500) {
+                        return; // Ignore duplicated browser mouse emulation
+                    }
+                }
+            }
+
             // Isomorphic Isolation: Ignore any interaction started outside the gray foveal arena
             if (s.appMode === 'synoptophore' && event) {
                 const target = event.target as HTMLElement;
@@ -678,6 +710,58 @@ window.addEventListener('load', async () => {
             dragStartStrongFactor = Store.state.appMode === 'synoptophore'
                 ? Store.state.synopStrongEyeContrastFactor
                 : Store.state.strongEyeContrastFactor;
+
+            clearEdgeTimers();
+
+            if (s.appMode === 'synoptophore' && s.synopState === 'align' && event) {
+                let clientX = 0;
+                let clientY = 0;
+                if (event instanceof MouseEvent) {
+                    clientX = event.clientX;
+                    clientY = event.clientY;
+                } else if (typeof TouchEvent !== 'undefined' && event instanceof TouchEvent) {
+                    if (event.touches && event.touches.length > 0) {
+                        clientX = event.touches[0].clientX;
+                        clientY = event.touches[0].clientY;
+                    }
+                }
+
+                if (clientX > 0 && clientY > 0) {
+                    const rect = container.getBoundingClientRect();
+                    const nx = (clientX - rect.left) / rect.width;
+                    const ny = (clientY - rect.top) / rect.height;
+                    const edgeZone = 0.25;
+
+                    const isEdgeTouch = (nx >= 0 && nx <= 1 && ny >= 0 && ny <= 1) && 
+                                        (nx < edgeZone || nx > 1 - edgeZone || ny < edgeZone || ny > 1 - edgeZone);
+
+                    if (isEdgeTouch) {
+                        let dx = 0;
+                        let dy = 0;
+                        if (nx < edgeZone) dx = -1;
+                        else if (nx > 1 - edgeZone) dx = 1;
+
+                        if (ny < edgeZone) dy = -1;
+                        else if (ny > 1 - edgeZone) dy = 1;
+
+                        isEdgeHoldingActive = true;
+
+                        const performEdgeNudge = () => {
+                            const curState = Store.state;
+                            if (curState.isPaused) return;
+                            if (dx !== 0) Store.updateState('synopTargetX', curState.synopTargetX + dx);
+                            if (dy !== 0) Store.updateState('synopTargetY', curState.synopTargetY + dy);
+                            triggerSynopDragEffects();
+                        };
+                        performEdgeNudge();
+
+                        // Snappy native hold timers matching keyboard delays (250ms delay, 50ms interval)
+                        edgeTimeoutId = window.setTimeout(() => {
+                            edgeIntervalId = window.setInterval(performEdgeNudge, 50);
+                        }, 250);
+                    }
+                }
+            }
         },
         onDragUpdate: (deltaX: number, deltaY: number) => {
             const s = Store.state;
@@ -693,40 +777,31 @@ window.addEventListener('load', async () => {
                 return;
             }
             if (s.appMode === 'synoptophore' && s.synopState === 'align') {
+                if (isEdgeHoldingActive) {
+                    const totalDist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                    if (totalDist > 8) {
+                        // Smoothly transition from hold-to-repeat step mode into standard drag mode
+                        clearEdgeTimers();
+                        isEdgeHoldingActive = false;
+                    } else {
+                        return; // Suppress micro-movement coordinate updates while holding edge still
+                    }
+                }
                 Store.updateState('synopTargetX', dragStartX + deltaX);
                 Store.updateState('synopTargetY', dragStartY + deltaY);
                 triggerSynopDragEffects();
             }
         },
-        onDragEnd: (deltaTime: number, deltaXTotal: number, deltaYTotal: number, clientX: number, clientY: number) => {
+        onDragEnd: (deltaTime: number, deltaXTotal: number, deltaYTotal: number) => {
             const s = Store.state;
 
             // Remove active tactile feedback class on drag completion
             if (container) container.classList.remove('dragging');
 
+            clearEdgeTimers();
+            isEdgeHoldingActive = false;
+
             if (s.appMode === 'synoptophore') {
-                if (s.synopState === 'align') {
-                    const isTapGesture = deltaTime < 250 && Math.abs(deltaXTotal) < 8 && Math.abs(deltaYTotal) < 8;
-                    if (isTapGesture) {
-                        const rect = container.getBoundingClientRect();
-                        const nx = (clientX - rect.left) / rect.width;
-                        const ny = (clientY - rect.top) / rect.height;
-                        const edgeZone = 0.25;
-
-                        // Boundary check: Restrict nudge triggers strictly to the physical surface of `#container`
-                        const isInsideContainer = (nx >= 0 && nx <= 1 && ny >= 0 && ny <= 1);
-                        if (isInsideContainer) {
-                            let didNudge = false;
-                            if (nx < edgeZone) { Store.updateState('synopTargetX', s.synopTargetX - 1); didNudge = true; }
-                            else if (nx > 1 - edgeZone) { Store.updateState('synopTargetX', s.synopTargetX + 1); didNudge = true; }
-
-                            if (ny < edgeZone) { Store.updateState('synopTargetY', s.synopTargetY - 1); didNudge = true; }
-                            else if (ny > 1 - edgeZone) { Store.updateState('synopTargetY', s.synopTargetY + 1); didNudge = true; }
-
-                            if (didNudge) triggerSynopDragEffects();
-                        }
-                    }
-                }
                 return;
             }
 
