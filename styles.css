@@ -148,6 +148,11 @@ img.emoji {
     opacity: 1;
 }
 
+body.modal-is-open #app-wrapper {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
 /*
  * @architecture Enterprise Desktop Mutation
  * Smoothly morphs the full-screen canvas into a centered, floating frosted-glass console.
@@ -753,8 +758,9 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    transform: translateZ(0);
     transition: opacity 0.3s ease, background-color 0.2s ease, visibility 0s linear 0s;
 }
 

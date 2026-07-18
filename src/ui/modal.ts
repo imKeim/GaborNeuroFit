@@ -57,6 +57,7 @@ export function openModal(modal: HTMLElement | null): void {
     }
 
     modal.classList.add('modal-open');
+    document.body.classList.add('modal-is-open');
 
     const appWrapper = document.getElementById('app-wrapper');
     if (appWrapper) appWrapper.setAttribute('aria-hidden', 'true');
@@ -84,6 +85,7 @@ export function closeModal(modal: HTMLElement | null): void {
     if (!modal) return;
 
     modal.classList.remove('modal-open');
+    document.body.classList.remove('modal-is-open');
 
     const appWrapper = document.getElementById('app-wrapper');
     if (appWrapper) appWrapper.removeAttribute('aria-hidden');
