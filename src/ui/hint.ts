@@ -84,7 +84,7 @@ export class HudHintController {
             this.hideDelayTimer = window.setTimeout(() => {
                 this.hideHint();
                 this.hideDelayTimer = null;
-            }, 150);
+            }, 250);
         };
 
         // Standard Mouse/Touch Hover events
@@ -137,22 +137,23 @@ export class HudHintController {
 
         // Scene: Update existing hint
         if (this.statusBar.classList.contains('hint-mode')) {
-            if (this.hintEl.innerText === text) {
+            // Fast textContent check prevents CSS reflow triggers
+            if (this.hintEl.textContent === text) {
                 this.startDisplayTimer(durationMs);
                 return;
             }
             this.statusBar.classList.add('hint-swap-out');
             this.animTimer = window.setTimeout(() => {
-                if (this.hintEl) this.hintEl.innerText = text;
+                if (this.hintEl) this.hintEl.textContent = text;
                 this.statusBar?.classList.remove('hint-swap-out');
                 this.statusBar?.classList.add('hint-swap-in');
                 void this.statusBar?.offsetWidth;
                 this.statusBar?.classList.remove('hint-swap-in');
                 this.startDisplayTimer(durationMs);
-            }, 350);
+            }, 250);
         } else {
             // Scene: Fresh entrance
-            this.hintEl.innerText = text;
+            this.hintEl.textContent = text;
             this.statusBar.classList.add('hint-mode');
             this.startDisplayTimer(durationMs);
         }
@@ -161,12 +162,15 @@ export class HudHintController {
     private startDisplayTimer(durationMs: number): void {
         if (this.displayTimer) window.clearTimeout(this.displayTimer);
         this.displayTimer = window.setTimeout(() => {
-            this.isActionLocked = false; // Release lock
+            this.isActionLocked = false; // Release lock only when time is up
             this.hideHint();
         }, durationMs);
     }
 
     private hideHint(): void {
+        // Brute-force guard: never hide if a click action is currently holding the lock
+        if (this.isActionLocked) return; 
+
         this.clearRenderTimers();
         if (this.statusBar?.classList.contains('hint-mode')) {
             this.statusBar.classList.remove('hint-mode', 'hint-swap-out', 'hint-swap-in');
@@ -174,7 +178,7 @@ export class HudHintController {
                 if (this.statusBar && !this.statusBar.classList.contains('hint-mode')) {
                     updateStatusBar(Store.state, this.getTranslations());
                 }
-            }, 450);
+            }, 250);
         }
     }
 
