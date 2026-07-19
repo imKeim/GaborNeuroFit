@@ -20,6 +20,7 @@ import { SettingsController } from './controller/settings';
 import { DashboardController } from './controller/dashboard';
 import { PauseController } from './controller/pause';
 import { HudHintController } from './ui/hint';
+import { InteractionController } from './controller/interaction';
 
 // Rendering Engine Layer (WebGL, 2D Canvas & Generative Audio)
 import { renderGabor, drawFusionLockFrame } from './engine/gabor-render';
@@ -31,7 +32,6 @@ import { playCue, playError, playGoldAward, playReset } from './engine/audio';
 // User Interface Layer (Presentation & Physical Inputs)
 import { updateScoreboard, drawIdleState, updateStatusBar } from './ui/screen';
 import { initModals, showCustomAlert, closeCustomAlert, closeModal } from './ui/modal';
-import { bindInputControls } from './ui/controls';
 
 // Utility & Environment Layer (Offline Hydration, Pacing & PWA)
 import { resizeCanvasesToDPR } from './utils/bootstrap';
@@ -40,7 +40,6 @@ import { loadLanguage } from './utils/i18n';
 
 // Import strict types
 import type { Language, AppMode } from './types/clinical';
-import type { InputHandlers } from './ui/controls';
 
 // Global cache for the active localization dictionary
 let activeTranslations: Record<string, string> = {};
@@ -53,6 +52,7 @@ let rdsController: RdsController | null = null;
 let dashboardController: DashboardController | null = null;
 let pauseController: PauseController | null = null;
 let hintController: HudHintController | null = null;
+let interactionController: InteractionController | null = null;
 
 /** 
  * @description "Dirty-checking" snapshots of critical clinical parameters. 
@@ -64,29 +64,6 @@ let snapTimerLimit: number | null = null;
 let snapRdsStartDisparity: number | null = null;
 let wasPausedBeforeSettings: boolean = false;
 let wasPausedBeforeModal: boolean = false;
-
-// Abstracted dragging coordinates context holds
-let dragStartX: number = 0;
-let dragStartY: number = 0;
-let dragStartStrongFactor: number = 0.3; // Calibrated contrast factor context holder
-
-// Context holders for edge-touch auto-repeat hold timers
-let edgeTimeoutId: number | null = null;
-let edgeIntervalId: number | null = null;
-let isEdgeHoldingActive: boolean = false;
-let lastTouchTime: number = 0; // Filter simulated ghost mouse events
-
-/** @description Utility to clear edge-touch hold timers and release resources. */
-function clearEdgeTimers(): void {
-    if (edgeTimeoutId !== null) {
-        window.clearTimeout(edgeTimeoutId);
-        edgeTimeoutId = null;
-    }
-    if (edgeIntervalId !== null) {
-        window.clearInterval(edgeIntervalId);
-        edgeIntervalId = null;
-    }
-}
 
 // Primary DOM References for view rendering (Strict Casting)
 const canvas = document.getElementById('gaborCanvas') as HTMLCanvasElement;
@@ -100,6 +77,18 @@ const container = document.getElementById('container') as HTMLElement;
 const btnStart = document.getElementById('btn-start') as HTMLButtonElement;
 const btnFusionTest = document.getElementById('btn-fusion-test') as HTMLButtonElement;
 const customAlertModal = document.getElementById('custom-alert-modal') as HTMLElement;
+
+/**
+ * @description Force a real GPU shader pass with 0 contrast to wake up the browser compositor and render foveal frames instantly.
+ */
+function drawIdleStateGabor(): void {
+    renderGabor(canvas, null, Store.state, 0, 0, 0, 0.08, 40, 0, 0, 0, 1.0);
+    overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    if (Store.state.isFusionLockEnabled) {
+        const scale = canvas.width / 256.0;
+        drawFusionLockFrame(overlayCanvas, overlayCtx, scale);
+    }
+}
 
 /**
  * @description Helper to evaluate if the state machine is in a pausable/interactive state.
@@ -275,8 +264,9 @@ function syncVisualState(): void {
 function transitionToMode(newMode: AppMode): void {
     const s = Store.state;
 
-    clearEdgeTimers();
-    isEdgeHoldingActive = false;
+    if (interactionController) {
+        interactionController.reset();
+    }
 
     // Step: Component teardown
     if (gaborController) gaborController.deactivate();
@@ -590,6 +580,82 @@ window.addEventListener('load', async () => {
     hintController = new HudHintController(() => activeTranslations);
     hintController.init();
 
+    // Initialize the decoupled Interaction Controller
+    interactionController = new InteractionController(container, {
+        onAnswer: (dir) => {
+            const s = Store.state;
+            if (s.isPaused || s.isSessionCompleted) return;
+            if (s.appMode === 'rds' && rdsController) rdsController.submitAnswer(dir);
+            else if (gaborController) gaborController.submitAnswer(dir);
+        },
+        onReset: () => {
+            const s = Store.state;
+            if (s.isPaused || s.isSessionCompleted) return;
+            if (s.appMode === 'synoptophore' && s.synopState === 'align') {
+                Store.updateState('synopTargetX', 0);
+                Store.updateState('synopTargetY', 0);
+                playError(s.isMuted);
+                triggerSynopDragEffects();
+            }
+        },
+        onPrimary: () => {
+            if (Store.state.isPaused) {
+                if (pauseController) pauseController.togglePause();
+                return;
+            }
+            runFlash();
+        },
+        onMuteToggle: () => {
+            Store.updateState('isMuted', !Store.state.isMuted);
+            Store.saveSettings();
+            updateMuteBtnUI();
+        },
+        onPauseToggle: () => {
+            if (document.querySelector('.modal.modal-open')) return;
+            const btnPause = document.getElementById('btn-pause') as HTMLButtonElement | null;
+            if (btnPause && btnPause.disabled) return;
+            if (pauseController) pauseController.togglePause();
+        },
+        onCanvasClick: () => {
+            const s = Store.state;
+            if (s.isPaused) {
+                if (pauseController) pauseController.togglePause();
+                return;
+            }
+            if (btnStart.disabled && !s.isSessionCompleted) return;
+            const curtain = document.getElementById('calibration-curtain');
+            if (curtain && curtain.classList.contains('active')) {
+                runFlash();
+                return;
+            }
+            if (s.appMode === 'synoptophore') {
+                if (s.synopState === 'pulling' && synoptophoreController) synoptophoreController.breakActiveFusion();
+                else { Store.startTimerIfNeeded(); updateScoreboard(Store.state, activeTranslations); }
+                return;
+            }
+            if (s.appMode === 'gabor') runFlash();
+            else if (s.appMode === 'rds' && rdsController && rdsController.currentState === 'IDLE') rdsController.triggerTrial();
+        },
+        onEscape: () => {
+            const s = Store.state;
+            const modals = ['custom-confirm-modal', 'settings-modal', 'info-modal', 'stats-modal'];
+            for (const id of modals) {
+                const m = document.getElementById(id);
+                if (m && m.classList.contains('modal-open')) {
+                    if (id === 'settings-modal') {
+                        if (s.isAnaglyphTestActive) { const b = document.getElementById('btn-fusion-test'); if (b) b.click(); }
+                        else { saveSettingsFromUI(); closeModal(m); }
+                    } else if (id === 'custom-confirm-modal') { /* keep open */ }
+                    else { closeModal(m); restoreSystemPause(); }
+                    return;
+                }
+            }
+            if (Store.state.isPaused && pauseController) pauseController.togglePause();
+        },
+        triggerSynopDragEffects: () => triggerSynopDragEffects()
+    });
+    interactionController.init();
+
     settingsController = new SettingsController(() => {
         updateStatusBar(Store.state, activeTranslations);
         if (Store.state.isAnaglyphTestActive) {
@@ -703,333 +769,6 @@ window.addEventListener('load', async () => {
         }
     );
 
-    // Initializing the architectural Input Dispatcher Switchboard
-    const handlers: InputHandlers = {
-        onActionLeft: () => {
-            const s = Store.state;
-            if (s.isPaused || s.isSessionCompleted) return;
-            if (s.isAnaglyphTestActive) return;
-
-            if (s.appMode === 'synoptophore') {
-                if (s.synopState === 'align') {
-                    Store.updateState('synopTargetX', s.synopTargetX - 1);
-                    triggerSynopDragEffects();
-                }
-            } else if (s.appMode === 'rds') {
-                if (rdsController) rdsController.submitAnswer('left');
-            } else {
-                if (gaborController) gaborController.submitAnswer('left');
-            }
-        },
-        onActionRight: () => {
-            const s = Store.state;
-            if (s.isPaused || s.isSessionCompleted) return;
-            if (s.isAnaglyphTestActive) return;
-
-            if (s.appMode === 'synoptophore') {
-                if (s.synopState === 'align') {
-                    Store.updateState('synopTargetX', s.synopTargetX + 1);
-                    triggerSynopDragEffects();
-                }
-            } else if (s.appMode === 'rds') {
-                if (rdsController) rdsController.submitAnswer('right');
-            } else {
-                if (gaborController) gaborController.submitAnswer('right');
-            }
-        },
-        onActionReset: () => {
-            const s = Store.state;
-            if (s.isPaused || s.isSessionCompleted) return;
-            if (s.appMode === 'synoptophore' && s.synopState === 'align') {
-                Store.updateState('synopTargetX', 0);
-                Store.updateState('synopTargetY', 0);
-                playError(s.isMuted);
-                triggerSynopDragEffects();
-            }
-        },
-        onActionPrimary: () => {
-            if (Store.state.isPaused) {
-                if (pauseController) pauseController.togglePause();
-                return;
-            }
-            runFlash();
-        },
-        onActionMuteToggle: () => {
-            Store.updateState('isMuted', !Store.state.isMuted);
-            Store.saveSettings();
-            updateMuteBtnUI();
-        },
-        /** 
-         * @description Primary interaction trigger for the visual arena.
-         * @clinical Implements the "Canvas-as-Trigger" metaphor. 
-         */
-        onActionCanvasClick: () => {
-            const s = Store.state;
-            if (s.isPaused) {
-                if (pauseController) pauseController.togglePause();
-                return;
-            }
-            if (btnStart.disabled && !s.isSessionCompleted) return;
-
-            const curtain = document.getElementById('calibration-curtain');
-            const isInitialStart = curtain && curtain.classList.contains('active');
-
-            // Route all initial starts cleanly through runFlash
-            if (isInitialStart) {
-                runFlash();
-                return;
-            }
-
-            if (s.appMode === 'synoptophore') {
-                // Trigger vergence slip/reset if patient taps the canvas during active vergence pulling
-                if (s.synopState === 'pulling' && synoptophoreController) {
-                    synoptophoreController.breakActiveFusion();
-                    return;
-                }
-                Store.startTimerIfNeeded();
-                updateScoreboard(Store.state, activeTranslations);
-                return;
-            }
-
-            if (s.appMode === 'gabor') {
-                runFlash();
-            } else if (s.appMode === 'rds') {
-                if (rdsController && rdsController.currentState === 'IDLE') {
-                    rdsController.triggerTrial();
-                }
-            }
-        },
-        /** @description Handles tactile engagement start for vergence and swipes. */
-        onDragStart: (event?: Event) => {
-            const s = Store.state;
-            if (s.isPaused) return;
-
-            // Filter out simulated ghost mouse events immediately after actual touch gestures
-            if (event) {
-                if (event.type === 'touchstart') {
-                    lastTouchTime = Date.now();
-                } else if (event.type === 'mousedown') {
-                    if (Date.now() - lastTouchTime < 500) {
-                        return; // Ignore duplicated browser mouse emulation
-                    }
-                }
-            }
-
-            // Ignore any interaction started outside the gray foveal arena
-            if (s.appMode === 'synoptophore' && event) {
-                const target = event.target as HTMLElement;
-                if (!target.closest('#container')) return;
-            }
-
-            if (s.isCurtainActive) {
-                return;
-            }
-
-            Store.startTimerIfNeeded();
-
-            // Set active tactile feedback class to preserve neon glow during active drags strictly in Synoptophore mode
-            if (container && s.appMode === 'synoptophore') container.classList.add('dragging');
-
-            dragStartX = Store.state.synopTargetX;
-            dragStartY = Store.state.synopTargetY;
-            dragStartStrongFactor = Store.state.appMode === 'synoptophore'
-                ? Store.state.synopStrongEyeContrastFactor
-                : Store.state.strongEyeContrastFactor;
-
-            clearEdgeTimers();
-
-            if (s.appMode === 'synoptophore' && s.synopState === 'align' && event) {
-                let clientX = 0;
-                let clientY = 0;
-                if (event instanceof MouseEvent) {
-                    clientX = event.clientX;
-                    clientY = event.clientY;
-                } else if (typeof TouchEvent !== 'undefined' && event instanceof TouchEvent) {
-                    if (event.touches && event.touches.length > 0) {
-                        clientX = event.touches[0].clientX;
-                        clientY = event.touches[0].clientY;
-                    }
-                }
-
-                if (clientX > 0 && clientY > 0) {
-                    const rect = container.getBoundingClientRect();
-                    const nx = (clientX - rect.left) / rect.width;
-                    const ny = (clientY - rect.top) / rect.height;
-                    const edgeZone = 0.25;
-
-                    const isEdgeTouch = (nx >= 0 && nx <= 1 && ny >= 0 && ny <= 1) && 
-                                        (nx < edgeZone || nx > 1 - edgeZone || ny < edgeZone || ny > 1 - edgeZone);
-
-                    if (isEdgeTouch) {
-                        let dx = 0;
-                        let dy = 0;
-                        if (nx < edgeZone) dx = -1;
-                        else if (nx > 1 - edgeZone) dx = 1;
-
-                        if (ny < edgeZone) dy = -1;
-                        else if (ny > 1 - edgeZone) dy = 1;
-
-                        isEdgeHoldingActive = true;
-
-                        const performEdgeNudge = () => {
-                            const curState = Store.state;
-                            if (curState.isPaused) return;
-                            if (dx !== 0) Store.updateState('synopTargetX', curState.synopTargetX + dx);
-                            if (dy !== 0) Store.updateState('synopTargetY', curState.synopTargetY + dy);
-                            triggerSynopDragEffects();
-                        };
-                        performEdgeNudge();
-
-                        // Snappy native hold timers matching keyboard delays (250ms delay, 50ms interval)
-                        edgeTimeoutId = window.setTimeout(() => {
-                            edgeIntervalId = window.setInterval(performEdgeNudge, 50);
-                        }, 250);
-                    }
-                }
-            }
-        },
-        onDragUpdate: (deltaX: number, deltaY: number) => {
-            const s = Store.state;
-            if (s.isPaused) return;
-            if (s.isAnaglyphTestActive) {
-                const slider = document.getElementById('range-strong-attenuation') as HTMLInputElement | null;
-                if (slider) {
-                    const delta = -deltaY * 0.4;
-                    const startVal = dragStartStrongFactor * 100;
-                    slider.value = Math.max(10, Math.min(100, Math.round(startVal + delta))).toString();
-                    slider.dispatchEvent(new Event('input', { bubbles: true }));
-                }
-                return;
-            }
-            if (s.appMode === 'synoptophore' && s.synopState === 'align') {
-                if (isEdgeHoldingActive) {
-                    const totalDist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                    if (totalDist > 8) {
-                        // Smoothly transition from hold-to-repeat step mode into standard drag mode
-                        clearEdgeTimers();
-                        isEdgeHoldingActive = false;
-                    } else {
-                        return; // Suppress micro-movement coordinate updates while holding edge still
-                    }
-                }
-                Store.updateState('synopTargetX', dragStartX + deltaX);
-                Store.updateState('synopTargetY', dragStartY + deltaY);
-                triggerSynopDragEffects();
-            }
-        },
-        onDragEnd: (deltaTime: number, deltaXTotal: number, deltaYTotal: number) => {
-            const s = Store.state;
-
-            // Remove active tactile feedback class on drag completion
-            if (container) container.classList.remove('dragging');
-
-            clearEdgeTimers();
-            isEdgeHoldingActive = false;
-
-            if (s.appMode === 'synoptophore') {
-                return;
-            }
-
-            const minSwipeDistance = 45;
-            const maxVerticalDeviation = 45;
-            const maxSwipeTime = 300;
-
-            if (deltaTime <= maxSwipeTime && Math.abs(deltaXTotal) >= minSwipeDistance && Math.abs(deltaYTotal) <= maxVerticalDeviation) {
-                const direction = deltaXTotal < 0 ? 'left' : 'right';
-                if (s.appMode === 'rds') {
-                    if (rdsController) rdsController.submitAnswer(direction);
-                } else {
-                    if (gaborController) gaborController.submitAnswer(direction);
-                }
-            }
-        },
-        onDragMovePreventDefault: () => {
-            return (Store.state.appMode === 'synoptophore');
-        },
-        isDirectionalHoldActive: () => {
-            const s = Store.state;
-            if (s.isAnaglyphTestActive) {
-                return true;
-            }
-            return (s.appMode === 'synoptophore' && s.synopState === 'align');
-        },
-        onDirectionalShift: (dx: number, dy: number) => {
-            const s = Store.state;
-            if (s.isAnaglyphTestActive) {
-                if (dy !== 0) {
-                    const slider = document.getElementById('range-strong-attenuation') as HTMLInputElement | null;
-                    if (slider) {
-                        const step = parseInt(slider.step, 10) || 5;
-                        const current = parseInt(slider.value, 10) || 30;
-                        const dir = -dy;
-                        slider.value = Math.max(10, Math.min(100, current + dir * step)).toString();
-                        slider.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
-                }
-                return;
-            }
-            if (s.appMode === 'synoptophore' && s.synopState === 'align') {
-                Store.updateState('synopTargetX', s.synopTargetX + dx);
-                Store.updateState('synopTargetY', s.synopTargetY + dy);
-                triggerSynopDragEffects();
-            }
-        },
-        onActionPauseToggle: () => {
-            // Block manual pause toggling via keyboard/shortcuts if any modal is active
-            if (document.querySelector('.modal.modal-open')) return;
-
-            const btnPause = document.getElementById('btn-pause') as HTMLButtonElement | null;
-            if (btnPause && btnPause.disabled) return;
-
-            if (pauseController) pauseController.togglePause();
-        },
-        onEscape: () => {
-            const s = Store.state;
-            const confirmModal = document.getElementById('custom-confirm-modal');
-            const settingsModal = document.getElementById('settings-modal');
-            const infoModal = document.getElementById('info-modal');
-            const statsModal = document.getElementById('stats-modal');
-
-            const isConfirmOpen = confirmModal && confirmModal.classList.contains('modal-open');
-            const isSettingsOpen = settingsModal && settingsModal.classList.contains('modal-open');
-            const isInfoOpen = infoModal && infoModal.classList.contains('modal-open');
-            const isStatsOpen = statsModal && statsModal.classList.contains('modal-open');
-
-            if (isConfirmOpen || isSettingsOpen || isInfoOpen || isStatsOpen || s.isAnaglyphTestActive) {
-                if (s.isAnaglyphTestActive) {
-                    const bTest = document.getElementById('btn-fusion-test');
-                    if (bTest) bTest.click();
-                    return;
-                }
-                if (isConfirmOpen) return;
-                if (customAlertModal && customAlertModal.classList.contains('modal-open')) {
-                    closeCustomAlert();
-                    return;
-                }
-                if (isSettingsOpen) {
-                    saveSettingsFromUI();
-                    closeModal(settingsModal);
-                }
-                if (isInfoOpen) {
-                    closeModal(infoModal);
-                    restoreSystemPause();
-                }
-                if (isStatsOpen) {
-                    closeModal(statsModal);
-                    restoreSystemPause();
-                }
-                return;
-            }
-
-            if (Store.state.isPaused && pauseController) {
-                pauseController.togglePause();
-                return;
-            }
-        }
-    };
-
-    bindInputControls(handlers);
-
     const btnPause = document.getElementById('btn-pause');
     if (btnPause) {
         btnPause.addEventListener('click', () => {
@@ -1097,7 +836,7 @@ window.addEventListener('load', async () => {
                             drawFusionLockFrame(overlayCanvas, overlayCtx, scale);
                         }
                     } else {
-                        drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
+                        drawIdleStateGabor();
                     }
                 }
             }
@@ -1128,7 +867,6 @@ window.addEventListener('load', async () => {
             const scrollBody = settingsModal ? settingsModal.querySelector('.modal-scroll-body') : null;
 
             if (modalContent) modalContent.classList.add('modal-transitioning');
-            Store.updateState('isCurtainActive', true);
 
             if (!s.isAnaglyphTestActive && settingsModal) {
                 settingsModal.classList.add('modal-clear-backdrop');
@@ -1141,33 +879,36 @@ window.addEventListener('load', async () => {
                 if (!gaborController) return;
                 Store.updateState('isAnaglyphTestActive', !s.isAnaglyphTestActive);
 
-                    if (s.isAnaglyphTestActive) {
-                        btnFusionTest.classList.add('active');
-                        container.classList.add('calibration-active');
+                if (s.isAnaglyphTestActive) {
+                    btnFusionTest.classList.add('active');
+                    container.classList.add('calibration-active');
 
-                        if (scrollBody && settingsModal) {
-                            // Safe persistent state anchoring for modal scrolling
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            (settingsModal as any)._savedScrollTop = scrollBody.scrollTop;
-                        }
+                    if (scrollBody && settingsModal) {
+                        // Safe persistent state anchoring for modal scrolling
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        (settingsModal as any)._savedScrollTop = scrollBody.scrollTop;
+                    }
 
-                        if (settingsModal) {
-                            settingsModal.classList.add('calibration-mode');
-                            if (scrollBody) scrollBody.scrollTop = 0;
-                        }
+                    if (settingsModal) {
+                        settingsModal.classList.add('calibration-mode');
+                        if (scrollBody) scrollBody.scrollTop = 0;
+                    }
 
-                        resizeCanvasesToDPR();
+                    resizeCanvasesToDPR();
 
-                        if (synoptophoreController) synoptophoreController.stopFlickerLoop();
+                    if (synoptophoreController) synoptophoreController.stopFlickerLoop();
 
-                        drawIdleState(canvas, null, overlayCanvas, overlayCtx, true);
-                        drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
-                        canvas.style.display = 'block';
-                        overlayCanvas.style.display = 'block';
-                        cross.style.display = 'block'; 
-                                
-                        if (modalContent) modalContent.classList.remove('modal-transitioning');
-                        Store.updateState('isCurtainActive', false);
+                    drawIdleState(canvas, null, overlayCanvas, overlayCtx, true);
+                    drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
+                    canvas.style.display = 'block';
+                    overlayCanvas.style.display = 'block';
+                    cross.style.display = 'block'; 
+                            
+                    if (modalContent) modalContent.classList.remove('modal-transitioning');
+                    
+                    // Force DOM update to instantly remove the curtain and reveal letters
+                    Store.updateState('isCurtainActive', false);
+                    syncVisualState();
                 } else {
                     btnFusionTest.classList.remove('active');
                     container.classList.remove('calibration-active');
@@ -1193,7 +934,13 @@ window.addEventListener('load', async () => {
                     if (modalContent) modalContent.classList.remove('modal-transitioning');
 
                     setTimeout(() => {
-                        Store.updateState('isCurtainActive', false);
+                        const isInitialState = (s.appMode === 'gabor' && s.total === 0) ||
+                                               (s.appMode === 'rds' && s.rdsTotal === 0) ||
+                                               (s.appMode === 'synoptophore' && s.synopState === 'idle');
+                        
+                        // Restore curtain if game hasn't started yet, and force DOM update
+                        Store.updateState('isCurtainActive', isInitialState || s.isSessionCompleted);
+                        syncVisualState();
                     }, 150);
                 }
             }, 250);
