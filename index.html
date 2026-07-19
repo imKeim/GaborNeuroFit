@@ -25,8 +25,8 @@
     <meta name="apple-mobile-web-app-title" content="GaborNeuroFit">
     <link class="apple-touch-icon" href="icon-192-maskable.png">
     <meta name="theme-color" content="#131a26">
-  <script type="module" crossorigin src="./assets/index-FmKSIpLZ.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-DdRVWgDh.css">
+  <script type="module" crossorigin src="./assets/index-Dba9BSYq.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-CYrVXWtY.css">
 <link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:inline-sw">if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('./sw.js', { scope: './' })})}</script></head>
 <body>
     <!--
@@ -54,11 +54,11 @@
             <h1 id="app-title" aria-label="Gabor Neuro Fit">🧿 GaborNeuroFit</h1>
 
             <nav id="top-controls" aria-label="Application Tools">
-                <button id="btn-mute" class="control-btn" aria-label="Toggle Sound">🔊</button>
-                <button id="btn-pause" class="control-btn" aria-label="Pause Session">⏸️</button>
-                <button id="btn-info" class="control-btn" aria-label="Clinical Handbook">ℹ️</button>
-                <button id="btn-stats" class="control-btn" aria-label="Patient Dashboard">📊</button>
-                <button id="btn-settings" class="control-btn" aria-label="Therapy Settings">🛠️</button>
+                <button id="btn-mute" class="control-btn" data-hint="hintBtnMute" aria-label="Toggle Sound">🔊</button>
+                <button id="btn-pause" class="control-btn" data-hint="hintBtnPause" aria-label="Pause Session">⏸️</button>
+                <button id="btn-info" class="control-btn" data-hint="hintBtnInfo" aria-label="Clinical Handbook">ℹ️</button>
+                <button id="btn-stats" class="control-btn" data-hint="hintBtnStats" aria-label="Patient Dashboard">📊</button>
+                <button id="btn-settings" class="control-btn" data-hint="hintBtnSettings" aria-label="Therapy Settings">🛠️</button>
             </nav>
         </header>
 
@@ -137,8 +137,11 @@
             <section id="controls-layout" aria-label="Therapy Controls">
                 <!-- Logic: Active Template & Temporal Constraints -->
                 <div id="mode-status-bar" aria-hidden="true">
-                    <span><span data-i18n="lblActiveMode">Mode</span>: <strong id="val-active-mode" style="color: #007aff;">Classic</strong></span>
-                    <span><span data-i18n="lblActiveSpeed">Speed</span>: <strong id="val-active-speed">Adaptive</strong></span>
+                    <div class="status-content">
+                        <span><span data-i18n="lblActiveMode">Mode</span>: <strong id="val-active-mode" style="color: #007aff;">Classic</strong></span>
+                        <span><span data-i18n="lblActiveSpeed">Speed</span>: <strong id="val-active-speed">Adaptive</strong></span>
+                    </div>
+                    <div id="status-hint"></div>
                 </div>
 
                 <!-- Logic: Primary Trigger (Operated strictly by State Machines via Typescript Injection) -->
