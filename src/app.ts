@@ -31,7 +31,7 @@ import { playCue, playError, playGoldAward, playReset } from './engine/audio';
 
 // User Interface Layer (Presentation & Physical Inputs)
 import { updateScoreboard, drawIdleState, updateStatusBar } from './ui/screen';
-import { initModals, showCustomAlert, closeCustomAlert, closeModal } from './ui/modal';
+import { initModals, showCustomAlert, closeModal } from './ui/modal';
 
 // Utility & Environment Layer (Offline Hydration, Pacing & PWA)
 import { resizeCanvasesToDPR } from './utils/bootstrap';
@@ -76,7 +76,6 @@ const flashOverlay = document.getElementById('flash-overlay') as HTMLElement;
 const container = document.getElementById('container') as HTMLElement;
 const btnStart = document.getElementById('btn-start') as HTMLButtonElement;
 const btnFusionTest = document.getElementById('btn-fusion-test') as HTMLButtonElement;
-const customAlertModal = document.getElementById('custom-alert-modal') as HTMLElement;
 
 /**
  * @description Force a real GPU shader pass with 0 contrast to wake up the browser compositor and render foveal frames instantly.
