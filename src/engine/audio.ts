@@ -262,6 +262,52 @@ export function playSuccess(isMuted: boolean, panValue: number = 0.0): void {
 }
 
 /**
+ * @description Synthesizes a fast, bright, ascending dual-tone major sweep to signal activation and reset.
+ */
+export function playReset(isMuted: boolean): void {
+    if (isMuted) return;
+    try {
+        initAudio();
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime + 0.015;
+
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(523.25, now);
+        osc1.frequency.exponentialRampToValueAtTime(783.99, now + 0.15);
+
+        gain1.gain.setValueAtTime(0, now);
+        gain1.gain.linearRampToValueAtTime(0.15, now + 0.01);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(659.25, now + 0.04);
+        osc2.frequency.exponentialRampToValueAtTime(1046.50, now + 0.19);
+
+        gain2.gain.setValueAtTime(0, now + 0.04);
+        gain2.gain.linearRampToValueAtTime(0.10, now + 0.05);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.29);
+
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+
+        osc1.start(now);
+        osc1.stop(now + 0.25);
+
+        osc2.start(now + 0.04);
+        osc2.stop(now + 0.29);
+    } catch (e) {
+        console.warn("Acoustic reset feedback generation bypassed:", e);
+    }
+}
+
+/**
  * @description Synthesizes an elegant cascading silver chime (G-Major 7th arpeggio).
  * @param {boolean} isMuted - Global sound suppression flag.
  */

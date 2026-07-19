@@ -44,6 +44,9 @@ export class PauseController {
      */
     togglePause(): void {
         const s = Store.state;
+        if (s.isSessionCompleted) {
+            return;
+        }
 
         // FSM Transition Guard: Prevent pausing during time-critical visual exposures
         if (!s.isPaused) {

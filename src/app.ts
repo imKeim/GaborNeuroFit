@@ -25,7 +25,7 @@ import { renderGabor, drawFusionLockFrame } from './engine/gabor-render';
 import { drawRandomDotStereogram } from './engine/rds-render';
 import { drawSynoptophoreTargets } from './engine/synop-render';
 import { drawFusionTestPattern } from './engine/calibration-render';
-import { playCue, playError, playGoldAward } from './engine/audio';
+import { playCue, playError, playGoldAward, playReset } from './engine/audio';
 
 // User Interface Layer (Presentation & Physical Inputs)
 import { updateScoreboard, drawIdleState, updateStatusBar } from './ui/screen';
@@ -38,7 +38,7 @@ import { PomodoroTimer } from './utils/timer';
 import { loadLanguage } from './utils/i18n';
 
 // Import strict types
-import type { Language, AppMode, GaborPreset } from './types/clinical';
+import type { Language, AppMode } from './types/clinical';
 import type { InputHandlers } from './ui/controls';
 
 // Global cache for the active localization dictionary
@@ -57,7 +57,6 @@ let pauseController: PauseController | null = null;
  * Captured upon opening settings to determine if a hard session reset is mandatory.
  */
 let snapAppMode: AppMode | null = null;
-let snapPresetMode: GaborPreset | null = null;
 let snapLevel: number | null = null;
 let snapTimerLimit: number | null = null;
 let snapRdsStartDisparity: number | null = null;
@@ -233,11 +232,29 @@ function syncVisualState(): void {
     const btnSettingsNode = document.getElementById('btn-settings') as HTMLButtonElement | null;
     const btnStatsNode = document.getElementById('btn-stats') as HTMLButtonElement | null;
     const btnInfoNode = document.getElementById('btn-info') as HTMLButtonElement | null;
+    const btnMuteNode = document.getElementById('btn-mute') as HTMLButtonElement | null;
+    const btnPauseNode = document.getElementById('btn-pause') as HTMLButtonElement | null;
+    const topBarNode = document.getElementById('top-bar');
 
     const disableModals = !canPause();
-    if (btnSettingsNode) btnSettingsNode.disabled = disableModals || s.isSessionCompleted;
-    if (btnStatsNode) btnStatsNode.disabled = disableModals;
-    if (btnInfoNode) btnInfoNode.disabled = disableModals;
+    const isCompleted = s.isSessionCompleted;
+
+    if (topBarNode) {
+        topBarNode.classList.toggle('locked-state', isCompleted);
+    }
+
+    if (btnSettingsNode) btnSettingsNode.disabled = disableModals || isCompleted;
+    if (btnStatsNode) btnStatsNode.disabled = disableModals || isCompleted;
+    if (btnInfoNode) btnInfoNode.disabled = disableModals || isCompleted;
+    if (btnMuteNode) btnMuteNode.disabled = isCompleted;
+    if (btnPauseNode) btnPauseNode.disabled = isCompleted || !canPause();
+
+    const isInitialStart = (s.appMode === 'gabor' && s.total === 0) ||
+                           (s.appMode === 'rds' && s.rdsTotal === 0) ||
+                           (s.appMode === 'synoptophore' && s.synopState === 'idle');
+
+    btnStart.classList.toggle('victory-pulse', isCompleted);
+    btnStart.classList.toggle('start-pulse', isInitialStart && !isCompleted && !s.isPaused);
 
     // Reparse Twemoji on the primary button whenever its state or text changes
     // @ts-ignore
@@ -398,6 +415,7 @@ function runFlash(): void {
     const s = Store.state;
 
     if (s.isSessionCompleted) {
+        playReset(s.isMuted);
         Store.resetSessionProgress();
         Store.updateState('isCurtainActive', false);
         updateScoreboard(s, activeTranslations);
@@ -651,7 +669,6 @@ window.addEventListener('load', async () => {
 
             // Take snapshot of clinical parameters to detect destructive changes
             snapAppMode = Store.state.appMode;
-            snapPresetMode = Store.state.presetMode;
             snapLevel = Store.state.currentLevel;
             snapTimerLimit = Store.state.timerLimitMinutes;
             snapRdsStartDisparity = Store.state.rdsStartDisparity;
@@ -955,6 +972,9 @@ window.addEventListener('load', async () => {
         onActionPauseToggle: () => {
             // Block manual pause toggling via keyboard/shortcuts if any modal is active
             if (document.querySelector('.modal.modal-open')) return;
+
+            const btnPause = document.getElementById('btn-pause') as HTMLButtonElement | null;
+            if (btnPause && btnPause.disabled) return;
 
             if (pauseController) pauseController.togglePause();
         },
