@@ -25,8 +25,8 @@
     <meta name="apple-mobile-web-app-title" content="GaborNeuroFit">
     <link class="apple-touch-icon" href="icon-192-maskable.png">
     <meta name="theme-color" content="#131a26">
-  <script type="module" crossorigin src="./assets/index-B3B4OOxl.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-CYrVXWtY.css">
+  <script type="module" crossorigin src="./assets/index-LpmSdE1w.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-1Wlx4yw9.css">
 <link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:inline-sw">if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('./sw.js', { scope: './' })})}</script></head>
 <body>
     <!--
@@ -112,7 +112,7 @@
                 </div>
 
                 <!-- View: Synoptophore Badges -->
-                <div id="synop-indicators" style="display: none; justify-content: center; gap: 6px;">
+                <div id="synop-indicators" class="indicators-panel">
                     <span id="badge-prism-x" class="badge" style="color: #3b90ff; border-color: rgba(59, 144, 255, 0.3); background: rgba(59, 144, 255, 0.12);">X: 0px (0.00Δ)</span>
                     <span id="badge-prism-y" class="badge" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.12);">Y: 0px (0.00Δ)</span>
                     <span id="badge-synop-score" class="badge" style="color: #eab308; border-color: rgba(234, 179, 8, 0.3); background: rgba(234, 179, 8, 0.12); font-weight: bold;">🏆 <strong id="val-synop-score">0</strong></span>
@@ -120,7 +120,7 @@
                 </div>
 
                 <!-- View: RDS Badges -->
-                <div id="rds-indicators" style="display: none; justify-content: center; gap: 6px;">
+                <div id="rds-indicators" class="indicators-panel">
                     <span id="badge-rds-level" class="badge" style="color: #22c55e; border-color: rgba(34, 197, 94, 0.3); background: rgba(34, 197, 94, 0.12);">Stage: 1/5</span>
                     <span id="badge-rds-disparity" class="badge" style="color: #3b90ff; border-color: rgba(59, 144, 255, 0.3); background: rgba(59, 144, 255, 0.12);">Depth: 4px</span>
                     <span id="badge-rds-streak" class="badge" style="color: #eab308; border-color: rgba(234, 179, 8, 0.3); background: rgba(234, 179, 8, 0.12); font-weight: bold;">🔥 <strong id="val-rds-streak">0</strong></span>
@@ -128,8 +128,8 @@
                 </div>
 
                 <!-- View: Dynamic Ocular Vergence Progress Bar -->
-                <div id="synop-progress-container" style="display: none; width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 4px; margin-top: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.02);" aria-hidden="true">
-                    <div id="synop-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #007aff, #22c55e); transition: width 0.25s cubic-bezier(0.25, 1, 0.5, 1);"></div>
+                <div id="synop-progress-container" class="progress-container" aria-hidden="true">
+                    <div id="synop-progress-bar" class="progress-bar"></div>
                 </div>
             </section>
 
@@ -182,7 +182,7 @@
                 <h2 id="settingsTitle" data-i18n="settingsTitle">Configuration Panel</h2>
 
                 <!-- Logic: Symmetrical Settings Mode Switcher -->
-                <nav id="settings-mode-bar" aria-label="Settings Categories" style="display: flex; background: #131a26; padding: 4px; border-radius: 10px; border: 1px solid #2b354a; margin-bottom: 14px; margin-left: auto; margin-right: auto; width: 100%;">
+                <nav id="settings-mode-bar" class="modal-tab-bar" aria-label="Settings Categories">
                     <button type="button" id="settings-tab-gabor" class="tab-btn active">
                         <span class="tab-btn-icon">🧿</span>
                         <span class="tab-btn-text" data-i18n="tabGabor"></span>
@@ -846,25 +846,25 @@
                     <!-- Profile Selector Row -->
                     <div class="settings-row" style="margin-top: 5px;">
                         <label data-i18n="lblActiveProfile" for="select-active-profile"></label>
-                        <select id="select-active-profile" style="max-width: 60%; min-width: 140px;"></select>
+                        <select id="select-active-profile" class="profile-select"></select>
                     </div>
 
                     <!-- New Profile Input & Add Form (Systemic HTML5 keypress submission) -->
-                    <form id="form-add-profile" style="display: flex; flex-direction: column; width: 100%;">
+                    <form id="form-add-profile" class="profile-form">
                         <!-- New Profile Input Row -->
-                        <div class="settings-row" style="border-bottom: none; margin-bottom: 6px; padding-bottom: 0; width: 100%;">
+                        <div class="settings-row profile-input-row">
                             <input type="text" id="input-new-profile" class="dash-input" data-i18n-placeholder="placeholderNewProfile" aria-label="New Patient Profile Name" placeholder="">
                         </div>
 
                         <!-- Profile Management Buttons Grid -->
-                        <div style="display: flex; gap: 10px; margin-bottom: 10px; width: 100%;">
+                        <div class="profile-btn-group">
                             <button type="submit" id="btn-add-profile" class="dash-btn btn-ghost-blue" data-i18n="btnAddProfile"></button>
                             <button type="button" id="btn-delete-profile" class="dash-btn btn-ghost-red" data-i18n="btnDeleteProfile"></button>
                         </div>
                     </form>
 
                     <!-- Global Database Backup/Restore & Wipe Grid (Profile Level Actions) -->
-                    <div style="display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;">
+                    <div class="db-actions-group">
                         <button type="button" id="btn-export-csv" class="dash-btn btn-ghost-green" data-i18n="btnExportCSV"></button>
                         <button type="button" id="btn-import-csv" class="dash-btn btn-ghost-blue" data-i18n="btnImportCSV"></button>
                         <input type="file" id="input-import-csv" accept=".csv" aria-label="Import CSV" style="display: none;">
@@ -872,10 +872,10 @@
                     </div>
 
                     <!-- Symmetrical Divider separating Global Profile Actions from Analytics -->
-                    <hr style="border: none; border-top: 1px dashed rgba(255, 255, 255, 0.08); margin: 18px 0;" aria-hidden="true">
+                    <hr class="dashed-divider" aria-hidden="true">
 
                     <!-- Symmetrical Tab Segmented Pill Control (3-Tab config) -->
-                    <nav id="stats-tab-bar" aria-label="Statistics Categories" style="display: flex; background: #131a26; padding: 4px; border-radius: 10px; border: 1px solid #2b354a; margin-bottom: 14px;">
+                    <nav id="stats-tab-bar" class="modal-tab-bar" aria-label="Statistics Categories">
                         <button type="button" id="tab-gabor" class="tab-btn active">
                             <span class="tab-btn-icon">🧿</span>
                             <span class="tab-btn-text" data-i18n="tabGabor"></span>
