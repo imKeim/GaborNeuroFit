@@ -605,8 +605,6 @@ export function updateStatusBar(state: AppState, translations: Record<string, st
         speedStr = interpolate(t.statusBarRdsSpeed || "Dot: {size}px | Noise: {density}%", { size: state.rdsDotSize, density: densityPercent });
     } else if (state.flashDurationMode === '100') {
         speedStr = interpolate(t.statusBarUnitSeconds || "{seconds} ms", { seconds: 100 });
-    } else if (state.flashDurationMode === '180') {
-        speedStr = interpolate(t.statusBarUnitSeconds || "{seconds} ms", { seconds: 180 });
     } else if (state.flashDurationMode === '200') {
         speedStr = interpolate(t.statusBarUnitSeconds || "{seconds} ms", { seconds: 200 });
     } else if (state.flashDurationMode === '350') {

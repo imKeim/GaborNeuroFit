@@ -244,8 +244,7 @@ export class SynoptophoreController {
         Store.updateState('synopState', 'idle');
         this.btnStart.innerText = t.synopStartBtn || "START";
 
-        const curtain = document.getElementById('calibration-curtain');
-        if (curtain) curtain.classList.add('active');
+        Store.updateState('isCurtainActive', true);
 
         if (!this.isFlickering) {
             drawSynoptophoreTargets(this.overlayCanvas, this.overlayCtx, Store.state);
@@ -281,8 +280,7 @@ export class SynoptophoreController {
         Store.updateState('synopState', 'idle');
         this.btnStart.innerText = t.synopStartBtn || "START";
 
-        const curtain = document.getElementById('calibration-curtain');
-        if (curtain) curtain.classList.add('active');
+        Store.updateState('isCurtainActive', true);
 
         drawSynoptophoreTargets(this.overlayCanvas, this.overlayCtx, Store.state);
         updateScoreboard(Store.state, t);

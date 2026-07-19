@@ -412,7 +412,6 @@ export class GaborController {
      */
     getFlashDuration(state: AppState): number {
         if (state.flashDurationMode === '100') return 100;
-        if (state.flashDurationMode === '180') return 180;
         if (state.flashDurationMode === '200') return 200;
         if (state.flashDurationMode === '350') return 350;
 

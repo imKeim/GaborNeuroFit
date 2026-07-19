@@ -48,7 +48,7 @@ export type GaborPreset = 'occlusion' | 'blitz' | 'binocular' | 'flicker' | 'per
  * faster than 200ms physically prevent the patient from shifting their gaze,
  * forcing orientation resolution strictly using foveal visual attention.
  */
-export type FlashDurationMode = 'adaptive' | '100' | '180' | '200' | '350';
+export type FlashDurationMode = 'adaptive' | '100' | '200' | '350';
 
 /**
  * @description Spatial configuration of lateral flanking bars surrounding the Gabor target.

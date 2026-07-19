@@ -36,7 +36,7 @@ export const Store = {
         isSessionCompleted: false,
 
         // --- Hardware & 3D ---
-        isAnaglyphEnabled: true,
+        isAnaglyphEnabled: false,
         redEyeSide: 'left' as EyeSide,
         lazyEyeSide: 'left' as EyeSide,
         strongEyeContrastFactor: 0.3,
@@ -56,7 +56,7 @@ export const Store = {
         flashDurationMode: 'adaptive' as FlashDurationMode,
         autoAdvance: true,
         allowStageAdvance: true,
-        isCrowdingEnabled: true,
+        isCrowdingEnabled: false,
         crowdingMode: 'vertical' as CrowdingMode,
         flankerDistanceCoeff: 2.0,
         isOrthogonalFlankersEnabled: false,
@@ -68,7 +68,7 @@ export const Store = {
         allowShapeVariance: false,
         isStaticEnabled: false,
         isFlickerEnabled: false,
-        isFusionLockEnabled: true,
+        isFusionLockEnabled: false,
         isPermanentCrossEnabled: false,
 
         // --- Synoptophore Modality ---
@@ -572,7 +572,7 @@ export const Store = {
         const s = this.state;
         if (s.allowStageAdvance === true && s.flashDurationMode === 'adaptive' && s.isPeripheralEnabled === false && s.isCrowdingEnabled === false && s.isOrthogonalFlankersEnabled === false && s.isDynamicFlankersEnabled === false && s.isStaticEnabled === false && s.isAnaglyphEnabled === false && s.allowDynamicLevelDrift === false && s.allowDensityVariance === false && s.allowShapeVariance === false && s.isFlickerEnabled === false && s.isFusionLockEnabled === false) return 'occlusion';
         if (s.flankerDistanceCoeff === 2.0 && s.allowStageAdvance === true && s.flashDurationMode === 'adaptive' && s.isPeripheralEnabled === false && s.isCrowdingEnabled === true && s.isOrthogonalFlankersEnabled === false && s.isDynamicFlankersEnabled === false && s.isStaticEnabled === false && s.isAnaglyphEnabled === true && s.allowDynamicLevelDrift === false && s.allowDensityVariance === false && s.allowShapeVariance === false && s.isFlickerEnabled === false && s.isFusionLockEnabled === true) return 'binocular';
-        if (s.flankerDistanceCoeff === 2.0 && s.allowStageAdvance === true && s.flashDurationMode === '180' && s.isPeripheralEnabled === true && s.isCrowdingEnabled === false && s.isOrthogonalFlankersEnabled === false && s.isDynamicFlankersEnabled === false && s.isStaticEnabled === false && s.isAnaglyphEnabled === true && s.allowDynamicLevelDrift === false && s.allowDensityVariance === false && s.allowShapeVariance === false && s.isFlickerEnabled === false && s.isFusionLockEnabled === true) return 'peripheral';
+        if (s.flankerDistanceCoeff === 2.0 && s.allowStageAdvance === true && s.flashDurationMode === '200' && s.isPeripheralEnabled === true && s.isCrowdingEnabled === false && s.isOrthogonalFlankersEnabled === false && s.isDynamicFlankersEnabled === false && s.isStaticEnabled === false && s.isAnaglyphEnabled === true && s.allowDynamicLevelDrift === false && s.allowDensityVariance === false && s.allowShapeVariance === false && s.isFlickerEnabled === false && s.isFusionLockEnabled === true) return 'peripheral';
         if (s.allowStageAdvance === true && s.flashDurationMode === '100' && s.isPeripheralEnabled === false && s.isCrowdingEnabled === false && s.isOrthogonalFlankersEnabled === false && s.isDynamicFlankersEnabled === false && s.isStaticEnabled === false && s.isAnaglyphEnabled === false && s.allowDynamicLevelDrift === true && s.allowDensityVariance === true && s.allowShapeVariance === true && s.isFlickerEnabled === false && s.isFusionLockEnabled === false) return 'blitz';
         if (s.flankerDistanceCoeff === 2.0 && s.allowStageAdvance === true && s.flashDurationMode === 'adaptive' && s.isPeripheralEnabled === false && s.isCrowdingEnabled === true && s.isOrthogonalFlankersEnabled === false && s.isDynamicFlankersEnabled === false && s.isStaticEnabled === true && s.isAnaglyphEnabled === true && s.allowDynamicLevelDrift === false && s.allowDensityVariance === false && s.allowShapeVariance === false && s.isFlickerEnabled === true && s.isFusionLockEnabled === true) return 'flicker';
         return 'custom';
@@ -590,7 +590,7 @@ export const Store = {
         } else if (mode === 'binocular') {
             this.state.allowStageAdvance = true; this.state.flashDurationMode = 'adaptive'; this.state.isPeripheralEnabled = false; this.state.isCrowdingEnabled = true; this.state.isOrthogonalFlankersEnabled = false; this.state.isDynamicFlankersEnabled = false; this.state.isStaticEnabled = false; this.state.isAnaglyphEnabled = true; this.state.allowDynamicLevelDrift = false; this.state.allowDensityVariance = false; this.state.allowShapeVariance = false; this.state.isFlickerEnabled = false; this.state.isFusionLockEnabled = true;
         } else if (mode === 'peripheral') {
-            this.state.allowStageAdvance = true; this.state.flashDurationMode = '180'; this.state.isPeripheralEnabled = true; this.state.isCrowdingEnabled = false; this.state.isOrthogonalFlankersEnabled = false; this.state.isDynamicFlankersEnabled = false; this.state.isStaticEnabled = false; this.state.isAnaglyphEnabled = true; this.state.allowDynamicLevelDrift = false; this.state.allowDensityVariance = false; this.state.allowShapeVariance = false; this.state.isFlickerEnabled = false; this.state.isFusionLockEnabled = true;
+            this.state.allowStageAdvance = true; this.state.flashDurationMode = '200'; this.state.isPeripheralEnabled = true; this.state.isCrowdingEnabled = false; this.state.isOrthogonalFlankersEnabled = false; this.state.isDynamicFlankersEnabled = false; this.state.isStaticEnabled = false; this.state.isAnaglyphEnabled = true; this.state.allowDynamicLevelDrift = false; this.state.allowDensityVariance = false; this.state.allowShapeVariance = false; this.state.isFlickerEnabled = false; this.state.isFusionLockEnabled = true;
         } else if (mode === 'blitz') {
             this.state.allowStageAdvance = true; this.state.flashDurationMode = '100'; this.state.isPeripheralEnabled = false; this.state.isCrowdingEnabled = false; this.state.isOrthogonalFlankersEnabled = false; this.state.isDynamicFlankersEnabled = false; this.state.isStaticEnabled = false; this.state.isAnaglyphEnabled = false; this.state.allowDynamicLevelDrift = true; this.state.allowDensityVariance = true; this.state.allowShapeVariance = true; this.state.isFlickerEnabled = false; this.state.isFusionLockEnabled = false;
         } else if (mode === 'flicker') {
