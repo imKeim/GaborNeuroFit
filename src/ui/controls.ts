@@ -306,6 +306,12 @@ export function bindInputControls(handlers: InputHandlers): void {
                 return;
         }
 
+        if (key === 'm' || key === 'ь') {
+            event.preventDefault();
+            if (typeof handlers.onActionMuteToggle === 'function') handlers.onActionMuteToggle();
+                return;
+        }
+
         if (typeof handlers.onDirectionalShift === 'function' &&
             typeof handlers.isDirectionalHoldActive === 'function' &&
             handlers.isDirectionalHoldActive()) {
