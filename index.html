@@ -25,8 +25,8 @@
     <meta name="apple-mobile-web-app-title" content="GaborNeuroFit">
     <link class="apple-touch-icon" href="icon-192-maskable.png">
     <meta name="theme-color" content="#131a26">
-  <script type="module" crossorigin src="./assets/index-DaRC36t8.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-Cgx1zDTK.css">
+  <script type="module" crossorigin src="./assets/index-BzOcs5gc.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-VS4CjOQ_.css">
 <link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:inline-sw">if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('./sw.js', { scope: './' })})}</script></head>
 <body>
     <!--
@@ -325,23 +325,32 @@
                             <span class="settings-help" data-i18n-html="helpFlashDuration"></span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingStageAdvance" for="chk-stage-advance"></label>
-                                <input type="checkbox" id="chk-stage-advance">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingStageAdvance"></span>
+                                <div id="select-stage-advance" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpStageAdvance"></span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingStatic" for="chk-static"></label>
-                                <input type="checkbox" id="chk-static">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingStatic"></span>
+                                <div id="select-static" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpStatic"></span>
                         </div>
-                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingFlicker" for="chk-flicker"></label>
-                                <input type="checkbox" id="chk-flicker">
+                        <div class="settings-row" id="row-flicker" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingFlicker"></span>
+                                <div id="select-flicker" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpFlicker"></span>
                         </div>
@@ -354,51 +363,72 @@
                     </div>
                     <div class="accordion-content" id="accordion-content-3" data-visible-in="gabor" role="region" aria-labelledby="accordion-header-3">
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingPermanentCross" for="chk-permanent-cross"></label>
-                                <input type="checkbox" id="chk-permanent-cross">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingPermanentCross"></span>
+                                <div id="select-permanent-cross" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpPermanentCross"></span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingLowContrast" for="chk-low-contrast"></label>
-                                <input type="checkbox" id="chk-low-contrast">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingLowContrast"></span>
+                                <div id="select-low-contrast" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpLowContrast"></span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingDynamicLevelDrift" for="chk-dynamic-level-drift"></label>
-                                <input type="checkbox" id="chk-dynamic-level-drift">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingDynamicLevelDrift"></span>
+                                <div id="select-dynamic-level-drift" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpDynamicLevelDrift"></span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingDensityVariance" for="chk-density-variance"></label>
-                                <input type="checkbox" id="chk-density-variance">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingDensityVariance"></span>
+                                <div id="select-density-variance" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpDensityVariance"></span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingShapeVariance" for="chk-shape-variance"></label>
-                                <input type="checkbox" id="chk-shape-variance">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingShapeVariance"></span>
+                                <div id="select-shape-variance" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpShapeVariance"></span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingPeripheral" for="chk-peripheral"></label>
-                                <input type="checkbox" id="chk-peripheral">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingPeripheral"></span>
+                                <div id="select-peripheral" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpPeripheral"></span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingCrowding" for="chk-crowding"></label>
-                                <input type="checkbox" id="chk-crowding">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingCrowding"></span>
+                                <div id="select-crowding" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpCrowding"></span>
                         </div>
@@ -424,16 +454,22 @@
                             <span class="settings-help" data-i18n-html="helpFlankerDistance"></span>
                         </div>
                         <div class="settings-row" id="row-orthogonal" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingOrthogonal" for="chk-orthogonal-flankers"></label>
-                                <input type="checkbox" id="chk-orthogonal-flankers">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingOrthogonal"></span>
+                                <div id="select-orthogonal-flankers" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpOrthogonal"></span>
                         </div>
                         <div class="settings-row" id="row-dynamic" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingDynamic" for="chk-dynamic-flankers"></label>
-                                <input type="checkbox" id="chk-dynamic-flankers">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingDynamic"></span>
+                                <div id="select-dynamic-flankers" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpDynamic"></span>
                         </div>
@@ -484,37 +520,52 @@
                     </div>
                     <div class="accordion-content" id="accordion-content-5" data-visible-in="synoptophore" role="region" aria-labelledby="accordion-header-5">
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingSynopLazyGrid" for="chk-synop-lazy-grid"></label>
-                                <input type="checkbox" id="chk-synop-lazy-grid">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingSynopLazyGrid"></span>
+                                <div id="select-synop-lazy-grid" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpSynopLazyGrid"></span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingSynopStrongGrid" for="chk-synop-strong-grid"></label>
-                                <input type="checkbox" id="chk-synop-strong-grid">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingSynopStrongGrid"></span>
+                                <div id="select-synop-strong-grid" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpSynopStrongGrid"></span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingSynopFlicker" for="chk-synop-flicker"></label>
-                                <input type="checkbox" id="chk-synop-flicker">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingSynopFlicker"></span>
+                                <div id="select-synop-flicker" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpSynopFlicker"></span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingSynopLockY" for="chk-synop-lock-y"></label>
-                                <input type="checkbox" id="chk-synop-lock-y">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingSynopLockY"></span>
+                                <div id="select-synop-lock-y" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpSynopLockY"></span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingSynopLockX" for="chk-synop-lock-x"></label>
-                                <input type="checkbox" id="chk-synop-lock-x">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingSynopLockX"></span>
+                                <div id="select-synop-lock-x" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpSynopLockX"></span>
                         </div>
@@ -579,30 +630,42 @@
                     </div>
                     <div class="accordion-content" id="accordion-content-6" data-visible-in="rds" role="region" aria-labelledby="accordion-header-6">
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingRdsPermanentCross" for="chk-rds-permanent-cross"></label>
-                                <input type="checkbox" id="chk-rds-permanent-cross">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingRdsPermanentCross"></span>
+                                <div id="select-rds-permanent-cross" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpRdsPermanentCross"></span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingRdsDynamic" for="chk-rds-dynamic"></label>
-                                <input type="checkbox" id="chk-rds-dynamic">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingRdsDynamic"></span>
+                                <div id="select-rds-dynamic" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpRdsDynamic"></span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingRdsRandomizeVertical" for="chk-rds-randomize-vertical"></label>
-                                <input type="checkbox" id="chk-rds-randomize-vertical">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingRdsRandomizeVertical"></span>
+                                <div id="select-rds-randomize-vertical" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpRdsRandomizeVertical"></span>
                         </div>
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingRdsFloating" for="chk-rds-floating"></label>
-                                <input type="checkbox" id="chk-rds-floating">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingRdsFloating"></span>
+                                <div id="select-rds-floating" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpRdsFloating"></span>
                         </div>
@@ -627,9 +690,12 @@
                     </div>
                     <div class="accordion-content" id="accordion-content-4" role="region" aria-labelledby="accordion-header-4">
                         <div class="settings-row" id="row-anaglyph-toggle" data-visible-in="gabor" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                <label data-i18n="lblSettingAnaglyph" for="chk-anaglyph"></label>
-                                <input type="checkbox" id="chk-anaglyph">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingAnaglyph"></span>
+                                <div id="select-anaglyph" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpAnaglyph" id="help-anaglyph"></span>
                         </div>
@@ -667,9 +733,12 @@
                                 <span class="settings-help" data-i18n-html="helpStrongAttenuation"></span>
                             </div>
                             <div class="settings-row" id="row-fusion-lock" data-visible-in="gabor" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                                    <label data-i18n="lblSettingFusionLock" for="chk-fusion-lock"></label>
-                                    <input type="checkbox" id="chk-fusion-lock">
+                                <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                    <span class="settings-label" data-i18n="lblSettingFusionLock"></span>
+                                    <div id="select-fusion-lock" class="pill-group" style="max-width: 45%;">
+                                        <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                        <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                    </div>
                                 </div>
                                 <span class="settings-help" data-i18n-html="helpFusionLock" id="help-fusion-lock"></span>
                             </div>
@@ -711,10 +780,7 @@
                             <button type="button" id="btn-fusion-test" class="close-btn" data-i18n="btnFusionTestLabel">L/R Alignment Test</button>
                         </div>
                     </div>
-
-                    <p style="font-size: 11px; color: #8e8e93; line-height: 1.3; margin-top: 15px;" data-i18n="descModeExplanation" id="desc-mode-explanation">Preset guidelines: Select an active protocol as a starting template. Modify any checkbox below to seamlessly transition into 'Custom' configuration mode.</p>
-                </div> <!-- End modal-scroll-body -->
-
+                </div>
                 <button type="button" id="btn-close-settings" class="close-btn" aria-label="Save and Close Settings">OK</button>
             </div>
         </div>
