@@ -21,7 +21,7 @@ import { DashboardController } from './controller/dashboard';
 import { PauseController } from './controller/pause';
 
 // Rendering Engine Layer (WebGL, 2D Canvas & Generative Audio)
-import { renderGabor } from './engine/gabor-render';
+import { renderGabor, drawFusionLockFrame } from './engine/gabor-render';
 import { drawRandomDotStereogram } from './engine/rds-render';
 import { drawSynoptophoreTargets } from './engine/synop-render';
 import { drawFusionTestPattern } from './engine/calibration-render';
@@ -571,6 +571,30 @@ window.addEventListener('load', async () => {
         updateStatusBar(Store.state, activeTranslations);
         if (Store.state.isAnaglyphTestActive) {
             drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
+        } else if (Store.state.appMode === 'gabor') {
+            if (gaborController) {
+                const isStimulusVisible = (gaborController.currentState === 'STIMULUS_ACTIVE') ||
+                                          (gaborController.currentState === 'AWAITING_INPUT' && Store.state.isStaticEnabled);
+                if (isStimulusVisible) {
+                    renderGabor(canvas, null, Store.state, gaborController.currentAngleDeg, Store.state.autoContrast, Store.state.autoContrast, gaborController.lastRandomFreq, gaborController.lastRandomSigma, gaborController.lastOffsetX, gaborController.lastOffsetY, 0, gaborController.lastRandomAspectRatio);
+                    overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                    if (Store.state.isFusionLockEnabled) {
+                        const scale = canvas.width / 256.0;
+                        drawFusionLockFrame(overlayCanvas, overlayCtx, scale);
+                    }
+                } else {
+                    drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
+                }
+            }
+        } else if (Store.state.appMode === 'synoptophore') {
+            if (Store.state.synopState !== 'idle' && !Store.state.synopFlickerActive) {
+                drawSynoptophoreTargets(overlayCanvas, overlayCtx, Store.state);
+            }
+        } else if (Store.state.appMode === 'rds') {
+            if (rdsController) {
+                const isIdle = rdsController.currentState === 'IDLE' || rdsController.currentState === 'FEEDBACK';
+                drawRandomDotStereogram(overlayCanvas, overlayCtx, Store.state, false, isIdle);
+            }
         }
         
         // If Pill Tabs change the language, immediately react and reload i18n
@@ -578,6 +602,8 @@ window.addEventListener('load', async () => {
             activeTranslations._currentLangMetadata = Store.state.currentLang;
             setLanguage(Store.state.currentLang);
         }
+
+        syncVisualState();
     });
     
     // Stamp initial language to metadata for comparison tracking
@@ -993,7 +1019,6 @@ window.addEventListener('load', async () => {
 
         const isCriticalChange = (
             snapAppMode !== Store.state.appMode ||
-            snapPresetMode !== Store.state.presetMode ||
             snapLevel !== Store.state.currentLevel ||
             snapRdsStartDisparity !== Store.state.rdsStartDisparity
         );
@@ -1026,21 +1051,28 @@ window.addEventListener('load', async () => {
                 pauseController.togglePause();
             }
 
-            if (!Store.state.isPaused) {
-                if (isSynop) {
-                    if (Store.state.synopState !== 'idle' && !Store.state.synopFlickerActive) {
-                        drawSynoptophoreTargets(overlayCanvas, overlayCtx, Store.state);
-                    }
-                } else if (Store.state.appMode === 'rds') {
-                    if (rdsController) {
-                        const isIdle = rdsController.currentState === 'IDLE' || rdsController.currentState === 'FEEDBACK';
-                        drawRandomDotStereogram(overlayCanvas, overlayCtx, Store.state, false, isIdle);
-                    }
-                } else if (Store.state.appMode === 'gabor') {
-                    if (gaborController && gaborController.currentState === 'IDLE') {
-                        drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
-                    } else if (gaborController && gaborController.currentState === 'AWAITING_INPUT' && Store.state.isStaticEnabled) {
+            if (isSynop) {
+                if (Store.state.synopState !== 'idle' && !Store.state.synopFlickerActive) {
+                    drawSynoptophoreTargets(overlayCanvas, overlayCtx, Store.state);
+                }
+            } else if (Store.state.appMode === 'rds') {
+                if (rdsController) {
+                    const isIdle = rdsController.currentState === 'IDLE' || rdsController.currentState === 'FEEDBACK';
+                    drawRandomDotStereogram(overlayCanvas, overlayCtx, Store.state, false, isIdle);
+                }
+            } else if (Store.state.appMode === 'gabor') {
+                if (gaborController) {
+                    const isStimulusVisible = (gaborController.currentState === 'STIMULUS_ACTIVE') ||
+                                              (gaborController.currentState === 'AWAITING_INPUT' && Store.state.isStaticEnabled);
+                    if (isStimulusVisible) {
                         renderGabor(canvas, null, Store.state, gaborController.currentAngleDeg, Store.state.autoContrast, Store.state.autoContrast, gaborController.lastRandomFreq, gaborController.lastRandomSigma, gaborController.lastOffsetX, gaborController.lastOffsetY, 0, gaborController.lastRandomAspectRatio);
+                        overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                        if (Store.state.isFusionLockEnabled) {
+                            const scale = canvas.width / 256.0;
+                            drawFusionLockFrame(overlayCanvas, overlayCtx, scale);
+                        }
+                    } else {
+                        drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
                     }
                 }
             }
