@@ -33,7 +33,7 @@ export class InteractionController {
 
     constructor(
         private container: HTMLElement,
-        private actions: InteractionActions
+        public actions: InteractionActions
     ) {}
 
     /**

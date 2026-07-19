@@ -49,6 +49,14 @@ export function bindInputControls(handlers: InputHandlers): void {
     const container = document.getElementById('container') as HTMLElement | null;
     const workspace = document.getElementById('workspace') as HTMLElement | null;
 
+    // Forcibly block browser-native context menus on active clinical elements during mobile long-presses
+    window.addEventListener('contextmenu', (event: MouseEvent) => {
+        const target = event.target as HTMLElement;
+        if (target.closest('#container, .control-btn, .action-btn, #btn-start')) {
+            event.preventDefault();
+        }
+    });
+
     let swipeStartX = 0;
     let swipeStartY = 0;
     let swipeStartTime = 0;

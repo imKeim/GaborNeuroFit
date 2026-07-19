@@ -27,7 +27,7 @@ import { renderGabor, drawFusionLockFrame } from './engine/gabor-render';
 import { drawRandomDotStereogram } from './engine/rds-render';
 import { drawSynoptophoreTargets } from './engine/synop-render';
 import { drawFusionTestPattern } from './engine/calibration-render';
-import { playCue, playError, playGoldAward, playReset } from './engine/audio';
+import { playCue, playError, playGoldAward, playReset, playUiClick } from './engine/audio';
 
 // User Interface Layer (Presentation & Physical Inputs)
 import { updateScoreboard, drawIdleState, updateStatusBar } from './ui/screen';
@@ -179,6 +179,26 @@ function transitionToMode(newMode: AppMode): void {
 
     setLanguage(s.currentLang);
     syncVisualState();
+}
+
+/**
+ * @description Master action router for Gabor, Synoptophore and RDS start/lock states.
+ * Guarantees unified execution paths and visual feedback for both keystrokes and mouse clicks.
+ */
+function handlePrimaryAction(): void {
+    const s = Store.state;
+    if (s.isPaused) {
+        if (pauseController) pauseController.togglePause();
+        if (hintController) hintController.triggerTemporaryHint('hintBtnResume');
+        return;
+    }
+    
+    runFlash();
+
+    if (hintController && !s.isSessionCompleted) {
+        // Unified pedagogical hint with hotkey info for ALL 3 types of starts
+        hintController.triggerTemporaryHint('hintBtnStart');
+    }
 }
 
 /**
@@ -468,15 +488,10 @@ window.addEventListener('load', async () => {
             }
         },
         onPrimary: () => {
-            if (Store.state.isPaused) {
-                if (pauseController) pauseController.togglePause();
-                return;
-            }
-            runFlash();
-
-            if (hintController && !Store.state.isSessionCompleted) hintController.triggerTemporaryHint('hintBtnStart');
+            handlePrimaryAction();
         },
         onMuteToggle: () => {
+            playUiClick(); // Always audible feedback for the mute action itself
             Store.updateState('isMuted', !Store.state.isMuted);
             Store.saveSettings();
             updateMuteBtnUI();
@@ -487,29 +502,16 @@ window.addEventListener('load', async () => {
             if (document.querySelector('.modal.modal-open')) return;
             const btnPause = document.getElementById('btn-pause') as HTMLButtonElement | null;
             if (btnPause && btnPause.disabled) return;
+            
+            // Audio feedback before state change
+            if (!Store.state.isMuted) playUiClick();
+            
             if (pauseController) pauseController.togglePause();
 
             if (hintController) hintController.triggerTemporaryHint(Store.state.isPaused ? 'hintBtnPause' : 'hintBtnResume');
         },
         onCanvasClick: () => {
-            const s = Store.state;
-            if (s.isPaused) {
-                if (pauseController) pauseController.togglePause();
-                return;
-            }
-            if (btnStart.disabled && !s.isSessionCompleted) return;
-            const curtain = document.getElementById('calibration-curtain');
-            if (curtain && curtain.classList.contains('active')) {
-                runFlash();
-                return;
-            }
-            if (s.appMode === 'synoptophore') {
-                if (s.synopState === 'pulling' && synoptophoreController) synoptophoreController.breakActiveFusion();
-                else { Store.startTimerIfNeeded(); updateScoreboard(Store.state, activeTranslations); }
-                return;
-            }
-            if (s.appMode === 'gabor') runFlash();
-            else if (s.appMode === 'rds' && rdsController && rdsController.currentState === 'IDLE') rdsController.triggerTrial();
+            handlePrimaryAction();
         },
         onEscape: () => {
             const s = Store.state;
@@ -644,10 +646,10 @@ window.addEventListener('load', async () => {
         }
     );
 
-    const btnPause = document.getElementById('btn-pause');
-    if (btnPause) {
-        btnPause.addEventListener('click', () => {
-            if (pauseController) pauseController.togglePause();
+    const bPause = document.getElementById('btn-pause');
+    if (bPause) {
+        bPause.addEventListener('click', () => {
+            if (interactionController) interactionController.actions.onPauseToggle();
         });
     }
 
@@ -823,7 +825,7 @@ window.addEventListener('load', async () => {
     }
 
     if (btnStart) {
-        btnStart.addEventListener('click', runFlash);
+        btnStart.addEventListener('click', handlePrimaryAction);
     }
 
     updateMuteBtnUI();

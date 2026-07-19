@@ -529,7 +529,6 @@ body.modal-is-open #app-wrapper {
     font-size: clamp(10px, 2.5vw, 12px);
     color: #cbd5e1;
     font-weight: 700;
-    text-transform: uppercase; /* Professional instrument-cluster feel */
 }
 
 .status-content {
@@ -709,8 +708,8 @@ body.modal-is-open #app-wrapper {
     /* Dynamic auto-scaling square layout driven by fluid viewport height constraints */
     width: 100%;
     height: 100%;
-    max-width: min(420px, calc(100% - 24px), calc(100dvh - 360px));
-    max-height: min(420px, calc(100% - 24px), calc(100dvh - 360px));
+    max-width: min(420px, 100% - 24px, 100dvh - 420px);
+    max-height: min(420px, 100% - 24px, 100dvh - 420px);
     aspect-ratio: 1 / 1;
 
     display: flex;

@@ -518,3 +518,37 @@ export function playGoldAward(isMuted: boolean): void {
         console.warn("Gold award chime synthesis bypassed:", e);
     }
 }
+
+/**
+ * @description Procedural synthesis of a crisp, short UI feedback "tick".
+ * Used for systemic confirmations like Pause and Mute.
+ */
+export function playUiClick(): void {
+    try {
+        initAudio();
+        // @ts-ignore
+        const ctx = audioCtx;
+        if (!ctx) return;
+        const now = ctx.currentTime + 0.01;
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        // Fast descending frequency for a "percussive" feel
+        osc.frequency.setValueAtTime(1200, now);
+        osc.frequency.exponentialRampToValueAtTime(400, now + 0.04);
+
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.1, now + 0.005);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.04);
+    } catch (e) {
+        // Silent fallback
+    }
+}
