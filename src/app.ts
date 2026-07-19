@@ -38,6 +38,9 @@ import { resizeCanvasesToDPR } from './utils/bootstrap';
 import { PomodoroTimer } from './utils/timer';
 import { loadLanguage } from './utils/i18n';
 
+// Import UI View Controller
+import { ViewController } from './ui/view-controller';
+
 // Import strict types
 import type { Language, AppMode } from './types/clinical';
 
@@ -53,6 +56,7 @@ let dashboardController: DashboardController | null = null;
 let pauseController: PauseController | null = null;
 let hintController: HudHintController | null = null;
 let interactionController: InteractionController | null = null;
+let viewController: ViewController | null = null;
 
 /** 
  * @description "Dirty-checking" snapshots of critical clinical parameters. 
@@ -71,11 +75,11 @@ const overlayCanvas = document.getElementById('overlayCanvas') as HTMLCanvasElem
 // The context is guaranteed to exist if the canvas does in a modern browser context
 const overlayCtx = overlayCanvas.getContext('2d') as CanvasRenderingContext2D;
 
-const cross = document.getElementById('cross') as HTMLElement;
-const flashOverlay = document.getElementById('flash-overlay') as HTMLElement;
-const container = document.getElementById('container') as HTMLElement;
 const btnStart = document.getElementById('btn-start') as HTMLButtonElement;
 const btnFusionTest = document.getElementById('btn-fusion-test') as HTMLButtonElement;
+const container = document.getElementById('container') as HTMLElement;
+const cross = document.getElementById('cross') as HTMLElement;
+const flashOverlay = document.getElementById('flash-overlay') as HTMLElement;
 
 /**
  * @description Force a real GPU shader pass with 0 contrast to wake up the browser compositor and render foveal frames instantly.
@@ -90,165 +94,24 @@ function drawIdleStateGabor(): void {
 }
 
 /**
- * @description Helper to evaluate if the state machine is in a pausable/interactive state.
- */
-function canPause(): boolean {
-    const s = Store.state;
-    if (s.isPaused) return true;
-
-    if (s.appMode === 'gabor' && gaborController) {
-        const gState = gaborController.currentState;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const isAutoPending = (gaborController as any).autoNextTimeoutId !== null;
-        if (gState === 'PRE_CUE' || gState === 'STIMULUS_ACTIVE' || gState === 'FEEDBACK' || isAutoPending) {
-            return false;
-        }
-    }
-    if (s.appMode === 'rds' && rdsController) {
-        const rState = rdsController.currentState;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const isAutoPending = (rdsController as any).autoNextTimeoutId !== null;
-        if (rState === 'PRE_CUE' || rState === 'FEEDBACK' || isAutoPending) {
-            return false;
-        }
-    }
-    if (s.appMode === 'synoptophore' && s.synopState === 'pulling') {
-        return false;
-    }
-    return true;
-}
-
-/**
- * @description Centralized visual synchronizer for fixation cross and mouse pointer state.
- * 
- * @clinical 
- * - Cross Scaling: Stage 1 (36px) down to Stage 5 (12px). Smaller anchors increase 
- *   foveal fixation accuracy requirements during high-frequency Gabor stimulation.
- * - Dynamic Visibility: Restores 100% opacity precisely when the stimulus is hidden 
- *   to assist the brain in re-centering focus before the next trial.
+ * @description Centralized visual synchronizer using ViewController.
  */
 function syncVisualState(): void {
-    const s = Store.state;
-    const t = activeTranslations;
-    const crossNode = document.getElementById('cross');
-    const containerNode = document.getElementById('container');
-    if (!crossNode || !containerNode) return;
+    if (!viewController) return;
+    
+    viewController.sync(
+        Store.state, 
+        activeTranslations, 
+        rdsController?.currentState, 
+        gaborController?.currentState
+    );
 
-    const curtain = document.getElementById('calibration-curtain');
-    if (curtain) {
-        curtain.classList.toggle('active', s.isCurtainActive);
-    }
+    // Dynamic interaction state (inherited by InteractionController logic)
+    const isDisabled = Store.state.appMode === 'synoptophore' 
+        ? (Store.state.synopState !== 'align' && Store.state.synopState !== 'pulling')
+        : btnStart.disabled;
 
-    const activeLevel = s.appMode === 'rds' ? s.rdsLevel : s.currentLevel;
-
-    containerNode.dataset.appMode = s.appMode;
-    containerNode.dataset.paused = String(s.isPaused);
-    containerNode.dataset.curtainActive = String(s.isCurtainActive);
-    containerNode.dataset.level = String(activeLevel);
-    containerNode.dataset.synopState = s.synopState;
-    containerNode.dataset.startDisabled = String(btnStart.disabled);
-    containerNode.dataset.sessionCompleted = String(s.isSessionCompleted);
-
-    // Declarative Main Button Text Logic
-    if (s.isSessionCompleted) {
-        btnStart.innerText = t.btnResetSession || "Reset Session";
-    } else if (s.appMode === 'synoptophore') {
-        if (s.synopState === 'idle') btnStart.innerText = t.synopStartBtn || "Start Alignment";
-        else if (s.synopState === 'align') btnStart.innerText = t.btnSynopLock || "Lock Fusion";
-        else btnStart.innerText = t.btnSynopBreak || "Slipped / Reset";
-    } else if (s.appMode === 'rds') {
-        if (rdsController && rdsController.currentState === 'AWAITING_INPUT') btnStart.innerText = "...";
-        else btnStart.innerText = (s.rdsTotal > 0 && !s.rdsAutoAdvance) ? (t.rdsNextBtn || "Next Stereogram") : (t.rdsStartBtn || "Start Stereogram");
-    } else {
-        if (s.isWaitingForAnswer) btnStart.innerText = t.reflashBtn || "Re-Flash";
-        else btnStart.innerText = (s.total > 0 && !s.autoAdvance) ? (t.nextBtn || "Next Flash") : (t.startBtn || "Start Flash");
-    }
-
-    let crossState = 'hidden';
-
-    // Logic: Fixation cross-scaling and visibility orchestration
-    if (s.appMode === 'synoptophore') {
-        crossState = 'hidden';
-    } else if (s.appMode === 'rds') {
-        if (s.rdsIsPermanentCrossEnabled) {
-            const rdsState = rdsController ? rdsController.currentState : 'IDLE';
-            const isStimulusActive = (rdsState === 'STIMULUS_ACTIVE' || rdsState === 'AWAITING_INPUT') && !s.isPaused;
-            crossState = isStimulusActive ? 'white-halo' : 'hidden';
-        } else {
-            crossState = 'hidden';
-        }
-    } else {
-        const gaborState = gaborController ? gaborController.currentState : 'IDLE';
-        const isCalibration = s.isAnaglyphTestActive;
-        const isStimulusVisible = (gaborState === 'STIMULUS_ACTIVE') || (gaborState === 'AWAITING_INPUT' && s.isStaticEnabled);
-
-        if (isCalibration) {
-            crossState = 'visible';
-        } else if (s.isPaused) {
-            crossState = 'dimmed';
-        } else if (isStimulusVisible) {
-            crossState = s.isPermanentCrossEnabled ? 'dimmed' : 'hidden';
-        } else {
-            crossState = 'visible';
-        }
-    }
-
-    containerNode.dataset.crossState = s.isCurtainActive ? 'hidden' : crossState;
-
-    // Logic: Interactive arena cursor and state synchronization
-    if (s.isPaused) {
-        containerNode.classList.remove('disabled');
-    } else if (s.appMode === 'synoptophore') {
-        // Container remains interactive during both active dragging and click-to-slip vergence phases
-        const isDisabled = (s.synopState !== 'align' && s.synopState !== 'pulling');
-        containerNode.classList.toggle('disabled', isDisabled);
-    } else {
-        containerNode.classList.toggle('disabled', btnStart.disabled);
-    }
-
-    // Logic: Synchronize Synoptophore Reset button state
-    const btnResetNode = document.getElementById('btn-reset') as HTMLButtonElement | null;
-    if (btnResetNode) {
-        btnResetNode.disabled = s.appMode === 'synoptophore' ? (s.synopState !== 'align') : false;
-    }
-
-    // Logic: Synchronize Left and Right buttons disabled states based on active pause
-    const btnLeftNode = document.getElementById('btn-left') as HTMLButtonElement | null;
-    const btnRightNode = document.getElementById('btn-right') as HTMLButtonElement | null;
-    if (btnLeftNode) btnLeftNode.disabled = s.isPaused;
-    if (btnRightNode) btnRightNode.disabled = s.isPaused;
-
-    // Sync modal buttons accessibility based on FSM state
-    const btnSettingsNode = document.getElementById('btn-settings') as HTMLButtonElement | null;
-    const btnStatsNode = document.getElementById('btn-stats') as HTMLButtonElement | null;
-    const btnInfoNode = document.getElementById('btn-info') as HTMLButtonElement | null;
-    const btnMuteNode = document.getElementById('btn-mute') as HTMLButtonElement | null;
-    const btnPauseNode = document.getElementById('btn-pause') as HTMLButtonElement | null;
-    const topBarNode = document.getElementById('top-bar');
-
-    const disableModals = !canPause();
-    const isCompleted = s.isSessionCompleted;
-
-    if (topBarNode) {
-        topBarNode.classList.toggle('locked-state', isCompleted);
-    }
-
-    if (btnSettingsNode) btnSettingsNode.disabled = disableModals || isCompleted;
-    if (btnStatsNode) btnStatsNode.disabled = disableModals || isCompleted;
-    if (btnInfoNode) btnInfoNode.disabled = disableModals || isCompleted;
-    if (btnMuteNode) btnMuteNode.disabled = isCompleted;
-    if (btnPauseNode) btnPauseNode.disabled = isCompleted || !canPause();
-
-    const isInitialStart = (s.appMode === 'gabor' && s.total === 0) ||
-                           (s.appMode === 'rds' && s.rdsTotal === 0) ||
-                           (s.appMode === 'synoptophore' && s.synopState === 'idle');
-
-    btnStart.classList.toggle('victory-pulse', isCompleted);
-    btnStart.classList.toggle('start-pulse', isInitialStart && !isCompleted && !s.isPaused);
-
-    // Reparse Twemoji on the primary button whenever its state or text changes
-    // @ts-ignore
-    if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(btnStart);
+    container.classList.toggle('disabled', !Store.state.isPaused && isDisabled);
 }
 
 /**
@@ -463,6 +326,9 @@ function runFlash(): void {
  * @description Orchestrator bootstrap initialization block
  */
 window.addEventListener('load', async () => {
+    // Instantiate the UI View Controller layer
+    viewController = new ViewController();
+
     // Logic: Canvas backing store scaling
     resizeCanvasesToDPR();
     
