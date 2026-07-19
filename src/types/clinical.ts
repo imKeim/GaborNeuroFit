@@ -216,8 +216,10 @@ export interface AppState {
     isPeripheralEnabled: boolean;
     /** @description Permits Gabor contrast to drop below standard 5% thresholds down to 1% */
     allowLowContrast: boolean;
-    /** @description Randomizes Gabor size and density with each flash to prevent visual cortex adaptation */
-    allowWideVariance: boolean;
+    /** @description Permits dynamic level drift to adjacent stages (±1 level) to bypass sensory adaptation */
+    allowDynamicLevelDrift: boolean;
+    /** @description Randomizes stripe density (spatial frequency) within the active stage to prevent neural adaptation */
+    allowDensityVariance: boolean;
     /** @description Squashes Gabor circular envelope to train elliptical astigmatic configurations */
     allowShapeVariance: boolean;
     /** @description Keeps the Gabor stimulus on screen permanently until an answer is submitted */

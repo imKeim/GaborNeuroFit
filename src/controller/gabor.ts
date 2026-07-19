@@ -216,24 +216,28 @@ export class GaborController {
                 this.currentAngleDeg = Math.floor(Math.random() * 160) - 80;
             } while (Math.abs(this.currentAngleDeg) < 15); // Disallow ambiguous vertical tilt
 
-            const freqRange = levelFreqRanges[s.currentLevel] || levelFreqRanges[1];
-            this.lastRandomFreq = Math.random() * (freqRange.max - freqRange.min) + freqRange.min;
+            let effectiveLevel = s.currentLevel;
+            if (s.allowDynamicLevelDrift) {
+                const jitter = Math.floor(Math.random() * 3) - 1;
+                effectiveLevel = Math.max(1, Math.min(5, s.currentLevel + jitter));
+            }
 
-            const sigmaRange = levelSigmaRanges[s.currentLevel] || levelSigmaRanges[1];
+            const freqRange = levelFreqRanges[effectiveLevel] || levelFreqRanges[1];
+            let minFreq = freqRange.min;
+            let maxFreq = freqRange.max;
+
+            if (s.allowDensityVariance) {
+                const span = freqRange.max - freqRange.min;
+                minFreq = Math.max(0.02, freqRange.min - span * 0.35);
+                maxFreq = Math.min(0.26, freqRange.max + span * 0.35);
+            }
+
+            this.lastRandomFreq = Math.random() * (maxFreq - minFreq) + minFreq;
+
+            const sigmaRange = levelSigmaRanges[effectiveLevel] || levelSigmaRanges[1];
             this.lastRandomSigma = Math.random() * (sigmaRange.max - sigmaRange.min) + sigmaRange.min;
 
             this.lastRandomAspectRatio = 1.0;
-            if (s.allowWideVariance) {
-                const randType = Math.random();
-                if (randType < 0.35) {
-                    this.lastRandomFreq = Math.random() * (0.04 - 0.03) + 0.03;
-                    this.lastRandomSigma = Math.random() * (45 - 35) + 35;
-                } else if (randType < 0.50) {
-                    this.lastRandomFreq = Math.random() * (0.16 - 0.12) + 0.12;
-                    this.lastRandomSigma = Math.random() * (40 - 32) + 32;
-                }
-            }
-
             if (s.allowShapeVariance) {
                 this.lastRandomAspectRatio = Math.random() * (2.0 - 0.5) + 0.5;
             }

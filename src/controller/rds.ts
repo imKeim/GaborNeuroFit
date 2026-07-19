@@ -106,12 +106,8 @@ export class RdsController {
         const s = Store.state;
         const t = this.getTranslations();
         this.abort();
+        Store.resetSessionProgress();
         Store.updateState('rdsDisparity', s.rdsStartDisparity);
-        Store.updateState('rdsScore', 0);
-        Store.updateState('rdsTotal', 0);
-        Store.updateState('rdsStreak', 0);
-        Store.updateState('rdsStaircaseStreak', 0);
-        Store.updateState('rdsHistory', [] as number[]);
 
         this.btnStart.disabled = false;
         this.btnStart.innerText = t.rdsStartBtn || "START";

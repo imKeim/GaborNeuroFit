@@ -400,6 +400,7 @@ function runFlash(): void {
     if (s.isSessionCompleted) {
         Store.resetSessionProgress();
         Store.updateState('isCurtainActive', false);
+        updateScoreboard(s, activeTranslations);
         syncVisualState();
         return;
     }
