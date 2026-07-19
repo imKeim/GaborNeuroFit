@@ -63,18 +63,21 @@ export class RdsController {
     abort(): void {
         this.tracker.clearAll();
         this.currentState = RdsState.IDLE;
+        Store.updateState('isAutoAdvanceTimerActive', false);
         if (this.syncCross) this.syncCross();
     }
 
     /** @description Pauses the controller without resetting the state machine. */
     pause(): void {
         this.tracker.clearAll();
+        Store.updateState('isAutoAdvanceTimerActive', false);
     }
 
     /** @description Idempotent teardown method for mode switching. */
     deactivate(): void {
         this.tracker.clearAll();
         this.currentState = RdsState.IDLE;
+        Store.updateState('isAutoAdvanceTimerActive', false);
         if (this.syncCross) this.syncCross();
     }
 
@@ -350,8 +353,10 @@ export class RdsController {
         }
 
         if (s.rdsAutoAdvance) {
+            Store.updateState('isAutoAdvanceTimerActive', true);
             this.autoNextTimeoutId = this.tracker.setTimeout(() => {
                 this.autoNextTimeoutId = null;
+                Store.updateState('isAutoAdvanceTimerActive', false);
                 this.triggerTrial();
             }, 900);
         }

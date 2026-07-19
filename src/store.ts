@@ -121,7 +121,8 @@ export const Store = {
         savedTimerRunningState: false,
 
         trialHistory: [] as number[],
-        rdsHistory: [] as number[]
+        rdsHistory: [] as number[],
+        isAutoAdvanceTimerActive: false
     } as AppState,
 
     /**
@@ -310,6 +311,7 @@ export const Store = {
         this.state.isPaused = false;
         this.state.savedTimerRunningState = false;
         this.state.isSessionCompleted = false;
+        this.state.isAutoAdvanceTimerActive = false;
 
         // Reset active RDS session metrics symmetrically
         this.state.rdsScore = 0;

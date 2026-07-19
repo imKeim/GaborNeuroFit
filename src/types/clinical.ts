@@ -367,6 +367,8 @@ export interface AppState {
     trialHistory: number[];
     /** @description Stores the correct/incorrect results of the last 20 RDS trials */
     rdsHistory: number[];
+    /** @description True if the auto-advance 900ms inter-trial rest timer is currently running, temporarily dimming the primary button to prevent peripheral distraction */
+    isAutoAdvanceTimerActive: boolean;
 }
 
 // ============================================================================

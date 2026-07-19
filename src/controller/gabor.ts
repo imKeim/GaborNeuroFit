@@ -101,6 +101,7 @@ export class GaborController {
     abort(): void {
         this.tracker.clearAll();
         this.currentState = TrialState.IDLE;
+        Store.updateState('isAutoAdvanceTimerActive', false);
         if (this.syncCross) this.syncCross();
     }
 
@@ -108,6 +109,7 @@ export class GaborController {
     deactivate(): void {
         Store.updateState('isAnaglyphTestActive', false);
         this.stopUnifiedRenderingLoop();
+        Store.updateState('isAutoAdvanceTimerActive', false);
         this.currentState = TrialState.IDLE;
         if (this.syncCross) this.syncCross();
     }
@@ -407,8 +409,10 @@ export class GaborController {
         }
 
         if (s.autoAdvance) {
+            Store.updateState('isAutoAdvanceTimerActive', true);
             this.autoNextTimeoutId = this.tracker.setTimeout(() => {
                 this.autoNextTimeoutId = null;
+                Store.updateState('isAutoAdvanceTimerActive', false);
                 this.triggerTrial();
             }, 900);
         }

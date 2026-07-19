@@ -112,12 +112,14 @@ export class ViewController {
 
         if (s.appMode === 'rds') {
             if (rdsState === 'AWAITING_INPUT') return "...";
-            return (s.rdsTotal > 0 && !s.rdsAutoAdvance) ? (t.rdsNextBtn || "Next Stereogram") : (t.rdsStartBtn || "Start Stereogram");
+            // If the session has already started, use the "Next" template
+            return s.rdsTotal > 0 ? (t.rdsNextBtn || "Next Stereogram") : (t.rdsStartBtn || "Start Stereogram");
         }
 
         // Default Gabor Mode
         if (s.isWaitingForAnswer) return t.reflashBtn || "Re-Flash";
-        return (s.total > 0 && !s.autoAdvance) ? (t.nextBtn || "Next Flash") : (t.startBtn || "Start Flash");
+        // If the session has already started, use the "Next" template
+        return s.total > 0 ? (t.nextBtn || "Next Flash") : (t.startBtn || "Start Flash");
     }
 
     private resolveCrossState(s: AppState, rdsState?: string, gaborState?: string): string {
@@ -150,33 +152,21 @@ export class ViewController {
     }
 
     private isStartDisabled(s: AppState, rdsState?: string, gaborState?: string): boolean {
-        // if session is completed, button must be active for "Reset Session"
         if (s.isSessionCompleted) return false;
-
         if (s.isPaused) return true;
-        
-        if (s.appMode === 'synoptophore') {
-            // Synoptophore buttons must ALWAYS be active to allow 'Lock' or 'Slip' actions.
-            return false;
-        }
+        if (s.appMode === 'synoptophore') return false;
         
         if (s.appMode === 'gabor') {
-            // Disable during sound priming, flash animation, or visual feedback
             if (gaborState === 'PRE_CUE' || gaborState === 'STIMULUS_ACTIVE' || gaborState === 'FEEDBACK') return true;
-            
-            // Clinical: In Static/Flicker mode, stimulus is already visible. 
             if (s.isStaticEnabled && s.isWaitingForAnswer) return true;
-            
-            // Clinical: If auto-advance is ON, keep the button dimmed during rest intervals 
-            // so it doesn't flash blue and distract peripheral vision.
-            if (s.autoAdvance && s.total > 0 && !s.isWaitingForAnswer) return true;
+            // Dim the button only if the auto-advance timer is actively running.
+            // When you close settings, the timer is inactive, so the button is enabled and waits for your click.
+            if (s.autoAdvance && s.isAutoAdvanceTimerActive) return true;
         }
 
         if (s.appMode === 'rds') {
             if (rdsState === 'PRE_CUE' || rdsState === 'STIMULUS_ACTIVE' || rdsState === 'AWAITING_INPUT' || rdsState === 'FEEDBACK') return true;
-            
-            // Keep button dimmed during auto-advance rest intervals
-            if (s.rdsAutoAdvance && s.rdsTotal > 0 && !s.isWaitingForAnswer) return true;
+            if (s.rdsAutoAdvance && s.isAutoAdvanceTimerActive) return true;
         }
 
         return false;
