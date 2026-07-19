@@ -879,29 +879,22 @@ canvas {
     visibility: visible;
 }
 
-#container[data-paused="true"] {
-    cursor: pointer;
-}
-
+/* Base pointer cursors for idle and active phases across all clinical modes */
+#container[data-app-mode="gabor"],
+#container[data-app-mode="rds"],
 #container[data-app-mode="synoptophore"][data-synop-state="idle"],
 #container[data-app-mode="synoptophore"][data-synop-state="pulling"] {
     cursor: pointer;
 }
 
+/* Global pause override */
+#container[data-paused="true"] {
+    cursor: pointer !important;
+}
+
+/* Clinical alignment phase: Move cursor has absolute priority for fine targeting */
 #container[data-app-mode="synoptophore"][data-synop-state="align"] {
     cursor: move !important;
-}
-
-#container[data-app-mode="gabor"],
-#container[data-app-mode="rds"],
-#container[data-app-mode="synoptophore"] {
-    cursor: pointer;
-}
-
-#container[data-app-mode="gabor"][data-paused="true"],
-#container[data-app-mode="rds"][data-paused="true"],
-#container[data-app-mode="synoptophore"][data-paused="true"] {
-    cursor: pointer;
 }
 
 #container[data-session-completed="true"] ~ #action-buttons .action-btn {
