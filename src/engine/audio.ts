@@ -196,18 +196,20 @@ export function playSlip(isMuted: boolean): void {
  * @param {boolean} isMuted - Global sound suppression flag.
  * @param {number} panValue - Spatial audio pan setting [-1.0 to 1.0].
  */
-export function playSuccess(isMuted: boolean, panValue: number = 0.0): void {
+export function playSuccess(isMuted: boolean, panValue: number = 0.0, isMono: boolean = false): void {
     if (isMuted) return;
     try {
         initAudio();
         if (!audioCtx) return;
         const now = audioCtx.currentTime + 0.015;
 
+        const actualPan = isMono ? 0.0 : panValue;
+
         // Create StereoPannerNode if supported by browser to enable spatial sound rewards
         let destination: AudioNode = audioCtx.destination;
-        if (audioCtx.createStereoPanner && panValue !== 0.0) {
+        if (audioCtx.createStereoPanner && actualPan !== 0.0) {
             const panner = audioCtx.createStereoPanner();
-            panner.pan.setValueAtTime(panValue, now);
+            panner.pan.setValueAtTime(actualPan, now);
             panner.connect(audioCtx.destination);
             destination = panner;
         }

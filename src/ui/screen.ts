@@ -291,8 +291,8 @@ export function updateScoreboard(state: AppState, translations: Record<string, s
             const badgeY = document.getElementById('badge-prism-y');
             const valSynopScore = document.getElementById('val-synop-score');
 
-            if (badgeX) badgeX.innerHTML = `X: <strong>${signX}${state.synopTargetX}px</strong> (${signX}${pdX}Δ)`;
-            if (badgeY) badgeY.innerHTML = `Y: <strong>${signY}${state.synopTargetY}px</strong> (${signY}${pdY}Δ)`;
+            if (badgeX) badgeX.innerHTML = `<span>X: <strong>${signX}${state.synopTargetX}px</strong> (${signX}${pdX}Δ)</span>`;
+            if (badgeY) badgeY.innerHTML = `<span>Y: <strong>${signY}${state.synopTargetY}px</strong> (${signY}${pdY}Δ)</span>`;
             // Symmetrically write textContent to bypass layout reflows during high-frequency drags
             if (valSynopScore) valSynopScore.textContent = state.synopScore.toString();
         }
@@ -324,8 +324,8 @@ export function updateScoreboard(state: AppState, translations: Record<string, s
             const badgeLevel = document.getElementById('badge-rds-level');
             const rdsStreakVal = document.getElementById('val-rds-streak');
 
-            if (badgeDisparity) badgeDisparity.innerHTML = `${t.lblActiveDepth || 'Depth'}: <strong>${state.rdsDisparity}px</strong>`;
-            if (badgeLevel) badgeLevel.innerHTML = `${t.stage || 'Stage'}: <strong>${state.rdsLevel}/5</strong>`;
+            if (badgeDisparity) badgeDisparity.innerHTML = `<span>${t.lblActiveDepth || 'Depth'}: <strong>${state.rdsDisparity}px</strong></span>`;
+            if (badgeLevel) badgeLevel.innerHTML = `<span>${t.stage || 'Stage'}: <strong>${state.rdsLevel}/5</strong></span>`;
             if (rdsStreakVal) rdsStreakVal.innerText = state.rdsStreak.toString();
         }
     } else {

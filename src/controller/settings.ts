@@ -53,6 +53,7 @@ const CONFIG_SCHEMA: ConfigField[] = [
     { id: 'select-session-limit', key: 'sessionLimit', type: 'pill' },
     { id: 'select-rds-session-limit', key: 'rdsSessionLimit', type: 'pill' },
     { id: 'select-timer-limit', key: 'timerLimitMinutes', type: 'pill' },
+    { id: 'select-mono-audio', key: 'isMonoAudioEnabled', type: 'pill' },
     { id: 'slider-left-r', key: 'calibratorLeftR', type: 'int' },
     { id: 'slider-right-g', key: 'calibratorRightG', type: 'int' },
     { id: 'slider-right-b', key: 'calibratorRightB', type: 'int' },

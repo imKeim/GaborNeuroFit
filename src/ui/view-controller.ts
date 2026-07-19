@@ -57,6 +57,7 @@ export class ViewController {
         el.container.dataset.level = String(state.appMode === 'rds' ? state.rdsLevel : state.currentLevel);
         el.container.dataset.synopState = state.synopState;
         el.container.dataset.sessionCompleted = String(isCompleted);
+        el.container.dataset.startDisabled = String(el.btnStart.disabled);
         el.container.dataset.crossState = this.resolveCrossState(state, rdsState, gaborState);
 
         // 2. Sync Curtain

@@ -452,6 +452,8 @@ window.addEventListener('load', async () => {
             if (s.isPaused || s.isSessionCompleted) return;
             if (s.appMode === 'rds' && rdsController) rdsController.submitAnswer(dir);
             else if (gaborController) gaborController.submitAnswer(dir);
+
+            if (hintController) hintController.triggerTemporaryHint(dir === 'left' ? 'hintBtnLeft' : 'hintBtnRight');
         },
         onReset: () => {
             const s = Store.state;
@@ -461,6 +463,8 @@ window.addEventListener('load', async () => {
                 Store.updateState('synopTargetY', 0);
                 playError(s.isMuted);
                 triggerSynopDragEffects();
+
+                if (hintController) hintController.triggerTemporaryHint('hintBtnReset');
             }
         },
         onPrimary: () => {
@@ -469,17 +473,23 @@ window.addEventListener('load', async () => {
                 return;
             }
             runFlash();
+
+            if (hintController && !Store.state.isSessionCompleted) hintController.triggerTemporaryHint('hintBtnStart');
         },
         onMuteToggle: () => {
             Store.updateState('isMuted', !Store.state.isMuted);
             Store.saveSettings();
             updateMuteBtnUI();
+
+            if (hintController) hintController.triggerTemporaryHint('hintBtnMute');
         },
         onPauseToggle: () => {
             if (document.querySelector('.modal.modal-open')) return;
             const btnPause = document.getElementById('btn-pause') as HTMLButtonElement | null;
             if (btnPause && btnPause.disabled) return;
             if (pauseController) pauseController.togglePause();
+
+            if (hintController) hintController.triggerTemporaryHint(Store.state.isPaused ? 'hintBtnPause' : 'hintBtnResume');
         },
         onCanvasClick: () => {
             const s = Store.state;

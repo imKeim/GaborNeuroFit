@@ -31,6 +31,7 @@ export const Store = {
         appMode: 'gabor',
         isPaused: false,
         isMuted: false,
+        isMonoAudioEnabled: false,
         isCurtainActive: true,
         isAnaglyphTestActive: false,
         isSessionCompleted: false,
@@ -412,6 +413,7 @@ export const Store = {
             this.state.isStaticEnabled = localStorage.getItem('gabor_static') === 'true';
             this.state.isFlickerEnabled = localStorage.getItem('gabor_flicker') === 'true';
             this.state.isMuted = localStorage.getItem('gabor_muted') === 'true';
+            this.state.isMonoAudioEnabled = localStorage.getItem('gabor_mono_audio') === 'true';
 
             // Unified locale bootstrapping (Bootstrap user settings or fallback to browser system language)
             const storedLang = localStorage.getItem('gabor_lang') as Language | null;
@@ -518,6 +520,7 @@ export const Store = {
             localStorage.setItem('gabor_static', this.state.isStaticEnabled ? "true" : "false");
             localStorage.setItem('gabor_flicker', this.state.isFlickerEnabled ? "true" : "false");
             localStorage.setItem('gabor_muted', this.state.isMuted ? "true" : "false");
+            localStorage.setItem('gabor_mono_audio', this.state.isMonoAudioEnabled ? "true" : "false");
             localStorage.setItem('gabor_lang', this.state.currentLang);
             localStorage.setItem('gabor_permanent_cross', this.state.isPermanentCrossEnabled ? "true" : "false");
             localStorage.setItem('gabor_flanker_distance_coeff', this.state.flankerDistanceCoeff.toString());

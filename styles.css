@@ -22,11 +22,11 @@
     --radius-sm: calc(10px * var(--fluid-scale));
     --radius-pill: 99px;
 
-    /* Intrinsic Spacing (Tightened to prioritize central canvas) */
-    --pad-v: clamp(8px, 2dvh, 16px);
-    --pad-h: clamp(16px, 3vw, 24px);
-    --gap-core: clamp(4px, 1.2vh, 10px);
-
+    /* Intrinsic Spacing (Fluid scaling based purely on viewport height to prevent workspace clamping) */
+    --pad-v: clamp(1dvh, 2dvh, 16px);
+    --pad-h: clamp(1.5vw, 3vw, 24px);
+    --gap-core: clamp(0.8dvh, 1.2dvh, 10px);
+    
     /* Absolute Z-Index Topology (Prevents overlay wars) */
     --z-base: 0;
     --z-canvas-gpu: 10;
@@ -93,8 +93,8 @@ img.emoji {
 }
 
 .control-btn img.emoji {
-    width: clamp(14px, 4vw, 18px);
-    height: clamp(14px, 4vw, 18px);
+    width: clamp(12px, 2.5dvh, 18px);
+    height: clamp(12px, 2.5dvh, 18px);
     margin: 0;
     vertical-align: middle;
 }
@@ -180,7 +180,7 @@ body.modal-is-open #app-wrapper {
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    padding: clamp(6px, 1.5vh, 10px) clamp(10px, 3vw, 16px);
+    padding: clamp(4px, 1.2dvh, 10px) clamp(10px, 3vw, 16px);
     background-color: #1a222f;
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: var(--radius-elements);
@@ -189,7 +189,7 @@ body.modal-is-open #app-wrapper {
 
 #app-title {
     margin: 0;
-    font-size: clamp(13px, 3.5vw, 16px);
+    font-size: clamp(11px, 3.2vw, 16px);
     font-weight: 700;
     color: #3b90ff;
     letter-spacing: 0.5px;
@@ -202,7 +202,7 @@ body.modal-is-open #app-wrapper {
 #top-controls {
     display: flex;
     align-items: center;
-    gap: clamp(6px, 2vw, 10px);
+    gap: clamp(4px, 1.5vw, 10px);
     flex-shrink: 0;
 }
 
@@ -210,12 +210,12 @@ body.modal-is-open #app-wrapper {
     appearance: none;
     border: none;
     outline: none;
-    font-size: clamp(12px, 3vw, 14px);
+    font-size: clamp(11px, 2.8vw, 14px);
     cursor: pointer;
     background: rgba(0, 122, 255, 0.12);
     border-radius: 50%;
-    width: clamp(28px, 6vw, 36px);
-    height: clamp(28px, 6vw, 36px);
+    width: clamp(24px, 5dvh, 36px);
+    height: clamp(24px, 5dvh, 36px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -285,18 +285,18 @@ body.modal-is-open #app-wrapper {
 #score-board {
     width: 100%;
     background: rgba(44, 52, 64, 0.85);
-    padding: clamp(6px, 1vh, 10px) clamp(10px, 2vw, 14px);
+    padding: clamp(4px, 0.8dvh, 10px) clamp(10px, 2vw, 14px);
     border-radius: var(--radius-elements);
     border: 1px solid rgba(255, 255, 255, 0.06);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 #score-text {
-    font-size: clamp(12px, 3.5vw, 14px);
+    font-size: clamp(11px, 3.2vw, 14px);
     color: #f1f3f9;
     font-weight: 700;
     text-align: center;
-    margin-bottom: 6px;
+    margin-bottom: clamp(2px, 0.5dvh, 6px);
 }
 
 #indicators {
@@ -311,20 +311,29 @@ body.modal-is-open #app-wrapper {
     align-items: center;
     justify-content: center;
     gap: 4px;
-    font-size: clamp(10px, 2.5vw, 10px);
-    padding: 4px 10px;
+    font-size: clamp(9.5px, 2.5vw, 11px);
+    padding: 3px 7px;
     line-height: 1;
     border-radius: var(--radius-pill);
-    font-weight: 600;
+    font-weight: 700;
     border: 1px solid rgba(0, 122, 255, 0.15);
     white-space: nowrap;
 }
 
 .badge img.emoji {
-    width: 1.35em;
-    height: 1.35em;
+    width: 1.25em;
+    height: 1.25em;
     margin: 0;
     transform: translateY(-0.5px);
+}
+
+/* Individual asset adjustments to compensate for SVG bounding box margins */
+.badge--danger img.emoji {
+    margin-right: 3.5px;
+}
+
+.badge--warning img.emoji {
+    margin-right: 0px;
 }
 
 /* Badge Color Modifiers */
@@ -444,18 +453,16 @@ body.modal-is-open #app-wrapper {
 }
 
 /* Input Controls Layout */
-.chart-card {
-    width: 100%;
-    height: 130px;
-    background: rgba(11, 15, 24, 0.3);
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.04);
+#controls-layout {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px;
-    margin-bottom: 6px;
-    box-sizing: border-box;
+    flex-direction: column;
+    background: #1a222f;
+    padding: clamp(6px, 1.2dvh, 14px) clamp(10px, 2vw, 14px);
+    gap: clamp(4px, 1dvh, 12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-elements);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.26);
+    transition: opacity 0.3s ease, filter 0.3s ease;
 }
 
 .chart-legend-wrapper {
@@ -606,8 +613,8 @@ body.modal-is-open #app-wrapper {
 #btn-start {
     appearance: none;
     width: 100%;
-    padding: clamp(10px, 2vh, 16px);
-    font-size: clamp(13px, 3.5vw, 16px);
+    padding: clamp(9px, 1.8dvh, 18px);
+    font-size: clamp(13px, 3.2vw, 16px);
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -642,8 +649,9 @@ body.modal-is-open #app-wrapper {
 .action-btn {
     appearance: none;
     flex: 1;
-    height: clamp(40px, 6.5vh, 56px);
-    font-size: clamp(11px, 2.5vw, 14px);
+    padding: clamp(3px, 0.8dvh, 10px) 0;
+    height: auto;
+    font-size: clamp(10px, 2.2vw, 14px);
     font-weight: 700;
     color: #fff;
     background: linear-gradient(135deg, #242b35, #1a1f26);
@@ -666,7 +674,7 @@ body.modal-is-open #app-wrapper {
 }
 
 .action-btn span {
-    font-size: clamp(16px, 4vw, 16px);
+    font-size: clamp(11px, 1.5dvh, 16px);
     line-height: 1;
     display: inline-block;
 }
@@ -698,10 +706,11 @@ body.modal-is-open #app-wrapper {
 #container {
     position: relative;
 
-    /* Safe buffer calc ensures the canvas never touches the adjoining UI layouts physically */
-    width: calc(100% - 24px);
-    max-width: 420px;
-    max-height: calc(100% - 24px);
+    /* Dynamic auto-scaling square layout driven by fluid viewport height constraints */
+    width: 100%;
+    height: 100%;
+    max-width: min(420px, calc(100% - 24px), calc(100dvh - 360px));
+    max-height: min(420px, calc(100% - 24px), calc(100dvh - 360px));
     aspect-ratio: 1 / 1;
 
     display: flex;

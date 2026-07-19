@@ -104,6 +104,8 @@ export interface AppState {
     isPaused: boolean;
     /** @description Sound effects mute toggle */
     isMuted: boolean;
+    /** @description Mono audio mode to merge stereo channels symmetrically */
+    isMonoAudioEnabled: boolean;
     /** @description Toggle for the protective foveal curtain to block light adaptation during rest */
     isCurtainActive: boolean;
     /** @description Toggle for the dichoptic alignment calibration test pattern (L/R test) */

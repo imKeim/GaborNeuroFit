@@ -343,7 +343,7 @@ export class GaborController {
         } else {
             if (isCorrect) {
                 const panValue = correctAnswer === 'left' ? -0.40 : 0.40;
-                playSuccess(s.isMuted, panValue);
+                playSuccess(s.isMuted, panValue, s.isMonoAudioEnabled);
             } else {
                 playError(s.isMuted);
             }

@@ -14,6 +14,9 @@ export class HudHintController {
     private hintTimeout: number | null = null;
     private leaveTimeout: number | null = null;
     private swapTimeout: number | null = null;
+    private tempTimeout: number | null = null;
+    // Session memory set to throttle repetitive gameplay hints
+    private triggeredSessionHints: Set<string> = new Set();
 
     private statusBar: HTMLElement | null;
     private hintEl: HTMLElement | null;
@@ -76,6 +79,52 @@ export class HudHintController {
             const btn = document.getElementById('btn-pause');
             if (btn) window.setTimeout(() => this.showHint(btn), 10);
         });
+    }
+
+    /**
+     * Triggers a temporary visual "calendar roll" hint upon hardware keypress.
+     */
+    public triggerTemporaryHint(hintKey: string): void {
+        if (!this.statusBar || !this.hintEl) return;
+
+        const t = this.getTranslations();
+        const key = hintKey;
+
+        // Throttle high-frequency gameplay keys to once-per-browser-session (warm-up onboarding)
+        const isSystemic = key.includes('Pause') || key.includes('Resume') || key.includes('Mute') || key.includes('Reset');
+        if (!isSystemic) {
+            if (this.triggeredSessionHints.has(key)) {
+                return; // Suppress to protect patient foveal fixation during high-speed trials
+            }
+            this.triggeredSessionHints.add(key);
+        }
+
+        if (t[key]) {
+            // Cancel any pending animations or leave timeouts
+            if (this.tempTimeout) { window.clearTimeout(this.tempTimeout); this.tempTimeout = null; }
+            if (this.hintTimeout) { window.clearTimeout(this.hintTimeout); this.hintTimeout = null; }
+            if (this.leaveTimeout) { window.clearTimeout(this.leaveTimeout); this.leaveTimeout = null; }
+
+            const newText = t[key];
+            this.hintEl.innerText = newText;
+            this.statusBar.classList.add('hint-mode');
+
+            // Set up auto-dismiss timer to roll back to clinical stats after 1200ms
+            this.tempTimeout = window.setTimeout(() => {
+                const isMouseStillHovering = this.topControls?.matches(':hover') || 
+                                            document.getElementById('bottom-dock')?.matches(':hover');
+                
+                if (this.statusBar && !isMouseStillHovering) {
+                    this.statusBar.classList.remove('hint-mode', 'hint-swap-out', 'hint-swap-in');
+                    window.setTimeout(() => {
+                        if (this.statusBar && !this.statusBar.classList.contains('hint-mode')) {
+                            updateStatusBar(Store.state, this.getTranslations());
+                        }
+                    }, 300);
+                }
+                this.tempTimeout = null;
+            }, 1200);
+        }
     }
 
     /**
