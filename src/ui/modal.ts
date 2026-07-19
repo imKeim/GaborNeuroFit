@@ -132,15 +132,26 @@ function setupFocusTrap(modal: HTMLElement): void {
         }
     };
 
+    const focusinHandler = (event: FocusEvent) => {
+        if (event.target && !modal.contains(event.target as Node)) {
+            event.stopImmediatePropagation();
+            const focusable = Array.from(modal.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS))
+                .filter(el => el.offsetWidth > 0 && el.offsetHeight > 0);
+            if (focusable.length > 0) {
+                focusable[0].focus();
+            }
+        }
+    };
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (modal as any)._focusTrapHandler = handler;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (modal as any)._focusinHandler = focusinHandler;
+
     modal.addEventListener('keydown', handler);
+    document.addEventListener('focusin', focusinHandler, true);
 }
 
-/**
- * @description Removes the focus trap listeners from the modal.
- * @param {HTMLElement} modal - Container element.
- */
 function destroyFocusTrap(modal: HTMLElement): void {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handler = (modal as any)._focusTrapHandler;
@@ -148,6 +159,14 @@ function destroyFocusTrap(modal: HTMLElement): void {
         modal.removeEventListener('keydown', handler);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         delete (modal as any)._focusTrapHandler;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const focusinHandler = (modal as any)._focusinHandler;
+    if (focusinHandler) {
+        document.removeEventListener('focusin', focusinHandler, true);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        delete (modal as any)._focusinHandler;
     }
 }
 

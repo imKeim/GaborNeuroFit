@@ -635,10 +635,12 @@ export const Store = {
                 if (s.currentLevel < 5) {
                     s.currentLevel++;
                     s.autoContrast = 0.40;
-                    s.correctStreak = 0;
                     s.staircaseStreak = 0;
                     s.trialHistory = [];
-                    if (isCorrect) s.score++;
+                    if (isCorrect) {
+                        s.score++;
+                        s.correctStreak++;
+                    }
                     return;
                 }
             }
@@ -651,7 +653,6 @@ export const Store = {
                 if (s.currentLevel > 1) {
                     s.currentLevel--;
                     s.autoContrast = 0.50;
-                    s.correctStreak = 0;
                     s.staircaseStreak = 0;
                     s.trialHistory = [];
                     return;

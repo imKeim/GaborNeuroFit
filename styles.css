@@ -730,6 +730,9 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
  */
 .control-btn:focus-visible, .tab-btn:focus-visible, .dash-btn:focus-visible, .dash-input:focus-visible, .pill-btn:focus-visible, .preset-card:focus-visible, .close-btn:focus-visible, .accordion-header:focus-visible, .nudge-btn:focus-visible, input[type="range"]:focus-visible {
     box-shadow: 0 0 0 3px rgba(59, 144, 255, 0.45) !important;
+    outline: none;
+    position: relative;
+    z-index: 10;
 }
 
 .action-btn:focus-visible, #btn-start:focus-visible {
@@ -915,6 +918,8 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
     overscroll-behavior: contain;
     padding-left: 8px;
     padding-right: 8px;
+    scroll-padding-top: 8px;
+    scroll-padding-bottom: 8px;
 
     /* Permanently reserves scrollbar track space to prevent horizontal jumping */
     scrollbar-gutter: stable;
@@ -988,6 +993,7 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
     cursor: pointer;
     user-select: none;
     transition: background 0.15s ease, border-color 0.15s ease;
+    scroll-margin-top: 8px;
 }
 
 .accordion-arrow {
@@ -1025,6 +1031,7 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
     margin-bottom: 14px;
     padding-bottom: 10px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    scroll-margin-top: 8px;
 }
 
 .settings-row label, .settings-row .settings-label {
@@ -1064,14 +1071,6 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
 .settings-row select:focus-visible {
     border-color: #3b90ff;
     box-shadow: 0 0 0 3px rgba(59, 144, 255, 0.2);
-}
-
-.settings-row input[type="checkbox"] {
-    width: 22px;
-    height: 22px;
-    accent-color: #007aff;
-    cursor: pointer;
-    flex-shrink: 0;
 }
 
 /* ==========================================================================

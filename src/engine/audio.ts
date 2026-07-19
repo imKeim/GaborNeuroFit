@@ -262,6 +262,76 @@ export function playSuccess(isMuted: boolean, panValue: number = 0.0): void {
 }
 
 /**
+ * @description Synthesizes a bright, rapid, ascending major arpeggio to celebrate stage promotion.
+ */
+export function playLevelUp(isMuted: boolean): void {
+    if (isMuted) return;
+    try {
+        initAudio();
+        const ctx = audioCtx;
+        if (!ctx) return;
+        const now = ctx.currentTime + 0.015;
+
+        // Ascending crystal arpeggio: A4 (440Hz) -> C#5 (554.37Hz) -> E5 (659.25Hz) -> A5 (880Hz)
+        const notes = [440.00, 554.37, 659.25, 880.00];
+        let delay = 0;
+
+        notes.forEach(freq => {
+            const noteTime = now + delay;
+            const osc = ctx.createOscillator();
+            const noteGain = ctx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, noteTime);
+
+            noteGain.gain.setValueAtTime(0, noteTime);
+            noteGain.gain.linearRampToValueAtTime(0.15, noteTime + 0.005);
+            noteGain.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.28);
+
+            osc.connect(noteGain);
+            noteGain.connect(ctx.destination);
+
+            osc.start(noteTime);
+            osc.stop(noteTime + 0.28);
+
+            delay += 0.04;
+        });
+    } catch (e) {
+        console.warn("Acoustic level up synthesis bypassed:", e);
+    }
+}
+
+export function playLevelDown(isMuted: boolean): void {
+    if (isMuted) return;
+    try {
+        initAudio();
+        const ctx = audioCtx;
+        if (!ctx) return;
+        const now = ctx.currentTime + 0.015;
+
+        // Soft non-punitive sigh: 280Hz -> 180Hz
+        const osc = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(280, now);
+        osc.frequency.exponentialRampToValueAtTime(180, now + 0.35);
+
+        gainNode.gain.setValueAtTime(0, now);
+        gainNode.gain.linearRampToValueAtTime(0.22, now + 0.05);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+        osc.connect(gainNode);
+        gainNode.connect(ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.35);
+    } catch (e) {
+        console.warn("Acoustic level down synthesis bypassed:", e);
+    }
+}
+
+/**
  * @description Synthesizes a fast, bright, ascending dual-tone major sweep to signal activation and reset.
  */
 export function playReset(isMuted: boolean): void {

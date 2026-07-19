@@ -11,7 +11,7 @@
 import { Store } from '../store';
 import { AsyncResourceTracker } from '../utils/tracker';
 import { renderGabor, drawFusionLockFrame } from '../engine/gabor-render';
-import { playCue, playSuccess, playError, playSilverAward, playGoldAward } from '../engine/audio';
+import { playCue, playSuccess, playError, playSilverAward, playGoldAward, playLevelUp, playLevelDown } from '../engine/audio';
 import { updateScoreboard, updateStatusBar, drawIdleState } from '../ui/screen';
 import type { AppState } from '../types/clinical';
 
@@ -322,18 +322,31 @@ export class GaborController {
         void this.container.offsetWidth;
         void this.flashOverlay.offsetWidth;
 
+        const previousLevel = s.currentLevel;
+
         Store.registerResult(isCorrect);
 
+        const currentLevel = s.currentLevel;
+
         if (isCorrect) {
-            // Spatial Pan: reinforcing neural field mapping via directional auditory rewards
-            const panValue = correctAnswer === 'left' ? -0.40 : 0.40;
-            playSuccess(s.isMuted, panValue);
             this.flashOverlay.classList.add('flash-success');
             this.container.classList.add('success-pulse');
         } else {
-            playError(s.isMuted);
             this.flashOverlay.classList.add('flash-error');
             this.container.classList.add('error-shake');
+        }
+
+         if (currentLevel > previousLevel) {
+            playLevelUp(s.isMuted);
+        } else if (currentLevel < previousLevel) {
+            playLevelDown(s.isMuted);
+        } else {
+            if (isCorrect) {
+                const panValue = correctAnswer === 'left' ? -0.40 : 0.40;
+                playSuccess(s.isMuted, panValue);
+            } else {
+                playError(s.isMuted);
+            }
         }
 
         drawIdleState(this.canvas, null, this.overlayCanvas, this.overlayCtx, s.isFusionLockEnabled);

@@ -21,7 +21,7 @@ interface ConfigField {
     /** @description Target key in the reactive AppState tree */
     key: keyof AppState;
     /** @description Component type used to determine parsing logic */
-    type: 'checkbox' | 'value' | 'int' | 'float' | 'boolean' | 'percent' | 'pill' | 'grid';
+    type: 'value' | 'int' | 'float' | 'boolean' | 'percent' | 'pill' | 'grid';
 }
 
 /** 
@@ -29,22 +29,22 @@ interface ConfigField {
  * Serves as the Single Source of Truth for settings synchronization.
  */
 const CONFIG_SCHEMA: ConfigField[] = [
-    { id: 'chk-stage-advance', key: 'allowStageAdvance', type: 'checkbox' },
+    { id: 'select-stage-advance', key: 'allowStageAdvance', type: 'pill' },
     { id: 'select-flash-duration', key: 'flashDurationMode', type: 'pill' },
-    { id: 'chk-peripheral', key: 'isPeripheralEnabled', type: 'checkbox' },
-    { id: 'chk-crowding', key: 'isCrowdingEnabled', type: 'checkbox' },
+    { id: 'select-peripheral', key: 'isPeripheralEnabled', type: 'pill' },
+    { id: 'select-crowding', key: 'isCrowdingEnabled', type: 'pill' },
     { id: 'select-crowding-mode', key: 'crowdingMode', type: 'pill' },
     { id: 'select-flanker-distance', key: 'flankerDistanceCoeff', type: 'pill' },
-    { id: 'chk-orthogonal-flankers', key: 'isOrthogonalFlankersEnabled', type: 'checkbox' },
-    { id: 'chk-dynamic-flankers', key: 'isDynamicFlankersEnabled', type: 'checkbox' },
-    { id: 'chk-low-contrast', key: 'allowLowContrast', type: 'checkbox' },
-    { id: 'chk-dynamic-level-drift', key: 'allowDynamicLevelDrift', type: 'checkbox' },
-    { id: 'chk-density-variance', key: 'allowDensityVariance', type: 'checkbox' },
-    { id: 'chk-shape-variance', key: 'allowShapeVariance', type: 'checkbox' },
-    { id: 'chk-static', key: 'isStaticEnabled', type: 'checkbox' },
-    { id: 'chk-anaglyph', key: 'isAnaglyphEnabled', type: 'checkbox' },
-    { id: 'chk-flicker', key: 'isFlickerEnabled', type: 'checkbox' },
-    { id: 'chk-fusion-lock', key: 'isFusionLockEnabled', type: 'checkbox' },
+    { id: 'select-orthogonal-flankers', key: 'isOrthogonalFlankersEnabled', type: 'pill' },
+    { id: 'select-dynamic-flankers', key: 'isDynamicFlankersEnabled', type: 'pill' },
+    { id: 'select-low-contrast', key: 'allowLowContrast', type: 'pill' },
+    { id: 'select-dynamic-level-drift', key: 'allowDynamicLevelDrift', type: 'pill' },
+    { id: 'select-density-variance', key: 'allowDensityVariance', type: 'pill' },
+    { id: 'select-shape-variance', key: 'allowShapeVariance', type: 'pill' },
+    { id: 'select-static', key: 'isStaticEnabled', type: 'pill' },
+    { id: 'select-anaglyph', key: 'isAnaglyphEnabled', type: 'pill' },
+    { id: 'select-flicker', key: 'isFlickerEnabled', type: 'pill' },
+    { id: 'select-fusion-lock', key: 'isFusionLockEnabled', type: 'pill' },
     { id: 'select-red-side', key: 'redEyeSide', type: 'pill' },
     { id: 'select-lazy-side', key: 'lazyEyeSide', type: 'pill' },
     { id: 'range-strong-attenuation', key: 'strongEyeContrastFactor', type: 'percent' },
@@ -58,22 +58,22 @@ const CONFIG_SCHEMA: ConfigField[] = [
     { id: 'slider-right-b', key: 'calibratorRightB', type: 'int' },
     { id: 'select-pull-speed', key: 'synopPullSpeed', type: 'pill' },
     { id: 'select-target-type', key: 'synopTargetType', type: 'pill' },
-    { id: 'chk-synop-lazy-grid', key: 'synopShowLazyGrid', type: 'checkbox' },
-    { id: 'chk-synop-strong-grid', key: 'synopShowStrongGrid', type: 'checkbox' },
+    { id: 'select-synop-lazy-grid', key: 'synopShowLazyGrid', type: 'pill' },
+    { id: 'select-synop-strong-grid', key: 'synopShowStrongGrid', type: 'pill' },
     { id: 'select-target-size', key: 'synopTargetSize', type: 'pill' },
-    { id: 'chk-synop-flicker', key: 'synopFlickerActive', type: 'checkbox' },
-    { id: 'chk-synop-lock-y', key: 'synopLockVertical', type: 'checkbox' },
-    { id: 'chk-synop-lock-x', key: 'synopLockHorizontal', type: 'checkbox' },
-    { id: 'chk-permanent-cross', key: 'isPermanentCrossEnabled', type: 'checkbox' },
+    { id: 'select-synop-flicker', key: 'synopFlickerActive', type: 'pill' },
+    { id: 'select-synop-lock-y', key: 'synopLockVertical', type: 'pill' },
+    { id: 'select-synop-lock-x', key: 'synopLockHorizontal', type: 'pill' },
+    { id: 'select-permanent-cross', key: 'isPermanentCrossEnabled', type: 'pill' },
     { id: 'select-rds-dot-size', key: 'rdsDotSize', type: 'pill' },
     { id: 'select-rds-density', key: 'rdsDensity', type: 'pill' },
     { id: 'select-rds-start-disparity', key: 'rdsStartDisparity', type: 'pill' },
     { id: 'select-rds-autonext', key: 'rdsAutoAdvance', type: 'pill' },
-    { id: 'chk-rds-dynamic', key: 'rdsIsDynamic', type: 'checkbox' },
-    { id: 'chk-rds-randomize-vertical', key: 'rdsRandomizeVertical', type: 'checkbox' },
-    { id: 'chk-rds-floating', key: 'rdsIsFloating', type: 'checkbox' },
+    { id: 'select-rds-dynamic', key: 'rdsIsDynamic', type: 'pill' },
+    { id: 'select-rds-randomize-vertical', key: 'rdsRandomizeVertical', type: 'pill' },
+    { id: 'select-rds-floating', key: 'rdsIsFloating', type: 'pill' },
     { id: 'select-rds-float-speed', key: 'rdsFloatSpeed', type: 'pill' },
-    { id: 'chk-rds-permanent-cross', key: 'rdsIsPermanentCrossEnabled', type: 'checkbox' },
+    { id: 'select-rds-permanent-cross', key: 'rdsIsPermanentCrossEnabled', type: 'pill' },
     { id: 'select-lang', key: 'currentLang', type: 'pill' },
     { id: 'select-preset-mode', key: 'presetMode', type: 'grid' }
 ];
@@ -125,23 +125,20 @@ export class SettingsController {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             let val: any;
 
-            if (field.type === 'checkbox') {
-                const inputEl = el as HTMLInputElement;
-                val = inputEl.checked;
-                if ((s[field.key] as boolean) !== val) {
-                    if (field.key === 'isPeripheralEnabled') lastActiveTrigger = 'peripheral';
-                    if (field.key === 'isCrowdingEnabled') lastActiveTrigger = 'crowding';
-                    if (field.key === 'isStaticEnabled') lastActiveTrigger = 'static';
-                    if (field.key === 'isFlickerEnabled') lastActiveTrigger = 'flicker';
-                    if (field.key === 'rdsRandomizeVertical') lastActiveTrigger = 'rdsRandomizeVertical';
-                    if (field.key === 'rdsIsFloating') lastActiveTrigger = 'rdsIsFloating';
-                }
-            } else if (field.type === 'pill' || field.type === 'grid') {
+            if (field.type === 'pill' || field.type === 'grid') {
                 const activeChild = el.querySelector('.active') as HTMLElement | null;
                 const rawVal = activeChild ? activeChild.getAttribute('data-value') || '' : '';
                 
-                if (field.key === 'autoAdvance' || field.key === 'rdsAutoAdvance') {
+                if (rawVal === 'true' || rawVal === 'false') {
                     val = (rawVal === 'true');
+                    if ((s[field.key] as boolean) !== val) {
+                        if (field.key === 'isPeripheralEnabled') lastActiveTrigger = 'peripheral';
+                        if (field.key === 'isCrowdingEnabled') lastActiveTrigger = 'crowding';
+                        if (field.key === 'isStaticEnabled') lastActiveTrigger = 'static';
+                        if (field.key === 'isFlickerEnabled') lastActiveTrigger = 'flicker';
+                        if (field.key === 'rdsRandomizeVertical') lastActiveTrigger = 'rdsRandomizeVertical';
+                        if (field.key === 'rdsIsFloating') lastActiveTrigger = 'rdsIsFloating';
+                    }
                 } else if (typeof s[field.key] === 'number') {
                     val = rawVal.includes('.') ? parseFloat(rawVal) : parseInt(rawVal, 10);
                     if (isNaN(val)) val = 0;
@@ -258,17 +255,14 @@ export class SettingsController {
                 return;
             }
 
-            if (field.type === 'checkbox') {
-                const inputEl = el as HTMLInputElement;
-                inputEl.checked = s[field.key] as boolean;
-            } else if (field.type === 'pill' || field.type === 'grid') {
+            if (field.type === 'pill' || field.type === 'grid') {
                 const currentValue = String(s[field.key]);
                 const children = el.querySelectorAll('.pill-btn, .preset-card');
                 children.forEach(child => {
-                    if (child.getAttribute('data-value') === currentValue) {
-                        child.classList.add('active');
-                    } else {
-                        child.classList.remove('active');
+                    const isTarget = (child.getAttribute('data-value') === currentValue);
+                    child.classList.toggle('active', isTarget);
+                    if (child.classList.contains('preset-card')) {
+                        child.setAttribute('aria-pressed', isTarget ? 'true' : 'false');
                     }
                 });
             } else {
@@ -287,7 +281,7 @@ export class SettingsController {
                 (el as HTMLInputElement).value = (s.appMode === 'synoptophore' ? s.synopCalibratorRightB : s.calibratorRightB).toString();
             }
 
-            if (field.type === 'checkbox' || el.tagName === 'SELECT' || field.type === 'pill' || field.type === 'grid') {
+            if (el.tagName === 'SELECT' || field.type === 'pill' || field.type === 'grid') {
                 // Skip track updates for non-range controls
             } else {
                 this.updateSliderTrackGradient(el as HTMLInputElement);
@@ -335,45 +329,28 @@ export class SettingsController {
             el.style.display = isVisible ? '' : 'none';
         });
 
+        const disableRow = (rowId: string, disable: boolean) => {
+            const row = document.getElementById(rowId);
+            if (!row) return;
+            row.style.opacity = disable ? '0.5' : '1';
+            row.querySelectorAll<HTMLButtonElement | HTMLInputElement>('button, input').forEach(el => {
+                el.disabled = disable;
+            });
+            const pillGroup = row.querySelector('.pill-group') as HTMLElement | null;
+            if (pillGroup) {
+                pillGroup.style.pointerEvents = disable ? 'none' : 'auto';
+            }
+        };
+
         if (!isSynop) {
-            const chkFlicker = document.getElementById('chk-flicker') as HTMLInputElement | null;
-            const rowFlicker = document.getElementById('row-flicker');
-            if (chkFlicker) chkFlicker.disabled = !s.isStaticEnabled;
-            if (rowFlicker) {
-                rowFlicker.style.opacity = s.isStaticEnabled ? '1' : '0.5';
-            }
-
-            const chkOrthogonal = document.getElementById('chk-orthogonal-flankers') as HTMLInputElement | null;
-            const chkDynamic = document.getElementById('chk-dynamic-flankers') as HTMLInputElement | null;
-            const rowOrthogonal = document.getElementById('row-orthogonal');
-            const rowDynamic = document.getElementById('row-dynamic');
-            const rowCrowdingMode = document.getElementById('row-crowding-mode');
-            const rowFlankerDistance = document.getElementById('row-flanker-distance');
-
-            if (chkOrthogonal) chkOrthogonal.disabled = !s.isCrowdingEnabled;
-            if (chkDynamic) chkDynamic.disabled = !s.isCrowdingEnabled;
-            const crowdingOpacity = s.isCrowdingEnabled ? '1' : '0.5';
-
-            if (rowCrowdingMode) {
-                rowCrowdingMode.style.opacity = crowdingOpacity;
-                const pillGroup = rowCrowdingMode.querySelector('.pill-group') as HTMLElement | null;
-                if (pillGroup) pillGroup.style.pointerEvents = s.isCrowdingEnabled ? 'auto' : 'none';
-            }
-            if (rowFlankerDistance) {
-                rowFlankerDistance.style.opacity = crowdingOpacity;
-                const pillGroup = rowFlankerDistance.querySelector('.pill-group') as HTMLElement | null;
-                if (pillGroup) pillGroup.style.pointerEvents = s.isCrowdingEnabled ? 'auto' : 'none';
-            }
-            if (rowOrthogonal) rowOrthogonal.style.opacity = crowdingOpacity;
-            if (rowDynamic) rowDynamic.style.opacity = crowdingOpacity;
+            disableRow('row-flicker', !s.isStaticEnabled);
+            disableRow('row-orthogonal', !s.isCrowdingEnabled);
+            disableRow('row-dynamic', !s.isCrowdingEnabled);
+            disableRow('row-crowding-mode', !s.isCrowdingEnabled);
+            disableRow('row-flanker-distance', !s.isCrowdingEnabled);
         }
 
-        const rowRdsFloatSpeed = document.getElementById('row-rds-floating-speed');
-        if (rowRdsFloatSpeed) {
-            rowRdsFloatSpeed.style.opacity = s.rdsIsFloating ? '1' : '0.5';
-            const pillGroup = rowRdsFloatSpeed.querySelector('.pill-group') as HTMLElement | null;
-            if (pillGroup) pillGroup.style.pointerEvents = s.rdsIsFloating ? 'auto' : 'none';
-        }
+        disableRow('row-rds-floating-speed', !s.rdsIsFloating);
 
         if (this.anaglyphPanel) {
             const isAnaglyphActive = s.isAnaglyphEnabled || isSynop || s.appMode === 'rds';
@@ -381,10 +358,8 @@ export class SettingsController {
             this.anaglyphPanel.style.display = 'block';
             this.anaglyphPanel.style.opacity = isAnaglyphActive ? '1' : '0.4';
             
-            this.anaglyphPanel.querySelectorAll<HTMLInputElement | HTMLButtonElement>('input, button').forEach(input => {
-                if (input.id !== 'chk-anaglyph') {
-                    input.disabled = !isAnaglyphActive;
-                }
+            this.anaglyphPanel.querySelectorAll<HTMLButtonElement | HTMLInputElement>('button, input').forEach(el => {
+                el.disabled = !isAnaglyphActive;
             });
 
             this.anaglyphPanel.querySelectorAll<HTMLElement>('.pill-group').forEach(group => {
@@ -400,12 +375,14 @@ export class SettingsController {
             if (shouldDisable3D && !isSynop && s.appMode !== 'rds') {
                 headerAnaglyph.style.opacity = '0.35';
                 headerAnaglyph.style.pointerEvents = 'none';
+                headerAnaglyph.setAttribute('tabindex', '-1');
                 if (contentAnaglyph) contentAnaglyph.classList.remove('open');
                 const arrow = headerAnaglyph.querySelector('.accordion-arrow');
                 if (arrow) arrow.classList.remove('active');
             } else {
                 headerAnaglyph.style.opacity = '1';
                 headerAnaglyph.style.pointerEvents = 'auto';
+                headerAnaglyph.setAttribute('tabindex', '0');
             }
         }
     }
@@ -419,17 +396,6 @@ export class SettingsController {
      * - High-Precision Nudges: Implements Pointer-down auto-repeat loops for fine-tuning range values.
      */
     bindSettingsInteractions(): void {
-        const chkY = document.getElementById('chk-synop-lock-y') as HTMLInputElement | null;
-        const chkX = document.getElementById('chk-synop-lock-x') as HTMLInputElement | null;
-        if (chkY && chkX) {
-            chkY.addEventListener('change', () => {
-                if (chkY.checked) chkX.checked = false;
-            });
-            chkX.addEventListener('change', () => {
-                if (chkX.checked) chkY.checked = false;
-            });
-        }
-
         const btnTabGabor = document.getElementById('settings-tab-gabor');
         const btnTabSynop = document.getElementById('settings-tab-synop');
         const btnTabRds = document.getElementById('settings-tab-rds');
@@ -461,15 +427,48 @@ export class SettingsController {
                 parent.querySelectorAll('.pill-btn, .preset-card').forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
 
-                this.syncStateFromUI();
+                const field = CONFIG_SCHEMA.find(f => f.id === parent.id);
+                if (field) {
+                    const rawVal = button.getAttribute('data-value') || '';
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    let val: any = rawVal;
+                    if (rawVal === 'true' || rawVal === 'false') {
+                        val = (rawVal === 'true');
+                    } else if (typeof Store.state[field.key] === 'number') {
+                        val = rawVal.includes('.') ? parseFloat(rawVal) : parseInt(rawVal, 10);
+                        if (isNaN(val)) val = 0;
+                    }
+                    Store.updateState(field.key, val);
+
+                    Store.resolveConflicts(field.key as string);
+                    if (Store.state.appMode === 'gabor' && Store.state.presetMode !== 'custom') {
+                        const detectedPreset = Store.detectMatchingPreset();
+                        Store.updateState('presetMode', detectedPreset);
+                    }
+                }
+
                 this.updatePresetUI();
                 if (typeof this.onSyncCallback === 'function') this.onSyncCallback();
+            });
+
+            parent.addEventListener('keydown', (event: Event) => {
+                const e = event as KeyboardEvent;
+                if (e.key === 'Enter' || e.key === ' ') {
+                    const target = e.target as HTMLElement;
+                    const card = target.closest('.preset-card') as HTMLElement | null;
+                    if (card) {
+                        e.preventDefault();
+                        card.click();
+                    }
+                }
             });
         });
 
         const headers = document.querySelectorAll<HTMLElement>('.accordion-header');
         headers.forEach(header => {
             header.addEventListener('click', () => {
+                if (header.style.pointerEvents === 'none') return;
+
                 const contentId = header.id.replace('header', 'content');
                 const content = document.getElementById(contentId);
                 if (!content) return;
@@ -484,14 +483,25 @@ export class SettingsController {
                     const arrow = header.querySelector('.accordion-arrow');
                     if (arrow) arrow.classList.add('active');
 
-                    // Smooth viewport anchoring for opened sections
+                    // Locally scroll only the scroll body to prevent pushing the modal header off-screen
                     setTimeout(() => {
-                        header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        const scrollBody = header.closest('.modal-scroll-body') as HTMLElement | null;
+                        if (scrollBody) {
+                            const containerRect = scrollBody.getBoundingClientRect();
+                            const elementRect = header.getBoundingClientRect();
+                            const relativeOffset = elementRect.top - containerRect.top;
+                            scrollBody.scrollTo({
+                                top: scrollBody.scrollTop + relativeOffset - 12,
+                                behavior: 'smooth'
+                            });
+                        }
                     }, 220); 
                 }
             });
 
             header.addEventListener('keydown', (e: KeyboardEvent) => {
+                if (header.style.pointerEvents === 'none') return;
+
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     header.click();
@@ -510,19 +520,6 @@ export class SettingsController {
                 this.syncStateFromUI();
             });
         }
-
-        CONFIG_SCHEMA.forEach(field => {
-            const el = document.getElementById(field.id);
-            if (!el) return;
-            const skipIds = ['select-preset-mode', 'range-strong-attenuation', 'slider-left-r', 'slider-right-g', 'slider-right-b'];
-            if (skipIds.includes(field.id) || field.type === 'pill' || field.type === 'grid') return;
-
-            el.addEventListener('change', () => {
-                this.syncStateFromUI();
-                this.updatePresetUI();
-                if (typeof this.onSyncCallback === 'function') this.onSyncCallback();
-            });
-        });
 
         // Initialize high-frequency nudge buttons for precise calibration
         document.querySelectorAll<HTMLElement>('.nudge-btn').forEach(btn => {

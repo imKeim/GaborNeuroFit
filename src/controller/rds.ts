@@ -12,7 +12,7 @@ import { Store } from '../store';
 import { DataRepository } from '../store/repository';
 import { AsyncResourceTracker } from '../utils/tracker';
 import { drawRandomDotStereogram } from '../engine/rds-render';
-import { playCue, playSuccess, playError, playSilverAward, playGoldAward } from '../engine/audio';
+import { playCue, playSuccess, playError, playSilverAward, playGoldAward, playLevelUp, playLevelDown } from '../engine/audio';
 import { updateScoreboard, drawIdleState } from '../ui/screen';
 import type { EyeSide } from '../types/clinical';
 
@@ -232,8 +232,6 @@ export class RdsController {
         const activeHistory = s.rdsHistory ? [...s.rdsHistory] : [];
 
         if (isCorrect) {
-            const panValue = s.rdsTargetSide === 'left' ? -0.40 : 0.40;
-            playSuccess(s.isMuted, panValue);
             this.flashOverlay.classList.add('flash-success');
             this.container.classList.add('success-pulse');
 
@@ -242,12 +240,11 @@ export class RdsController {
             newStaircaseStreak++;
             activeHistory.push(1);
 
-            if (newStaircaseStreak >= 3) {
+             if (newStaircaseStreak >= 3) {
                 if (newDisparity > 1) newDisparity--;
                 newStaircaseStreak = 0;
             }
         } else {
-            playError(s.isMuted);
             this.flashOverlay.classList.add('flash-error');
             this.container.classList.add('error-shake');
 
@@ -268,6 +265,8 @@ export class RdsController {
         else if (newDisparity === 2) newLevel = 4;
         else if (newDisparity === 1) newLevel = 5;
 
+        const previousLevel = s.rdsLevel;
+
         Store.updateState('rdsScore', newScore);
         Store.updateState('rdsTotal', newTotal);
         Store.updateState('rdsStreak', newStreak);
@@ -275,6 +274,21 @@ export class RdsController {
         Store.updateState('rdsDisparity', newDisparity);
         Store.updateState('rdsLevel', newLevel);
         Store.updateState('rdsHistory', activeHistory);
+
+        const currentLevel = s.rdsLevel;
+
+        if (currentLevel > previousLevel) {
+            playLevelUp(s.isMuted);
+        } else if (currentLevel < previousLevel) {
+            playLevelDown(s.isMuted);
+        } else {
+            if (isCorrect) {
+                const panValue = s.rdsTargetSide === 'left' ? -0.40 : 0.40;
+                playSuccess(s.isMuted, panValue);
+            } else {
+                playError(s.isMuted);
+            }
+        }
 
         this.saveRdsSession();
 
