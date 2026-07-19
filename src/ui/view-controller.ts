@@ -65,7 +65,7 @@ export class ViewController {
         el.curtain.classList.toggle('active', state.isCurtainActive);
 
         // Sync Start Button (Text and Visuals)
-        el.btnStart.innerText = this.resolveStartButtonText(state, translations, rdsState);
+        el.btnStart.innerText = this.resolveStartButtonText(state, translations);
         el.btnStart.disabled = this.isStartDisabled(state, rdsState, gaborState);
         el.btnStart.classList.toggle('victory-pulse', isCompleted);
         el.btnStart.classList.toggle('start-pulse', this.isInitialState(state) && !isCompleted && !state.isPaused);
@@ -101,7 +101,7 @@ export class ViewController {
         this.elements.btnRight.style.display = isSynop ? 'none' : 'flex';
     }
 
-    private resolveStartButtonText(s: AppState, t: Record<string, string>, rdsState?: string): string {
+    private resolveStartButtonText(s: AppState, t: Record<string, string>): string {
         if (s.isSessionCompleted) return t.btnResetSession || "Reset Session";
         
         if (s.appMode === 'synoptophore') {
@@ -111,6 +111,7 @@ export class ViewController {
         }
 
         if (s.appMode === 'rds') {
+            // Clinical UX: If the session has already started, use the "Next" template
             return s.rdsTotal > 0 ? (t.rdsNextBtn || "Next Stereogram") : (t.rdsStartBtn || "Start Stereogram");
         }
 
