@@ -45,14 +45,16 @@ export class HudHintController {
         const handleMouseOver = (e: MouseEvent) => {
             if (this.isActionLocked) return; // Action hint has absolute priority
 
-            // Cancel any pending hide to ensure "sticky" transition between buttons
+            const btn = (e.target as HTMLElement).closest('[data-hint]') as HTMLElement;
+            if (!btn) return; // Safeguard: do not interrupt pending hides if hovering over dead space
+
+            // Instantly interrupt active fading transitions on entry
+            this.clearRenderTimers();
             if (this.hideDelayTimer) {
                 window.clearTimeout(this.hideDelayTimer);
                 this.hideDelayTimer = null;
             }
 
-            const btn = (e.target as HTMLElement).closest('[data-hint]') as HTMLElement;
-            if (!btn) return;
             let key = btn.getAttribute('data-hint');
             if (!key) return;
 
@@ -65,12 +67,14 @@ export class HudHintController {
 
             this.clearDebounce();
 
-            if (this.statusBar?.classList.contains('hint-mode')) {
+            const isFocus = (e.type === 'focusin' || e.type === 'focus');
+
+            if (this.statusBar?.classList.contains('hint-mode') || isFocus) {
                 this.executeRender(key, 2500);
             } else {
                 this.debounceTimer = window.setTimeout(() => {
                     this.executeRender(key!, 2500);
-                }, 120);
+                }, 50);
             }
         };
 
@@ -78,13 +82,13 @@ export class HudHintController {
             if (this.isActionLocked) return; // Ignore jitter during clicks
             this.clearDebounce();
             
-            // Add stickiness: wait 150ms before reverting to stats 
+            // Add stickiness: wait 100ms before reverting to stats 
             // to allow smooth movement between HUD elements.
             if (this.hideDelayTimer) window.clearTimeout(this.hideDelayTimer);
             this.hideDelayTimer = window.setTimeout(() => {
                 this.hideHint();
                 this.hideDelayTimer = null;
-            }, 250);
+            }, 100);
         };
 
         // Standard Mouse/Touch Hover events

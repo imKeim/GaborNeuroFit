@@ -1839,3 +1839,13 @@ input[type="range"]::-moz-range-thumb {
     background: linear-gradient(135deg, #007aff, #0056b3) !important;
     border-color: rgba(0, 122, 255, 0.4) !important;
 }
+
+/* 
+ * @architecture CSS Transition Preemption
+ * Temporarily suspends hardware animations on demand to ensure instant layout updates.
+ */
+.no-transition, .no-transition * {
+    transition: none !important;
+    animation: none !important;
+    will-change: auto !important;
+}

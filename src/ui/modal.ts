@@ -93,8 +93,19 @@ export function closeModal(modal: HTMLElement | null): void {
     destroyFocusTrap(modal);
 
     if (previousActiveElement) {
+        const statusBar = document.getElementById('mode-status-bar');
+        if (statusBar) {
+            statusBar.classList.add('no-transition');
+        }
+
         previousActiveElement.focus();
         previousActiveElement = null;
+
+        if (statusBar) {
+            requestAnimationFrame(() => {
+                statusBar.classList.remove('no-transition');
+            });
+        }
     }
 }
 
