@@ -111,8 +111,6 @@ export class ViewController {
         }
 
         if (s.appMode === 'rds') {
-            if (rdsState === 'AWAITING_INPUT') return "...";
-            // If the session has already started, use the "Next" template
             return s.rdsTotal > 0 ? (t.rdsNextBtn || "Next Stereogram") : (t.rdsStartBtn || "Start Stereogram");
         }
 
