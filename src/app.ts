@@ -19,6 +19,7 @@ import { SynoptophoreController } from './controller/synop';
 import { SettingsController } from './controller/settings';
 import { DashboardController } from './controller/dashboard';
 import { PauseController } from './controller/pause';
+import { HudHintController } from './ui/hint';
 
 // Rendering Engine Layer (WebGL, 2D Canvas & Generative Audio)
 import { renderGabor, drawFusionLockFrame } from './engine/gabor-render';
@@ -51,6 +52,7 @@ let synoptophoreController: SynoptophoreController | null = null;
 let rdsController: RdsController | null = null;
 let dashboardController: DashboardController | null = null;
 let pauseController: PauseController | null = null;
+let hintController: HudHintController | null = null;
 
 /** 
  * @description "Dirty-checking" snapshots of critical clinical parameters. 
@@ -584,6 +586,9 @@ window.addEventListener('load', async () => {
         () => syncVisualState(),
         () => activeTranslations
     );
+
+    hintController = new HudHintController(() => activeTranslations);
+    hintController.init();
 
     settingsController = new SettingsController(() => {
         updateStatusBar(Store.state, activeTranslations);

@@ -230,7 +230,7 @@ body.modal-is-open #app-wrapper {
 }
 
 /* 
- * @a11y Reveals focus outline ONLY for keyboard navigation (Tab), 
+ * @a11y Reveals focus outline only for keyboard navigation (Tab), 
  * remaining hidden for mouse/touch interactions to preserve aesthetics.
  */
 .control-btn:focus-visible, .action-btn:focus-visible, #btn-start:focus-visible, .tab-btn:focus-visible {
@@ -365,13 +365,69 @@ body.modal-is-open #app-wrapper {
 }
 
 #mode-status-bar {
+    position: relative;
+    height: 1.6em;
+    overflow: hidden;
+    font-size: clamp(10px, 2.5vw, 12px);
+    color: #cbd5e1;
+    font-weight: 700;
+    text-transform: uppercase; /* Professional instrument-cluster feel */
+}
+
+.status-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
-    font-size: clamp(10px, 2.5vw, 12px);
-    color: #cbd5e1;
-    font-weight: 500;
+    width: 100%;
+    height: 100%;
+    will-change: transform, opacity;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+    transform: translateY(0);
+    opacity: 1;
+}
+
+#status-hint {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    color: #3b90ff;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+    will-change: transform, opacity;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+    /* Hidden below by default */
+    transform: translateY(100%);
+    opacity: 0;
+}
+
+#mode-status-bar.hint-mode .status-content {
+    opacity: 0;
+    transform: translateY(-100%); /* Exit top */
+}
+
+#mode-status-bar.hint-mode #status-hint {
+    opacity: 1;
+    transform: translateY(0); /* Enter from bottom */
+}
+
+/* 
+ * Calendar Roll Animation State (Swapping text while hovering)
+ */
+#mode-status-bar.hint-swap-out #status-hint {
+    opacity: 0;
+    transform: translateY(-100%);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s ease;
+}
+
+#mode-status-bar.hint-swap-in #status-hint {
+    opacity: 0;
+    transform: translateY(100%);
+    transition: none !important; /* Instant invisible teleport to bottom */
 }
 
 #mode-status-bar > span:first-child {
@@ -752,9 +808,9 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
 /* 
  * @a11y Safe, rounded neon halos strictly for keyboard navigation 
  */
-.control-btn:focus-visible, .tab-btn:focus-visible, .dash-btn:focus-visible, .dash-input:focus-visible, .pill-btn:focus-visible, .preset-card:focus-visible, .close-btn:focus-visible, .accordion-header:focus-visible, .nudge-btn:focus-visible, input[type="range"]:focus-visible {
+.control-btn:focus-visible, .tab-btn:focus-visible, .dash-btn:focus-visible, .dash-input:focus-visible, .pill-btn:focus-visible, .preset-card:focus-visible, .close-btn:focus-visible, .accordion-header:focus-visible, .nudge-btn:focus-visible, input[type="range"]:focus-visible, input[type="checkbox"]:focus-visible {
     box-shadow: 0 0 0 3px rgba(59, 144, 255, 0.45) !important;
-    outline: none;
+    outline: none !important;
     position: relative;
     z-index: 10;
 }
@@ -942,8 +998,8 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
     overscroll-behavior: contain;
     padding-left: 8px;
     padding-right: 8px;
-    scroll-padding-top: 8px;
-    scroll-padding-bottom: 8px;
+    scroll-padding-top: 12px;
+    scroll-padding-bottom: 24px;
 
     /* Permanently reserves scrollbar track space to prevent horizontal jumping */
     scrollbar-gutter: stable;
@@ -1017,7 +1073,7 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
     cursor: pointer;
     user-select: none;
     transition: background 0.15s ease, border-color 0.15s ease;
-    scroll-margin-top: 8px;
+    scroll-margin-top: 12px;
 }
 
 .accordion-arrow {
