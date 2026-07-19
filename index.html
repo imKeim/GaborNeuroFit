@@ -25,8 +25,8 @@
     <meta name="apple-mobile-web-app-title" content="GaborNeuroFit">
     <link class="apple-touch-icon" href="icon-192-maskable.png">
     <meta name="theme-color" content="#131a26">
-  <script type="module" crossorigin src="./assets/index-OCi6GJ6M.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-C7oAlY8K.css">
+  <script type="module" crossorigin src="./assets/index-NN06w3gF.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-kD2Wjcra.css">
 <link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:inline-sw">if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('./sw.js', { scope: './' })})}</script></head>
 <body>
     <!--
@@ -105,26 +105,26 @@
 
                 <!-- View: Gabor Badges -->
                 <div id="indicators">
-                    <span class="badge badge--success"><span data-i18n="stage">Stage</span>: <span id="current-level">1</span>/5</span>
-                    <span class="badge badge--info"><span data-i18n="contrast">Contrast</span>: <span id="current-contrast">50</span>%</span>
-                    <span id="badge-gabor-streak" class="badge badge--warning" style="font-weight: bold;">🔥 <strong id="val-gabor-streak">0</strong></span>
-                    <span id="badge-timer-gabor" class="badge badge--danger" style="display: none;">🍅 <strong id="val-timer-gabor">00:00</strong></span>
+                    <span class="badge badge--success"><span><span data-i18n="stage">Stage</span>: <span id="current-level">1</span>/5</span></span>
+                    <span class="badge badge--info"><span><span data-i18n="contrast">Contrast</span>: <span id="current-contrast">50</span>%</span></span>
+                    <span id="badge-gabor-streak" class="badge badge--warning">🔥<strong id="val-gabor-streak">0</strong></span>
+                    <span id="badge-timer-gabor" class="badge badge--danger" style="display: none;">🍅<strong id="val-timer-gabor">00:00</strong></span>
                 </div>
 
                 <!-- View: Synoptophore Badges -->
                 <div id="synop-indicators" class="indicators-panel">
-                    <span id="badge-prism-x" class="badge badge--info">X: 0px (0.00Δ)</span>
-                    <span id="badge-prism-y" class="badge badge--danger">Y: 0px (0.00Δ)</span>
-                    <span id="badge-synop-score" class="badge badge--warning" style="font-weight: bold;">🏆 <strong id="val-synop-score">0</strong></span>
-                    <span id="badge-timer-synop" class="badge badge--danger" style="display: none;">🍅 <strong id="val-timer-synop">00:00</strong></span>
+                    <span id="badge-prism-x" class="badge badge--info"><span>X: 0px (0.00Δ)</span></span>
+                    <span id="badge-prism-y" class="badge badge--danger"><span>Y: 0px (0.00Δ)</span></span>
+                    <span id="badge-synop-score" class="badge badge--warning">🏆<strong id="val-synop-score">0</strong></span>
+                    <span id="badge-timer-synop" class="badge badge--danger" style="display: none;">🍅<strong id="val-timer-synop">00:00</strong></span>
                 </div>
 
                 <!-- View: RDS Badges -->
                 <div id="rds-indicators" class="indicators-panel">
-                    <span id="badge-rds-level" class="badge badge--success">Stage: 1/5</span>
-                    <span id="badge-rds-disparity" class="badge badge--info">Depth: 4px</span>
-                    <span id="badge-rds-streak" class="badge badge--warning" style="font-weight: bold;">🔥 <strong id="val-rds-streak">0</strong></span>
-                    <span id="badge-timer-rds" class="badge badge--danger" style="display: none;">🍅 <strong id="val-timer-rds">00:00</strong></span>
+                    <span id="badge-rds-level" class="badge badge--success"><span>Stage: 1/5</span></span>
+                    <span id="badge-rds-disparity" class="badge badge--info"><span>Depth: 4px</span></span>
+                    <span id="badge-rds-streak" class="badge badge--warning">🔥<strong id="val-rds-streak">0</strong></span>
+                    <span id="badge-timer-rds" class="badge badge--danger" style="display: none;">🍅<strong id="val-timer-rds">00:00</strong></span>
                 </div>
 
                 <!-- View: Dynamic Ocular Vergence Progress Bar -->
@@ -145,19 +145,19 @@
                 </div>
 
                 <!-- Logic: Primary Trigger (Operated strictly by State Machines via Typescript Injection) -->
-                <button type="button" id="btn-start" aria-label="Execute Primary Action"></button>
+                <button type="button" id="btn-start" data-hint="hintBtnStart" aria-label="Execute Primary Action"></button>
 
                 <!-- Logic: Motor/Sensory Switcharoos -->
                 <div id="action-buttons">
-                    <button type="button" class="action-btn" id="btn-left" aria-label="Choose Left">
+                    <button type="button" class="action-btn" id="btn-left" data-hint="hintBtnLeft" aria-label="Choose Left">
                         <span>◀</span>
                         <div class="btn-label" data-i18n="leftBtn">Left</div>
                     </button>
-                    <button type="button" class="action-btn" id="btn-reset" aria-label="Reset Coordinates" style="display: none;">
+                    <button type="button" class="action-btn" id="btn-reset" data-hint="hintBtnReset" aria-label="Reset Coordinates" style="display: none;">
                         <span>🔄</span>
                         <div class="btn-label" data-i18n="resetBtn">Reset</div>
                     </button>
-                    <button type="button" class="action-btn" id="btn-right" aria-label="Choose Right">
+                    <button type="button" class="action-btn" id="btn-right" data-hint="hintBtnRight" aria-label="Choose Right">
                         <span>▶</span>
                         <div class="btn-label" data-i18n="rightBtn">Right</div>
                     </button>
@@ -235,7 +235,7 @@
                             </div>
                             <span class="settings-help" data-i18n-html="helpSessionLimit"></span>
                         </div>
-                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 10px; margin-bottom: 14px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <span class="settings-label" data-i18n="lblSettingTimerLimit" style="color: #cbd5e1;"></span>
                                 <div id="select-timer-limit" class="pill-group">
@@ -246,6 +246,16 @@
                                 </div>
                             </div>
                             <span class="settings-help" data-i18n-html="helpTimerLimit"></span>
+                        </div>
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                            <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                                <span class="settings-label" data-i18n="lblSettingMonoAudio" style="color: #cbd5e1;"></span>
+                                <div id="select-mono-audio" class="pill-group" style="max-width: 45%;">
+                                    <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
+                                    <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
+                                </div>
+                            </div>
+                            <span class="settings-help" data-i18n-html="helpSettingMonoAudio"></span>
                         </div>
                     </div>
 
