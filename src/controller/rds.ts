@@ -190,9 +190,6 @@ export class RdsController {
 
         Store.updateState('isCurtainActive', false);
         if (this.syncCross) this.syncCross();
-
-        this.btnStart.disabled = true;
-        this.btnStart.innerText = "...";
     }
 
     /**

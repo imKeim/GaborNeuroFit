@@ -274,13 +274,13 @@ export class GaborController {
 
         this.canvas.style.display = 'block';
         Store.updateState('isWaitingForAnswer', true);
-
-        const curtain = document.getElementById('calibration-curtain');
-        if (curtain) curtain.classList.remove('active');
+        Store.updateState('isCurtainActive', false);
 
         const isAnimating = (s.isDynamicFlankersEnabled && s.isCrowdingEnabled) || s.isFlickerEnabled;
 
         if (isAnimating) {
+            // Flicker Warm-up: ensure immediate visibility before loop starts
+            renderGabor(this.canvas, null, s, this.currentAngleDeg, s.autoContrast, s.autoContrast, this.lastRandomFreq, this.lastRandomSigma, this.lastOffsetX, this.lastOffsetY, 0, this.lastRandomAspectRatio);
             this.startUnifiedRenderingLoop(s);
         }
 
@@ -289,14 +289,10 @@ export class GaborController {
             this.tracker.setTimeout(() => {
                 this.stopUnifiedRenderingLoop();
                 drawIdleState(this.canvas, null, this.overlayCanvas, this.overlayCtx, s.isFusionLockEnabled);
-                this.btnStart.disabled = false;
-                this.btnStart.innerText = t.reflashBtn || "RE-FLASH";
                 this.transitionTo(TrialState.AWAITING_INPUT);
             }, flashDuration);
         } else {
             // Static/Flicker persistent logic
-            this.btnStart.disabled = true;
-            this.btnStart.innerText = "...";
             this.transitionTo(TrialState.AWAITING_INPUT);
         }
     }

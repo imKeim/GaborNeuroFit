@@ -78,7 +78,6 @@ const overlayCtx = overlayCanvas.getContext('2d') as CanvasRenderingContext2D;
 const btnStart = document.getElementById('btn-start') as HTMLButtonElement;
 const btnFusionTest = document.getElementById('btn-fusion-test') as HTMLButtonElement;
 const container = document.getElementById('container') as HTMLElement;
-const cross = document.getElementById('cross') as HTMLElement;
 const flashOverlay = document.getElementById('flash-overlay') as HTMLElement;
 
 /**
@@ -511,6 +510,9 @@ window.addEventListener('load', async () => {
             if (hintController) hintController.triggerTemporaryHint(Store.state.isPaused ? 'hintBtnPause' : 'hintBtnResume');
         },
         onCanvasClick: () => {
+            // In Synoptophore alignment mode, the canvas is a manipulation surface.
+            // We disable the "Click to Lock" trigger on the canvas to prevent drag-release collisions.
+            if (Store.state.appMode === 'synoptophore' && Store.state.synopState === 'align') return;
             handlePrimaryAction();
         },
         onEscape: () => {
@@ -559,7 +561,12 @@ window.addEventListener('load', async () => {
         } else if (Store.state.appMode === 'rds') {
             if (rdsController) {
                 const isIdle = rdsController.currentState === 'IDLE' || rdsController.currentState === 'FEEDBACK';
-                drawRandomDotStereogram(overlayCanvas, overlayCtx, Store.state, false, isIdle);
+                // If the session hasn't started, draw neutral gray instead of noise.
+                if (isIdle && Store.state.rdsTotal === 0 && !Store.state.isAnaglyphTestActive) {
+                    drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
+                } else {
+                    drawRandomDotStereogram(overlayCanvas, overlayCtx, Store.state, false, isIdle);
+                }
             }
         }
         
@@ -719,6 +726,14 @@ window.addEventListener('load', async () => {
             }
 
             setLanguage(Store.state.currentLang);
+
+            // Logic: Ensure curtain state is consistent with active trial status.
+            const isInitial = (Store.state.appMode === 'gabor' && Store.state.total === 0 && !Store.state.isWaitingForAnswer) ||
+                              (Store.state.appMode === 'rds' && Store.state.rdsTotal === 0 && !Store.state.isWaitingForAnswer) ||
+                              (Store.state.appMode === 'synoptophore' && Store.state.synopState === 'idle');
+            
+            Store.updateState('isCurtainActive', isInitial || Store.state.isSessionCompleted);
+
             syncVisualState();
         }
     }
@@ -779,7 +794,6 @@ window.addEventListener('load', async () => {
                     drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
                     canvas.style.display = 'block';
                     overlayCanvas.style.display = 'block';
-                    cross.style.display = 'block'; 
                             
                     if (modalContent) modalContent.classList.remove('modal-transitioning');
                     
@@ -803,24 +817,22 @@ window.addEventListener('load', async () => {
 
                     drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.appMode === 'synoptophore' || Store.state.isFusionLockEnabled);
 
-                    if (Store.state.appMode === 'synoptophore') {
+                    if (Store.state.appMode === 'synoptophore' && Store.state.synopState !== 'idle') {
                         if (synoptophoreController) synoptophoreController.syncFlickerState();
                     }
-                    cross.style.display = 'block';
 
                     if (modalContent) modalContent.classList.remove('modal-transitioning');
 
-                    setTimeout(() => {
-                        const isInitialState = (s.appMode === 'gabor' && s.total === 0) ||
-                                               (s.appMode === 'rds' && s.rdsTotal === 0) ||
-                                               (s.appMode === 'synoptophore' && s.synopState === 'idle');
-                        
-                        // Restore curtain if game hasn't started yet, and force DOM update
-                        Store.updateState('isCurtainActive', isInitialState || s.isSessionCompleted);
-                        syncVisualState();
-                    }, 150);
+                    // Curtain must be up if we are waiting for an answer,
+                    // regardless of total count, to prevent soft-locks in Flicker/Static modes.
+                    const isInitialState = (s.appMode === 'gabor' && s.total === 0 && !s.isWaitingForAnswer) ||
+                                           (s.appMode === 'rds' && s.rdsTotal === 0 && !s.isWaitingForAnswer) ||
+                                           (s.appMode === 'synoptophore' && s.synopState === 'idle');
+                    
+                    Store.updateState('isCurtainActive', isInitialState || s.isSessionCompleted);
+                    syncVisualState();
                 }
-            }, 250);
+            }, 100);
         });
     }
 

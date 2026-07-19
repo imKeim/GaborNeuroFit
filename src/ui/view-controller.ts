@@ -50,25 +50,27 @@ export class ViewController {
         const isCompleted = state.isSessionCompleted;
         const canPause = this.isPausable(state, rdsState, gaborState);
 
-        // 1. Sync Data Attributes for CSS-driven styling
+        // Sync Data Attributes for CSS-driven styling
         el.container.dataset.appMode = state.appMode;
         el.container.dataset.paused = String(state.isPaused);
         el.container.dataset.curtainActive = String(state.isCurtainActive);
+
         el.container.dataset.level = String(state.appMode === 'rds' ? state.rdsLevel : state.currentLevel);
         el.container.dataset.synopState = state.synopState;
         el.container.dataset.sessionCompleted = String(isCompleted);
         el.container.dataset.startDisabled = String(el.btnStart.disabled);
         el.container.dataset.crossState = this.resolveCrossState(state, rdsState, gaborState);
 
-        // 2. Sync Curtain
+        // Sync Curtain
         el.curtain.classList.toggle('active', state.isCurtainActive);
 
-        // 3. Sync Start Button (Text and Visuals)
+        // Sync Start Button (Text and Visuals)
         el.btnStart.innerText = this.resolveStartButtonText(state, translations, rdsState);
+        el.btnStart.disabled = this.isStartDisabled(state, rdsState, gaborState);
         el.btnStart.classList.toggle('victory-pulse', isCompleted);
         el.btnStart.classList.toggle('start-pulse', this.isInitialState(state) && !isCompleted && !state.isPaused);
 
-        // 4. Sync HUD Controls Accessibility
+        // Sync HUD Controls Accessibility
         el.topBar.classList.toggle('locked-state', isCompleted);
         el.btnSettings.disabled = !canPause || isCompleted;
         el.btnStats.disabled = !canPause || isCompleted;
@@ -76,12 +78,12 @@ export class ViewController {
         el.btnMute.disabled = isCompleted;
         el.btnPause.disabled = !canPause || isCompleted;
 
-        // 5. Sync Action Buttons
+        // Sync Action Buttons
         el.btnLeft.disabled = state.isPaused;
         el.btnRight.disabled = state.isPaused;
         el.btnReset.disabled = state.appMode === 'synoptophore' ? (state.synopState !== 'align') : false;
 
-        // 6. Handle Twemoji parsing
+        // Handle Twemoji parsing
         // @ts-ignore
         if (typeof window !== 'undefined' && window.twemoji) {
             window.twemoji.parse(el.btnStart);
@@ -119,6 +121,7 @@ export class ViewController {
     }
 
     private resolveCrossState(s: AppState, rdsState?: string, gaborState?: string): string {
+        if (s.isAnaglyphTestActive) return 'visible';
         if (s.isCurtainActive) return 'hidden';
         if (s.appMode === 'synoptophore') return 'hidden';
 
@@ -144,6 +147,39 @@ export class ViewController {
         if (s.appMode === 'gabor' && (gaborState === 'PRE_CUE' || gaborState === 'STIMULUS_ACTIVE' || gaborState === 'FEEDBACK')) return false;
         if (s.appMode === 'rds' && (rdsState === 'PRE_CUE' || rdsState === 'FEEDBACK')) return false;
         return true;
+    }
+
+    private isStartDisabled(s: AppState, rdsState?: string, gaborState?: string): boolean {
+        // if session is completed, button must be active for "Reset Session"
+        if (s.isSessionCompleted) return false;
+
+        if (s.isPaused) return true;
+        
+        if (s.appMode === 'synoptophore') {
+            // Synoptophore buttons must ALWAYS be active to allow 'Lock' or 'Slip' actions.
+            return false;
+        }
+        
+        if (s.appMode === 'gabor') {
+            // Disable during sound priming, flash animation, or visual feedback
+            if (gaborState === 'PRE_CUE' || gaborState === 'STIMULUS_ACTIVE' || gaborState === 'FEEDBACK') return true;
+            
+            // Clinical: In Static/Flicker mode, stimulus is already visible. 
+            if (s.isStaticEnabled && s.isWaitingForAnswer) return true;
+            
+            // Clinical: If auto-advance is ON, keep the button dimmed during rest intervals 
+            // so it doesn't flash blue and distract peripheral vision.
+            if (s.autoAdvance && s.total > 0 && !s.isWaitingForAnswer) return true;
+        }
+
+        if (s.appMode === 'rds') {
+            if (rdsState === 'PRE_CUE' || rdsState === 'STIMULUS_ACTIVE' || rdsState === 'AWAITING_INPUT' || rdsState === 'FEEDBACK') return true;
+            
+            // Keep button dimmed during auto-advance rest intervals
+            if (s.rdsAutoAdvance && s.rdsTotal > 0 && !s.isWaitingForAnswer) return true;
+        }
+
+        return false;
     }
 
     private isInitialState(s: AppState): boolean {
