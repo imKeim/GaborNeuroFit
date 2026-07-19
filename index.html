@@ -25,8 +25,8 @@
     <meta name="apple-mobile-web-app-title" content="GaborNeuroFit">
     <link class="apple-touch-icon" href="icon-192-maskable.png">
     <meta name="theme-color" content="#131a26">
-  <script type="module" crossorigin src="./assets/index-LpmSdE1w.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-1Wlx4yw9.css">
+  <script type="module" crossorigin src="./assets/index-D6kXbmDq.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-C7oAlY8K.css">
 <link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:inline-sw">if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('./sw.js', { scope: './' })})}</script></head>
 <body>
     <!--
@@ -105,26 +105,26 @@
 
                 <!-- View: Gabor Badges -->
                 <div id="indicators">
-                    <span class="badge" style="color: #22c55e; border-color: rgba(34, 197, 94, 0.3); background: rgba(34, 197, 94, 0.12);"><span data-i18n="stage">Stage</span>: <span id="current-level">1</span>/5</span>
-                    <span class="badge" style="color: #3b90ff; border-color: rgba(59, 144, 255, 0.3); background: rgba(59, 144, 255, 0.12);"><span data-i18n="contrast">Contrast</span>: <span id="current-contrast">50</span>%</span>
-                    <span id="badge-gabor-streak" class="badge" style="color: #eab308; border-color: rgba(234, 179, 8, 0.3); background: rgba(234, 179, 8, 0.12); font-weight: bold;">🔥 <strong id="val-gabor-streak">0</strong></span>
-                    <span id="badge-timer-gabor" class="badge" style="display: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.12);">🍅 <strong id="val-timer-gabor">00:00</strong></span>
+                    <span class="badge badge--success"><span data-i18n="stage">Stage</span>: <span id="current-level">1</span>/5</span>
+                    <span class="badge badge--info"><span data-i18n="contrast">Contrast</span>: <span id="current-contrast">50</span>%</span>
+                    <span id="badge-gabor-streak" class="badge badge--warning" style="font-weight: bold;">🔥 <strong id="val-gabor-streak">0</strong></span>
+                    <span id="badge-timer-gabor" class="badge badge--danger" style="display: none;">🍅 <strong id="val-timer-gabor">00:00</strong></span>
                 </div>
 
                 <!-- View: Synoptophore Badges -->
                 <div id="synop-indicators" class="indicators-panel">
-                    <span id="badge-prism-x" class="badge" style="color: #3b90ff; border-color: rgba(59, 144, 255, 0.3); background: rgba(59, 144, 255, 0.12);">X: 0px (0.00Δ)</span>
-                    <span id="badge-prism-y" class="badge" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.12);">Y: 0px (0.00Δ)</span>
-                    <span id="badge-synop-score" class="badge" style="color: #eab308; border-color: rgba(234, 179, 8, 0.3); background: rgba(234, 179, 8, 0.12); font-weight: bold;">🏆 <strong id="val-synop-score">0</strong></span>
-                    <span id="badge-timer-synop" class="badge" style="display: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.12);">🍅 <strong id="val-timer-synop">00:00</strong></span>
+                    <span id="badge-prism-x" class="badge badge--info">X: 0px (0.00Δ)</span>
+                    <span id="badge-prism-y" class="badge badge--danger">Y: 0px (0.00Δ)</span>
+                    <span id="badge-synop-score" class="badge badge--warning" style="font-weight: bold;">🏆 <strong id="val-synop-score">0</strong></span>
+                    <span id="badge-timer-synop" class="badge badge--danger" style="display: none;">🍅 <strong id="val-timer-synop">00:00</strong></span>
                 </div>
 
                 <!-- View: RDS Badges -->
                 <div id="rds-indicators" class="indicators-panel">
-                    <span id="badge-rds-level" class="badge" style="color: #22c55e; border-color: rgba(34, 197, 94, 0.3); background: rgba(34, 197, 94, 0.12);">Stage: 1/5</span>
-                    <span id="badge-rds-disparity" class="badge" style="color: #3b90ff; border-color: rgba(59, 144, 255, 0.3); background: rgba(59, 144, 255, 0.12);">Depth: 4px</span>
-                    <span id="badge-rds-streak" class="badge" style="color: #eab308; border-color: rgba(234, 179, 8, 0.3); background: rgba(234, 179, 8, 0.12); font-weight: bold;">🔥 <strong id="val-rds-streak">0</strong></span>
-                    <span id="badge-timer-rds" class="badge" style="display: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.12);">🍅 <strong id="val-timer-rds">00:00</strong></span>
+                    <span id="badge-rds-level" class="badge badge--success">Stage: 1/5</span>
+                    <span id="badge-rds-disparity" class="badge badge--info">Depth: 4px</span>
+                    <span id="badge-rds-streak" class="badge badge--warning" style="font-weight: bold;">🔥 <strong id="val-rds-streak">0</strong></span>
+                    <span id="badge-timer-rds" class="badge badge--danger" style="display: none;">🍅 <strong id="val-timer-rds">00:00</strong></span>
                 </div>
 
                 <!-- View: Dynamic Ocular Vergence Progress Bar -->
@@ -200,7 +200,7 @@
                 <div class="modal-scroll-body" tabindex="0">
 
                     <!-- Sub-section: Global Ergonomics (Language, Limit, Pomodoro) -->
-                    <div style="background: rgba(11, 15, 24, 0.3); padding: 12px; border-radius: var(--radius-elements); border: 1px solid rgba(255, 255, 255, 0.03); display: flex; flex-direction: column; margin-bottom: 14px;">
+                    <div class="settings-group">
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <span class="settings-label" data-i18n="lblSettingLang" style="color: #cbd5e1;"></span>
@@ -252,7 +252,7 @@
                     <!-- Group: Gabor Therapeutic Area -->
                     
                     <!-- Sub-section: Macro-Presets -->
-                    <div id="row-preset-mode" data-visible-in="gabor" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;">
+                    <div id="row-preset-mode" class="settings-row-stack" data-visible-in="gabor">
                         <span data-i18n="lblSettingPreset" style="font-size: 13px; font-weight: 700; color: #3b90ff; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">Training Protocol:</span>
                         <div id="select-preset-mode" class="preset-grid">
                             <div class="preset-card active" data-value="occlusion" tabindex="0" role="button" aria-pressed="true">
@@ -283,11 +283,11 @@
                     </div>
 
                     <!-- Sub-section: Core Parameters -->
-                    <div data-visible-in="gabor" style="background: rgba(13, 26, 38, 0.2); padding: 10px; border-radius: var(--radius-elements); border: 1px dashed rgba(255,255,255,0.04); display: flex; flex-direction: column; margin-bottom: 14px;">
+                    <div class="settings-group settings-group--dashed" data-visible-in="gabor">
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <span class="settings-label" data-i18n="lblSettingStartLevel" style="color: #cbd5e1;"></span>
-                                <div id="select-start-level" class="pill-group" style="max-width: 50%;">
+                                 <div id="select-start-level" class="pill-group u-max-w-50">
                                     <button type="button" class="pill-btn" data-value="1">1</button>
                                     <button type="button" class="pill-btn" data-value="2">2</button>
                                     <button type="button" class="pill-btn" data-value="3">3</button>
@@ -300,7 +300,7 @@
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <span class="settings-label" data-i18n="lblSettingAutonext" style="color: #cbd5e1;"></span>
-                                <div id="select-autonext" class="pill-group" style="max-width: 45%;">
+                                <div id="select-autonext" class="pill-group u-max-w-45">
                                     <button type="button" class="pill-btn" data-value="true" data-i18n="optAutonextOn">On</button>
                                     <button type="button" class="pill-btn" data-value="false" data-i18n="optAutonextOff">Off</button>
                                 </div>
@@ -481,7 +481,7 @@
                     <!-- Group: Synoptophore Therapeutic Area -->
 
                     <!-- Sub-section: Oculomotor Physics -->
-                    <div data-visible-in="synoptophore" style="background: rgba(19, 26, 38, 0.2); padding: 10px; border-radius: var(--radius-elements); border: 1px dashed rgba(255,255,255,0.04); display: flex; flex-direction: column; margin-bottom: 14px;">
+                    <div class="settings-group settings-group--dashed" data-visible-in="synoptophore">
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <span class="settings-label" data-i18n="lblSettingPullSpeed" style="color: #cbd5e1;"></span>
@@ -578,7 +578,7 @@
                     <!-- Group: Stereogram Therapeutic Area -->
 
                     <!-- Sub-section: Depth Parameters -->
-                    <div data-visible-in="rds" style="background: rgba(19, 26, 38, 0.2); padding: 10px; border-radius: var(--radius-elements); border: 1px dashed rgba(255,255,255,0.04); display: flex; flex-direction: column; margin-bottom: 14px;">
+                    <div class="settings-group settings-group--dashed" data-visible-in="rds">
                         <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                             <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                 <span class="settings-label" data-i18n="lblSettingRdsStartDisparity" style="color: #cbd5e1;"></span>
@@ -704,7 +704,7 @@
                         </div>
 
                         <!-- TS Reactivity Link: anaglyph-settings-panel state is controlled by SettingsController -->
-                        <div id="anaglyph-settings-panel" style="border-top: 1px dashed #2b354a; padding-top: 12px; margin-top: 10px; margin-bottom: 0;">
+                        <div id="anaglyph-settings-panel" class="calibration-panel">
                             <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); padding-bottom: 8px; margin-bottom: 8px;">
                                 <div class="pill-row" style="width: 100%; border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
                                     <span class="settings-label" data-i18n="lblSettingRedSide" style="color: #cbd5e1;"></span>
@@ -789,26 +789,26 @@
         </div>
 
         <!-- View: Alert Dialog -->
-        <div id="custom-alert-modal" class="modal" role="alertdialog" aria-modal="true" aria-labelledby="custom-alert-title" aria-describedby="custom-alert-text" style="z-index: 3000;" tabindex="-1">
-            <div class="modal-content" style="height: auto; max-height: 320px; width: 88%; max-width: 420px; text-align: center; border-radius: var(--border-radius-elements); padding: 20px;">
-                <h2 id="custom-alert-title" style="margin-top: 0; margin-bottom: 12px; font-size: 16px; color: #eab308; font-weight: 700;">GaborNeuroFit</h2>
-                <div class="modal-scroll-body" style="font-size: 12px; color: #cbd5e1; line-height: 1.45; text-align: center; margin-bottom: 12px; padding: 0 4px;">
+        <div id="custom-alert-modal" class="modal modal--alert" role="alertdialog" aria-modal="true" aria-labelledby="custom-alert-title" aria-describedby="custom-alert-text" tabindex="-1">
+            <div class="modal-content modal-content--compact">
+                <h2 id="custom-alert-title" class="modal-title--compact" style="color: #eab308;">GaborNeuroFit</h2>
+                <div class="modal-scroll-body modal-scroll-body--compact">
                     <p id="custom-alert-text" style="margin: 0;"></p>
                 </div>
-                <button type="button" id="btn-close-custom-alert" class="close-btn" style="margin-top: 0; padding: 8px;">OK</button>
+                <button type="button" id="btn-close-custom-alert" class="close-btn close-btn--compact">OK</button>
             </div>
         </div>
 
         <!-- View: Confirmation Dialog -->
-        <div id="custom-confirm-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="custom-confirm-title" aria-describedby="custom-confirm-text" style="z-index: 3010;" tabindex="-1">
-            <div class="modal-content" style="height: auto; max-height: 320px; width: 88%; max-width: 420px; text-align: center; border-radius: var(--border-radius-elements); padding: 20px;">
-                <h2 id="custom-confirm-title" style="margin-top: 0; margin-bottom: 12px; font-size: 16px; color: #ef4444; font-weight: 700;">GaborNeuroFit</h2>
-                <div class="modal-scroll-body" style="font-size: 12px; color: #cbd5e1; line-height: 1.45; text-align: center; margin-bottom: 12px; padding: 0 4px;">
+        <div id="custom-confirm-modal" class="modal modal--confirm" role="dialog" aria-modal="true" aria-labelledby="custom-confirm-title" aria-describedby="custom-confirm-text" tabindex="-1">
+            <div class="modal-content modal-content--compact">
+                <h2 id="custom-confirm-title" class="modal-title--compact" style="color: #ef4444;">GaborNeuroFit</h2>
+                <div class="modal-scroll-body modal-scroll-body--compact">
                     <p id="custom-confirm-text" style="margin: 0;"></p>
                 </div>
-                <div style="display: flex; gap: 10px; width: 100%;">
-                    <button type="button" id="btn-confirm-yes" class="close-btn" style="flex: 1; margin-top: 0; padding: 8px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; font-weight: bold;" data-i18n="confirmYes">Yes</button>
-                    <button type="button" id="btn-confirm-no" class="close-btn" style="flex: 1; margin-top: 0; padding: 8px; background: #2b354a; font-weight: bold;" data-i18n="confirmNo">Cancel</button>
+                <div class="confirm-btn-group">
+                    <button type="button" id="btn-confirm-yes" class="close-btn confirm-btn-yes" data-i18n="confirmYes">Yes</button>
+                    <button type="button" id="btn-confirm-no" class="close-btn confirm-btn-no" data-i18n="confirmNo">Cancel</button>
                 </div>
             </div>
         </div>
@@ -844,7 +844,7 @@
                 <div class="modal-scroll-body" tabindex="0">
 
                     <!-- Profile Selector Row -->
-                    <div class="settings-row" style="margin-top: 5px;">
+                    <div class="settings-row u-mt-xs">
                         <label data-i18n="lblActiveProfile" for="select-active-profile"></label>
                         <select id="select-active-profile" class="profile-select"></select>
                     </div>
@@ -893,12 +893,12 @@
                     <!-- Gabor Sensory Training Viewport -->
                     <div id="tab-gabor-content" role="region" aria-label="Gabor Training History" style="display: block;">
                         <!-- Procedural SVG Progress Chart -->
-                        <div id="progress-chart-container" aria-hidden="true" style="width: 100%; height: 130px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.04); display: flex; align-items: center; justify-content: center; padding: 10px; margin-bottom: 6px; box-sizing: border-box;">
+                        <div id="progress-chart-container" class="chart-card" aria-hidden="true">
                             <!-- SVG injected by screen.ts -->
                         </div>
 
                         <!-- Progress Chart Descriptive Legend Info -->
-                        <div style="margin-top: 0; margin-bottom: 14px; text-align: center; line-height: 1.15; padding: 0 10px;">
+                        <div class="chart-legend-wrapper">
                             <span data-i18n-html="chartLegend" style="font-size: 11px; color: #8e8e93; font-weight: 300; letter-spacing: 0.2px;"></span>
                         </div>
 
@@ -911,12 +911,12 @@
                     <!-- Synoptophore Motor Vergence Viewport -->
                     <div id="tab-tab-synop-content" role="region" aria-label="Synoptophore Training History" style="display: none;">
                         <!-- Procedural SVG Synop Deviation Chart -->
-                        <div id="synop-chart-container" aria-hidden="true" style="width: 100%; height: 130px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.04); display: flex; align-items: center; justify-content: center; padding: 10px; margin-bottom: 6px; box-sizing: border-box;">
+                        <div id="synop-chart-container" class="chart-card" aria-hidden="true">
                             <!-- SVG injected by screen.ts -->
                         </div>
 
                         <!-- Progress Chart Descriptive Legend Info for Synoptophore -->
-                        <div style="margin-top: 0; margin-bottom: 14px; text-align: center; line-height: 1.15; padding: 0 10px;">
+                        <div class="chart-legend-wrapper">
                             <span data-i18n-html="synopChartLegend" style="font-size: 11px; color: #8e8e93; font-weight: 300; letter-spacing: 0.2px;"></span>
                         </div>
 
@@ -929,12 +929,12 @@
                     <!-- Stereopsis Training Viewport -->
                     <div id="tab-rds-content" role="region" aria-label="Stereogram Training History" style="display: none;">
                         <!-- Procedural SVG Stereopsis Progress Chart -->
-                        <div id="rds-chart-container" aria-hidden="true" style="width: 100%; height: 130px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.04); display: flex; align-items: center; justify-content: center; padding: 10px; margin-bottom: 6px; box-sizing: border-box;">
+                        <div id="rds-chart-container" class="chart-card" aria-hidden="true">
                             <!-- SVG injected by screen.ts -->
                         </div>
 
                         <!-- Progress Chart Descriptive Legend Info for RDS -->
-                        <div style="margin-top: 0; margin-bottom: 14px; text-align: center; line-height: 1.15; padding: 0 10px;">
+                        <div class="chart-legend-wrapper">
                             <span data-i18n-html="rdsChartLegend" style="font-size: 11px; color: #8e8e93; font-weight: 300; letter-spacing: 0.2px;"></span>
                         </div>
 
