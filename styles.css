@@ -243,6 +243,30 @@ body.modal-is-open #app-wrapper {
         background-color: rgba(0, 122, 255, 0.18);
         box-shadow: 0 0 10px rgba(0, 122, 255, 0.2);
     }
+
+    .tab-btn:not(.active):hover {
+        color: #3b90ff;
+        background-color: rgba(43, 53, 74, 0.25);
+        box-shadow: 0 0 8px rgba(59, 144, 255, 0.15);
+    }
+
+    .pill-btn:not(.active):hover {
+        color: #3b90ff;
+        background-color: rgba(43, 53, 74, 0.25);
+        box-shadow: 0 0 8px rgba(59, 144, 255, 0.15);
+    }
+
+    .preset-card:not(.active):hover {
+        border-color: rgba(59, 144, 255, 0.4) !important;
+        background: rgba(43, 53, 74, 0.15) !important;
+        box-shadow: 0 0 12px rgba(59, 144, 255, 0.15);
+    }
+
+    .accordion-header:hover {
+        border-color: rgba(59, 144, 255, 0.4) !important;
+        background: rgba(26, 35, 58, 0.3) !important;
+        box-shadow: 0 0 10px rgba(59, 144, 255, 0.12);
+    }
 }
 
 /* ==========================================================================
