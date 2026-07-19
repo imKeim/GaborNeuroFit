@@ -307,12 +307,49 @@ body.modal-is-open #app-wrapper {
 }
 
 .badge {
-    font-size: clamp(9px, 2.5vw, 11px);
-    padding: 3px 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-size: clamp(10px, 2.5vw, 10px);
+    padding: 4px 10px;
+    line-height: 1;
     border-radius: var(--radius-pill);
     font-weight: 600;
     border: 1px solid rgba(0, 122, 255, 0.15);
     white-space: nowrap;
+}
+
+.badge img.emoji {
+    width: 1.35em;
+    height: 1.35em;
+    margin: 0;
+    transform: translateY(-0.5px);
+}
+
+/* Badge Color Modifiers */
+.badge--success {
+    color: #22c55e;
+    border-color: rgba(34, 197, 94, 0.3);
+    background: rgba(34, 197, 94, 0.12);
+}
+
+.badge--info {
+    color: #3b90ff;
+    border-color: rgba(59, 144, 255, 0.3);
+    background: rgba(59, 144, 255, 0.12);
+}
+
+.badge--warning {
+    color: #eab308;
+    border-color: rgba(234, 179, 8, 0.3);
+    background: rgba(234, 179, 8, 0.12);
+}
+
+.badge--danger {
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.12);
 }
 
 .indicators-panel {
@@ -389,7 +426,24 @@ body.modal-is-open #app-wrapper {
     margin: 18px 0;
 }
 
-/* Progress Graphs & Charts */
+/* Settings Modal Layout Components */
+.settings-group {
+    background: rgba(11, 15, 24, 0.3);
+    padding: 12px;
+    border-radius: var(--radius-elements);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 14px;
+}
+
+.settings-group--dashed {
+    background: rgba(13, 26, 38, 0.2);
+    padding: 10px;
+    border: 1px dashed rgba(255, 255, 255, 0.04);
+}
+
+/* Input Controls Layout */
 .chart-card {
     width: 100%;
     height: 130px;
