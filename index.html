@@ -788,26 +788,26 @@
         </div>
 
         <!-- View: Alert Dialog -->
-        <div id="custom-alert-modal" class="modal" role="alertdialog" aria-modal="true" aria-labelledby="custom-alert-title" aria-describedby="custom-alert-text" style="z-index: 3000;" tabindex="-1">
-            <div class="modal-content" style="height: auto; max-height: 320px; width: 88%; max-width: 420px; text-align: center; border-radius: var(--border-radius-elements); padding: 20px;">
-                <h2 id="custom-alert-title" style="margin-top: 0; margin-bottom: 12px; font-size: 16px; color: #eab308; font-weight: 700;">GaborNeuroFit</h2>
-                <div class="modal-scroll-body" style="font-size: 12px; color: #cbd5e1; line-height: 1.45; text-align: center; margin-bottom: 12px; padding: 0 4px;">
+        <div id="custom-alert-modal" class="modal modal--alert" role="alertdialog" aria-modal="true" aria-labelledby="custom-alert-title" aria-describedby="custom-alert-text" tabindex="-1">
+            <div class="modal-content modal-content--compact">
+                <h2 id="custom-alert-title" class="modal-title--compact" style="color: #eab308;">GaborNeuroFit</h2>
+                <div class="modal-scroll-body modal-scroll-body--compact">
                     <p id="custom-alert-text" style="margin: 0;"></p>
                 </div>
-                <button type="button" id="btn-close-custom-alert" class="close-btn" style="margin-top: 0; padding: 8px;">OK</button>
+                <button type="button" id="btn-close-custom-alert" class="close-btn close-btn--compact">OK</button>
             </div>
         </div>
 
         <!-- View: Confirmation Dialog -->
-        <div id="custom-confirm-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="custom-confirm-title" aria-describedby="custom-confirm-text" style="z-index: 3010;" tabindex="-1">
-            <div class="modal-content" style="height: auto; max-height: 320px; width: 88%; max-width: 420px; text-align: center; border-radius: var(--border-radius-elements); padding: 20px;">
-                <h2 id="custom-confirm-title" style="margin-top: 0; margin-bottom: 12px; font-size: 16px; color: #ef4444; font-weight: 700;">GaborNeuroFit</h2>
-                <div class="modal-scroll-body" style="font-size: 12px; color: #cbd5e1; line-height: 1.45; text-align: center; margin-bottom: 12px; padding: 0 4px;">
+        <div id="custom-confirm-modal" class="modal modal--confirm" role="dialog" aria-modal="true" aria-labelledby="custom-confirm-title" aria-describedby="custom-confirm-text" tabindex="-1">
+            <div class="modal-content modal-content--compact">
+                <h2 id="custom-confirm-title" class="modal-title--compact" style="color: #ef4444;">GaborNeuroFit</h2>
+                <div class="modal-scroll-body modal-scroll-body--compact">
                     <p id="custom-confirm-text" style="margin: 0;"></p>
                 </div>
-                <div style="display: flex; gap: 10px; width: 100%;">
-                    <button type="button" id="btn-confirm-yes" class="close-btn" style="flex: 1; margin-top: 0; padding: 8px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; font-weight: bold;" data-i18n="confirmYes">Yes</button>
-                    <button type="button" id="btn-confirm-no" class="close-btn" style="flex: 1; margin-top: 0; padding: 8px; background: #2b354a; font-weight: bold;" data-i18n="confirmNo">Cancel</button>
+                <div class="confirm-btn-group">
+                    <button type="button" id="btn-confirm-yes" class="close-btn confirm-btn-yes" data-i18n="confirmYes">Yes</button>
+                    <button type="button" id="btn-confirm-no" class="close-btn confirm-btn-no" data-i18n="confirmNo">Cancel</button>
                 </div>
             </div>
         </div>
@@ -892,12 +892,12 @@
                     <!-- Gabor Sensory Training Viewport -->
                     <div id="tab-gabor-content" role="region" aria-label="Gabor Training History" style="display: block;">
                         <!-- Procedural SVG Progress Chart -->
-                        <div id="progress-chart-container" aria-hidden="true" style="width: 100%; height: 130px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.04); display: flex; align-items: center; justify-content: center; padding: 10px; margin-bottom: 6px; box-sizing: border-box;">
+                        <div id="progress-chart-container" class="chart-card" aria-hidden="true">
                             <!-- SVG injected by screen.ts -->
                         </div>
 
                         <!-- Progress Chart Descriptive Legend Info -->
-                        <div style="margin-top: 0; margin-bottom: 14px; text-align: center; line-height: 1.15; padding: 0 10px;">
+                        <div class="chart-legend-wrapper">
                             <span data-i18n-html="chartLegend" style="font-size: 11px; color: #8e8e93; font-weight: 300; letter-spacing: 0.2px;"></span>
                         </div>
 
@@ -910,12 +910,12 @@
                     <!-- Synoptophore Motor Vergence Viewport -->
                     <div id="tab-tab-synop-content" role="region" aria-label="Synoptophore Training History" style="display: none;">
                         <!-- Procedural SVG Synop Deviation Chart -->
-                        <div id="synop-chart-container" aria-hidden="true" style="width: 100%; height: 130px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.04); display: flex; align-items: center; justify-content: center; padding: 10px; margin-bottom: 6px; box-sizing: border-box;">
+                        <div id="synop-chart-container" class="chart-card" aria-hidden="true">
                             <!-- SVG injected by screen.ts -->
                         </div>
 
                         <!-- Progress Chart Descriptive Legend Info for Synoptophore -->
-                        <div style="margin-top: 0; margin-bottom: 14px; text-align: center; line-height: 1.15; padding: 0 10px;">
+                        <div class="chart-legend-wrapper">
                             <span data-i18n-html="synopChartLegend" style="font-size: 11px; color: #8e8e93; font-weight: 300; letter-spacing: 0.2px;"></span>
                         </div>
 
@@ -928,12 +928,12 @@
                     <!-- Stereopsis Training Viewport -->
                     <div id="tab-rds-content" role="region" aria-label="Stereogram Training History" style="display: none;">
                         <!-- Procedural SVG Stereopsis Progress Chart -->
-                        <div id="rds-chart-container" aria-hidden="true" style="width: 100%; height: 130px; background: rgba(11, 15, 24, 0.3); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.04); display: flex; align-items: center; justify-content: center; padding: 10px; margin-bottom: 6px; box-sizing: border-box;">
+                        <div id="rds-chart-container" class="chart-card" aria-hidden="true">
                             <!-- SVG injected by screen.ts -->
                         </div>
 
                         <!-- Progress Chart Descriptive Legend Info for RDS -->
-                        <div style="margin-top: 0; margin-bottom: 14px; text-align: center; line-height: 1.15; padding: 0 10px;">
+                        <div class="chart-legend-wrapper">
                             <span data-i18n-html="rdsChartLegend" style="font-size: 11px; color: #8e8e93; font-weight: 300; letter-spacing: 0.2px;"></span>
                         </div>
 

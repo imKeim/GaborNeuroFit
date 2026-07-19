@@ -389,6 +389,29 @@ body.modal-is-open #app-wrapper {
     margin: 18px 0;
 }
 
+/* Progress Graphs & Charts */
+.chart-card {
+    width: 100%;
+    height: 130px;
+    background: rgba(11, 15, 24, 0.3);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    margin-bottom: 6px;
+    box-sizing: border-box;
+}
+
+.chart-legend-wrapper {
+    margin-top: 0;
+    margin-bottom: 14px;
+    text-align: center;
+    line-height: 1.15;
+    padding: 0 10px;
+}
+
 /* Input Controls Layout */
 #controls-layout {
     display: flex;
@@ -949,6 +972,15 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
     transition: opacity 0.3s ease, background-color 0.2s ease, visibility 0s linear 0.3s;
 }
 
+/* Specificity overrides for high-level systemic dialogs */
+.modal.modal--alert {
+    z-index: 3000;
+}
+
+.modal.modal--confirm {
+    z-index: 3010;
+}
+
 .modal.modal-open {
     opacity: 1;
     visibility: visible;
@@ -956,6 +988,63 @@ button:focus, input:focus, select:focus, [tabindex="0"]:focus {
     -webkit-backdrop-filter: blur(12px) !important;
     backdrop-filter: blur(12px) !important;
     transition: opacity 0.3s ease, background-color 0.2s ease, visibility 0s linear 0s;
+}
+
+/* Compact Alerts & Confirms Portal Layer overrides */
+.modal-content.modal-content--compact {
+    height: auto;
+    max-height: 320px;
+    width: 88%;
+    max-width: 420px;
+    text-align: center;
+    border-radius: var(--radius-elements);
+    padding: 20px;
+}
+
+.modal-title--compact {
+    margin-top: 0;
+    margin-bottom: 12px;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.modal-scroll-body.modal-scroll-body--compact {
+    font-size: 12px;
+    color: #cbd5e1;
+    line-height: 1.45;
+    text-align: center;
+    margin-bottom: 12px;
+    padding: 0 4px;
+    min-height: 0;
+}
+
+.close-btn.close-btn--compact {
+    margin-top: 0;
+    padding: 8px;
+}
+
+.confirm-btn-group {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.close-btn.confirm-btn-yes {
+    flex: 1;
+    margin-top: 0;
+    padding: 8px;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    color: #ef4444;
+    font-weight: bold;
+}
+
+.close-btn.confirm-btn-no {
+    flex: 1;
+    margin-top: 0;
+    padding: 8px;
+    background: #2b354a;
+    font-weight: bold;
 }
 
 .modal.modal-clear-backdrop {

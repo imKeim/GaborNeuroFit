@@ -637,7 +637,7 @@ window.addEventListener('load', async () => {
         },
         onEscape: () => {
             const s = Store.state;
-            const modals = ['custom-confirm-modal', 'settings-modal', 'info-modal', 'stats-modal'];
+            const modals = ['custom-alert-modal', 'custom-confirm-modal', 'settings-modal', 'info-modal', 'stats-modal'];
             for (const id of modals) {
                 const m = document.getElementById(id);
                 if (m && m.classList.contains('modal-open')) {
