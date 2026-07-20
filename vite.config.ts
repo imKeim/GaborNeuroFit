@@ -11,12 +11,14 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { configDefaults } from 'vitest/config';
+import vue from '@vitejs/plugin-vue';
 
 export default defineConfig({
   /** @description Force relative base paths to enable standalone local deployments. */
   base: './',
 
   plugins: [
+    vue(),
     /**
      * @block PWA Orchestration
      * @clinical Offline Continuity: Guarantees that vision therapy remains accessible 
