@@ -50,7 +50,8 @@ const flankerSpacings = [
          role="dialog" aria-modal="true" aria-labelledby="settingsTitle" tabindex="-1">
       <div class="modal-content">
         <h2 id="settingsTitle">Configuration Panel</h2>
-        <!-- Preset Grid -->
+        <div class="modal-scroll-body" style="overflow-y: auto; max-height: 60vh; padding-right: 8px;">
+          <!-- Preset Grid -->
         <div class="preset-grid">
           <div
             v-for="p in presets"
@@ -135,6 +136,27 @@ const flankerSpacings = [
           <div class="pill-group">
             <button class="pill-btn" :class="{ active: settings.isMonoAudioEnabled }" @click="settings.setMonoAudio(true)">On</button>
             <button class="pill-btn" :class="{ active: !settings.isMonoAudioEnabled }" @click="settings.setMonoAudio(false)">Off</button>
+          </div>
+        </div>
+
+        <!-- 3D Anaglyph Mode -->
+        <div class="settings-row">
+          <span class="settings-label">3D Anaglyph Mode</span>
+          <div class="pill-group">
+            <button class="pill-btn" :class="{ active: settings.isAnaglyphEnabled }" @click="settings.setAnaglyph(true)">On</button>
+            <button class="pill-btn" :class="{ active: !settings.isAnaglyphEnabled }" @click="settings.setAnaglyph(false)">Off</button>
+          </div>
+        </div>
+
+        <!-- Strong Eye Contrast Balancer -->
+        <div class="settings-row" v-if="settings.isAnaglyphEnabled">
+          <label for="range-strong-contrast" class="settings-label">Strong Eye Contrast Balancer</label>
+          <div style="display:flex; align-items:center; gap:8px; width:100%">
+            <input type="range" id="range-strong-contrast" min="10" max="100" step="5"
+                   :value="settings.strongEyeContrastPercent"
+                   @input="settings.setStrongContrastPercent(Number(($event.target as HTMLInputElement).value))"
+                   style="flex:1">
+            <span style="min-width:3em; text-align:right; font-weight:bold; color:#3b90ff">{{ settings.strongEyeContrastPercent }}%</span>
           </div>
         </div>
 
@@ -231,6 +253,7 @@ const flankerSpacings = [
           </div>
         </div>
 
+        </div>
         <button type="button" class="close-btn" @click="ui.closeSettings()">OK</button>
       </div>
     </div>

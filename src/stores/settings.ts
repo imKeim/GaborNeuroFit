@@ -27,6 +27,11 @@ export const useSettingsStore = defineStore('settings', () => {
   const isOrthogonalFlankersEnabled = ref<boolean>(Store.state.isOrthogonalFlankersEnabled)
   const isDynamicFlankersEnabled = ref<boolean>(Store.state.isDynamicFlankersEnabled)
 
+  // App mode & Anaglyph
+  const appMode = ref<'gabor' | 'synoptophore' | 'rds'>(Store.state.appMode)
+  const isAnaglyphEnabled = ref<boolean>(Store.state.isAnaglyphEnabled)
+  const strongEyeContrastPercent = ref<number>(Math.round(Store.state.strongEyeContrastFactor * 100))
+
   // Синхронизация со старым Store
   watch(presetMode, (val) => { Store.updateState('presetMode', val); Store.saveSettings() })
   watch(sessionLimit, (val) => { Store.updateState('sessionLimit', val); Store.saveSettings() })
@@ -60,6 +65,13 @@ export const useSettingsStore = defineStore('settings', () => {
   watch(isOrthogonalFlankersEnabled, (val) => { Store.updateState('isOrthogonalFlankersEnabled', val); Store.saveSettings() })
   watch(isDynamicFlankersEnabled, (val) => { Store.updateState('isDynamicFlankersEnabled', val); Store.saveSettings() })
 
+  watch(appMode, (val) => { Store.updateState('appMode', val); Store.saveSettings() })
+  watch(isAnaglyphEnabled, (val) => { Store.updateState('isAnaglyphEnabled', val); Store.saveSettings() })
+  watch(strongEyeContrastPercent, (val) => {
+    Store.updateState('strongEyeContrastFactor', val / 100)
+    Store.saveSettings()
+  })
+
   // Методы установки
   function setPreset(mode: GaborPreset) { presetMode.value = mode }
   function setSessionLimit(val: number) { sessionLimit.value = val }
@@ -79,6 +91,9 @@ export const useSettingsStore = defineStore('settings', () => {
   function setFlankerDistance(coeff: number) { flankerDistanceCoeff.value = coeff }
   function setOrthogonalFlankers(val: boolean) { isOrthogonalFlankersEnabled.value = val }
   function setDynamicFlankers(val: boolean) { isDynamicFlankersEnabled.value = val }
+  function setAppMode(mode: 'gabor' | 'synoptophore' | 'rds') { appMode.value = mode }
+  function setAnaglyph(val: boolean) { isAnaglyphEnabled.value = val }
+  function setStrongContrastPercent(percent: number) { strongEyeContrastPercent.value = percent }
 
   return {
     presetMode, setPreset,
@@ -99,5 +114,8 @@ export const useSettingsStore = defineStore('settings', () => {
     flankerDistanceCoeff, setFlankerDistance,
     isOrthogonalFlankersEnabled, setOrthogonalFlankers,
     isDynamicFlankersEnabled, setDynamicFlankers,
+    appMode, setAppMode,
+    isAnaglyphEnabled, setAnaglyph,
+    strongEyeContrastPercent, setStrongContrastPercent,
   }
 })

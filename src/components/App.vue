@@ -5,7 +5,12 @@ import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
 
 const ui = useUIStore()
-useSettingsStore() // side‑effect: синхронизирует старый Store через watch
+useSettingsStore()
+
+import { watch } from 'vue'
+watch(() => ui.isSettingsOpen, (open) => {
+  document.body.classList.toggle('modal-is-open', open)
+})
 
 onMounted(() => {
   // Перехватываем клик по старой кнопке настроек
