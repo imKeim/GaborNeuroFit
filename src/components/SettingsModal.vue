@@ -33,6 +33,15 @@ const timerLimits = [
   { label: '10m', value: 10 },
   { label: '15m', value: 15 },
 ]
+const crowdingModes = [
+  { label: 'Vertical', value: 'vertical' },
+  { label: 'Horizontal', value: 'horizontal' },
+  { label: 'All', value: 'all' },
+]
+const flankerSpacings = [
+  { label: 'Close (2x)', value: 2 },
+  { label: 'Far (4x)', value: 4 },
+]
 </script>
 
 <template>
@@ -116,13 +125,7 @@ const timerLimits = [
         <div class="settings-row">
           <span class="settings-label">Timer Limit</span>
           <div class="pill-group">
-            <button
-              v-for="opt in timerLimits"
-              :key="opt.value"
-              class="pill-btn"
-              :class="{ active: settings.timerLimitMinutes === opt.value }"
-              @click="settings.setTimerLimit(opt.value)"
-            >{{ opt.label }}</button>
+            <button v-for="opt in timerLimits" :key="opt.value" class="pill-btn" :class="{ active: settings.timerLimitMinutes === opt.value }" @click="settings.setTimerLimit(opt.value)">{{ opt.label }}</button>
           </div>
         </div>
 
@@ -130,8 +133,101 @@ const timerLimits = [
         <div class="settings-row">
           <span class="settings-label">Mono Audio</span>
           <div class="pill-group">
-            <button class="pill-btn" :class="{ active: settings.isMonoAudioEnabled === true }" @click="settings.setMonoAudio(true)">On</button>
-            <button class="pill-btn" :class="{ active: settings.isMonoAudioEnabled === false }" @click="settings.setMonoAudio(false)">Off</button>
+            <button class="pill-btn" :class="{ active: settings.isMonoAudioEnabled }" @click="settings.setMonoAudio(true)">On</button>
+            <button class="pill-btn" :class="{ active: !settings.isMonoAudioEnabled }" @click="settings.setMonoAudio(false)">Off</button>
+          </div>
+        </div>
+
+        <!-- Permanent Cross -->
+        <div class="settings-row">
+          <span class="settings-label">Permanent Cross</span>
+          <div class="pill-group">
+            <button class="pill-btn" :class="{ active: settings.isPermanentCrossEnabled }" @click="settings.setPermanentCross(true)">On</button>
+            <button class="pill-btn" :class="{ active: !settings.isPermanentCrossEnabled }" @click="settings.setPermanentCross(false)">Off</button>
+          </div>
+        </div>
+
+        <!-- Ultra-Low Contrast -->
+        <div class="settings-row">
+          <span class="settings-label">Ultra-Low Contrast</span>
+          <div class="pill-group">
+            <button class="pill-btn" :class="{ active: settings.allowLowContrast }" @click="settings.setLowContrast(true)">On</button>
+            <button class="pill-btn" :class="{ active: !settings.allowLowContrast }" @click="settings.setLowContrast(false)">Off</button>
+          </div>
+        </div>
+
+        <!-- Dynamic Level Drift -->
+        <div class="settings-row">
+          <span class="settings-label">Dynamic Level Drift</span>
+          <div class="pill-group">
+            <button class="pill-btn" :class="{ active: settings.allowDynamicLevelDrift }" @click="settings.setDynamicLevelDrift(true)">On</button>
+            <button class="pill-btn" :class="{ active: !settings.allowDynamicLevelDrift }" @click="settings.setDynamicLevelDrift(false)">Off</button>
+          </div>
+        </div>
+
+        <!-- Density Variance -->
+        <div class="settings-row">
+          <span class="settings-label">Density Variance</span>
+          <div class="pill-group">
+            <button class="pill-btn" :class="{ active: settings.allowDensityVariance }" @click="settings.setDensityVariance(true)">On</button>
+            <button class="pill-btn" :class="{ active: !settings.allowDensityVariance }" @click="settings.setDensityVariance(false)">Off</button>
+          </div>
+        </div>
+
+        <!-- Shape Variance -->
+        <div class="settings-row">
+          <span class="settings-label">Shape Variance</span>
+          <div class="pill-group">
+            <button class="pill-btn" :class="{ active: settings.allowShapeVariance }" @click="settings.setShapeVariance(true)">On</button>
+            <button class="pill-btn" :class="{ active: !settings.allowShapeVariance }" @click="settings.setShapeVariance(false)">Off</button>
+          </div>
+        </div>
+
+        <!-- Peripheral Shift -->
+        <div class="settings-row">
+          <span class="settings-label">Peripheral Shift</span>
+          <div class="pill-group">
+            <button class="pill-btn" :class="{ active: settings.isPeripheralEnabled }" @click="settings.setPeripheral(true)">On</button>
+            <button class="pill-btn" :class="{ active: !settings.isPeripheralEnabled }" @click="settings.setPeripheral(false)">Off</button>
+          </div>
+        </div>
+
+        <!-- Visual Crowding -->
+        <div class="settings-row">
+          <span class="settings-label">Visual Crowding</span>
+          <div class="pill-group">
+            <button class="pill-btn" :class="{ active: settings.isCrowdingEnabled }" @click="settings.setCrowding(true)">On</button>
+            <button class="pill-btn" :class="{ active: !settings.isCrowdingEnabled }" @click="settings.setCrowding(false)">Off</button>
+          </div>
+        </div>
+
+        <!-- Crowding Options -->
+        <div v-if="settings.isCrowdingEnabled">
+          <div class="settings-row">
+            <span class="settings-label">Crowding Axis</span>
+            <div class="pill-group">
+              <button v-for="mode in crowdingModes" :key="mode.value" class="pill-btn" :class="{ active: settings.crowdingMode === mode.value }" @click="settings.setCrowdingMode(mode.value)">{{ mode.label }}</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label">Flanker Spacing</span>
+            <div class="pill-group">
+              <button v-for="sp in flankerSpacings" :key="sp.value" class="pill-btn" :class="{ active: settings.flankerDistanceCoeff === sp.value }" @click="settings.setFlankerDistance(sp.value)">{{ sp.label }}</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label">Orthogonal Distractor</span>
+            <div class="pill-group">
+              <button class="pill-btn" :class="{ active: settings.isOrthogonalFlankersEnabled }" @click="settings.setOrthogonalFlankers(true)">On</button>
+              <button class="pill-btn" :class="{ active: !settings.isOrthogonalFlankersEnabled }" @click="settings.setOrthogonalFlankers(false)">Off</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label">Dynamic Flankers</span>
+            <div class="pill-group">
+              <button class="pill-btn" :class="{ active: settings.isDynamicFlankersEnabled }" @click="settings.setDynamicFlankers(true)">On</button>
+              <button class="pill-btn" :class="{ active: !settings.isDynamicFlankersEnabled }" @click="settings.setDynamicFlankers(false)">Off</button>
+            </div>
           </div>
         </div>
 
