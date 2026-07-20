@@ -16,7 +16,6 @@ import { DataRepository } from './store/repository';
 import { GaborController } from './controller/gabor';
 import { RdsController } from './controller/rds';
 import { SynoptophoreController } from './controller/synop';
-import { SettingsController } from './controller/settings';
 import { DashboardController } from './controller/dashboard';
 import { PauseController } from './controller/pause';
 import { HudHintController } from './ui/hint';
@@ -49,7 +48,6 @@ let activeTranslations: Record<string, string> = {};
 
 /** @description Global registry for modality-specific controller singletons. */
 let gaborController: GaborController | null = null;
-let settingsController: SettingsController | null = null;
 let synoptophoreController: SynoptophoreController | null = null;
 let rdsController: RdsController | null = null;
 let dashboardController: DashboardController | null = null;
@@ -271,9 +269,6 @@ export async function setLanguage(lang: Language): Promise<void> {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         window.twemoji.parse(document.getElementById('bottom-dock'));
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        window.twemoji.parse(document.getElementById('settings-modal'));
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         window.twemoji.parse(document.getElementById('stats-modal'));
@@ -535,50 +530,6 @@ window.addEventListener('load', async () => {
     });
     interactionController.init();
 
-    settingsController = new SettingsController(() => {
-        updateStatusBar(Store.state, activeTranslations);
-        if (Store.state.isAnaglyphTestActive) {
-            drawFusionTestPattern(overlayCanvas, overlayCtx, Store.state);
-        } else if (Store.state.appMode === 'gabor') {
-            if (gaborController) {
-                const isStimulusVisible = (gaborController.currentState === 'STIMULUS_ACTIVE') ||
-                                          (gaborController.currentState === 'AWAITING_INPUT' && Store.state.isStaticEnabled);
-                if (isStimulusVisible) {
-                    renderGabor(canvas, null, Store.state, gaborController.currentAngleDeg, Store.state.autoContrast, Store.state.autoContrast, gaborController.lastRandomFreq, gaborController.lastRandomSigma, gaborController.lastOffsetX, gaborController.lastOffsetY, 0, gaborController.lastRandomAspectRatio);
-                    overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-                    if (Store.state.isFusionLockEnabled) {
-                        const scale = canvas.width / 256.0;
-                        drawFusionLockFrame(overlayCanvas, overlayCtx, scale);
-                    }
-                } else {
-                    drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
-                }
-            }
-        } else if (Store.state.appMode === 'synoptophore') {
-            if (Store.state.synopState !== 'idle' && !Store.state.synopFlickerActive) {
-                drawSynoptophoreTargets(overlayCanvas, overlayCtx, Store.state);
-            }
-        } else if (Store.state.appMode === 'rds') {
-            if (rdsController) {
-                const isIdle = rdsController.currentState === 'IDLE' || rdsController.currentState === 'FEEDBACK';
-                // If the session hasn't started, draw neutral gray instead of noise.
-                if (isIdle && Store.state.rdsTotal === 0 && !Store.state.isAnaglyphTestActive) {
-                    drawIdleState(canvas, null, overlayCanvas, overlayCtx, Store.state.isFusionLockEnabled);
-                } else {
-                    drawRandomDotStereogram(overlayCanvas, overlayCtx, Store.state, false, isIdle);
-                }
-            }
-        }
-        
-        // If Pill Tabs change the language, immediately react and reload i18n
-        if (Store.state.currentLang !== activeTranslations._currentLangMetadata) {
-            activeTranslations._currentLangMetadata = Store.state.currentLang;
-            setLanguage(Store.state.currentLang);
-        }
-
-        syncVisualState();
-    });
-    
     // Stamp initial language to metadata for comparison tracking
     activeTranslations._currentLangMetadata = Store.state.currentLang;
 
@@ -616,32 +567,6 @@ window.addEventListener('load', async () => {
 
     initModals(
         () => {
-            // Record if the game was already paused by the user before opening settings
-            wasPausedBeforeSettings = Store.state.isPaused;
-
-            enforceSystemPause();
-            Store.loadSettings();
-
-            // Take snapshot of clinical parameters to detect destructive changes
-            snapAppMode = Store.state.appMode;
-            snapLevel = Store.state.currentLevel;
-            snapTimerLimit = Store.state.timerLimitMinutes;
-            snapRdsStartDisparity = Store.state.rdsStartDisparity;
-
-            if (btnFusionTest) {
-                if (Store.state.isAnaglyphTestActive) {
-                    btnFusionTest.classList.add('active');
-                } else {
-                    btnFusionTest.classList.remove('active');
-                }
-            }
-
-            if (settingsController) settingsController.updatePresetUI();
-        },
-        () => {
-            saveSettingsFromUI();
-        },
-        () => {
             enforceSystemPause();
             if (dashboardController) dashboardController.refreshStatsUI();
         },
@@ -662,7 +587,6 @@ window.addEventListener('load', async () => {
 
     /** @description Synchronizes state and triggers re-initialization if clinical changes are detected. */
     function saveSettingsFromUI(): void {
-        if (settingsController) settingsController.syncStateFromUI();
         Store.saveSettings();
 
         const isCriticalChange = (
@@ -841,7 +765,6 @@ window.addEventListener('load', async () => {
     }
 
     updateMuteBtnUI();
-    if (settingsController) settingsController.bindSettingsInteractions();
 
     transitionToMode(Store.state.appMode);
 

@@ -300,8 +300,6 @@ export function showCustomConfirm(
  * @param {Function} onStatsOpen - Dashboard telemetry refresh hook.
  */
 export function initModals(
-    onSettingsOpen: () => void,
-    onSettingsSave: () => void,
     onStatsOpen: () => void,
     onStatsClose: () => void,
     onInfoClose: () => void
@@ -309,10 +307,6 @@ export function initModals(
     const infoModal = document.getElementById('info-modal');
     const btnInfo = document.getElementById('btn-info');
     const btnCloseModal = document.getElementById('btn-close-modal');
-
-    const settingsModal = document.getElementById('settings-modal');
-    const btnSettings = document.getElementById('btn-settings');
-    const btnCloseSettings = document.getElementById('btn-close-settings');
 
     const statsModal = document.getElementById('stats-modal');
     const btnStats = document.getElementById('btn-stats');
@@ -328,8 +322,6 @@ export function initModals(
     if (btnInfo && infoModal) {
         btnInfo.addEventListener('click', () => {
             openModal(infoModal);
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
             if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(infoModal);
         });
     }
@@ -340,29 +332,10 @@ export function initModals(
         });
     }
 
-    if (btnSettings && settingsModal) {
-        btnSettings.addEventListener('click', () => {
-            if (typeof onSettingsOpen === 'function') onSettingsOpen();
-            openModal(settingsModal);
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(settingsModal);
-        });
-    }
-
-    if (btnCloseSettings && settingsModal) {
-        btnCloseSettings.addEventListener('click', () => {
-            if (typeof onSettingsSave === 'function') onSettingsSave();
-            closeModal(settingsModal);
-        });
-    }
-
     if (btnStats && statsModal) {
         btnStats.addEventListener('click', () => {
             if (typeof onStatsOpen === 'function') onStatsOpen();
             openModal(statsModal);
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
             if (typeof window !== 'undefined' && window.twemoji) window.twemoji.parse(statsModal);
         });
     }
