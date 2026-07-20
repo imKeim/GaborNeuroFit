@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 import { Store } from '../store' // старый глобальный Store
-import type { GaborPreset, FlashDurationMode, CrowdingMode } from '../types/clinical'
+import type { GaborPreset, FlashDurationMode, CrowdingMode, SynopTargetType } from '../types/clinical'
 
 export const useSettingsStore = defineStore('settings', () => {
   const presetMode = ref<GaborPreset>(Store.state.presetMode)
@@ -31,6 +31,16 @@ export const useSettingsStore = defineStore('settings', () => {
   const appMode = ref<'gabor' | 'synoptophore' | 'rds'>(Store.state.appMode)
   const isAnaglyphEnabled = ref<boolean>(Store.state.isAnaglyphEnabled)
   const strongEyeContrastPercent = ref<number>(Math.round(Store.state.strongEyeContrastFactor * 100))
+
+  // Synoptophore
+  const synopPullSpeed = ref<number>(Store.state.synopPullSpeed)
+  const synopTargetType = ref<SynopTargetType>(Store.state.synopTargetType)
+  const synopShowLazyGrid = ref<boolean>(Store.state.synopShowLazyGrid)
+  const synopShowStrongGrid = ref<boolean>(Store.state.synopShowStrongGrid)
+  const synopTargetSize = ref<number>(Store.state.synopTargetSize)
+  const synopFlickerActive = ref<boolean>(Store.state.synopFlickerActive)
+  const synopLockVertical = ref<boolean>(Store.state.synopLockVertical)
+  const synopLockHorizontal = ref<boolean>(Store.state.synopLockHorizontal)
 
   // Синхронизация со старым Store
   watch(presetMode, (val) => { Store.updateState('presetMode', val); Store.saveSettings() })
@@ -72,6 +82,23 @@ export const useSettingsStore = defineStore('settings', () => {
     Store.saveSettings()
   })
 
+  watch(synopPullSpeed, (val) => { Store.updateState('synopPullSpeed', val); Store.saveSettings() })
+  watch(synopTargetType, (val) => { Store.updateState('synopTargetType', val); Store.saveSettings() })
+  watch(synopShowLazyGrid, (val) => { Store.updateState('synopShowLazyGrid', val); Store.saveSettings() })
+  watch(synopShowStrongGrid, (val) => { Store.updateState('synopShowStrongGrid', val); Store.saveSettings() })
+  watch(synopTargetSize, (val) => { Store.updateState('synopTargetSize', val); Store.saveSettings() })
+  watch(synopFlickerActive, (val) => { Store.updateState('synopFlickerActive', val); Store.saveSettings() })
+
+  // Взаимная блокировка lock‑осей
+  watch(synopLockVertical, (val) => {
+    if (val && synopLockHorizontal.value) synopLockHorizontal.value = false
+    Store.updateState('synopLockVertical', val); Store.saveSettings()
+  })
+  watch(synopLockHorizontal, (val) => {
+    if (val && synopLockVertical.value) synopLockVertical.value = false
+    Store.updateState('synopLockHorizontal', val); Store.saveSettings()
+  })
+
   // Методы установки
   function setPreset(mode: GaborPreset) { presetMode.value = mode }
   function setSessionLimit(val: number) { sessionLimit.value = val }
@@ -94,6 +121,14 @@ export const useSettingsStore = defineStore('settings', () => {
   function setAppMode(mode: 'gabor' | 'synoptophore' | 'rds') { appMode.value = mode }
   function setAnaglyph(val: boolean) { isAnaglyphEnabled.value = val }
   function setStrongContrastPercent(percent: number) { strongEyeContrastPercent.value = percent }
+  function setSynopPullSpeed(ms: number) { synopPullSpeed.value = ms }
+  function setSynopTargetType(type: SynopTargetType) { synopTargetType.value = type }
+  function setSynopLazyGrid(val: boolean) { synopShowLazyGrid.value = val }
+  function setSynopStrongGrid(val: boolean) { synopShowStrongGrid.value = val }
+  function setSynopTargetSize(px: number) { synopTargetSize.value = px }
+  function setSynopFlicker(val: boolean) { synopFlickerActive.value = val }
+  function setSynopLockVertical(val: boolean) { synopLockVertical.value = val }
+  function setSynopLockHorizontal(val: boolean) { synopLockHorizontal.value = val }
 
   return {
     presetMode, setPreset,
@@ -117,5 +152,13 @@ export const useSettingsStore = defineStore('settings', () => {
     appMode, setAppMode,
     isAnaglyphEnabled, setAnaglyph,
     strongEyeContrastPercent, setStrongContrastPercent,
+    synopPullSpeed, setSynopPullSpeed,
+    synopTargetType, setSynopTargetType,
+    synopShowLazyGrid, setSynopLazyGrid,
+    synopShowStrongGrid, setSynopStrongGrid,
+    synopTargetSize, setSynopTargetSize,
+    synopFlickerActive, setSynopFlicker,
+    synopLockVertical, setSynopLockVertical,
+    synopLockHorizontal, setSynopLockHorizontal,
   }
 })
