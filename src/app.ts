@@ -832,7 +832,7 @@ window.addEventListener('load', async () => {
                     Store.updateState('isCurtainActive', isInitialState || s.isSessionCompleted);
                     syncVisualState();
                 }
-            }, 100);
+            }, 10);
         });
     }
 
