@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
-import type { GaborPreset } from '../types/clinical'
+import type { GaborPreset, FlashDurationMode } from '../types/clinical'
 
 const ui = useUIStore()
 const settings = useSettingsStore()
@@ -15,9 +15,24 @@ const presets: { mode: GaborPreset; title: string; desc: string }[] = [
   { mode: 'custom', title: '⚙️ Custom', desc: 'Manual parameter control.' },
 ]
 
-function selectPreset(mode: GaborPreset) {
-  settings.setPreset(mode)
-}
+const sessionLimits = [
+  { label: 'Off', value: 0 },
+  { label: '40', value: 40 },
+  { label: '80', value: 80 },
+  { label: '120', value: 120 },
+]
+const flashDurations: { label: string; value: FlashDurationMode }[] = [
+  { label: 'Adapt.', value: 'adaptive' },
+  { label: '100ms', value: '100' },
+  { label: '200ms', value: '200' },
+  { label: '350ms', value: '350' },
+]
+const timerLimits = [
+  { label: 'Off', value: 0 },
+  { label: '5m', value: 5 },
+  { label: '10m', value: 10 },
+  { label: '15m', value: 15 },
+]
 </script>
 
 <template>
@@ -33,7 +48,7 @@ function selectPreset(mode: GaborPreset) {
             :key="p.mode"
             class="preset-card"
             :class="{ active: settings.presetMode === p.mode }"
-            @click="selectPreset(p.mode)"
+            @click="settings.setPreset(p.mode)"
             tabindex="0"
             role="button"
             :aria-pressed="settings.presetMode === p.mode ? 'true' : 'false'"
@@ -42,6 +57,84 @@ function selectPreset(mode: GaborPreset) {
             <span class="preset-card-desc">{{ p.desc }}</span>
           </div>
         </div>
+
+        <!-- Session Limit -->
+        <div class="settings-row">
+          <span class="settings-label">Session Limit</span>
+          <div class="pill-group">
+            <button
+              v-for="opt in sessionLimits"
+              :key="opt.value"
+              class="pill-btn"
+              :class="{ active: settings.sessionLimit === opt.value }"
+              @click="settings.setSessionLimit(opt.value)"
+            >{{ opt.label }}</button>
+          </div>
+        </div>
+
+        <!-- Auto-Next -->
+        <div class="settings-row">
+          <span class="settings-label">Auto-Next</span>
+          <div class="pill-group">
+            <button
+              class="pill-btn" :class="{ active: settings.autoAdvance === true }"
+              @click="settings.setAutoAdvance(true)">On</button>
+            <button
+              class="pill-btn" :class="{ active: settings.autoAdvance === false }"
+              @click="settings.setAutoAdvance(false)">Off</button>
+          </div>
+        </div>
+
+        <!-- Stage Advance -->
+        <div class="settings-row">
+          <span class="settings-label">Stage Advance</span>
+          <div class="pill-group">
+            <button
+              class="pill-btn" :class="{ active: settings.allowStageAdvance === true }"
+              @click="settings.setStageAdvance(true)">On</button>
+            <button
+              class="pill-btn" :class="{ active: settings.allowStageAdvance === false }"
+              @click="settings.setStageAdvance(false)">Off</button>
+          </div>
+        </div>
+
+        <!-- Flash Duration -->
+        <div class="settings-row">
+          <span class="settings-label">Flash Duration</span>
+          <div class="pill-group">
+            <button
+              v-for="opt in flashDurations"
+              :key="opt.value"
+              class="pill-btn"
+              :class="{ active: settings.flashDurationMode === opt.value }"
+              @click="settings.setFlashDuration(opt.value)"
+            >{{ opt.label }}</button>
+          </div>
+        </div>
+
+        <!-- Timer Limit -->
+        <div class="settings-row">
+          <span class="settings-label">Timer Limit</span>
+          <div class="pill-group">
+            <button
+              v-for="opt in timerLimits"
+              :key="opt.value"
+              class="pill-btn"
+              :class="{ active: settings.timerLimitMinutes === opt.value }"
+              @click="settings.setTimerLimit(opt.value)"
+            >{{ opt.label }}</button>
+          </div>
+        </div>
+
+        <!-- Mono Audio -->
+        <div class="settings-row">
+          <span class="settings-label">Mono Audio</span>
+          <div class="pill-group">
+            <button class="pill-btn" :class="{ active: settings.isMonoAudioEnabled === true }" @click="settings.setMonoAudio(true)">On</button>
+            <button class="pill-btn" :class="{ active: settings.isMonoAudioEnabled === false }" @click="settings.setMonoAudio(false)">Off</button>
+          </div>
+        </div>
+
         <button type="button" class="close-btn" @click="ui.closeSettings()">OK</button>
       </div>
     </div>
