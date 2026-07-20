@@ -52,6 +52,34 @@ const targetSizes = [
   { label: '45px (Param.)', value: 45 },
   { label: '30px (Fov.)', value: 30 },
 ]
+const disparities = [
+  { label: '8px', value: 8 },
+  { label: '6px', value: 6 },
+  { label: '4px', value: 4 },
+  { label: '2px', value: 2 },
+  { label: '1px', value: 1 },
+]
+const dotSizes = [
+  { label: '2px', value: 2 },
+  { label: '4px', value: 4 },
+  { label: '6px', value: 6 },
+]
+const densities = [
+  { label: '35%', value: 35 },
+  { label: '50%', value: 50 },
+  { label: '65%', value: 65 },
+]
+const floatSpeeds = [
+  { label: 'Slow', value: 'slow' },
+  { label: 'Normal', value: 'medium' },
+  { label: 'Fast', value: 'fast' },
+]
+const rdsSessionLimits = [
+  { label: 'Off', value: 0 },
+  { label: '15', value: 15 },
+  { label: '30', value: 30 },
+  { label: '45', value: 45 },
+]
 </script>
 
 <template>
@@ -140,16 +168,63 @@ const targetSizes = [
               </div>
             </div>
 
-            <!-- 3D Anaglyph Mode -->
-            <div class="settings-row">
-              <span class="settings-label">3D Anaglyph Mode</span>
-              <div class="pill-group">
-                <button class="pill-btn" :class="{ active: settings.isAnaglyphEnabled }" @click="settings.setAnaglyph(true)">On</button>
-                <button class="pill-btn" :class="{ active: !settings.isAnaglyphEnabled }" @click="settings.setAnaglyph(false)">Off</button>
-              </div>
-            </div>
-
-            <!-- Strong Eye Contrast Balancer -->
+	        <!-- 3D Anaglyph Mode -->
+		        <div class="settings-row">
+		          <span class="settings-label">3D Anaglyph Mode</span>
+		          <div class="pill-group">
+		            <button class="pill-btn" :class="{ active: settings.isAnaglyphEnabled }" @click="settings.setAnaglyph(true)">On</button>
+		            <button class="pill-btn" :class="{ active: !settings.isAnaglyphEnabled }" @click="settings.setAnaglyph(false)">Off</button>
+		          </div>
+		        </div>
+		
+		        <!-- Subpixel Calibration -->
+		        <div class="settings-row">
+		          <div style="display:flex; flex-direction:column; gap:6px; width:100%">
+		            <div style="display:flex; justify-content:space-between; align-items:center">
+		              <span style="color:#ef4444; font-weight:bold">R (Left Lens)</span>
+		              <span style="color:#ef4444; font-weight:bold">{{ settings.calibratorLeftR }}</span>
+		            </div>
+		            <div style="display:flex; align-items:center; gap:6px">
+		              <button class="pill-btn" @click="settings.setCalibratorLeftR(Math.max(0, settings.calibratorLeftR - 1))">−</button>
+		              <input type="range" min="0" max="255" :value="settings.calibratorLeftR"
+		                     @input="settings.setCalibratorLeftR(Number(($event.target as HTMLInputElement).value))"
+		                     style="flex:1">
+		              <button class="pill-btn" @click="settings.setCalibratorLeftR(Math.min(255, settings.calibratorLeftR + 1))">+</button>
+		            </div>
+		          </div>
+		        </div>
+		        <div class="settings-row">
+		          <div style="display:flex; flex-direction:column; gap:6px; width:100%">
+		            <div style="display:flex; justify-content:space-between; align-items:center">
+		              <span style="color:#22c55e; font-weight:bold">G (Right Lens)</span>
+		              <span style="color:#22c55e; font-weight:bold">{{ settings.calibratorRightG }}</span>
+		            </div>
+		            <div style="display:flex; align-items:center; gap:6px">
+		              <button class="pill-btn" @click="settings.setCalibratorRightG(Math.max(0, settings.calibratorRightG - 1))">−</button>
+		              <input type="range" min="0" max="255" :value="settings.calibratorRightG"
+		                     @input="settings.setCalibratorRightG(Number(($event.target as HTMLInputElement).value))"
+		                     style="flex:1">
+		              <button class="pill-btn" @click="settings.setCalibratorRightG(Math.min(255, settings.calibratorRightG + 1))">+</button>
+		            </div>
+		          </div>
+		        </div>
+		        <div class="settings-row">
+		          <div style="display:flex; flex-direction:column; gap:6px; width:100%">
+		            <div style="display:flex; justify-content:space-between; align-items:center">
+		              <span style="color:#3b82f6; font-weight:bold">B (Right Lens)</span>
+		              <span style="color:#3b82f6; font-weight:bold">{{ settings.calibratorRightB }}</span>
+		            </div>
+		            <div style="display:flex; align-items:center; gap:6px">
+		              <button class="pill-btn" @click="settings.setCalibratorRightB(Math.max(0, settings.calibratorRightB - 1))">−</button>
+		              <input type="range" min="0" max="255" :value="settings.calibratorRightB"
+		                     @input="settings.setCalibratorRightB(Number(($event.target as HTMLInputElement).value))"
+		                     style="flex:1">
+		              <button class="pill-btn" @click="settings.setCalibratorRightB(Math.min(255, settings.calibratorRightB + 1))">+</button>
+		            </div>
+		          </div>
+		        </div>
+		
+		        <!-- Strong Eye Contrast Balancer -->
             <div class="settings-row" v-if="settings.isAnaglyphEnabled">
               <label for="range-strong-contrast" class="settings-label">Strong Eye Contrast Balancer</label>
               <div style="display:flex; align-items:center; gap:8px; width:100%">
@@ -330,7 +405,90 @@ const targetSizes = [
 
           <!-- ==================== RDS ==================== -->
           <template v-if="settings.appMode === 'rds'">
-            <p style="text-align:center; color:#8e8e93; padding:20px;">RDS settings coming soon…</p>
+            <!-- Starting Disparity -->
+            <div class="settings-row">
+              <span class="settings-label">Starting Disparity</span>
+              <div class="pill-group">
+                <button v-for="d in disparities" :key="d.value" class="pill-btn" :class="{ active: settings.rdsStartDisparity === d.value }" @click="settings.setRdsStartDisparity(d.value)">{{ d.label }}</button>
+              </div>
+            </div>
+
+            <!-- Dot Size -->
+            <div class="settings-row">
+              <span class="settings-label">Dot Size</span>
+              <div class="pill-group">
+                <button v-for="ds in dotSizes" :key="ds.value" class="pill-btn" :class="{ active: settings.rdsDotSize === ds.value }" @click="settings.setRdsDotSize(ds.value)">{{ ds.label }}</button>
+              </div>
+            </div>
+
+            <!-- Density -->
+            <div class="settings-row">
+              <span class="settings-label">Density</span>
+              <div class="pill-group">
+                <button v-for="den in densities" :key="den.value" class="pill-btn" :class="{ active: settings.rdsDensityPercent === den.value }" @click="settings.setRdsDensityPercent(den.value)">{{ den.label }}</button>
+              </div>
+            </div>
+
+            <!-- Auto-Next -->
+            <div class="settings-row">
+              <span class="settings-label">Auto-Next</span>
+              <div class="pill-group">
+                <button class="pill-btn" :class="{ active: settings.rdsAutoAdvance }" @click="settings.setRdsAutoAdvance(true)">On</button>
+                <button class="pill-btn" :class="{ active: !settings.rdsAutoAdvance }" @click="settings.setRdsAutoAdvance(false)">Off</button>
+              </div>
+            </div>
+
+            <!-- Dynamic Noise -->
+            <div class="settings-row">
+              <span class="settings-label">Dynamic Noise</span>
+              <div class="pill-group">
+                <button class="pill-btn" :class="{ active: settings.rdsIsDynamic }" @click="settings.setRdsIsDynamic(true)">On</button>
+                <button class="pill-btn" :class="{ active: !settings.rdsIsDynamic }" @click="settings.setRdsIsDynamic(false)">Off</button>
+              </div>
+            </div>
+
+            <!-- Randomize Vertical -->
+            <div class="settings-row">
+              <span class="settings-label">Randomize Vertical</span>
+              <div class="pill-group">
+                <button class="pill-btn" :class="{ active: settings.rdsRandomizeVertical }" @click="settings.setRdsRandomizeVertical(true)">On</button>
+                <button class="pill-btn" :class="{ active: !settings.rdsRandomizeVertical }" @click="settings.setRdsRandomizeVertical(false)">Off</button>
+              </div>
+            </div>
+
+            <!-- Floating Target -->
+            <div class="settings-row">
+              <span class="settings-label">Floating Target</span>
+              <div class="pill-group">
+                <button class="pill-btn" :class="{ active: settings.rdsIsFloating }" @click="settings.setRdsIsFloating(true)">On</button>
+                <button class="pill-btn" :class="{ active: !settings.rdsIsFloating }" @click="settings.setRdsIsFloating(false)">Off</button>
+              </div>
+            </div>
+
+            <!-- Float Speed (only if floating) -->
+            <div class="settings-row" v-if="settings.rdsIsFloating">
+              <span class="settings-label">Float Speed</span>
+              <div class="pill-group">
+                <button v-for="fs in floatSpeeds" :key="fs.value" class="pill-btn" :class="{ active: settings.rdsFloatSpeed === fs.value }" @click="settings.setRdsFloatSpeed(fs.value)">{{ fs.label }}</button>
+              </div>
+            </div>
+
+            <!-- Permanent Cross -->
+            <div class="settings-row">
+              <span class="settings-label">Permanent Cross</span>
+              <div class="pill-group">
+                <button class="pill-btn" :class="{ active: settings.rdsIsPermanentCrossEnabled }" @click="settings.setRdsPermanentCross(true)">On</button>
+                <button class="pill-btn" :class="{ active: !settings.rdsIsPermanentCrossEnabled }" @click="settings.setRdsPermanentCross(false)">Off</button>
+              </div>
+            </div>
+
+            <!-- Session Limit -->
+            <div class="settings-row">
+              <span class="settings-label">Session Limit</span>
+              <div class="pill-group">
+                <button v-for="lim in rdsSessionLimits" :key="lim.value" class="pill-btn" :class="{ active: settings.rdsSessionLimit === lim.value }" @click="settings.setRdsSessionLimit(lim.value)">{{ lim.label }}</button>
+              </div>
+            </div>
           </template>
 
         </div>

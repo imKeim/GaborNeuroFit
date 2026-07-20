@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 import { Store } from '../store' // старый глобальный Store
-import type { GaborPreset, FlashDurationMode, CrowdingMode, SynopTargetType } from '../types/clinical'
+import type { GaborPreset, FlashDurationMode, CrowdingMode, SynopTargetType, RdsFloatSpeed } from '../types/clinical'
 
 export const useSettingsStore = defineStore('settings', () => {
   const presetMode = ref<GaborPreset>(Store.state.presetMode)
@@ -41,6 +41,23 @@ export const useSettingsStore = defineStore('settings', () => {
   const synopFlickerActive = ref<boolean>(Store.state.synopFlickerActive)
   const synopLockVertical = ref<boolean>(Store.state.synopLockVertical)
   const synopLockHorizontal = ref<boolean>(Store.state.synopLockHorizontal)
+
+  // RDS
+  const rdsStartDisparity = ref<number>(Store.state.rdsStartDisparity)
+  const rdsDotSize = ref<number>(Store.state.rdsDotSize)
+  const rdsDensityPercent = ref<number>(Math.round(Store.state.rdsDensity * 100))
+  const rdsAutoAdvance = ref<boolean>(Store.state.rdsAutoAdvance)
+  const rdsIsDynamic = ref<boolean>(Store.state.rdsIsDynamic)
+  const rdsRandomizeVertical = ref<boolean>(Store.state.rdsRandomizeVertical)
+  const rdsIsFloating = ref<boolean>(Store.state.rdsIsFloating)
+  const rdsFloatSpeed = ref<RdsFloatSpeed>(Store.state.rdsFloatSpeed)
+  const rdsIsPermanentCrossEnabled = ref<boolean>(Store.state.rdsIsPermanentCrossEnabled)
+  const rdsSessionLimit = ref<number>(Store.state.rdsSessionLimit)
+
+  // Calibration
+  const calibratorLeftR = ref<number>(Store.state.calibratorLeftR)
+  const calibratorRightG = ref<number>(Store.state.calibratorRightG)
+  const calibratorRightB = ref<number>(Store.state.calibratorRightB)
 
   // Синхронизация со старым Store
   watch(presetMode, (val) => { Store.updateState('presetMode', val); Store.saveSettings() })
@@ -99,6 +116,28 @@ export const useSettingsStore = defineStore('settings', () => {
     Store.updateState('synopLockHorizontal', val); Store.saveSettings()
   })
 
+  // RDS
+  watch(rdsStartDisparity, (val) => { Store.updateState('rdsStartDisparity', val); Store.saveSettings() })
+  watch(rdsDotSize, (val) => { Store.updateState('rdsDotSize', val); Store.saveSettings() })
+  watch(rdsDensityPercent, (val) => { Store.updateState('rdsDensity', val / 100); Store.saveSettings() })
+  watch(rdsAutoAdvance, (val) => { Store.updateState('rdsAutoAdvance', val); Store.saveSettings() })
+  watch(rdsIsDynamic, (val) => { Store.updateState('rdsIsDynamic', val); Store.saveSettings() })
+  watch(rdsIsPermanentCrossEnabled, (val) => { Store.updateState('rdsIsPermanentCrossEnabled', val); Store.saveSettings() })
+  watch(rdsSessionLimit, (val) => { Store.updateState('rdsSessionLimit', val); Store.saveSettings() })
+
+  watch(rdsRandomizeVertical, (val) => {
+    if (val && rdsIsFloating.value) rdsIsFloating.value = false
+    Store.updateState('rdsRandomizeVertical', val); Store.saveSettings()
+  })
+  watch(rdsIsFloating, (val) => {
+    if (val && rdsRandomizeVertical.value) rdsRandomizeVertical.value = false
+    Store.updateState('rdsIsFloating', val); Store.saveSettings()
+  })
+  watch(rdsFloatSpeed, (val) => { Store.updateState('rdsFloatSpeed', val); Store.saveSettings() })
+  watch(calibratorLeftR, (val) => { Store.updateState('calibratorLeftR', val); Store.saveSettings() })
+  watch(calibratorRightG, (val) => { Store.updateState('calibratorRightG', val); Store.saveSettings() })
+  watch(calibratorRightB, (val) => { Store.updateState('calibratorRightB', val); Store.saveSettings() })
+
   // Методы установки
   function setPreset(mode: GaborPreset) { presetMode.value = mode }
   function setSessionLimit(val: number) { sessionLimit.value = val }
@@ -129,6 +168,19 @@ export const useSettingsStore = defineStore('settings', () => {
   function setSynopFlicker(val: boolean) { synopFlickerActive.value = val }
   function setSynopLockVertical(val: boolean) { synopLockVertical.value = val }
   function setSynopLockHorizontal(val: boolean) { synopLockHorizontal.value = val }
+  function setRdsStartDisparity(px: number) { rdsStartDisparity.value = px }
+  function setRdsDotSize(px: number) { rdsDotSize.value = px }
+  function setRdsDensityPercent(percent: number) { rdsDensityPercent.value = percent }
+  function setRdsAutoAdvance(val: boolean) { rdsAutoAdvance.value = val }
+  function setRdsIsDynamic(val: boolean) { rdsIsDynamic.value = val }
+  function setRdsRandomizeVertical(val: boolean) { rdsRandomizeVertical.value = val }
+  function setRdsIsFloating(val: boolean) { rdsIsFloating.value = val }
+  function setRdsFloatSpeed(speed: RdsFloatSpeed) { rdsFloatSpeed.value = speed }
+  function setRdsPermanentCross(val: boolean) { rdsIsPermanentCrossEnabled.value = val }
+  function setRdsSessionLimit(val: number) { rdsSessionLimit.value = val }
+  function setCalibratorLeftR(val: number) { calibratorLeftR.value = val }
+  function setCalibratorRightG(val: number) { calibratorRightG.value = val }
+  function setCalibratorRightB(val: number) { calibratorRightB.value = val }
 
   return {
     presetMode, setPreset,
@@ -160,5 +212,18 @@ export const useSettingsStore = defineStore('settings', () => {
     synopFlickerActive, setSynopFlicker,
     synopLockVertical, setSynopLockVertical,
     synopLockHorizontal, setSynopLockHorizontal,
+    rdsStartDisparity, setRdsStartDisparity,
+    rdsDotSize, setRdsDotSize,
+    rdsDensityPercent, setRdsDensityPercent,
+    rdsAutoAdvance, setRdsAutoAdvance,
+    rdsIsDynamic, setRdsIsDynamic,
+    rdsRandomizeVertical, setRdsRandomizeVertical,
+    rdsIsFloating, setRdsIsFloating,
+    rdsFloatSpeed, setRdsFloatSpeed,
+    rdsIsPermanentCrossEnabled, setRdsPermanentCross,
+    rdsSessionLimit, setRdsSessionLimit,
+    calibratorLeftR, setCalibratorLeftR,
+    calibratorRightG, setCalibratorRightG,
+    calibratorRightB, setCalibratorRightB,
   }
 })
