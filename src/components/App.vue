@@ -1,35 +1,74 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, nextTick, ref, watch } from 'vue'
 import SettingsModal from './SettingsModal.vue'
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
+import { useHudStore } from '../stores/hudStore'
 
 const ui = useUIStore()
-useSettingsStore()
+const settings = useSettingsStore()
+const hud = useHudStore()
+const startBtnRef = ref<HTMLElement | null>(null)
 
-import { watch } from 'vue'
 watch(() => ui.isSettingsOpen, (open) => {
   document.body.classList.toggle('modal-is-open', open)
 })
 
 onMounted(() => {
   // Перехватываем клик по старой кнопке настроек
-  const btn = document.getElementById('btn-settings')
-  if (btn) {
-    btn.addEventListener('click', (e) => {
+  const oldSettingsBtn = document.getElementById('btn-settings')
+  if (oldSettingsBtn) {
+    oldSettingsBtn.addEventListener('click', (e) => {
       e.stopImmediatePropagation()
       e.preventDefault()
       ui.openSettings()
     })
   }
-  // Скрываем старую модалку (временный костыль)
+
+  // Скрываем старую модалку
   const oldModal = document.getElementById('settings-modal')
   if (oldModal) oldModal.style.display = 'none'
+
+  // Перемещаем новую кнопку Start внутрь #controls-layout
+  nextTick(() => {
+    if (!startBtnRef.value) return
+    const controlsLayout = document.getElementById('controls-layout')
+    const oldStartBtn = document.getElementById('btn-start')
+    if (controlsLayout && oldStartBtn) {
+      oldStartBtn.style.display = 'none'
+      controlsLayout.insertBefore(startBtnRef.value, oldStartBtn)
+    }
+  })
 })
 </script>
 
 <template>
-  <div class="vue-app-wrapper">
-    <SettingsModal />
-  </div>
+  <button
+    id="vue-btn-start"
+    ref="startBtnRef"
+    :disabled="hud.isPrimaryDisabled"
+    @click="hud.onPrimaryClick()"
+    class="action-btn btn-start-vue"
+  >
+    {{ hud.primaryLabel }}
+  </button>
+  <SettingsModal />
 </template>
+
+<style scoped>
+.btn-start-vue {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 12px;
+  background: #007aff;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+.btn-start-vue:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+</style>

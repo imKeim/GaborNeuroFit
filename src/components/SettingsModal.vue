@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useUIStore } from '../stores/ui'
 import { useSettingsStore } from '../stores/settings'
-import type { GaborPreset, FlashDurationMode, CrowdingMode } from '../types/clinical'
+import type { GaborPreset, FlashDurationMode } from '../types/clinical'
 
 const ui = useUIStore()
 const settings = useSettingsStore()

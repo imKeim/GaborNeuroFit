@@ -40,6 +40,8 @@ import { loadLanguage } from './utils/i18n';
 // Import UI View Controller
 import { ViewController } from './ui/view-controller';
 
+import { useGaborStore } from './stores/gaborStore';
+
 // Import strict types
 import type { Language, AppMode } from './types/clinical';
 
@@ -189,7 +191,7 @@ function handlePrimaryAction(): void {
         if (hintController) hintController.triggerTemporaryHint('hintBtnResume');
         return;
     }
-    
+
     runFlash();
 
     if (hintController && !s.isSessionCompleted) {
@@ -373,6 +375,7 @@ window.addEventListener('load', async () => {
     DataRepository.migrateLegacyDatabase();
 
     // Step: Dependency Injection (Controller instances)
+    const gaborStore = useGaborStore();
     gaborController = new GaborController(
         canvas,
         overlayCanvas,
@@ -382,8 +385,10 @@ window.addEventListener('load', async () => {
         btnStart,
         () => activeTranslations,
         showCustomAlert,
-        () => syncVisualState()
+        () => syncVisualState(),
+        (state: string) => gaborStore.updateState(state)
     );
+    gaborStore.setController(gaborController);
     /** 
      * @architecture Inversion of Control (IoC)
      * SynoptophoreController is completely decoupled from the DataRepository. 

@@ -94,7 +94,8 @@ export class GaborController {
         private btnStart: HTMLButtonElement,
         private getTranslations: () => Record<string, string>,
         private showCustomModal: (title: string, text: string) => void,
-        private syncCross: () => void
+        private syncCross: () => void,
+        private onStateUpdate?: (state: string) => void
     ) {}
 
     /** @description Aborts current trial by clearing timers and resetting state to IDLE. */
@@ -102,6 +103,7 @@ export class GaborController {
         this.tracker.clearAll();
         this.currentState = TrialState.IDLE;
         Store.updateState('isAutoAdvanceTimerActive', false);
+        if (this.onStateUpdate) this.onStateUpdate('IDLE');
         if (this.syncCross) this.syncCross();
     }
 
@@ -125,6 +127,7 @@ export class GaborController {
             return false;
         }
         this.currentState = nextState;
+        if (this.onStateUpdate) this.onStateUpdate(nextState);
         if (nextState === TrialState.PRE_CUE || nextState === TrialState.FEEDBACK) {
             this.tracker.clearAll();
         }
