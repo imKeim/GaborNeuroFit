@@ -56,7 +56,8 @@ export class RdsController {
         private btnStart: HTMLButtonElement,
         private getTranslations: () => Record<string, string>,
         private showCustomModal: (title: string, text: string) => void,
-        private syncCross: () => void
+        private syncCross: () => void,
+        private onStateUpdate?: (state: string) => void
     ) {}
 
     /** @description Forcefully resets the controller to IDLE and clears pending timers. */
@@ -64,6 +65,7 @@ export class RdsController {
         this.tracker.clearAll();
         this.currentState = RdsState.IDLE;
         Store.updateState('isAutoAdvanceTimerActive', false);
+        if (this.onStateUpdate) this.onStateUpdate('IDLE');
         if (this.syncCross) this.syncCross();
     }
 
@@ -91,6 +93,7 @@ export class RdsController {
         if (!allowed || !allowed.includes(nextState)) return false;
 
         this.currentState = nextState;
+        if (this.onStateUpdate) this.onStateUpdate(nextState);
         if (nextState === RdsState.PRE_CUE || nextState === RdsState.FEEDBACK) {
             this.tracker.clearAll();
         }

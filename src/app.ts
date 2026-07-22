@@ -41,6 +41,7 @@ import { loadLanguage } from './utils/i18n';
 import { ViewController } from './ui/view-controller';
 
 import { useGaborStore } from './stores/gaborStore';
+import { useRdsStore } from './stores/rdsStore';
 
 // Import strict types
 import type { Language, AppMode } from './types/clinical';
@@ -402,7 +403,6 @@ window.addEventListener('load', async () => {
         showCustomAlert,
         () => {
             const startDist = Store.state.synopStartDistance;
-            // Persistence Hook: Save successful 100% motor vergence sweep
             DataRepository.saveSession({
                 sessionId: Store.state.sessionId,
                 protocol: 'synoptophore',
@@ -416,11 +416,10 @@ window.addEventListener('load', async () => {
                 startDistance: startDist,
                 outcome: 'success'
             });
-            Store.rotateSessionId(); // Symmetrically rotate ID for the subsequent attempt
+            Store.rotateSessionId();
             syncVisualState();
         },
         (targetX, targetY, startDistance) => {
-            // Save slipped vergence sweep conforming strictly to Polymorphic interfaces
             DataRepository.saveSession({
                 sessionId: Store.state.sessionId,
                 protocol: 'synoptophore',
@@ -434,11 +433,13 @@ window.addEventListener('load', async () => {
                 startDistance: startDistance,
                 outcome: 'slip'
             });
-            Store.rotateSessionId(); // Symmetrically rotate ID for the subsequent attempt
+            Store.rotateSessionId();
             syncVisualState();
         }
     );
+    (window as any).__synopController = synoptophoreController;
 
+    const rdsStore = useRdsStore();
     rdsController = new RdsController(
         canvas,
         overlayCanvas,
@@ -448,8 +449,10 @@ window.addEventListener('load', async () => {
         btnStart,
         () => activeTranslations,
         showCustomAlert,
-        () => syncVisualState()
+        () => syncVisualState(),
+        (state: string) => rdsStore.updateState(state)
     );
+    rdsStore.setController(rdsController);
 
     dashboardController = new DashboardController(() => activeTranslations);
 
@@ -562,6 +565,24 @@ window.addEventListener('load', async () => {
         }
     }
 
+    // Event Bridge from Vue Settings Modal
+    window.addEventListener('vue-settings-opened', () => {
+        // Записываем паузу и останавливаем таймеры
+        wasPausedBeforeSettings = Store.state.isPaused;
+        enforceSystemPause();
+
+        // Делаем снимки (snaps) важных параметров до того, как Vue их изменит
+        snapAppMode = Store.state.appMode;
+        snapLevel = Store.state.currentLevel;
+        snapTimerLimit = Store.state.timerLimitMinutes;
+        snapRdsStartDisparity = Store.state.rdsStartDisparity;
+    });
+
+    window.addEventListener('vue-settings-closed', () => {
+        // Триггерим функцию применения настроек движка
+        saveSettingsFromUI();
+    });
+
     // Logic: Handbook modal binding
     const btnInfo = document.getElementById('btn-info');
     if (btnInfo) {
@@ -604,8 +625,6 @@ window.addEventListener('load', async () => {
         const isSynop = (Store.state.appMode === 'synoptophore');
 
         Store.updateState('isAnaglyphTestActive', false);
-        const settingsModal = document.getElementById('settings-modal');
-        if (settingsModal) settingsModal.classList.remove('calibration-mode');
 
         if (isCriticalChange) {
             transitionToMode(Store.state.appMode);

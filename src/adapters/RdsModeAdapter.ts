@@ -1,33 +1,31 @@
 import { computed } from 'vue'
 import type { IModeController } from '../types/hud'
-import { useGaborStore } from '../stores/gaborStore'
 import { Store } from '../store'
+import { useRdsStore } from '../stores/rdsStore'
 
-export function createGaborAdapter(): IModeController {
-  const gabor = useGaborStore()
+export function createRdsAdapter(): IModeController {
+  const rds = useRdsStore()
 
   const primaryLabel = computed(() => {
     const s = Store.state
     if (s.isSessionCompleted) return 'Reset Session'
-    if (s.isWaitingForAnswer) return 'Re-Flash'
-    return s.total > 0 ? 'Next' : 'Start'
+    if (rds.isWaitingForAnswer) return 'Next Stereogram'
+    return rds.rdsTotal > 0 ? 'Next Stereogram' : 'Start Stereogram'
   })
 
   const isPrimaryDisabled = computed(() => {
     const s = Store.state
     if (s.isPaused) return true
     if (s.isSessionCompleted) return false
-    const state = gabor.currentState
-    if (state === 'PRE_CUE' || state === 'STIMULUS_ACTIVE' || state === 'FEEDBACK') return true
-    if (s.isStaticEnabled && s.isWaitingForAnswer) return true
-    if (s.autoAdvance && s.isAutoAdvanceTimerActive) return true
+    const state = rds.currentState
+    if (state === 'PRE_CUE' || state === 'STIMULUS_ACTIVE' || state === 'AWAITING_INPUT' || state === 'FEEDBACK') return true
+    // TODO: сделать rds.isAutoAdvanceTimerActive по аналогии с Gabor, пока пропускаем
     return false
   })
 
-  const onPrimaryClick = () => gabor.triggerTrial()
+  const onPrimaryClick = () => rds.triggerTrial()
 
   const showDirectionButtons = computed(() => true)
-
   const leftLabel = computed(() => 'Left')
   const rightLabel = computed(() => 'Right')
 
@@ -35,19 +33,17 @@ export function createGaborAdapter(): IModeController {
     const s = Store.state
     if (s.isPaused) return true
     if (s.isSessionCompleted) return true
-    return gabor.currentState !== 'AWAITING_INPUT'
+    return rds.currentState !== 'AWAITING_INPUT'
   })
-
-  const onLeftClick = () => gabor.submitAnswer('left')
+  const onLeftClick = () => rds.submitAnswer('left')
 
   const isRightDisabled = computed(() => {
     const s = Store.state
     if (s.isPaused) return true
     if (s.isSessionCompleted) return true
-    return gabor.currentState !== 'AWAITING_INPUT'
+    return rds.currentState !== 'AWAITING_INPUT'
   })
-
-  const onRightClick = () => gabor.submitAnswer('right')
+  const onRightClick = () => rds.submitAnswer('right')
 
   const showResetButton = computed(() => false)
   const resetLabel = computed(() => 'Reset')
@@ -57,7 +53,7 @@ export function createGaborAdapter(): IModeController {
   const isPauseDisabled = computed(() => {
     const s = Store.state
     if (s.isSessionCompleted) return true
-    const state = gabor.currentState
+    const state = rds.currentState
     return state === 'PRE_CUE' || state === 'FEEDBACK'
   })
 

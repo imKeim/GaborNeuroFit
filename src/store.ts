@@ -9,6 +9,7 @@
  * @license GNU GPL v3
  */
 
+import { reactive } from 'vue';
 import { DataRepository } from './store/repository.js';
 import type {
     AppState,
@@ -24,7 +25,7 @@ import type {
 
 export const Store = {
     /** @description The Single Source of Truth (SSoT) reactive application state tree */
-    state: {
+    state: reactive({
         // --- System & Meta ---
         sessionId: 'session_' + Date.now(),
         currentLang: 'en' as Language,
@@ -123,7 +124,7 @@ export const Store = {
         trialHistory: [] as number[],
         rdsHistory: [] as number[],
         isAutoAdvanceTimerActive: false
-    } as AppState,
+    }) as AppState,
 
     /**
      * @description Regroups active session trackers by generating a fresh cryptographic timestamp UID.

@@ -12,6 +12,11 @@ const startBtnRef = ref<HTMLElement | null>(null)
 
 watch(() => ui.isSettingsOpen, (open) => {
   document.body.classList.toggle('modal-is-open', open)
+  if (open) {
+    window.dispatchEvent(new CustomEvent('vue-settings-opened'))
+  } else {
+    window.dispatchEvent(new CustomEvent('vue-settings-closed'))
+  }
 })
 
 onMounted(() => {

@@ -1,7 +1,9 @@
 import { defineStore } from 'pinia'
-import { computed, readonly, ref } from 'vue'
+import { computed } from 'vue'
 import { useSettingsStore } from './settings'
 import { createGaborAdapter } from '../adapters/GaborModeAdapter'
+import { createSynopAdapter } from '../adapters/SynopModeAdapter'
+import { createRdsAdapter } from '../adapters/RdsModeAdapter'
 import type { IModeController } from '../types/hud'
 
 export const useHudStore = defineStore('hud', () => {
@@ -12,48 +14,51 @@ export const useHudStore = defineStore('hud', () => {
     switch (settings.appMode) {
       case 'gabor':
         return createGaborAdapter()
-      // Synoptophore и RDS пока не реализованы
+      case 'synoptophore':
+        return createSynopAdapter()
+      case 'rds':
+        return createRdsAdapter()
       default:
         return null
     }
   })
 
   // Проксируем свойства адаптера
-  const primaryLabel = computed(() => activeAdapter.value?.primaryLabel ?? 'Start')
-  const isPrimaryDisabled = computed(() => activeAdapter.value?.isPrimaryDisabled ?? true)
+  const primaryLabel = computed(() => activeAdapter.value?.primaryLabel.value ?? 'Start')
+  const isPrimaryDisabled = computed(() => activeAdapter.value?.isPrimaryDisabled.value ?? true)
   function onPrimaryClick() { activeAdapter.value?.onPrimaryClick() }
 
-  const showDirectionButtons = computed(() => activeAdapter.value?.showDirectionButtons ?? false)
-  const leftLabel = computed(() => activeAdapter.value?.leftLabel ?? 'Left')
-  const isLeftDisabled = computed(() => activeAdapter.value?.isLeftDisabled ?? true)
+  const showDirectionButtons = computed(() => activeAdapter.value?.showDirectionButtons.value ?? false)
+  const leftLabel = computed(() => activeAdapter.value?.leftLabel.value ?? 'Left')
+  const isLeftDisabled = computed(() => activeAdapter.value?.isLeftDisabled.value ?? true)
   function onLeftClick() { activeAdapter.value?.onLeftClick() }
 
-  const rightLabel = computed(() => activeAdapter.value?.rightLabel ?? 'Right')
-  const isRightDisabled = computed(() => activeAdapter.value?.isRightDisabled ?? true)
+  const rightLabel = computed(() => activeAdapter.value?.rightLabel.value ?? 'Right')
+  const isRightDisabled = computed(() => activeAdapter.value?.isRightDisabled.value ?? true)
   function onRightClick() { activeAdapter.value?.onRightClick() }
 
-  const showResetButton = computed(() => activeAdapter.value?.showResetButton ?? false)
-  const resetLabel = computed(() => activeAdapter.value?.resetLabel ?? 'Reset')
-  const isResetDisabled = computed(() => activeAdapter.value?.isResetDisabled ?? true)
+  const showResetButton = computed(() => activeAdapter.value?.showResetButton.value ?? false)
+  const resetLabel = computed(() => activeAdapter.value?.resetLabel.value ?? 'Reset')
+  const isResetDisabled = computed(() => activeAdapter.value?.isResetDisabled.value ?? true)
   function onResetClick() { activeAdapter.value?.onResetClick() }
 
-  const isPauseDisabled = computed(() => activeAdapter.value?.isPauseDisabled ?? true)
+  const isPauseDisabled = computed(() => activeAdapter.value?.isPauseDisabled.value ?? true)
 
   return {
-    primaryLabel: readonly(primaryLabel),
-    isPrimaryDisabled: readonly(isPrimaryDisabled),
+    primaryLabel,
+    isPrimaryDisabled,
     onPrimaryClick,
-    showDirectionButtons: readonly(showDirectionButtons),
-    leftLabel: readonly(leftLabel),
-    isLeftDisabled: readonly(isLeftDisabled),
+    showDirectionButtons,
+    leftLabel,
+    isLeftDisabled,
     onLeftClick,
-    rightLabel: readonly(rightLabel),
-    isRightDisabled: readonly(isRightDisabled),
+    rightLabel,
+    isRightDisabled,
     onRightClick,
-    showResetButton: readonly(showResetButton),
-    resetLabel: readonly(resetLabel),
-    isResetDisabled: readonly(isResetDisabled),
+    showResetButton,
+    resetLabel,
+    isResetDisabled,
     onResetClick,
-    isPauseDisabled: readonly(isPauseDisabled),
+    isPauseDisabled,
   }
 })
